@@ -15,6 +15,10 @@ interface ScrapedItem {
 }
 
 function insertRecords(category: string, districtId: number, item: ScrapedItem): Promise<void> {
+  // Normalize phone to '' so the UNIQUE(category, district_id, business_name, phone)
+  // constraint actually dedupes rows where phone is missing (SQLite NULLs never
+  // compare equal, so NULL phones would bypass the constraint entirely).
+  const phoneKey = (item.phone ?? '').trim();
   return new Promise((resolve, reject) => {
     db.serialize(() => {
       db.run(
@@ -34,7 +38,7 @@ function insertRecords(category: string, districtId: number, item: ScrapedItem):
            address = excluded.address,
            website = excluded.website,
            last_updated = CURRENT_TIMESTAMP`,
-        [category, districtId, item.business_name, item.contact_person, item.phone, item.address, item.website],
+        [category, districtId, item.business_name, item.contact_person, phoneKey, item.address, item.website],
         (err) => { if (err) reject(err); else resolve(); }
       );
     });
@@ -60,6 +64,7 @@ export async function scrapeDistrict(
       await page.waitForSelector('[role="feed"]', { timeout: 15000 }).catch(() => null);
 
       const results: ScrapedItem[] = [];
+      const seen = new Set<string>();
       let previousHeight = 0;
       let scrollAttempts = 0;
       const maxScrolls = 10;
@@ -76,19 +81,26 @@ export async function scrapeDistrict(
             const combinedText = `${name} ${address} ${phone} ${website}`;
             const enriched = await extractWithOllama(combinedText);
 
-            results.push({
+            const record: ScrapedItem = {
               business_name: name || enriched?.company_name || '',
               contact_person: enriched?.contact_person || null,
               phone: phone || enriched?.phone || null,
               address: address || enriched?.address || null,
               website: website || null,
-            });
+            };
+
+            // Dedup key tolerant of NULL phone (SQLite treats NULLs as distinct,
+            // which would otherwise let the same business insert repeatedly).
+            const key = `${record.business_name.trim().toLowerCase()}|${(record.phone || '').trim()}`;
+            if (!record.business_name || seen.has(key)) continue;
+            seen.add(key);
+            results.push(record);
           } catch (e) { /* skip */ }
         }
 
         await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         await sleep(2000 + Math.random() * 1000);
-        const newHeight = await page.evaluate('document.body.scrollHeight');
+        const newHeight = Number(await page.evaluate('document.body.scrollHeight'));
         if (newHeight === previousHeight) break;
         previousHeight = newHeight;
         scrollAttempts++;
