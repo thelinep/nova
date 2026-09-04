@@ -1,0 +1,32 @@
+{
+  "name": "india-scraper-next",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "next dev"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "dependencies": {
+    "@types/node": "^26.4.1",
+    "axios": "^1.20.0",
+    "next": "^16.3.4",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "sqlite3": "^6.0.1",
+    "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "sqlite3@6.0.1": true
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3"
+  }
+}
