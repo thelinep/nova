@@ -71,7 +71,7 @@ cat > package.json <<'EOF'
   "description": "Scrape Google Maps for business categories across Indian districts",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "TURBOPACK=0 next dev",
     "build": "next build",
     "start": "next start",
     "test": "jest",
