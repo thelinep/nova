@@ -50,6 +50,29 @@ db.serialize(() => {
   `);
   db.run(`CREATE INDEX IF NOT EXISTS idx_refined_category ON refined_data(category)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_refined_district ON refined_data(district_id)`);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_sources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT NOT NULL CHECK(kind IN ('url', 'text')),
+      url TEXT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      content_type TEXT,
+      collected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(kind, url) ON CONFLICT REPLACE
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_sources_collected ON knowledge_sources(collected_at DESC)`);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_patterns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      label TEXT NOT NULL,
+      pattern TEXT NOT NULL UNIQUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 });
 
 export default db;

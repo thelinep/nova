@@ -95,6 +95,7 @@ export default function Home() {
     <main className="container mx-auto p-4 max-w-6xl">
       <h1 className="text-3xl font-bold mb-2">🇮🇳 India Business Scraper</h1>
       <p className="text-gray-600 mb-4">Scrape Google Maps for any category across all Indian districts.</p>
+      <a href="/knowledge" className="mb-4 inline-block text-sm text-blue-700 underline">Open Universal Knowledge Collector →</a>
 
       <div className="flex flex-wrap gap-3 mb-4">
         <input
