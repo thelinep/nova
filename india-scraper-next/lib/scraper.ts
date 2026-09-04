@@ -18,22 +18,22 @@ function insertRecords(category: string, districtId: number, item: ScrapedItem):
   return new Promise((resolve, reject) => {
     db.serialize(() => {
       db.run(
-        \`INSERT INTO scraped_data 
+        `INSERT INTO scraped_data 
           (category, district_id, business_name, contact_person, phone, address, website)
-         VALUES (?, ?, ?, ?, ?, ?, ?)\`,
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [category, districtId, item.business_name, item.contact_person, item.phone, item.address, item.website],
         (err) => { if (err) reject(err); }
       );
 
       db.run(
-        \`INSERT INTO refined_data 
+        `INSERT INTO refined_data 
           (category, district_id, business_name, contact_person, phone, address, website)
          VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(category, district_id, business_name, phone) DO UPDATE SET
            contact_person = excluded.contact_person,
            address = excluded.address,
            website = excluded.website,
-           last_updated = CURRENT_TIMESTAMP\`,
+           last_updated = CURRENT_TIMESTAMP`,
         [category, districtId, item.business_name, item.contact_person, item.phone, item.address, item.website],
         (err) => { if (err) reject(err); else resolve(); }
       );
@@ -55,8 +55,8 @@ export async function scrapeDistrict(
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
       await page.setViewport({ width: 1280, height: 800 });
 
-      const searchQuery = \`\${category} in \${districtName}, India\`;
-      await page.goto(\`https://www.google.com/maps/search/\${encodeURIComponent(searchQuery)}\`, { waitUntil: 'networkidle2' });
+      const searchQuery = `${category} in ${districtName}, India`;
+      await page.goto(`https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`, { waitUntil: 'networkidle2' });
       await page.waitForSelector('[role="feed"]', { timeout: 15000 }).catch(() => null);
 
       const results: ScrapedItem[] = [];
@@ -68,12 +68,12 @@ export async function scrapeDistrict(
         const items = await page.$$('div[role="article"]');
         for (const item of items) {
           try {
-            const name = await item.$eval('div.fontHeadlineSmall', el => el.innerText).catch(() => '');
-            const address = await item.$eval('div[data-item-id="address"]', el => el.innerText).catch(() => '');
-            const phone = await item.$eval('div[data-item-id="phone"]', el => el.innerText).catch(() => '');
-            const website = await item.$eval('div[data-item-id="website"]', el => el.innerText).catch(() => '');
+            const name = await item.$eval('div.fontHeadlineSmall', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
+            const address = await item.$eval('div[data-item-id="address"]', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
+            const phone = await item.$eval('div[data-item-id="phone"]', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
+            const website = await item.$eval('div[data-item-id="website"]', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
 
-            const combinedText = \`\${name} \${address} \${phone} \${website}\`;
+            const combinedText = `${name} ${address} ${phone} ${website}`;
             const enriched = await extractWithOllama(combinedText);
 
             results.push({
@@ -102,7 +102,8 @@ export async function scrapeDistrict(
       return results.length;
     } catch (error) {
       attempt++;
-      console.error(\`Scraping \${districtName} failed (attempt \${attempt}):\`, error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`Scraping ${districtName} failed (attempt ${attempt}):`, message);
       if (attempt < retries) {
         const delay = parseInt(process.env.RETRY_DELAY || '2000') * Math.pow(2, attempt - 1);
         await sleep(delay);

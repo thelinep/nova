@@ -9,15 +9,15 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 });
 
 db.serialize(() => {
-  db.run(\`
+  db.run(`
     CREATE TABLE IF NOT EXISTS districts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE,
       state TEXT
     )
-  \`);
+  `);
 
-  db.run(\`
+  db.run(`
     CREATE TABLE IF NOT EXISTS scraped_data (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category TEXT,
@@ -30,10 +30,10 @@ db.serialize(() => {
       scraped_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (district_id) REFERENCES districts(id)
     )
-  \`);
-  db.run(\`CREATE INDEX IF NOT EXISTS idx_scraped_category ON scraped_data(category)\`);
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_scraped_category ON scraped_data(category)`);
 
-  db.run(\`
+  db.run(`
     CREATE TABLE IF NOT EXISTS refined_data (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category TEXT,
@@ -47,9 +47,9 @@ db.serialize(() => {
       last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(category, district_id, business_name, phone) ON CONFLICT REPLACE
     )
-  \`);
-  db.run(\`CREATE INDEX IF NOT EXISTS idx_refined_category ON refined_data(category)\`);
-  db.run(\`CREATE INDEX IF NOT EXISTS idx_refined_district ON refined_data(district_id)\`);
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_refined_category ON refined_data(category)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_refined_district ON refined_data(district_id)`);
 });
 
 export default db;

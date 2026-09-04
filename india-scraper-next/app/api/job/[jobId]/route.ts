@@ -3,9 +3,10 @@ import { getJob } from '@/lib/jobs';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
-  const job = getJob(params.jobId);
+  const { jobId } = await params;
+  const job = getJob(jobId);
   if (!job) {
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
   }

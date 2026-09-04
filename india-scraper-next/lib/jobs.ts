@@ -20,8 +20,27 @@ export function getJob(jobId: string): Job | undefined {
   return jobs[jobId];
 }
 
-export function updateJob(jobId: string, updates: Partial<Job>): void {
-  if (jobs[jobId]) {
-    jobs[jobId] = { ...jobs[jobId], ...updates };
-  }
+export function updateJob(jobId: string, updates: Partial<Job>): Job | undefined {
+  const current = jobs[jobId];
+  if (!current) return undefined;
+  jobs[jobId] = { ...current, ...updates };
+  return jobs[jobId];
+}
+
+export function incrementJobCompleted(jobId: string, by: number = 1): Job | undefined {
+  const current = jobs[jobId];
+  if (!current) return undefined;
+  const completed = current.completed + by;
+  const done = completed >= current.total;
+  jobs[jobId] = {
+    ...current,
+    completed,
+    ...(done ? { status: 'completed', endTime: new Date().toISOString() } : {}),
+  };
+  return jobs[jobId];
+}
+
+// Test helper
+export function __clearJobs(): void {
+  for (const key of Object.keys(jobs)) delete jobs[key];
 }

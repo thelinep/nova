@@ -27,6 +27,7 @@ export default function Home() {
   const [progress, setProgress] = useState({ total: 0, completed: 0, status: 'idle' });
   const [loading, setLoading] = useState(false);
   const pollInterval = useRef<NodeJS.Timeout | null>(null);
+  const jobIdRef = useRef<string | null>(null);
 
   const fetchData = async () => {
     const endpoint = view === 'refined' ? '/api/refined-results' : '/api/history-results';
@@ -52,6 +53,7 @@ export default function Home() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setJobId(data.jobId);
+      jobIdRef.current = data.jobId;
       setProgress({ total: data.total, completed: 0, status: 'running' });
       if (pollInterval.current) clearInterval(pollInterval.current);
       pollInterval.current = setInterval(checkProgress, 3000);
@@ -63,9 +65,10 @@ export default function Home() {
   };
 
   const checkProgress = async () => {
-    if (!jobId) return;
+    const currentJobId = jobIdRef.current;
+    if (!currentJobId) return;
     try {
-      const res = await fetch(`/api/job/${jobId}`);
+      const res = await fetch(`/api/job/${currentJobId}`);
       const data = await res.json();
       if (data.error) return;
       setProgress({ total: data.total, completed: data.completed, status: data.status });

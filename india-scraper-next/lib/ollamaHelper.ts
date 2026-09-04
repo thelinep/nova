@@ -6,11 +6,11 @@ const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3';
 export async function extractWithOllama(text: string): Promise<any> {
   if (process.env.USE_OLLAMA === 'false') return null;
   try {
-    const prompt = \`
+    const prompt = `
       Extract the following fields from the text below and return a valid JSON object with keys: "contact_person", "phone", "company_name", "address".
       If a field is not present, set it to null.
-      Text: "\${text}"
-    \`;
+      Text: "${text}"
+    `;
     const response = await axios.post(OLLAMA_URL, {
       model: OLLAMA_MODEL,
       prompt,
@@ -18,7 +18,7 @@ export async function extractWithOllama(text: string): Promise<any> {
       format: 'json',
     });
     const raw = response.data.response;
-    const jsonMatch = raw.match(/\\{.*\\}/s);
+    const jsonMatch = raw.match(/\{.*\}/s);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }

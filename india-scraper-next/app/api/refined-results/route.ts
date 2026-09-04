@@ -6,11 +6,11 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const district_id = searchParams.get('district_id');
 
-  let sql = \`
+  let sql = `
     SELECT r.*, d.name as district_name 
     FROM refined_data r 
     JOIN districts d ON r.district_id = d.id
-  \`;
+  `;
   const params: any[] = [];
   const conditions: string[] = [];
   if (category) {

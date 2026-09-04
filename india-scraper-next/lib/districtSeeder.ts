@@ -24,7 +24,7 @@ export async function seedDistricts() {
     rows.forEach(row => {
       const cols = row.querySelectorAll('td');
       if (cols.length >= 2) {
-        const name = cols[0].innerText.trim().replace(/\\[.*\\]/, '');
+        const name = cols[0].innerText.trim().replace(/\[.*\]/, '');
         const state = cols[1].innerText.trim();
         if (name && state) data.push({ name, state });
       }
@@ -35,7 +35,7 @@ export async function seedDistricts() {
   await browser.close();
 
   const stmt = db.prepare('INSERT OR IGNORE INTO districts (name, state) VALUES (?, ?)');
-  districts.forEach(d => stmt.run(d.name, d.state));
+  districts.forEach((d: { name: string; state: string }) => stmt.run(d.name, d.state));
   stmt.finalize();
-  console.log(\`Inserted \${districts.length} districts.\`);
+  console.log(`Inserted ${districts.length} districts.`);
 }
