@@ -27,7 +27,10 @@
     "typescript": "^5.7.0"
   },
   "allowScripts": {
-    "sqlite3@5.1.7": true
+    "sqlite3@5.1.7": true,
+    "puppeteer@23.11.1": true,
+    "fsevents@2.3.3": true,
+    "fsevents@2.3.2": true
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

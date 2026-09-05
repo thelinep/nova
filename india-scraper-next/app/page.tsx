@@ -50,9 +50,11 @@ export default function Home() {
   const [ingestMessage, setIngestMessage] = useState('');
   const [refreshMessage, setRefreshMessage] = useState('');
 
+  const [district, setDistrict] = useState('');
+
   const fetchData = async () => {
     const endpoint = view === 'refined' ? '/api/refined-results' : '/api/history-results';
-    const url = category ? `${endpoint}?category=${encodeURIComponent(category)}` : endpoint;
+    const url = category ? `${endpoint}?category=${encodeURIComponent(category)}&district=${encodeURIComponent(district)}` : endpoint;
     try {
       const res = await fetch(url);
       const data = await res.json();
@@ -69,7 +71,7 @@ export default function Home() {
       const res = await fetch('/api/start-scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category }),
+        body: JSON.stringify({ category, district }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -106,7 +108,7 @@ export default function Home() {
     return () => {
       if (pollInterval.current) clearInterval(pollInterval.current);
     };
-  }, [view, category]);
+  }, [view, category, district]);
 
   const getDateField = (item: ResultItem) => {
     return view === 'refined' ? item.last_updated : item.scraped_at;
@@ -170,21 +172,31 @@ export default function Home() {
 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-2">🇮🇳 India Business Scraper</h1>
-      <p className="text-gray-600 mb-4">Scrape Google Maps for any category across all Indian districts.</p>
+      <h1 className="text-3xl font-bold mb-2">🇮🇳 India Business Scraper/Reflector</h1>
+      <p className="text-gray-600 mb-4">Scrape/Reflect Google Maps for any category across all Indian districts.</p>
       <a href="/knowledge" className="mb-4 inline-block text-sm text-blue-700 underline">Open Universal Knowledge Collector →</a>
 
       <div className="flex flex-wrap gap-3 mb-4">
         <input
           type="text"
+          data-testid="category-input"
           className="flex-1 min-w-[200px] p-2 border rounded"
           placeholder="e.g., plumbers, dentists"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         />
+        <input
+          type="text"
+          data-testid="district-input"
+          className="flex-1 min-w-[200px] p-2 border rounded"
+          placeholder="e.g., East Delhi (optional)"
+          value={district}
+          onChange={(e) => setDistrict(e.target.value)}
+        />
         <button
           onClick={startScrape}
           disabled={loading}
+          data-testid="start-button"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? 'Starting...' : 'Start Scraping'}
@@ -339,7 +351,7 @@ export default function Home() {
       {view !== 'knowledge' && (
       <>
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border">
+        <table data-testid="results-table"  className="min-w-full bg-white border">
           <thead>
             <tr className="bg-gray-100">
               <th className="py-2 px-3 border">District</th>
