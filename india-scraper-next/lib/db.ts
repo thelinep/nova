@@ -66,6 +66,34 @@ db.serialize(() => {
   addColumn('refined_data', 'maps_url', 'TEXT');
   addColumn('refined_data', 'latitude', 'REAL');
   addColumn('refined_data', 'longitude', 'REAL');
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_sources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type TEXT NOT NULL,
+      source_key TEXT NOT NULL UNIQUE,
+      title TEXT,
+      content_hash TEXT,
+      metadata TEXT,
+      last_checked_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_source_key ON knowledge_sources(source_key)`);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_id INTEGER NOT NULL,
+      chunk_index INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      embedding BLOB,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(source_id, chunk_index) ON CONFLICT REPLACE,
+      FOREIGN KEY (source_id) REFERENCES knowledge_sources(id) ON DELETE CASCADE
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_source ON knowledge_chunks(source_id)`);
 });
 
 export default db;
