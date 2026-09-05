@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-type ViewMode = 'refined' | 'history';
+type ViewMode = 'refined' | 'history' | 'knowledge';
+
+interface KnowledgeResult {
+  score: number;
+  content: string;
+  source_type: string;
+  source_key: string;
+  title: string | null;
+  metadata: any;
+}
 
 interface ResultItem {
   id: number;
@@ -28,6 +37,18 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const pollInterval = useRef<NodeJS.Timeout | null>(null);
   const jobIdRef = useRef<string | null>(null);
+
+  // Knowledge panel state
+  const [knowledgeQuery, setKnowledgeQuery] = useState('');
+  const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeResult[]>([]);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [ingestType, setIngestType] = useState<'text' | 'url'>('text');
+  const [ingestKey, setIngestKey] = useState('');
+  const [ingestTitle, setIngestTitle] = useState('');
+  const [ingestContent, setIngestContent] = useState('');
+  const [ingestUrl, setIngestUrl] = useState('');
+  const [ingestMessage, setIngestMessage] = useState('');
+  const [refreshMessage, setRefreshMessage] = useState('');
 
   const fetchData = async () => {
     const endpoint = view === 'refined' ? '/api/refined-results' : '/api/history-results';
@@ -91,6 +112,62 @@ export default function Home() {
     return view === 'refined' ? item.last_updated : item.scraped_at;
   };
 
+  const searchKnowledge = async () => {
+    if (!knowledgeQuery) return;
+    setKnowledgeLoading(true);
+    try {
+      const res = await fetch(`/api/knowledge/search?q=${encodeURIComponent(knowledgeQuery)}&topK=5`);
+      const data = await res.json();
+      setKnowledgeResults(data.results || []);
+    } catch (error) {
+      console.error('Knowledge search error:', error);
+    } finally {
+      setKnowledgeLoading(false);
+    }
+  };
+
+  const ingestKnowledge = async () => {
+    setIngestMessage('');
+    try {
+      const body: any = {
+        type: ingestType,
+        key: ingestKey || (ingestType === 'url' ? ingestUrl : ingestTitle || 'untitled'),
+        title: ingestTitle || ingestKey,
+      };
+      if (ingestType === 'url') body.url = ingestUrl;
+      else body.content = ingestContent;
+
+      const res = await fetch('/api/knowledge/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setIngestMessage(`Ingested ${data.chunks} chunk(s) for "${data.source_key}"`);
+      setIngestContent('');
+      setIngestUrl('');
+    } catch (err: any) {
+      setIngestMessage('Error: ' + err.message);
+    }
+  };
+
+  const refreshKnowledge = async () => {
+    setRefreshMessage('Refreshing...');
+    try {
+      const res = await fetch('/api/knowledge/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: category || undefined }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setRefreshMessage(`Refreshed ${data.ingested} business record(s)`);
+    } catch (err: any) {
+      setRefreshMessage('Error: ' + err.message);
+    }
+  };
+
   return (
     <main className="container mx-auto p-4 max-w-6xl">
       <h1 className="text-3xl font-bold mb-2">🇮🇳 India Business Scraper</h1>
@@ -139,11 +216,128 @@ export default function Home() {
         >
           History (All)
         </button>
+        <button
+          onClick={() => setView('knowledge')}
+          className={`px-3 py-1 rounded ${view === 'knowledge' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          Knowledge
+        </button>
         <button onClick={fetchData} className="ml-auto px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
           Refresh
         </button>
       </div>
 
+      {view === 'knowledge' && (
+        <div className="space-y-6 mb-6">
+          <div className="p-4 border rounded bg-white">
+            <h2 className="text-lg font-semibold mb-3">Knowledge Search</h2>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                className="flex-1 p-2 border rounded"
+                placeholder="Ask or search the knowledge base..."
+                value={knowledgeQuery}
+                onChange={(e) => setKnowledgeQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchKnowledge()}
+              />
+              <button
+                onClick={searchKnowledge}
+                disabled={knowledgeLoading}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {knowledgeLoading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+            {knowledgeResults.length > 0 && (
+              <div className="space-y-3 mt-4">
+                {knowledgeResults.map((r, idx) => (
+                  <div key={idx} className="p-3 bg-gray-50 border rounded">
+                    <div className="flex justify-between text-sm text-gray-500 mb-1">
+                      <span className="font-medium">{r.title || r.source_key}</span>
+                      <span>score: {r.score.toFixed(3)}</span>
+                    </div>
+                    <pre className="whitespace-pre-wrap text-sm">{r.content}</pre>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border rounded bg-white">
+            <h2 className="text-lg font-semibold mb-3">Ingest Knowledge</h2>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setIngestType('text')}
+                className={`px-3 py-1 rounded ${ingestType === 'text' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+              >
+                Text
+              </button>
+              <button
+                onClick={() => setIngestType('url')}
+                className={`px-3 py-1 rounded ${ingestType === 'url' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+              >
+                URL
+              </button>
+            </div>
+            <div className="grid gap-3 mb-3">
+              <input
+                type="text"
+                className="p-2 border rounded"
+                placeholder="Unique key (optional)"
+                value={ingestKey}
+                onChange={(e) => setIngestKey(e.target.value)}
+              />
+              <input
+                type="text"
+                className="p-2 border rounded"
+                placeholder="Title"
+                value={ingestTitle}
+                onChange={(e) => setIngestTitle(e.target.value)}
+              />
+              {ingestType === 'url' ? (
+                <input
+                  type="url"
+                  className="p-2 border rounded"
+                  placeholder="https://example.com/article"
+                  value={ingestUrl}
+                  onChange={(e) => setIngestUrl(e.target.value)}
+                />
+              ) : (
+                <textarea
+                  className="p-2 border rounded h-32"
+                  placeholder="Paste text content here..."
+                  value={ingestContent}
+                  onChange={(e) => setIngestContent(e.target.value)}
+                />
+              )}
+            </div>
+            <button
+              onClick={ingestKnowledge}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Ingest
+            </button>
+            {ingestMessage && <p className="text-sm mt-2 text-gray-700">{ingestMessage}</p>}
+          </div>
+
+          <div className="p-4 border rounded bg-white">
+            <h2 className="text-lg font-semibold mb-3">Refresh from Scraped Data</h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Embed refined business records into the knowledge base. Filter by the category above, or leave it blank to refresh all.
+            </p>
+            <button
+              onClick={refreshKnowledge}
+              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+            >
+              Refresh Scraped Records
+            </button>
+            {refreshMessage && <p className="text-sm mt-2 text-gray-700">{refreshMessage}</p>}
+          </div>
+        </div>
+      )}
+
+      {view !== 'knowledge' && (
+      <>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border">
           <thead>
@@ -181,6 +375,8 @@ export default function Home() {
         </table>
       </div>
       <div className="text-xs text-gray-500 mt-2">Showing latest {results.length} records</div>
+      </>
+      )}
     </main>
   );
 }

@@ -32,6 +32,17 @@ db.serialize(() => {
     )
   `);
   db.run(`CREATE INDEX IF NOT EXISTS idx_scraped_category ON scraped_data(category)`);
+  // Gracefully add columns if they don't exist yet (SQLite lacks IF NOT EXISTS for ADD COLUMN).
+  const addColumn = (table: string, column: string, type: string) => {
+    db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`, (err) => {
+      if (err && !err.message.includes('duplicate column')) console.error(`ALTER ${table} ADD ${column} failed:`, err.message);
+    });
+  };
+  addColumn('scraped_data', 'rating', 'TEXT');
+  addColumn('scraped_data', 'reviews', 'TEXT');
+  addColumn('scraped_data', 'maps_url', 'TEXT');
+  addColumn('scraped_data', 'latitude', 'REAL');
+  addColumn('scraped_data', 'longitude', 'REAL');
 
   db.run(`
     CREATE TABLE IF NOT EXISTS refined_data (
@@ -50,6 +61,11 @@ db.serialize(() => {
   `);
   db.run(`CREATE INDEX IF NOT EXISTS idx_refined_category ON refined_data(category)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_refined_district ON refined_data(district_id)`);
+  addColumn('refined_data', 'rating', 'TEXT');
+  addColumn('refined_data', 'reviews', 'TEXT');
+  addColumn('refined_data', 'maps_url', 'TEXT');
+  addColumn('refined_data', 'latitude', 'REAL');
+  addColumn('refined_data', 'longitude', 'REAL');
 
   db.run(`
     CREATE TABLE IF NOT EXISTS knowledge_sources (
@@ -73,6 +89,34 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_seeker_sources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type TEXT NOT NULL,
+      source_key TEXT NOT NULL UNIQUE,
+      title TEXT,
+      content_hash TEXT,
+      metadata TEXT,
+      last_checked_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_seeker_source_key ON knowledge_seeker_sources(source_key)`);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_id INTEGER NOT NULL,
+      chunk_index INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      embedding BLOB,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(source_id, chunk_index) ON CONFLICT REPLACE,
+      FOREIGN KEY (source_id) REFERENCES knowledge_seeker_sources(id) ON DELETE CASCADE
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_source ON knowledge_chunks(source_id)`);
 });
 
 export default db;

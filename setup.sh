@@ -258,7 +258,16 @@ cat > app/page.tsx <<'EOF'
 
 import { useState, useEffect, useRef } from 'react';
 
-type ViewMode = 'refined' | 'history';
+type ViewMode = 'refined' | 'history' | 'knowledge';
+
+interface KnowledgeResult {
+  score: number;
+  content: string;
+  source_type: string;
+  source_key: string;
+  title: string | null;
+  metadata: any;
+}
 
 interface ResultItem {
   id: number;
@@ -284,6 +293,18 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const pollInterval = useRef<NodeJS.Timeout | null>(null);
   const jobIdRef = useRef<string | null>(null);
+
+  // Knowledge panel state
+  const [knowledgeQuery, setKnowledgeQuery] = useState('');
+  const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeResult[]>([]);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [ingestType, setIngestType] = useState<'text' | 'url'>('text');
+  const [ingestKey, setIngestKey] = useState('');
+  const [ingestTitle, setIngestTitle] = useState('');
+  const [ingestContent, setIngestContent] = useState('');
+  const [ingestUrl, setIngestUrl] = useState('');
+  const [ingestMessage, setIngestMessage] = useState('');
+  const [refreshMessage, setRefreshMessage] = useState('');
 
   const fetchData = async () => {
     const endpoint = view === 'refined' ? '/api/refined-results' : '/api/history-results';
@@ -347,6 +368,62 @@ export default function Home() {
     return view === 'refined' ? item.last_updated : item.scraped_at;
   };
 
+  const searchKnowledge = async () => {
+    if (!knowledgeQuery) return;
+    setKnowledgeLoading(true);
+    try {
+      const res = await fetch(`/api/knowledge/search?q=${encodeURIComponent(knowledgeQuery)}&topK=5`);
+      const data = await res.json();
+      setKnowledgeResults(data.results || []);
+    } catch (error) {
+      console.error('Knowledge search error:', error);
+    } finally {
+      setKnowledgeLoading(false);
+    }
+  };
+
+  const ingestKnowledge = async () => {
+    setIngestMessage('');
+    try {
+      const body: any = {
+        type: ingestType,
+        key: ingestKey || (ingestType === 'url' ? ingestUrl : ingestTitle || 'untitled'),
+        title: ingestTitle || ingestKey,
+      };
+      if (ingestType === 'url') body.url = ingestUrl;
+      else body.content = ingestContent;
+
+      const res = await fetch('/api/knowledge/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setIngestMessage(`Ingested ${data.chunks} chunk(s) for "${data.source_key}"`);
+      setIngestContent('');
+      setIngestUrl('');
+    } catch (err: any) {
+      setIngestMessage('Error: ' + err.message);
+    }
+  };
+
+  const refreshKnowledge = async () => {
+    setRefreshMessage('Refreshing...');
+    try {
+      const res = await fetch('/api/knowledge/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: category || undefined }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setRefreshMessage(`Refreshed ${data.ingested} business record(s)`);
+    } catch (err: any) {
+      setRefreshMessage('Error: ' + err.message);
+    }
+  };
+
   return (
     <main className="container mx-auto p-4 max-w-6xl">
       <h1 className="text-3xl font-bold mb-2">🇮🇳 India Business Scraper</h1>
@@ -394,11 +471,128 @@ export default function Home() {
         >
           History (All)
         </button>
+        <button
+          onClick={() => setView('knowledge')}
+          className={`px-3 py-1 rounded ${view === 'knowledge' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          Knowledge
+        </button>
         <button onClick={fetchData} className="ml-auto px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
           Refresh
         </button>
       </div>
 
+      {view === 'knowledge' && (
+        <div className="space-y-6 mb-6">
+          <div className="p-4 border rounded bg-white">
+            <h2 className="text-lg font-semibold mb-3">Knowledge Search</h2>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                className="flex-1 p-2 border rounded"
+                placeholder="Ask or search the knowledge base..."
+                value={knowledgeQuery}
+                onChange={(e) => setKnowledgeQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchKnowledge()}
+              />
+              <button
+                onClick={searchKnowledge}
+                disabled={knowledgeLoading}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {knowledgeLoading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+            {knowledgeResults.length > 0 && (
+              <div className="space-y-3 mt-4">
+                {knowledgeResults.map((r, idx) => (
+                  <div key={idx} className="p-3 bg-gray-50 border rounded">
+                    <div className="flex justify-between text-sm text-gray-500 mb-1">
+                      <span className="font-medium">{r.title || r.source_key}</span>
+                      <span>score: {r.score.toFixed(3)}</span>
+                    </div>
+                    <pre className="whitespace-pre-wrap text-sm">{r.content}</pre>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border rounded bg-white">
+            <h2 className="text-lg font-semibold mb-3">Ingest Knowledge</h2>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setIngestType('text')}
+                className={`px-3 py-1 rounded ${ingestType === 'text' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+              >
+                Text
+              </button>
+              <button
+                onClick={() => setIngestType('url')}
+                className={`px-3 py-1 rounded ${ingestType === 'url' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+              >
+                URL
+              </button>
+            </div>
+            <div className="grid gap-3 mb-3">
+              <input
+                type="text"
+                className="p-2 border rounded"
+                placeholder="Unique key (optional)"
+                value={ingestKey}
+                onChange={(e) => setIngestKey(e.target.value)}
+              />
+              <input
+                type="text"
+                className="p-2 border rounded"
+                placeholder="Title"
+                value={ingestTitle}
+                onChange={(e) => setIngestTitle(e.target.value)}
+              />
+              {ingestType === 'url' ? (
+                <input
+                  type="url"
+                  className="p-2 border rounded"
+                  placeholder="https://example.com/article"
+                  value={ingestUrl}
+                  onChange={(e) => setIngestUrl(e.target.value)}
+                />
+              ) : (
+                <textarea
+                  className="p-2 border rounded h-32"
+                  placeholder="Paste text content here..."
+                  value={ingestContent}
+                  onChange={(e) => setIngestContent(e.target.value)}
+                />
+              )}
+            </div>
+            <button
+              onClick={ingestKnowledge}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Ingest
+            </button>
+            {ingestMessage && <p className="text-sm mt-2 text-gray-700">{ingestMessage}</p>}
+          </div>
+
+          <div className="p-4 border rounded bg-white">
+            <h2 className="text-lg font-semibold mb-3">Refresh from Scraped Data</h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Embed refined business records into the knowledge base. Filter by the category above, or leave it blank to refresh all.
+            </p>
+            <button
+              onClick={refreshKnowledge}
+              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+            >
+              Refresh Scraped Records
+            </button>
+            {refreshMessage && <p className="text-sm mt-2 text-gray-700">{refreshMessage}</p>}
+          </div>
+        </div>
+      )}
+
+      {view !== 'knowledge' && (
+      <>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border">
           <thead>
@@ -436,10 +630,13 @@ export default function Home() {
         </table>
       </div>
       <div className="text-xs text-gray-500 mt-2">Showing latest {results.length} records</div>
+      </>
+      )}
     </main>
   );
 }
 EOF
+
 
 # ========== lib/db.ts ==========
 cat > lib/db.ts <<'EOF'
@@ -477,6 +674,17 @@ db.serialize(() => {
     )
   `);
   db.run(`CREATE INDEX IF NOT EXISTS idx_scraped_category ON scraped_data(category)`);
+  // Gracefully add columns if they don't exist yet (SQLite lacks IF NOT EXISTS for ADD COLUMN).
+  const addColumn = (table: string, column: string, type: string) => {
+    db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`, (err) => {
+      if (err && !err.message.includes('duplicate column')) console.error(`ALTER ${table} ADD ${column} failed:`, err.message);
+    });
+  };
+  addColumn('scraped_data', 'rating', 'TEXT');
+  addColumn('scraped_data', 'reviews', 'TEXT');
+  addColumn('scraped_data', 'maps_url', 'TEXT');
+  addColumn('scraped_data', 'latitude', 'REAL');
+  addColumn('scraped_data', 'longitude', 'REAL');
 
   db.run(`
     CREATE TABLE IF NOT EXISTS refined_data (
@@ -495,10 +703,44 @@ db.serialize(() => {
   `);
   db.run(`CREATE INDEX IF NOT EXISTS idx_refined_category ON refined_data(category)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_refined_district ON refined_data(district_id)`);
+  addColumn('refined_data', 'rating', 'TEXT');
+  addColumn('refined_data', 'reviews', 'TEXT');
+  addColumn('refined_data', 'maps_url', 'TEXT');
+  addColumn('refined_data', 'latitude', 'REAL');
+  addColumn('refined_data', 'longitude', 'REAL');
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_sources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type TEXT NOT NULL,
+      source_key TEXT NOT NULL UNIQUE,
+      title TEXT,
+      content_hash TEXT,
+      metadata TEXT,
+      last_checked_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_source_key ON knowledge_sources(source_key)`);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_id INTEGER NOT NULL,
+      chunk_index INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      embedding BLOB,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(source_id, chunk_index) ON CONFLICT REPLACE,
+      FOREIGN KEY (source_id) REFERENCES knowledge_sources(id) ON DELETE CASCADE
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_source ON knowledge_chunks(source_id)`);
 });
 
 export default db;
 EOF
+
 
 # ========== lib/ollamaHelper.ts ==========
 cat > lib/ollamaHelper.ts <<'EOF'
@@ -586,8 +828,25 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 puppeteer.use(StealthPlugin());
 import db from './db';
 import { extractWithOllama } from './ollamaHelper';
+import fs from 'fs';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+function findSystemChrome(): string | undefined {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  const candidates: string[] = [];
+  if (process.platform === 'darwin') {
+    candidates.push('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
+  } else if (process.platform === 'win32') {
+    candidates.push('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe');
+    candidates.push('C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe');
+  } else {
+    candidates.push('/usr/bin/google-chrome', '/usr/bin/chromium-browser', '/usr/bin/chromium');
+  }
+  return candidates.find(p => fs.existsSync(p));
+}
 
 interface ScrapedItem {
   business_name: string;
@@ -595,6 +854,11 @@ interface ScrapedItem {
   phone: string | null;
   address: string | null;
   website: string | null;
+  rating: string | null;
+  reviews: string | null;
+  maps_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 function insertRecords(category: string, districtId: number, item: ScrapedItem): Promise<void> {
@@ -606,22 +870,31 @@ function insertRecords(category: string, districtId: number, item: ScrapedItem):
     db.serialize(() => {
       db.run(
         `INSERT INTO scraped_data 
-          (category, district_id, business_name, contact_person, phone, address, website)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [category, districtId, item.business_name, item.contact_person, item.phone, item.address, item.website],
+          (category, district_id, business_name, contact_person, phone, address, website,
+           rating, reviews, maps_url, latitude, longitude)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [category, districtId, item.business_name, item.contact_person, item.phone, item.address, item.website,
+         item.rating, item.reviews, item.maps_url, item.latitude, item.longitude],
         (err) => { if (err) reject(err); }
       );
 
       db.run(
         `INSERT INTO refined_data 
-          (category, district_id, business_name, contact_person, phone, address, website)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+          (category, district_id, business_name, contact_person, phone, address, website,
+           rating, reviews, maps_url, latitude, longitude)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(category, district_id, business_name, phone) DO UPDATE SET
            contact_person = excluded.contact_person,
            address = excluded.address,
            website = excluded.website,
+           rating = excluded.rating,
+           reviews = excluded.reviews,
+           maps_url = excluded.maps_url,
+           latitude = excluded.latitude,
+           longitude = excluded.longitude,
            last_updated = CURRENT_TIMESTAMP`,
-        [category, districtId, item.business_name, item.contact_person, phoneKey, item.address, item.website],
+        [category, districtId, item.business_name, item.contact_person, phoneKey, item.address, item.website,
+         item.rating, item.reviews, item.maps_url, item.latitude, item.longitude],
         (err) => { if (err) reject(err); else resolve(); }
       );
     });
@@ -637,59 +910,127 @@ export async function scrapeDistrict(
   let attempt = 0;
   while (attempt < retries) {
     try {
-      const browser = await puppeteer.launch({ headless: true });
+      const executablePath = findSystemChrome();
+      const launchOptions: any = {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      };
+      if (executablePath) {
+        launchOptions.executablePath = executablePath;
+      }
+      const browser = await puppeteer.launch(launchOptions);
       const page = await browser.newPage();
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
       await page.setViewport({ width: 1280, height: 800 });
 
       const searchQuery = `${category} in ${districtName}, India`;
       await page.goto(`https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`, { waitUntil: 'networkidle2' });
       await page.waitForSelector('[role="feed"]', { timeout: 15000 }).catch(() => null);
 
-      const results: ScrapedItem[] = [];
-      const seen = new Set<string>();
-      let previousHeight = 0;
-      let scrollAttempts = 0;
-      const maxScrolls = 10;
-
-      while (scrollAttempts < maxScrolls) {
-        const items = await page.$$('div[role="article"]');
-        for (const item of items) {
-          try {
-            const name = await item.$eval('div.fontHeadlineSmall', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
-            const address = await item.$eval('div[data-item-id="address"]', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
-            const phone = await item.$eval('div[data-item-id="phone"]', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
-            const website = await item.$eval('div[data-item-id="website"]', (el: Element) => (el as HTMLElement).innerText).catch(() => '');
-
-            const combinedText = `${name} ${address} ${phone} ${website}`;
-            const enriched = await extractWithOllama(combinedText);
-
-            const record: ScrapedItem = {
-              business_name: name || enriched?.company_name || '',
-              contact_person: enriched?.contact_person || null,
-              phone: phone || enriched?.phone || null,
-              address: address || enriched?.address || null,
-              website: website || null,
-            };
-
-            // Dedup key tolerant of NULL phone (SQLite treats NULLs as distinct,
-            // which would otherwise let the same business insert repeatedly).
-            const key = `${record.business_name.trim().toLowerCase()}|${(record.phone || '').trim()}`;
-            if (!record.business_name || seen.has(key)) continue;
-            seen.add(key);
-            results.push(record);
-          } catch (e) { /* skip */ }
-        }
-
-        await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
-        await sleep(2000 + Math.random() * 1000);
-        const newHeight = Number(await page.evaluate('document.body.scrollHeight'));
-        if (newHeight === previousHeight) break;
-        previousHeight = newHeight;
-        scrollAttempts++;
+      // Scroll the results feed until no new listings appear.
+      let previousCount = 0;
+      let unchangedRounds = 0;
+      for (let i = 0; i < 30 && unchangedRounds < 3; i++) {
+        const state = await page.evaluate(() => {
+          const feed = document.querySelector('[role="feed"]');
+          if (!feed) return { count: document.querySelectorAll('div[role="article"]').length, height: 0 };
+          feed.scrollTop = feed.scrollHeight;
+          return { count: feed.querySelectorAll('div[role="article"]').length, height: feed.scrollHeight };
+        });
+        await sleep(1800);
+        const currentCount = await page.$$eval('div[role="article"]', items => items.length);
+        if (currentCount <= previousCount && state.height === 0) unchangedRounds++;
+        else if (currentCount <= previousCount) unchangedRounds++;
+        else unchangedRounds = 0;
+        previousCount = currentCount;
       }
 
+      // Extract listings using the same robust selectors as the working scrapper.js.
+      const rawItems = await page.evaluate(() => {
+        const text = (element: Element | null) => element?.textContent?.replace(/\s+/g, ' ').trim() || '';
+        const results: Array<{
+          business_name: string;
+          address: string;
+          rating: string;
+          reviews: string;
+          phone: string;
+          website: string | null;
+          maps_url: string | null;
+          latitude: number | null;
+          longitude: number | null;
+        }> = [];
+        const items = document.querySelectorAll('div[role="article"]');
+        items.forEach(item => {
+          const nameLink = item.querySelector('a.hfpxzc[aria-label]');
+          const business_name = nameLink?.getAttribute('aria-label') || text(item.querySelector('.fontHeadlineSmall'));
+          if (!business_name) return;
+
+          const ratingElement = item.querySelector('[role="img"][aria-label*="stars"], .MW4etd');
+          const ratingLabel = ratingElement?.getAttribute('aria-label') || '';
+          const ratingMatch = ratingLabel.match(/([0-5](?:\.\d)?)\s*stars?/i);
+          const rating = ratingMatch ? ratingMatch[1] : text(item.querySelector('.MW4etd'));
+
+          const reviewElement = item.querySelector('[aria-label*="reviews"], .UY7F9');
+          const reviewLabel = reviewElement?.getAttribute('aria-label') || text(reviewElement);
+          const reviewMatch = reviewLabel.match(/([\d,]+)\s*reviews?/i);
+          const reviews = reviewMatch ? reviewMatch[1].replace(/,/g, '') : reviewLabel;
+
+          const detailRows = [...item.querySelectorAll('.W4Efsd')]
+            .map(row => text(row))
+            .filter(Boolean);
+          const detailParts = detailRows
+            .flatMap(row => row.split('·').map(value => value.trim()))
+            .filter(value => value && value !== rating && !/^(open|closed|temporarily closed)/i.test(value) && !/^\+?\d[\d\s().-]{7,}$/.test(value));
+          const phone = detailParts
+            .find(value => /^\+?[\d][\d\s().-]{7,}$/.test(value)) || '';
+          const addressCandidates = detailParts.filter(value => value !== phone && !/^(wedding planner|event planner|event management company)$/i.test(value));
+          const address = addressCandidates[addressCandidates.length - 1] || '';
+          const website = (item.querySelector('a[data-value="Website"]') as HTMLAnchorElement)?.href || null;
+          const href = (nameLink as HTMLAnchorElement)?.href || null;
+          const coordinates = href?.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+
+          results.push({
+            business_name,
+            address,
+            rating,
+            reviews,
+            phone,
+            website,
+            maps_url: href,
+            latitude: coordinates ? Number(coordinates[1]) : null,
+            longitude: coordinates ? Number(coordinates[2]) : null,
+          });
+        });
+        return [...new Map(results.map(item => [item.maps_url || item.business_name, item])).values()];
+      });
+
       await browser.close();
+
+      // Enrich and dedupe before persisting.
+      const results: ScrapedItem[] = [];
+      const seen = new Set<string>();
+      for (const raw of rawItems) {
+        const combinedText = `${raw.business_name} ${raw.address} ${raw.phone} ${raw.website || ''}`;
+        const enriched = await extractWithOllama(combinedText);
+
+        const record: ScrapedItem = {
+          business_name: raw.business_name || enriched?.company_name || '',
+          contact_person: enriched?.contact_person || null,
+          phone: raw.phone || enriched?.phone || null,
+          address: raw.address || enriched?.address || null,
+          website: raw.website || null,
+          rating: raw.rating || null,
+          reviews: raw.reviews || null,
+          maps_url: raw.maps_url || null,
+          latitude: raw.latitude,
+          longitude: raw.longitude,
+        };
+
+        const key = `${record.business_name.trim().toLowerCase()}|${(record.phone || '').trim()}`;
+        if (!record.business_name || seen.has(key)) continue;
+        seen.add(key);
+        results.push(record);
+      }
 
       for (const item of results) {
         await insertRecords(category, districtId, item);
@@ -710,6 +1051,7 @@ export async function scrapeDistrict(
   return 0;
 }
 EOF
+
 
 # ========== lib/jobs.ts ==========
 cat > lib/jobs.ts <<'EOF'
@@ -1874,8 +2216,883 @@ describe('POST /api/start-scrape', () => {
 });
 EOF
 
+# ========== lib/knowledge/chunker.ts ==========
+cat > lib/knowledge/chunker.ts <<'EOF'
+export interface Chunk {
+  index: number;
+  content: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ChunkOptions {
+  size?: number;
+  overlap?: number;
+  splitBy?: 'word' | 'sentence' | 'line';
+}
+
+function splitBySentence(text: string): string[] {
+  return text
+    .replace(/([.!?])\s+/g, "$1\n")
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function splitByLine(text: string): string[] {
+  return text.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+function splitByWord(text: string): string[] {
+  return text.split(/\s+/).filter(Boolean);
+}
+
+/**
+ * Splits text into overlapping chunks.
+ * Default strategy: word-based sliding window. Sentence/line modes keep whole units.
+ */
+export function chunkText(text: string, options: ChunkOptions = {}): Chunk[] {
+  const { size = 300, overlap = 0, splitBy = 'word' } = options;
+  if (!text || size <= 0) return [];
+
+  const units =
+    splitBy === 'sentence'
+      ? splitBySentence(text)
+      : splitBy === 'line'
+      ? splitByLine(text)
+      : splitByWord(text);
+
+  if (units.length === 0) return [];
+
+  const step = Math.max(1, size - overlap);
+  const chunks: Chunk[] = [];
+
+  for (let i = 0; i < units.length; i += step) {
+    const slice = units.slice(i, i + size);
+    if (slice.length === 0) continue;
+    const content = splitBy === 'word' ? slice.join(' ') : slice.join('\n');
+    if (!content.trim()) continue;
+    chunks.push({ index: chunks.length, content: content.trim() });
+  }
+
+  return chunks;
+}
+
+/**
+ * Prepares scraped business rows as knowledge chunks.
+ */
+export function chunkBusinessRecord(record: Record<string, any>): Chunk[] {
+  const parts = [
+    record.business_name,
+    record.category ? `Category: ${record.category}` : '',
+    record.contact_person ? `Contact: ${record.contact_person}` : '',
+    record.phone ? `Phone: ${record.phone}` : '',
+    record.address ? `Address: ${record.address}` : '',
+    record.website ? `Website: ${record.website}` : '',
+    record.rating ? `Rating: ${record.rating}` : '',
+    record.reviews ? `Reviews: ${record.reviews}` : '',
+    record.maps_url ? `Maps: ${record.maps_url}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  return parts ? [{ index: 0, content: parts, metadata: { type: 'business', id: record.id } }] : [];
+}
+EOF
+
+# ========== lib/knowledge/embedder.ts ==========
+cat > lib/knowledge/embedder.ts <<'EOF'
+export interface Embedder {
+  embed(text: string): Promise<number[]>;
+  embedBatch(texts: string[]): Promise<number[][]>;
+}
+
+const VECTOR_DIM = 384;
+
+function normalize(v: number[]): number[] {
+  const magnitude = Math.sqrt(v.reduce((sum, x) => sum + x * x, 0));
+  if (magnitude === 0) return v;
+  return v.map(x => x / magnitude);
+}
+
+/**
+ * Deterministic fallback embedder: hashes tokens into a fixed-size vector.
+ * Useful for tests and environments without an external embedding provider.
+ * Not semantically meaningful, but produces consistent vectors for identical text.
+ */
+class HashEmbedder implements Embedder {
+  async embed(text: string): Promise<number[]> {
+    const vector = new Array(VECTOR_DIM).fill(0);
+    const tokens = text.toLowerCase().split(/\W+/).filter(Boolean);
+    for (const token of tokens) {
+      let hash = 0;
+      for (let i = 0; i < token.length; i++) {
+        hash = (hash << 5) - hash + token.charCodeAt(i);
+        hash |= 0;
+      }
+      const idx = Math.abs(hash) % VECTOR_DIM;
+      vector[idx] += 1;
+    }
+    return normalize(vector);
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    return Promise.all(texts.map(t => this.embed(t)));
+  }
+}
+
+/**
+ * OpenAI embedder. Requires OPENAI_API_KEY env var.
+ */
+class OpenAIEmbedder implements Embedder {
+  private apiKey: string;
+  private model: string;
+
+  constructor(apiKey: string, model = 'text-embedding-3-small') {
+    this.apiKey = apiKey;
+    this.model = model;
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const [embedding] = await this.embedBatch([text]);
+    return embedding;
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ input: texts, model: this.model }),
+    });
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenAI embedding failed: ${response.status} ${error}`);
+    }
+    const data = await response.json();
+    return data.data.map((item: any) => item.embedding as number[]);
+  }
+}
+
+export function createEmbedder(provider?: string): Embedder {
+  const resolved = provider || process.env.KNOWLEDGE_EMBEDDER || 'hash';
+
+  if (resolved === 'openai') {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY is required when using OpenAI embedder');
+    return new OpenAIEmbedder(apiKey, process.env.OPENAI_EMBEDDING_MODEL);
+  }
+
+  return new HashEmbedder();
+}
+
+export function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 0 : dot / denom;
+}
+EOF
+
+# ========== lib/knowledge/store.ts ==========
+cat > lib/knowledge/store.ts <<'EOF'
+import db from '@/lib/db';
+import { createEmbedder, cosineSimilarity, Embedder } from './embedder';
+import { Chunk } from './chunker';
+
+export interface KnowledgeSource {
+  id?: number;
+  source_type: 'text' | 'url' | 'document' | 'business' | 'unknown';
+  source_key: string;
+  title?: string | null;
+  content_hash?: string | null;
+  metadata?: Record<string, any> | null;
+  last_checked_at?: string;
+}
+
+export interface KnowledgeChunk {
+  id?: number;
+  source_id: number;
+  chunk_index: number;
+  content: string;
+  embedding?: number[] | null;
+  metadata?: Record<string, any> | null;
+}
+
+export interface SearchResult {
+  chunk: KnowledgeChunk;
+  source: KnowledgeSource;
+  score: number;
+}
+
+const DEFAULT_TOP_K = 5;
+
+function serializeEmbedding(embedding: number[]): Buffer {
+  const buffer = Buffer.alloc(embedding.length * 4);
+  for (let i = 0; i < embedding.length; i++) {
+    buffer.writeFloatLE(embedding[i], i * 4);
+  }
+  return buffer;
+}
+
+function deserializeEmbedding(buffer: Buffer): number[] {
+  if (!buffer) return [];
+  const arr = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.length / 4);
+  return Array.from(arr);
+}
+
+function hashContent(content: string): string {
+  // Simple stable hash; sufficient for detecting content changes.
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return hash.toString(16);
+}
+
+export class KnowledgeStore {
+  private embedder: Embedder;
+
+  constructor(embedder?: Embedder) {
+    this.embedder = embedder || createEmbedder();
+  }
+
+  async upsertSource(source: KnowledgeSource): Promise<number> {
+    const existing = await this.getSourceByKey(source.source_key);
+    if (existing?.id) {
+      await new Promise<void>((resolve, reject) => {
+        db.run(
+          `UPDATE knowledge_sources
+           SET source_type = ?, title = ?, content_hash = ?, metadata = ?, last_checked_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [source.source_type, source.title || null, source.content_hash || null, JSON.stringify(source.metadata || null), existing.id],
+          (err) => (err ? reject(err) : resolve())
+        );
+      });
+      return existing.id;
+    }
+
+    return new Promise<number>((resolve, reject) => {
+      db.run(
+        `INSERT INTO knowledge_sources (source_type, source_key, title, content_hash, metadata)
+         VALUES (?, ?, ?, ?, ?)`,
+        [source.source_type, source.source_key, source.title || null, source.content_hash || null, JSON.stringify(source.metadata || null)],
+        function (err) {
+          if (err) reject(err);
+          else resolve(this.lastID);
+        }
+      );
+    });
+  }
+
+  async getSourceByKey(source_key: string): Promise<KnowledgeSource | undefined> {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM knowledge_sources WHERE source_key = ?', [source_key], (err, row) => {
+        if (err) reject(err);
+        else resolve(row as KnowledgeSource | undefined);
+      });
+    });
+  }
+
+  async getSourceById(id: number): Promise<KnowledgeSource | undefined> {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM knowledge_sources WHERE id = ?', [id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row as KnowledgeSource | undefined);
+      });
+    });
+  }
+
+  async deleteSource(source_key: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      db.run('DELETE FROM knowledge_sources WHERE source_key = ?', [source_key], (err) =>
+        err ? reject(err) : resolve()
+      );
+    });
+  }
+
+  async ingestChunks(source_key: string, chunks: Chunk[], source: Omit<KnowledgeSource, 'id'>): Promise<void> {
+    const fullContent = chunks.map(c => c.content).join('\n');
+    const contentHash = hashContent(fullContent);
+    const existing = await this.getSourceByKey(source_key);
+
+    if (existing?.content_hash === contentHash) {
+      // No change; just refresh the checked timestamp.
+      await new Promise<void>((resolve, reject) => {
+        db.run(
+          'UPDATE knowledge_sources SET last_checked_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [existing.id],
+          (err) => (err ? reject(err) : resolve())
+        );
+      });
+      return;
+    }
+
+    const sourceId = await this.upsertSource({ ...source, source_key, content_hash: contentHash });
+
+    // Remove old chunks for this source.
+    await new Promise<void>((resolve, reject) => {
+      db.run('DELETE FROM knowledge_chunks WHERE source_id = ?', [sourceId], (err) =>
+        err ? reject(err) : resolve()
+      );
+    });
+
+    if (chunks.length === 0) return;
+
+    const embeddings = await this.embedder.embedBatch(chunks.map(c => c.content));
+    const stmt = db.prepare(
+      `INSERT INTO knowledge_chunks (source_id, chunk_index, content, embedding, metadata)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+
+    await new Promise<void>((resolve, reject) => {
+      let completed = 0;
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const embedding = embeddings[i];
+        stmt.run(
+          sourceId,
+          chunk.index,
+          chunk.content,
+          serializeEmbedding(embedding),
+          JSON.stringify(chunk.metadata || source.metadata || null),
+          (err: Error | null) => {
+            if (err) reject(err);
+            else if (++completed === chunks.length) resolve();
+          }
+        );
+      }
+    });
+
+    stmt.finalize();
+  }
+
+  async search(query: string, topK = DEFAULT_TOP_K): Promise<SearchResult[]> {
+    const queryEmbedding = await this.embedder.embed(query);
+    const rows = await new Promise<any[]>((resolve, reject) => {
+      db.all('SELECT * FROM knowledge_chunks', (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    });
+
+    const scored = await Promise.all(
+      rows.map(async (row) => {
+        const embedding = deserializeEmbedding(row.embedding);
+        const score = cosineSimilarity(queryEmbedding, embedding);
+        const source = await this.getSourceById(row.source_id);
+        return {
+          chunk: {
+            id: row.id,
+            source_id: row.source_id,
+            chunk_index: row.chunk_index,
+            content: row.content,
+            metadata: row.metadata ? JSON.parse(row.metadata) : null,
+          } as KnowledgeChunk,
+          source: source || ({ source_type: 'unknown', source_key: '' } as KnowledgeSource),
+          score,
+        };
+      })
+    );
+
+    return scored
+      .filter(r => r.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
+  }
+
+  async listSources(): Promise<KnowledgeSource[]> {
+    return new Promise((resolve, reject) => {
+      db.all('SELECT * FROM knowledge_sources ORDER BY last_checked_at DESC', (err, rows) => {
+        if (err) reject(err);
+        else resolve((rows || []) as KnowledgeSource[]);
+      });
+    });
+  }
+}
+EOF
+
+# ========== app/api/knowledge/ingest/route.ts ==========
+cat > app/api/knowledge/ingest/route.ts <<'EOF'
+import { NextRequest, NextResponse } from 'next/server';
+import { KnowledgeStore } from '@/lib/knowledge/store';
+import { chunkText } from '@/lib/knowledge/chunker';
+
+function extractTextFromHtml(html: string): string {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { type = 'text', key, title, content, url, chunkSize, chunkOverlap } = body;
+
+    if (!key) {
+      return NextResponse.json({ error: 'key is required' }, { status: 400 });
+    }
+
+    let sourceType: 'text' | 'url' | 'document' | 'business' = 'text';
+    let sourceKey = key;
+    let sourceTitle = title || key;
+    let textContent = content || '';
+
+    if (type === 'url' && url) {
+      sourceType = 'url';
+      sourceKey = url;
+      sourceTitle = title || url;
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (!res.ok) {
+        return NextResponse.json({ error: `Failed to fetch URL: ${res.status}` }, { status: 502 });
+      }
+      const html = await res.text();
+      textContent = extractTextFromHtml(html);
+    } else if (type === 'document' && content) {
+      sourceType = 'document';
+    } else if (type === 'text' && content) {
+      sourceType = 'text';
+    } else {
+      return NextResponse.json({ error: 'content is required for text/document types' }, { status: 400 });
+    }
+
+    const store = new KnowledgeStore();
+    const chunks = chunkText(textContent, { size: chunkSize || 300, overlap: chunkOverlap || 50 });
+
+    await store.ingestChunks(
+      sourceKey,
+      chunks,
+      { source_type: sourceType, source_key: sourceKey, title: sourceTitle, metadata: { type } }
+    );
+
+    return NextResponse.json({
+      success: true,
+      source_key: sourceKey,
+      chunks: chunks.length,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Knowledge ingest error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+EOF
+
+# ========== app/api/knowledge/search/route.ts ==========
+cat > app/api/knowledge/search/route.ts <<'EOF'
+import { NextRequest, NextResponse } from 'next/server';
+import { KnowledgeStore } from '@/lib/knowledge/store';
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const q = searchParams.get('q');
+    const topK = parseInt(searchParams.get('topK') || '5', 10);
+
+    if (!q) {
+      return NextResponse.json({ error: 'q query parameter is required' }, { status: 400 });
+    }
+
+    const store = new KnowledgeStore();
+    const results = await store.search(q, topK);
+
+    return NextResponse.json({
+      query: q,
+      results: results.map(r => ({
+        score: r.score,
+        content: r.chunk.content,
+        source_type: r.source.source_type,
+        source_key: r.source.source_key,
+        title: r.source.title,
+        metadata: r.chunk.metadata,
+      })),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Knowledge search error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+EOF
+
+# ========== app/api/knowledge/refresh/route.ts ==========
+cat > app/api/knowledge/refresh/route.ts <<'EOF'
+import { NextRequest, NextResponse } from 'next/server';
+import db from '@/lib/db';
+import { KnowledgeStore } from '@/lib/knowledge/store';
+import { chunkBusinessRecord } from '@/lib/knowledge/chunker';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { category } = body;
+
+    const where = category ? 'WHERE category = ?' : '';
+    const params = category ? [category] : [];
+
+    const rows = await new Promise<any[]>((resolve, reject) => {
+      db.all(
+        `SELECT * FROM refined_data ${where} ORDER BY last_updated DESC`,
+        params,
+        (err, rows) => (err ? reject(err) : resolve(rows || []))
+      );
+    });
+
+    const store = new KnowledgeStore();
+    let ingested = 0;
+
+    for (const record of rows) {
+      const sourceKey = `business:${record.category}:${record.district_id}:${record.id}`;
+      const chunks = chunkBusinessRecord(record);
+      if (chunks.length === 0) continue;
+
+      await store.ingestChunks(sourceKey, chunks, {
+        source_type: 'business',
+        source_key: sourceKey,
+        title: record.business_name,
+        metadata: {
+          category: record.category,
+          district_id: record.district_id,
+          business_name: record.business_name,
+        },
+      });
+      ingested++;
+    }
+
+    return NextResponse.json({
+      success: true,
+      ingested,
+      total_records: rows.length,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Knowledge refresh error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+EOF
+
+# ========== __tests__/knowledge/chunker.test.ts ==========
+cat > __tests__/knowledge/chunker.test.ts <<'EOF'
+/**
+ * @jest-environment node
+ */
+import { chunkText, chunkBusinessRecord } from '@/lib/knowledge/chunker';
+
+describe('chunkText', () => {
+  it('splits text into word-based chunks with overlap', () => {
+    const text = 'one two three four five six seven eight nine ten';
+    const chunks = chunkText(text, { size: 4, overlap: 2 });
+    expect(chunks.length).toBeGreaterThan(0);
+    expect(chunks[0].content.split(' ').length).toBeLessThanOrEqual(4);
+  });
+
+  it('returns empty array for empty input', () => {
+    expect(chunkText('', { size: 10 })).toEqual([]);
+  });
+
+  it('supports sentence splitting', () => {
+    const text = 'First sentence. Second sentence. Third sentence.';
+    const chunks = chunkText(text, { splitBy: 'sentence', size: 2 });
+    expect(chunks.length).toBe(2);
+  });
+
+  it('supports line splitting', () => {
+    const text = 'line1\nline2\nline3\nline4';
+    const chunks = chunkText(text, { splitBy: 'line', size: 2 });
+    expect(chunks.length).toBe(2);
+  });
+});
+
+describe('chunkBusinessRecord', () => {
+  it('creates a single chunk from a business record', () => {
+    const chunks = chunkBusinessRecord({
+      id: 1,
+      business_name: 'Test Cafe',
+      category: 'cafe',
+      phone: '1234567890',
+      address: 'Main St',
+      rating: '4.5',
+    });
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0].content).toContain('Test Cafe');
+    expect(chunks[0].content).toContain('Category: cafe');
+    expect(chunks[0].content).toContain('Phone: 1234567890');
+  });
+
+  it('returns empty array when record has no useful fields', () => {
+    expect(chunkBusinessRecord({ id: 1 })).toEqual([]);
+  });
+});
+EOF
+
+# ========== __tests__/knowledge/embedder.test.ts ==========
+cat > __tests__/knowledge/embedder.test.ts <<'EOF'
+/**
+ * @jest-environment node
+ */
+import { createEmbedder, cosineSimilarity } from '@/lib/knowledge/embedder';
+
+describe('hash embedder', () => {
+  it('produces normalized vectors', async () => {
+    const embedder = createEmbedder('hash');
+    const vec = await embedder.embed('hello world');
+    expect(vec.length).toBe(384);
+    const magnitude = Math.sqrt(vec.reduce((sum, x) => sum + x * x, 0));
+    expect(magnitude).toBeCloseTo(1, 5);
+  });
+
+  it('returns identical embeddings for identical text', async () => {
+    const embedder = createEmbedder('hash');
+    const a = await embedder.embed('test phrase');
+    const b = await embedder.embed('test phrase');
+    expect(a).toEqual(b);
+  });
+
+  it('batch embeds multiple texts', async () => {
+    const embedder = createEmbedder('hash');
+    const vecs = await embedder.embedBatch(['a', 'b', 'c']);
+    expect(vecs).toHaveLength(3);
+    vecs.forEach(v => expect(v.length).toBe(384));
+  });
+});
+
+describe('cosineSimilarity', () => {
+  it('returns 1 for identical vectors', () => {
+    expect(cosineSimilarity([1, 0, 0], [1, 0, 0])).toBe(1);
+  });
+
+  it('returns 0 for orthogonal vectors', () => {
+    expect(cosineSimilarity([1, 0], [0, 1])).toBe(0);
+  });
+
+  it('returns 0 for zero vectors', () => {
+    expect(cosineSimilarity([0, 0], [1, 0])).toBe(0);
+  });
+});
+EOF
+
+# ========== __tests__/knowledge/store.test.ts ==========
+cat > __tests__/knowledge/store.test.ts <<'EOF'
+/**
+ * @jest-environment node
+ */
+import { KnowledgeStore } from '@/lib/knowledge/store';
+import db from '@/lib/db';
+import { createEmbedder } from '@/lib/knowledge/embedder';
+
+const testEmbedder = createEmbedder('hash');
+
+async function cleanStore(store: KnowledgeStore) {
+  await new Promise<void>((resolve, reject) => {
+    db.run('DELETE FROM knowledge_chunks', (err) => (err ? reject(err) : resolve()));
+  });
+  await new Promise<void>((resolve, reject) => {
+    db.run('DELETE FROM knowledge_sources', (err) => (err ? reject(err) : resolve()));
+  });
+}
+
+describe('KnowledgeStore', () => {
+  let store: KnowledgeStore;
+
+  beforeEach(async () => {
+    store = new KnowledgeStore(testEmbedder);
+    await cleanStore(store);
+  });
+
+  afterAll(async () => {
+    await cleanStore(store);
+  });
+
+  it('ingests text chunks and searches', async () => {
+    await store.ingestChunks(
+      'test:text',
+      [
+        { index: 0, content: 'apple pie recipe' },
+        { index: 1, content: 'banana bread recipe' },
+      ],
+      { source_type: 'text', source_key: 'test:text', title: 'Recipes' }
+    );
+
+    const results = await store.search('apple pie', 2);
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].chunk.content).toContain('apple pie');
+    expect(results[0].source.title).toBe('Recipes');
+  });
+
+  it('skips re-ingesting unchanged content', async () => {
+    const source = { source_type: 'text' as const, source_key: 'test:stable', title: 'Stable' };
+    await store.ingestChunks('test:stable', [{ index: 0, content: 'unchanged' }], source);
+    const first = await store.listSources();
+    await store.ingestChunks('test:stable', [{ index: 0, content: 'unchanged' }], source);
+    const second = await store.listSources();
+    expect(second[0].last_checked_at).toEqual(first[0].last_checked_at);
+  });
+
+  it('lists sources', async () => {
+    await store.ingestChunks(
+      'test:list',
+      [{ index: 0, content: 'hello' }],
+      { source_type: 'text', source_key: 'test:list', title: 'List Test' }
+    );
+    const sources = await store.listSources();
+    expect(sources.some(s => s.source_key === 'test:list')).toBe(true);
+  });
+
+  it('deletes a source and its chunks', async () => {
+    await store.ingestChunks(
+      'test:delete',
+      [{ index: 0, content: 'delete me' }],
+      { source_type: 'text', source_key: 'test:delete', title: 'Delete Test' }
+    );
+    await store.deleteSource('test:delete');
+    const sources = await store.listSources();
+    expect(sources.some(s => s.source_key === 'test:delete')).toBe(false);
+  });
+});
+EOF
+
+# ========== __tests__/knowledge/routes.test.ts ==========
+cat > __tests__/knowledge/routes.test.ts <<'EOF'
+/**
+ * @jest-environment node
+ */
+import { NextRequest } from 'next/server';
+
+// Mock the knowledge store before importing the routes
+jest.mock('@/lib/knowledge/store', () => ({
+  __esModule: true,
+  KnowledgeStore: jest.fn().mockImplementation(() => ({
+    ingestChunks: jest.fn().mockResolvedValue(undefined),
+    search: jest.fn().mockResolvedValue([
+      {
+        chunk: { content: 'hello world', metadata: null },
+        source: { source_type: 'text', source_key: 'test', title: 'Test' },
+        score: 0.95,
+      },
+    ]),
+  })),
+}));
+
+// Mock the db module for the refresh route
+jest.mock('@/lib/db', () => ({
+  __esModule: true,
+  default: {
+    all: jest.fn(),
+    get: jest.fn(),
+    run: jest.fn(),
+    prepare: jest.fn(),
+  },
+}));
+
+import db from '@/lib/db';
+import { POST as ingestPOST } from '@/app/api/knowledge/ingest/route';
+import { GET as searchGET } from '@/app/api/knowledge/search/route';
+import { POST as refreshPOST } from '@/app/api/knowledge/refresh/route';
+
+const mockedDb = db as unknown as {
+  all: jest.Mock;
+  get: jest.Mock;
+  run: jest.Mock;
+  prepare: jest.Mock;
+};
+
+function makeRequest(url: string, body?: any): NextRequest {
+  return new NextRequest(new Request(url, body ? { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : undefined));
+}
+
+describe('POST /api/knowledge/ingest', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns 400 when key is missing', async () => {
+    const res = await ingestPOST(makeRequest('http://localhost/api/knowledge/ingest', { content: 'hello' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when text content is missing', async () => {
+    const res = await ingestPOST(makeRequest('http://localhost/api/knowledge/ingest', { type: 'text', key: 'x' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('ingests text successfully', async () => {
+    mockedDb.run.mockImplementation(function (this: any, sql: string, params: any[], cb: any) {
+      const callback = typeof params === 'function' ? params : cb;
+      if (sql.includes('INSERT INTO knowledge_sources')) {
+        this.lastID = 1;
+      }
+      callback(null);
+    });
+
+    const res = await ingestPOST(makeRequest('http://localhost/api/knowledge/ingest', {
+      type: 'text',
+      key: 'test:text',
+      title: 'Test',
+      content: 'hello world',
+    }));
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(data.chunks).toBeGreaterThan(0);
+  });
+});
+
+describe('GET /api/knowledge/search', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedDb.all.mockImplementation((sql: string, params: any[], cb: any) => {
+      const callback = typeof params === 'function' ? params : cb;
+      callback(null, []);
+    });
+  });
+
+  it('returns 400 when query is missing', async () => {
+    const res = await searchGET(makeRequest('http://localhost/api/knowledge/search'));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns search results', async () => {
+    const res = await searchGET(makeRequest('http://localhost/api/knowledge/search?q=hello'));
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.query).toBe('hello');
+    expect(Array.isArray(data.results)).toBe(true);
+  });
+});
+
+describe('POST /api/knowledge/refresh', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedDb.all.mockImplementation((sql: string, params: any[], cb: any) => {
+      const callback = typeof params === 'function' ? params : cb;
+      callback(null, []);
+    });
+  });
+
+  it('refines records by category', async () => {
+    const res = await refreshPOST(makeRequest('http://localhost/api/knowledge/refresh', { category: 'caterers' }));
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(mockedDb.all.mock.calls[0][0]).toContain("category = ?");
+  });
+});
+EOF
+
 echo "✅ All files created successfully!"
 echo "Now run 'npm install' and then 'npm run dev' to start the application."
+
 CREATE_FILES_EOF
 
 bash create_files.sh
