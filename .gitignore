@@ -71,3 +71,5 @@ Thumbs.db
 
 # Isolated integration build
 .next-tlps/
+
+.next-event-planners/

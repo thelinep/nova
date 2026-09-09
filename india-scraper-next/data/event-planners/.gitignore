@@ -1,0 +1,4 @@
+# Live snapshots and database stay local; the frozen district frame is versioned.
+*
+!.gitignore
+!districts.json
