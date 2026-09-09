@@ -96,6 +96,6 @@ async function main(){
   }
   await meta('runnerState',halted?'paused':'finished');await meta('finishedAt',new Date().toISOString());await exportSnapshot();
 }
-process.on('SIGTERM',()=>{halted=true});process.on('SIGINT',()=>{halted=true});
+if(require.main===module){process.on('SIGTERM',()=>{halted=true});process.on('SIGINT',()=>{halted=true});}
 module.exports={collect};
 if(require.main===module)main().catch(async error=>{console.error(error);if(db){await meta('runnerState','failed').catch(()=>{});await meta('lastError',error.message).catch(()=>{});await exportSnapshot().catch(()=>{});}process.exitCode=1;}).finally(async()=>{if(browser)await browser.close().catch(()=>{});if(db)await close(db).catch(()=>{});if(ownsLock)await fs.unlink(lock).catch(()=>{});});
