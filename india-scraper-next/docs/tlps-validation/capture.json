@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-09-09T13:25:03.047Z",
+  "baseURL": "http://127.0.0.1:3194",
+  "buildId": "FCnajBVMriZHdF8k7IP3G",
+  "query": "Mumbai",
+  "corpus": "global",
+  "matches": 43,
+  "pageErrors": [],
+  "mobileOverflow": false,
+  "screenshots": [
+    "locations-desktop.png",
+    "locations-mobile.png",
+    "campaign-desktop.png"
+  ]
+}

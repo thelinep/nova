@@ -1,7 +1,8 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
-const DB_PATH = path.join(process.cwd(), 'data.db');
+// Tests must never open or clean the operator's persisted knowledge database.
+const DB_PATH = process.env.NODE_ENV === 'test' ? ':memory:' : path.join(process.cwd(), 'data.db');
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) console.error('DB error:', err.message);

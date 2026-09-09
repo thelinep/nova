@@ -63,3 +63,11 @@ Thumbs.db
 # Turbopack
 .turbo/
 .run-build/
+
+# Derived TLPS catalogue sidecars
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Isolated integration build
+.next-tlps/
