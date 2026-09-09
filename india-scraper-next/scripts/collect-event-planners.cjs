@@ -70,7 +70,7 @@ async function persist(task,result){
 async function main(){
   await fs.mkdir(root,{recursive:true});
   try{await fs.writeFile(lock,JSON.stringify({pid:process.pid,startedAt:new Date().toISOString()}),{flag:'wx'});ownsLock=true;}catch(error){if(error.code!=='EEXIST')throw error;const prior=JSON.parse(await fs.readFile(lock,'utf8'));let alive=true;try{process.kill(prior.pid,0);}catch{alive=false;}if(alive)throw Error(`Runner ${prior.pid} already active`);await fs.unlink(lock);await fs.writeFile(lock,JSON.stringify({pid:process.pid,startedAt:new Date().toISOString()}),{flag:'wx'});ownsLock=true;}
-  db=await open(false);await initialize(db);
+  db=await open(false);await initialize(db);await require('../lib/event-planners/studio.cjs').init(db);
   if(process.argv.includes('--export-only')){await exportSnapshot();return;}
   const bytes=await fs.readFile(path.join(root,'districts.json'));const manifest=JSON.parse(bytes);
   const hash=crypto.createHash('sha256').update(bytes).digest('hex');
@@ -90,10 +90,12 @@ async function main(){
     if(await fs.access(path.join(root,'PAUSE')).then(()=>true,()=>false)){halted=true;await meta('pauseReason','Operator PAUSE file');break;}
     const task=tasks[index++];await run(db,"UPDATE tasks SET status='running',attempts=attempts+1,started_at=? WHERE id=?",[new Date().toISOString(),task.id]);
     try{const result=await collect(page,task);await persist(task,result);console.log(`${new Date().toISOString()} ${task.state} / ${task.district}: ${result.records.length} (${result.status})`);if(result.status==='blocked'){halted=true;await meta('pauseReason',result.note);await page.screenshot({path:path.join(root,'blocked.png')}).catch(()=>{});}}
-    catch(error){await run(db,"UPDATE tasks SET status='failed',finished_at=?,note=? WHERE id=?",[new Date().toISOString(),error.message,task.id]);console.error(`${task.district}: ${error.message}`);}
+    catch(error){await run(db,"UPDATE tasks SET status='failed',finished_at=?,note=? WHERE id=?",[new Date().toISOString(),error.message,task.id]);console.error(`${task.district}: ${error.message}`);halted=true;await meta('pauseReason','Search failed; remaining districts preserved: '+error.message);}
+    await require('../lib/event-planners/studio.cjs').init(db);
     processed++;await meta('lastProgressAt',new Date().toISOString());await exportSnapshot();await pause(2000);
   }
   await meta('runnerState',halted?'paused':'finished');await meta('finishedAt',new Date().toISOString());await exportSnapshot();
 }
 process.on('SIGTERM',()=>{halted=true});process.on('SIGINT',()=>{halted=true});
-main().catch(async error=>{console.error(error);if(db){await meta('runnerState','failed').catch(()=>{});await meta('lastError',error.message).catch(()=>{});await exportSnapshot().catch(()=>{});}process.exitCode=1;}).finally(async()=>{if(browser)await browser.close().catch(()=>{});if(db)await close(db).catch(()=>{});if(ownsLock)await fs.unlink(lock).catch(()=>{});});
+module.exports={collect};
+if(require.main===module)main().catch(async error=>{console.error(error);if(db){await meta('runnerState','failed').catch(()=>{});await meta('lastError',error.message).catch(()=>{});await exportSnapshot().catch(()=>{});}process.exitCode=1;}).finally(async()=>{if(browser)await browser.close().catch(()=>{});if(db)await close(db).catch(()=>{});if(ownsLock)await fs.unlink(lock).catch(()=>{});});

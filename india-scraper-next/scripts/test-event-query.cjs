@@ -1,0 +1,17 @@
+const s=require('../lib/event-planners/store.cjs');
+const studio=require('../lib/event-planners/studio.cjs');
+const {collect}=require('./collect-event-planners.cjs');
+const puppeteer=require('puppeteer');
+const crypto=require('node:crypto');
+let db,browser,id;
+(async()=>{db=await s.open(false);await studio.init(db);
+ const [method]=await s.all(db,'SELECT * FROM query_methods WHERE id=?',[process.argv[2]]);
+ const [district]=await s.all(db,'SELECT * FROM tasks WHERE id=?',[process.argv[3]]);
+ if(!method||!district)throw Error('Unknown method or district');
+ const blocked=await s.all(db,"SELECT id FROM tasks WHERE status='blocked' UNION SELECT id FROM query_history WHERE status='blocked' LIMIT 1");if(blocked.length)throw Error('Access challenge requires review before further tests');
+ id=crypto.randomUUID();const query=studio.render(method.template,district);
+ await s.run(db,'INSERT INTO query_history VALUES (?,?,?,?,?,?,?,?,?,?)',[id,district.id,method.id,query,'running',new Date().toISOString(),null,0,null,null]);
+ browser=await puppeteer.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+ const page=await browser.newPage();await page.setViewport({width:1400,height:900});const result=await collect(page,{query});
+ await s.run(db,'UPDATE query_history SET status=?,finished_at=?,results=?,note=?,records_json=? WHERE id=?',[result.status,new Date().toISOString(),result.records.length,result.note,JSON.stringify(result.records),id]);console.log(JSON.stringify({id,status:result.status,results:result.records.length}));
+})().catch(async e=>{if(db&&id)await s.run(db,"UPDATE query_history SET status='failed',finished_at=?,note=? WHERE id=?",[new Date().toISOString(),e.message,id]);console.error(e.message);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(db)await s.close(db);});
