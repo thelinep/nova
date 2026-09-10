@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import MaataaWorkspace from '@/components/MaataaWorkspace';
 
 type ViewMode = 'refined' | 'history' | 'knowledge';
 
@@ -172,7 +173,8 @@ export default function Home() {
 
   return (
     <main className="container mx-auto p-4 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-2">🇮🇳 India Business Scraper/Reflector</h1>
+      <MaataaWorkspace />
+      <h2 id="collector" className="text-3xl font-bold mb-2">India Business Collector</h2>
       <p className="text-gray-600 mb-4">Scrape/Reflect Google Maps for any category across all Indian districts.</p>
       <a href="/locations" className="mb-4 mr-5 inline-block text-sm text-teal-700 underline">Open Location Map & Search →</a>
       <a href="/knowledge" className="mb-4 inline-block text-sm text-blue-700 underline">Open Universal Knowledge Collector →</a>

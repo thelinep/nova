@@ -2,6 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import Home from '@/app/page';
 
+// Collector tests isolate the independent Maataa workspace; its full flow is browser-tested.
+jest.mock('@/components/MaataaWorkspace', () => () => null);
+
 // Mock global fetch
 const mockFetch = jest.fn();
 global.fetch = mockFetch as any;
@@ -32,7 +35,7 @@ describe('Home page', () => {
 
   it('renders heading and input', async () => {
     render(<Home />);
-    expect(screen.getByText(/India Business Scraper/i)).toBeInTheDocument();
+    expect(screen.getByText(/India Business Collector/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/plumbers, dentists/i)).toBeInTheDocument();
   });
 

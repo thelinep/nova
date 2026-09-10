@@ -1,0 +1,7 @@
+
+# Local Maataa conversation and publication data
+/data/maataa/
+/.next-maataa/
+/.next-maataa-final/
+
+/.next-helpers/
