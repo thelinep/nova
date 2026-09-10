@@ -1,0 +1,7 @@
+import {NextRequest,NextResponse} from 'next/server';
+const {createHelpers}=require('@/lib/maataa-helpers.cjs');const helpers=createHelpers();
+export const runtime='nodejs';export const dynamic='force-dynamic';
+function allowed(req:NextRequest){try{return ['localhost','127.0.0.1','[::1]'].includes(new URL('http://'+req.headers.get('host')).hostname)}catch{return false}}
+const json=(b:unknown,status=200)=>NextResponse.json(b,{status,headers:{'Cache-Control':'no-store'}});
+export async function GET(req:NextRequest){if(!allowed(req))return json({error:'Open this workspace on your computer'},403);try{return json(await helpers.snapshot())}catch{return json({error:'Cannot read saved helpers'},503)}}
+export async function POST(req:NextRequest){if(!allowed(req)||!['http://'+req.headers.get('host'),'https://'+req.headers.get('host')].includes(req.headers.get('origin')||''))return json({error:'Same-origin local request required'},403);try{const raw=await req.text();if(raw.length>16000)throw Error('Instructions are too long');const b=JSON.parse(raw);switch(b.action){case 'create':return json(await helpers.create(b));case 'toggle':return json(await helpers.toggle(b));case 'queue':return json(await helpers.queue(b.id));case 'cancel':return json(await helpers.cancel(b.id));default:throw Error('Unknown action')}}catch(e){return json({error:e instanceof Error?e.message:'Unable to save'},400)}}

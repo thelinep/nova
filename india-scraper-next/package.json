@@ -13,7 +13,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "locations:import": "node scripts/import-tlps.cjs",
-    "locations:validate": "node scripts/validate-tlps.cjs"
+    "locations:validate": "node scripts/validate-tlps.cjs",
+    "test:maataa": "node --test tests/maataa.test.cjs",
+    "scheduler": "node scripts/maataa-scheduler.cjs"
   },
   "keywords": [],
   "dependencies": {
