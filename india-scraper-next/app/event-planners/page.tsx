@@ -16,7 +16,7 @@ export default function EventPlanners(){
   },[query]);
   const attempted=summary?.counts.filter(c=>!['pending','running'].includes(c.status)).reduce((n,c)=>n+c.count,0)||0;
   return <main className="min-h-screen bg-slate-950 p-5 text-slate-100 sm:p-9"><div className="mx-auto max-w-6xl">
-    <nav className="mb-7 flex gap-5 text-sm text-teal-300"><a href="/">Home & Maataa</a><a href="/helpers">Helpers & schedule</a><a href="/event-planners/studio">Design a search</a><a href="/locations">Location catalogue</a><a href="/knowledge">Knowledge collector</a></nav>
+    <nav className="mb-7 flex flex-wrap gap-5 text-sm text-teal-300"><a href="/">Home & Maataa</a><a href="/roadmap">Roadmap</a><a href="/helpers">Helpers & schedule</a><a href="/event-planners/studio">Design a search</a><a href="/locations">Location catalogue</a><a href="/knowledge">Knowledge collector</a></nav>
     <h1 className="text-3xl font-semibold">Event planners across India</h1>
     <p className="mt-3 text-slate-300">Find businesses we have already collected. Search by name, choose a state, or download the list. Results refresh every 10 seconds.</p>
     <p className="mt-2 text-sm text-slate-400">Search and CSV show only listings categorized as Event planner, Event management company, Wedding planner, or Party planner. Other search candidates are retained separately in the JSON download. The unique listings count includes all candidates.</p>
