@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { isLocalRequest, localOnlyResponse } from '@/lib/local-only';
 
 export async function GET(request: NextRequest) {
+  if (!isLocalRequest(request)) return localOnlyResponse();
   const searchParams = request.nextUrl.searchParams;
   const category = searchParams.get('category');
   const district_id = searchParams.get('district_id');

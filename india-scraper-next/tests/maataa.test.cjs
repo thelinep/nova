@@ -19,6 +19,33 @@ test('conversation survives reopening; concurrent turn rejected; failed prompt r
  await assert.rejects(store.draft({id:'missing',kind:'update',title:'Bad',body:'Bad'}),/not found/);
  }finally{fs.rmSync(dir,{recursive:true,force:true})}
 });
+test('conversation management: rename, archive, delete guard, and export preserve history',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'maataa-manage-')),file=path.join(dir,'test.db');
+ try{
+ const store=createStore(file);
+ const {id}=await store.create({title:'Original title',category:'Research'});
+ await store.rename({id,title:'Renamed title'});
+ let snapshot=await store.snapshot();assert.equal(snapshot.conversations[0].title,'Renamed title');
+ await store.archive({id,archived:true});
+ snapshot=await store.snapshot();assert.equal(snapshot.conversations[0].archived,1);
+ await store.archive({id,archived:false});
+ snapshot=await store.snapshot();assert.equal(snapshot.conversations[0].archived,0);
+ const first=await store.begin({id,prompt:'Find planners',model:'test-local',mode:'chat'});
+ await store.finish(first.id,'A helpful reply',null);
+ const draft=await store.draft({id,kind:'update',title:'Progress note',body:'Reviewed a reply.'});
+ await assert.rejects(store.remove({id}),/saved updates or milestones/);
+ await store.publish(draft);
+ await assert.rejects(store.remove({id}),/saved updates or milestones/);
+ const exported=await store.export(id);
+ assert.equal(exported.conversation.title,'Renamed title');
+ assert.equal(exported.messages.length,1);
+ assert.equal(exported.publications.length,1);
+ const {id:empty}=await store.create({title:'No history',category:'Research'});
+ await store.remove({id:empty});
+ snapshot=await store.snapshot();assert.ok(!snapshot.conversations.some(c=>c.id===empty));
+ await assert.rejects(store.rename({id:'missing',title:'x'}),/not found/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}
+});
 test('query validation rejects unusable and extra placeholders',()=>{assert.deepEqual(ai.validateQuery({name:'Planners',template:'planners in {district}, {state}',rationale:'District scoped'}),{name:'Planners',template:'planners in {district}, {state}',rationale:'District scoped'});for(const template of ['planners','in {district}','{district} {state} {secret}'])assert.throws(()=>ai.validateQuery({name:'Test',template,rationale:'Test'}));});
 test('local endpoint refuses remote configuration',()=>{const old=process.env.OLLAMA_BASE_URL;try{process.env.OLLAMA_BASE_URL='https://example.com';assert.throws(()=>ai.localOrigin(),/loopback/);process.env.OLLAMA_BASE_URL='http://127.0.0.1:11434/api/generate';assert.equal(ai.localOrigin(),'http://127.0.0.1:11434')}finally{if(old===undefined)delete process.env.OLLAMA_BASE_URL;else process.env.OLLAMA_BASE_URL=old}});
 test('Ollama contract retains context and validates structured output without executing search',async()=>{

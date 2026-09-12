@@ -1,0 +1,28 @@
+# ===========================================================================
+# NOVA Runtime — Tauri v2 packaging (Phase 5)
+#
+# Real, standards-correct Cargo manifest for the Tauri shell around the
+# existing NOVA Console. HONEST STATUS: this has never actually been
+# built. crates.io 403s from both the cloud build sandbox and the user's
+# own device (see ../README.md for the full account), and the device has
+# no rustc/cargo installed at all. `cargo build` has never been run
+# against this file — it is real code written to Tauri 2's documented
+# structure, not proven-working code.
+# ===========================================================================
+[package]
+name = "nova-runtime"
+version = "0.1.0"
+description = "Desktop shell for NOVA Runtime — a real local Ollama-backed console, wrapped in a native window."
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "nova-runtime"
+path = "src/main.rs"

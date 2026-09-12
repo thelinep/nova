@@ -4,9 +4,9 @@
   "description": "Scrape Google Maps for business categories across Indian districts",
   "private": true,
   "scripts": {
-    "dev": "TURBOPACK=0 next dev",
+    "dev": "TURBOPACK=0 next dev -H 127.0.0.1",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -15,7 +15,8 @@
     "locations:import": "node scripts/import-tlps.cjs",
     "locations:validate": "node scripts/validate-tlps.cjs",
     "test:maataa": "node --test tests/maataa.test.cjs",
-    "scheduler": "node scripts/maataa-scheduler.cjs"
+    "scheduler": "node scripts/maataa-scheduler.cjs",
+    "collect:supervised": "node scripts/collection-supervisor.cjs"
   },
   "keywords": [],
   "dependencies": {

@@ -1,5 +1,7 @@
 import db from './db';
 import { lookup } from 'node:dns/promises';
+import http from 'node:http';
+import https from 'node:https';
 
 const MAX_CONTENT_BYTES = 2_000_000;
 const MAX_BULK_URLS = 50;
@@ -44,14 +46,83 @@ function isPrivateHost(hostname: string) {
     /^fc/i.test(host) || /^fd/i.test(host) || /^fe80:/i.test(host);
 }
 
-async function assertPublicResolution(url: string) {
-  const hostname = new URL(url).hostname;
+async function resolvePinnedAddress(hostname: string): Promise<string> {
   // Literal addresses have already been rejected; resolve names before every
   // outbound request to avoid accepting a hostname that points at a local RFC1918 address.
   const records = await lookup(hostname, { all: true, verbatim: true });
   if (records.length === 0 || records.some(({ address }) => isPrivateHost(address))) {
     throw new Error('URL resolves to a private-network address');
   }
+  // Pin the real connection to the exact address just validated above, instead
+  // of letting the HTTP client re-resolve the hostname a second time. A second,
+  // independent lookup would reopen a DNS-rebinding window: a hostile DNS server
+  // could return a safe address for this check and a private one moments later
+  // for the actual connection.
+  return records[0].address;
+}
+
+type PinnedResponse = { statusCode: number; headers: http.IncomingHttpHeaders; body: Buffer };
+
+/**
+ * Fetches `url` over a socket connected to `address` (not to whatever the
+ * hostname happens to resolve to at request time), while still sending the
+ * real hostname as the Host header and TLS SNI/cert-check target. Exported
+ * so the pinning behaviour itself -- "do I actually connect to the address I
+ * was given, and do I enforce the byte cap while streaming rather than after
+ * buffering" -- can be tested directly against a local HTTP server without
+ * going through the public-address policy check in resolvePinnedAddress.
+ */
+export function fetchViaAddress(
+  url: URL,
+  address: string,
+  options: { timeoutMs?: number; maxBytes?: number } = {},
+): Promise<PinnedResponse> {
+  const timeoutMs = options.timeoutMs ?? 15_000;
+  const maxBytes = options.maxBytes ?? MAX_CONTENT_BYTES;
+  const isHttps = url.protocol === 'https:';
+  const transport = isHttps ? https : http;
+  const port = url.port ? Number(url.port) : isHttps ? 443 : 80;
+
+  return new Promise((resolve, reject) => {
+    const req = transport.request(
+      {
+        host: address,
+        port,
+        path: url.pathname + url.search,
+        method: 'GET',
+        servername: isHttps ? url.hostname : undefined,
+        headers: {
+          Host: url.hostname,
+          'User-Agent': 'BrahminiKnowledgeCollector/1.0 (+local collection)',
+        },
+        timeout: timeoutMs,
+      },
+      (res) => {
+        const statusCode = res.statusCode ?? 0;
+        if (statusCode >= 300 && statusCode < 400) {
+          res.resume();
+          reject(new Error('Redirects are not followed'));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let received = 0;
+        res.on('data', (chunk: Buffer) => {
+          received += chunk.length;
+          if (received > maxBytes) {
+            res.destroy();
+            reject(new Error('Source is larger than 2 MB'));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        res.on('end', () => resolve({ statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+        res.on('error', reject);
+      },
+    );
+    req.on('timeout', () => req.destroy(new Error('Request timed out')));
+    req.on('error', reject);
+    req.end();
+  });
 }
 
 export function validateCollectionUrl(raw: unknown): string {
@@ -78,20 +149,22 @@ export function expandUrlPattern(pattern: unknown, start: unknown, end: unknown)
 }
 
 export async function collectUrl(rawUrl: unknown): Promise<CollectedDocument> {
-  const url = validateCollectionUrl(rawUrl);
-  await assertPublicResolution(url);
-  const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(15_000), headers: { 'User-Agent': 'BrahminiKnowledgeCollector/1.0 (+local collection)' } });
-  if (!response.ok) throw new Error(`Collection failed with HTTP ${response.status}`);
-  const contentType = response.headers.get('content-type') ?? 'text/plain';
+  const validated = validateCollectionUrl(rawUrl);
+  const url = new URL(validated);
+  const address = await resolvePinnedAddress(url.hostname);
+  const response = await fetchViaAddress(url, address, { timeoutMs: 15_000, maxBytes: MAX_CONTENT_BYTES });
+  if (response.statusCode < 200 || response.statusCode >= 300) throw new Error(`Collection failed with HTTP ${response.statusCode}`);
+  const rawContentType = response.headers['content-type'];
+  const contentType = (Array.isArray(rawContentType) ? rawContentType[0] : rawContentType) ?? 'text/plain';
   if (!/(text\/html|text\/plain|application\/json|application\/xml|text\/xml)/i.test(contentType)) {
     throw new Error(`Unsupported content type: ${contentType}`);
   }
-  const declaredSize = Number(response.headers.get('content-length') ?? 0);
-  if (declaredSize > MAX_CONTENT_BYTES) throw new Error('Source is larger than 2 MB');
-  const body = (await response.text()).slice(0, MAX_CONTENT_BYTES);
+  // The byte cap is already enforced while streaming in fetchViaAddress; this
+  // slice is just a final belt-and-suspenders bound on what we hand to the parser.
+  const body = response.body.slice(0, MAX_CONTENT_BYTES).toString('utf8');
   const extracted = /text\/html/i.test(contentType) ? textFromHtml(body) : { title: '', content: body.trim() };
   if (!extracted.content) throw new Error('Source did not contain collectable text');
-  return { kind: 'url', url, title: extracted.title || new URL(url).hostname, content: extracted.content, content_type: contentType };
+  return { kind: 'url', url: validated, title: extracted.title || url.hostname, content: extracted.content, content_type: contentType };
 }
 
 export function saveSource(source: CollectedDocument): Promise<void> {

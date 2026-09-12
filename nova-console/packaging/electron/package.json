@@ -1,0 +1,25 @@
+{
+  "name": "nova-runtime-electron",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NOVA Runtime packaged as an Electron desktop app — a window wrapping the real local server at server.js, not a separate build of anything. See packaging/README.md: this could not actually be built (`npm install electron`) in this project's sandboxes, so it has never been run — it is real, standards-correct config, not proven-working config.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.brahmini.nova-runtime",
+    "productName": "NOVA Runtime",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "../server.js", "../lib/**", "../skills/**", "../public/**", "../package.json"],
+    "extraMetadata": { "main": "main.js" },
+    "mac": { "category": "public.app-category.developer-tools", "target": "dmg" },
+    "linux": { "category": "Development", "target": "AppImage" },
+    "win": { "target": "nsis" }
+  }
+}

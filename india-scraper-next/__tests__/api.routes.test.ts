@@ -44,7 +44,7 @@ describe('GET /api/districts', () => {
       { id: 2, name: 'Pune', state: 'Maharashtra' },
     ];
     mockAll(rows);
-    const res = await districtsGET();
+    const res = await districtsGET(makeRequest('http://localhost/api/districts'));
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data).toEqual(rows);
@@ -56,19 +56,19 @@ describe('GET /api/districts', () => {
 
   it('orders by name', async () => {
     mockAll([]);
-    await districtsGET();
+    await districtsGET(makeRequest('http://localhost/api/districts'));
     expect(mockedDb.all.mock.calls[0][0]).toContain('ORDER BY name');
   });
 
   it('returns empty array when no districts', async () => {
     mockAll([]);
-    const res = await districtsGET();
+    const res = await districtsGET(makeRequest('http://localhost/api/districts'));
     expect(await res.json()).toEqual([]);
   });
 
   it('propagates db errors (rejects)', async () => {
     mockAll([], new Error('db failure'));
-    await expect(districtsGET()).rejects.toThrow('db failure');
+    await expect(districtsGET(makeRequest('http://localhost/api/districts'))).rejects.toThrow('db failure');
   });
 });
 

@@ -116,6 +116,21 @@ describe('jobs module', () => {
     });
   });
 
+  describe('job eviction', () => {
+    it('prunes the oldest finished jobs once the store exceeds its cap, but never a running one', () => {
+      createJob('keep-running', 'cat', 5); // never completed below -- must survive pruning
+      for (let k = 0; k < 205; k++) {
+        const id = `bulk-${k}`;
+        createJob(id, 'cat', 1);
+        incrementJobCompleted(id); // finishes immediately (completed === total)
+      }
+      expect(getJob('keep-running')).toBeDefined();
+      expect(getJob('keep-running')!.status).toBe('running');
+      expect(getJob('bulk-0')).toBeUndefined(); // oldest finished job, pruned
+      expect(getJob('bulk-204')).toBeDefined(); // newest finished job, kept
+    });
+  });
+
   describe('__clearJobs', () => {
     it('removes all jobs', () => {
       createJob('c1', 'a', 1);

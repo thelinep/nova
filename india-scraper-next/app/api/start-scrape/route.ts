@@ -3,8 +3,10 @@ import db from '@/lib/db';
 import { scrapeDistrict } from '@/lib/scraper';
 import { createJob, incrementJobCompleted } from '@/lib/jobs';
 import { seedDistricts } from '@/lib/districtSeeder';
+import { isLocalRequest, localOnlyResponse } from '@/lib/local-only';
 
 export async function POST(request: NextRequest) {
+  if (!isLocalRequest(request)) return localOnlyResponse();
   const { category } = await request.json();
   if (!category) {
     return NextResponse.json({ error: 'Category is required' }, { status: 400 });

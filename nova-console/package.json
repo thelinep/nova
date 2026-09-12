@@ -1,0 +1,17 @@
+{
+  "name": "nova-runtime",
+  "version": "0.1.0",
+  "description": "NOVA Runtime — local backend for the NOVA Console prototype. Real SQLite persistence, real Ollama-backed streaming inference, real CPU/RAM/GPU telemetry. Zero npm dependencies by design — everything here runs on what Node 22+ ships built in (node:sqlite, global fetch, node:http), so there is nothing to install and nothing that can fail to compile on your machine.",
+  "private": true,
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "dev": "node --no-warnings --watch server.js",
+    "launch": "node packaging/launch.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {}
+}

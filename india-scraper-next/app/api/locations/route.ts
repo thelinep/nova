@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InputError, search, summary } from '@/lib/locations/catalog.cjs';
+import { isLocalRequest, localOnlyResponse } from '@/lib/local-only';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
+  if (!isLocalRequest(request)) return localOnlyResponse();
   try {
     const params = request.nextUrl.searchParams;
     const mode = params.get('mode') || 'records';

@@ -2,9 +2,11 @@ import {NextRequest,NextResponse} from 'next/server';
 import {readSummary,search} from '@/lib/event-planners/store.cjs';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
+import {isLocalRequest,localOnlyResponse} from '@/lib/local-only';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export async function GET(request:NextRequest){
+  if(!isLocalRequest(request))return localOnlyResponse();
   try{
     const params=request.nextUrl.searchParams;
     const format=params.get('format');

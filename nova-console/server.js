@@ -1,0 +1,588 @@
+'use strict';
+/* ===========================================================================
+ * NOVA Runtime
+ *
+ * The local backend behind the NOVA Console prototype (Phase 1 of its
+ * roadmap: "Real inference core"). Serves the modified console HTML,
+ * persists every store to real SQLite (node:sqlite — no install step),
+ * and proxies real inference, model lifecycle, and telemetry to/from a
+ * local Ollama daemon. No external npm dependencies: node:sqlite, global
+ * fetch, and node:http are all that Node 22+ needs to ship this.
+ *
+ * Run: node server.js   (or: npm start)
+ * Config via env vars:
+ *   PORT          — default 8787
+ *   OLLAMA_HOST   — default http://127.0.0.1:11434
+ *   DATA_DIR      — default ./data  (holds nova.db)
+ * ========================================================================= */
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const { STORE_NAMES, openDb, Store } = require('./lib/db');
+const { OllamaClient } = require('./lib/ollama');
+const { TelemetryReader } = require('./lib/telemetry');
+const { ingestDocument, reindexCollection, searchKnowledge, deleteDocument } = require('./lib/knowledge');
+const mcpManager = require('./lib/mcp-manager');
+const { runSkillSandboxed } = require('./lib/skill-runner');
+const { runAgentLoop } = require('./lib/agent-loop');
+const workflowEngine = require('./lib/workflow-engine');
+const evalBench = require('./lib/eval-bench');
+const scheduler = require('./lib/scheduler');
+const { uid, logExecution } = require('./lib/exec-log');
+
+const PORT = Number(process.env.PORT) || 8787;
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+const { db } = openDb(DATA_DIR);
+const store = new Store(db);
+const ollama = new OllamaClient(process.env.OLLAMA_HOST);
+const telemetry = new TelemetryReader();
+
+// Cached reachability flag the frontend's diagnostics/status-bar can read
+// cheaply and synchronously; refreshed on a slow interval in the
+// background rather than on every request.
+let ollamaStatusCache = { reachable: false, models: [], runningModelNames: [], error: 'not checked yet' };
+async function refreshOllamaStatus() {
+  ollamaStatusCache = await ollama.status();
+  return ollamaStatusCache;
+}
+refreshOllamaStatus();
+setInterval(refreshOllamaStatus, 5000);
+
+/* ---------------------------- tiny helpers ---------------------------- */
+
+function sendJson(res, statusCode, body) {
+  const text = JSON.stringify(body);
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(text),
+  });
+  res.end(text);
+}
+
+function sendError(res, err) {
+  const statusCode = err.statusCode || 500;
+  if (statusCode >= 500) console.error('[nova-runtime] error:', err);
+  sendJson(res, statusCode, { error: err.message || 'Internal error' });
+}
+
+// uid()/logExecution() now live in lib/exec-log.js — lib/scheduler.js needs
+// the same audit-trail helper from a background tick with no request/
+// response in play, so it moved out from under server.js rather than being
+// duplicated (see lib/exec-log.js's own header for why).
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let chunks = [];
+    let size = 0;
+    req.on('data', c => {
+      size += c.length;
+      if (size > 25 * 1024 * 1024) { reject(Object.assign(new Error('Body too large'), { statusCode: 413 })); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      if (!chunks.length) { resolve({}); return; }
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
+      catch (e) { reject(Object.assign(new Error('Invalid JSON body'), { statusCode: 400 })); }
+    });
+    req.on('error', reject);
+  });
+}
+
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
+function serveStatic(req, res, pathname) {
+  let rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+  const filePath = path.join(PUBLIC_DIR, rel);
+  if (!filePath.startsWith(PUBLIC_DIR)) { sendJson(res, 403, { error: 'Forbidden' }); return; }
+  fs.readFile(filePath, (err, data) => {
+    if (err) { sendJson(res, 404, { error: 'Not found' }); return; }
+    const ext = path.extname(filePath);
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': data.length });
+    res.end(data);
+  });
+}
+
+/* ----------------------------- model mapping ----------------------------- */
+
+/** Maps one entry from Ollama's GET /api/tags into the shape the NOVA
+ *  Console frontend already knows how to render (see modelCardHtml in the
+ *  console). Anything Ollama doesn't expose (context window, GPU layer
+ *  count) is left null rather than guessed — the frontend already renders
+ *  null as "—". promptTps/genTps/ttft come from benchmark(), not here. */
+function mapOllamaTagToModel(tag, runningNames, existing) {
+  const prior = existing || {};
+  return {
+    id: tag.name,
+    name: tag.name,
+    runtime: 'ollama',
+    format: 'GGUF',
+    quant: (tag.details && tag.details.quantization_level) || '—',
+    params: (tag.details && tag.details.parameter_size) || '—',
+    diskGb: typeof tag.size === 'number' ? tag.size / 1e9 : null,
+    ramGb: prior.ramGb != null ? prior.ramGb : null,
+    ctx: prior.ctx != null ? prior.ctx : null,
+    ctxMax: prior.ctxMax != null ? prior.ctxMax : null,
+    gpuLayers: prior.gpuLayers != null ? prior.gpuLayers : '—',
+    gpuLayersMax: prior.gpuLayersMax != null ? prior.gpuLayersMax : '—',
+    promptTps: prior.promptTps != null ? prior.promptTps : null,
+    genTps: prior.genTps != null ? prior.genTps : null,
+    ttft: prior.ttft != null ? prior.ttft : null,
+    loaded: runningNames.includes(tag.name),
+    runtimeKind: 'local',
+    family: (tag.details && tag.details.family) || null,
+    modifiedAt: tag.modified_at || null,
+  };
+}
+
+async function syncModelsFromOllama() {
+  const status = await ollama.status();
+  if (!status.reachable) {
+    const err = new Error('Ollama is not reachable at ' + ollama.host + (status.error ? (' (' + status.error + ')') : ''));
+    err.statusCode = 503;
+    throw err;
+  }
+  const existingById = new Map(store.all('models').map(m => [m.id, m]));
+  const mapped = status.models.map(tag => mapOllamaTagToModel(tag, status.runningModelNames, existingById.get(tag.name)));
+  // Replace only the models that came from Ollama (runtimeKind local/ollama
+  // rows not present in this tag list are left alone — e.g. a remote/API
+  // model entry the user added by hand has nothing to do with `ollama list`).
+  const mappedIds = new Set(mapped.map(m => m.id));
+  for (const m of existingById.values()) {
+    if (m.runtime === 'ollama' && !mappedIds.has(m.id)) store.delete('models', m.id);
+  }
+  for (const m of mapped) store.put('models', m);
+
+  // Phase 5 fix: the seeded demo agents/automations point at seeded demo
+  // model rows (runtime 'llama.cpp'/'MLX'/'API', never 'ollama') — real
+  // ids that were never meant to be run against, only displayed. Syncing
+  // real models in without also repointing anything still aimed at a demo
+  // model left every seeded agent run and automation run rejected by
+  // resolveOllamaModel() ("not Ollama-backed") the moment a real (or
+  // stubbed) Ollama actually became reachable — the sync fixed the model
+  // list but silently broke the two Phase 4/5 features built on top of it.
+  // Repoint anything still aimed at a non-Ollama model at the first real
+  // synced one, once, here — where the swap actually happens.
+  if (mapped.length) {
+    const fallbackModelId = mapped[0].id;
+    for (const a of store.all('agents')) {
+      const am = store.get('models', a.modelId);
+      if (!am || am.runtime !== 'ollama') { a.modelId = fallbackModelId; store.put('agents', a); }
+    }
+    for (const auto of store.all('automations')) {
+      const am = store.get('models', auto.modelId);
+      if (!am || am.runtime !== 'ollama') { auto.modelId = fallbackModelId; store.put('automations', auto); }
+    }
+  }
+  return mapped;
+}
+
+/* --------------------------------- routes -------------------------------- */
+
+const routes = [
+  { method: 'GET', pattern: /^\/api\/health$/, handler: async (req, res) => sendJson(res, 200, { ok: true, pid: process.pid, dataDir: DATA_DIR }) },
+
+  { method: 'GET', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => sendJson(res, 200, store.all(decodeURIComponent(name))) },
+  /* Phase 5: real backend-driven pagination — see Store.page(). Used by the
+     Trace and Execution History views instead of fetching every row and
+     capping the client's in-memory copy at an arbitrary number. */
+  {
+    method: 'GET', pattern: /^\/api\/store\/([^/]+)\/page$/, handler: async (req, res, [name]) => {
+      const q = new URL(req.url, 'http://localhost').searchParams;
+      const limit = Number(q.get('limit')) || 50;
+      const before = q.get('before') || null;
+      sendJson(res, 200, store.page(decodeURIComponent(name), { limit, beforeUpdatedAt: before }));
+    },
+  },
+  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req); sendJson(res, 200, store.put(decodeURIComponent(name), body)); } },
+  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { store.delete(decodeURIComponent(name), decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); sendJson(res, 200, { ok: true }); } },
+
+  { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
+  { method: 'POST', pattern: /^\/api\/models\/sync$/, handler: async (req, res) => sendJson(res, 200, { models: await syncModelsFromOllama() }) },
+
+  {
+    method: 'POST', pattern: /^\/api\/models\/([^/]+)\/load$/, handler: async (req, res, [id]) => {
+      const modelId = decodeURIComponent(id);
+      await ollama.load(modelId);
+      const m = store.get('models', modelId);
+      if (m) { m.loaded = true; store.put('models', m); }
+      await refreshOllamaStatus();
+      sendJson(res, 200, m || { id: modelId, loaded: true });
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/models\/([^/]+)\/unload$/, handler: async (req, res, [id]) => {
+      const modelId = decodeURIComponent(id);
+      await ollama.unload(modelId);
+      const m = store.get('models', modelId);
+      if (m) { m.loaded = false; store.put('models', m); }
+      await refreshOllamaStatus();
+      sendJson(res, 200, m || { id: modelId, loaded: false });
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/models\/([^/]+)\/benchmark$/, handler: async (req, res, [id]) => {
+      const modelId = decodeURIComponent(id);
+      const result = await ollama.benchmark(modelId);
+      const promptTps = result.prompt_eval_count && result.prompt_eval_duration
+        ? +(result.prompt_eval_count / (result.prompt_eval_duration / 1e9)).toFixed(1) : null;
+      const genTps = result.eval_count && result.eval_duration
+        ? +(result.eval_count / (result.eval_duration / 1e9)).toFixed(1) : null;
+      const ttft = (result.total_duration != null && result.eval_duration != null)
+        ? Math.round((result.total_duration - result.eval_duration) / 1e6) : null;
+      const m = store.get('models', modelId) || { id: modelId, name: modelId, runtime: 'ollama', runtimeKind: 'local' };
+      m.promptTps = promptTps; m.genTps = genTps; m.ttft = ttft; m.loaded = true;
+      store.put('models', m);
+      sendJson(res, 200, { model: m, raw: result });
+    },
+  },
+
+  {
+    method: 'POST', pattern: /^\/api\/chat\/stream$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      const { model, messages, options } = body;
+      if (!model || !Array.isArray(messages)) { sendJson(res, 400, { error: 'Expected {model, messages[]}' }); return; }
+      const controller = new AbortController();
+      req.on('close', () => controller.abort());
+      let upstream;
+      try {
+        upstream = await ollama.chatStream(model, messages, options, controller.signal);
+      } catch (e) {
+        sendJson(res, 502, { error: e.message });
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+      try {
+        for await (const chunk of upstream.body) res.write(chunk);
+      } catch (e) {
+        // client disconnected / aborted — nothing to send a response to
+      } finally {
+        res.end();
+      }
+    },
+  },
+
+  { method: 'GET', pattern: /^\/api\/telemetry$/, handler: async (req, res) => sendJson(res, 200, { ...(await telemetry.read()), ollama: { reachable: ollamaStatusCache.reachable } }) },
+
+  {
+    method: 'POST', pattern: /^\/api\/embeddings$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      if (!body.model || body.input == null) { sendJson(res, 400, { error: 'Expected {model, input}' }); return; }
+      const embeddings = await ollama.embed(body.model, body.input);
+      sendJson(res, 200, { embeddings });
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/knowledge\/ingest$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      const result = await ingestDocument(store, ollama, body);
+      // Phase 5: the real event receiver — fires any automation actually
+      // watching this collection now that a document has genuinely been
+      // added to it. Doesn't block the response; a slow/failed automation
+      // run shouldn't turn a successful ingest into a failed request.
+      Promise.resolve(scheduler.onDocumentIngested(store, ollama, body.collectionId))
+        .catch(e => console.error('[nova-runtime] event dispatch failed', e.message || e));
+      sendJson(res, 200, result);
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/knowledge\/reindex\/([^/]+)$/, handler: async (req, res, [collectionId]) => {
+      sendJson(res, 200, await reindexCollection(store, ollama, decodeURIComponent(collectionId)));
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/knowledge\/search$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      sendJson(res, 200, await searchKnowledge(store, ollama, body));
+    },
+  },
+  {
+    method: 'DELETE', pattern: /^\/api\/knowledge\/documents\/([^/]+)$/, handler: async (req, res, [id]) => {
+      const collection = deleteDocument(store, decodeURIComponent(id));
+      sendJson(res, 200, { ok: true, collection });
+    },
+  },
+
+  /* ---- Phase 3: real MCP connections + approval-gated tool calls ---- */
+  {
+    method: 'POST', pattern: /^\/api\/mcp\/([^/]+)\/connect$/, handler: async (req, res, [id]) => {
+      sendJson(res, 200, await mcpManager.connectServer(store, decodeURIComponent(id)));
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/mcp\/([^/]+)\/disconnect$/, handler: async (req, res, [id]) => {
+      sendJson(res, 200, mcpManager.disconnectServer(store, decodeURIComponent(id)));
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/mcp\/([^/]+)\/call$/, handler: async (req, res, [id]) => {
+      const body = await readJsonBody(req);
+      if (!body.toolName) { sendJson(res, 400, { error: 'Expected {toolName, arguments}' }); return; }
+      const outcome = await mcpManager.gatedCall(store, decodeURIComponent(id), body.toolName, body.arguments, { origin: 'manual' });
+      if (outcome && outcome.pending) sendJson(res, 202, outcome);
+      else sendJson(res, 200, { status: 'ok', result: outcome });
+    },
+  },
+  { method: 'GET', pattern: /^\/api\/mcp\/approvals$/, handler: async (req, res) => sendJson(res, 200, mcpManager.listPendingApprovals()) },
+  {
+    method: 'POST', pattern: /^\/api\/mcp\/approvals\/([^/]+)\/approve$/, handler: async (req, res, [aid]) => {
+      sendJson(res, 200, await mcpManager.resolveApproval(store, decodeURIComponent(aid), 'approve'));
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/mcp\/approvals\/([^/]+)\/reject$/, handler: async (req, res, [aid]) => {
+      sendJson(res, 200, await mcpManager.resolveApproval(store, decodeURIComponent(aid), 'reject'));
+    },
+  },
+
+  /* ---- Phase 4: real agent tool-calling loop ---- */
+  {
+    method: 'POST', pattern: /^\/api\/agents\/([^/]+)\/run$/, handler: async (req, res, [id]) => {
+      const agentId = decodeURIComponent(id);
+      const agent = store.get('agents', agentId);
+      if (!agent) { sendJson(res, 404, { error: 'Unknown agent: ' + agentId }); return; }
+      const body = await readJsonBody(req);
+      const instruction = (body.instruction || '').trim();
+      if (!instruction) { sendJson(res, 400, { error: 'Expected a non-empty {instruction}' }); return; }
+
+      agent.status = 'running';
+      store.put('agents', agent);
+      const startedAt = new Date().toISOString();
+      const exec = logExecution(store, 'agent', agent.name + ' · run', 'running', instruction, agent.id);
+      try {
+        const result = await runAgentLoop(store, ollama, agent, instruction, body.context, 'agent');
+        const finishedAt = new Date().toISOString();
+        agent.status = 'idle';
+        agent.lastRun = finishedAt;
+        agent.lastResult = { instruction, content: result.content, toolTrace: result.toolTrace, rounds: result.rounds, at: finishedAt };
+        store.put('agents', agent);
+        const ex = store.get('executions', exec.id);
+        if (ex) { ex.status = 'success'; ex.finishedAt = finishedAt; ex.detail = result.toolTrace.length + ' tool call(s), ' + result.rounds + ' round(s)'; store.put('executions', ex); }
+        sendJson(res, 200, { agent, result, startedAt, finishedAt });
+      } catch (e) {
+        agent.status = 'error';
+        store.put('agents', agent);
+        const ex = store.get('executions', exec.id);
+        if (ex) { ex.status = 'error'; ex.finishedAt = new Date().toISOString(); ex.detail = e.message || String(e); store.put('executions', ex); }
+        throw e;
+      }
+    },
+  },
+
+  /* ---- Phase 4: real, server-driven, restart-resilient workflow runs ---- */
+  {
+    method: 'POST', pattern: /^\/api\/workflows\/([^/]+)\/run$/, handler: async (req, res, [id]) => {
+      const run = workflowEngine.startRun(store, decodeURIComponent(id));
+      sendJson(res, 202, run); // stepping continues after the response — see advanceRun below
+      workflowEngine.advanceRun(store, ollama, run.id).catch(e => console.error('[nova-runtime] workflow run failed', run.id, e.message || e));
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/workflows\/runs\/([^/]+)\/approve$/, handler: async (req, res, [runId]) => {
+      const run = workflowEngine.resolveApprovalNode(store, decodeURIComponent(runId), 'approve');
+      sendJson(res, 202, run);
+      if (run.status === 'running') {
+        workflowEngine.advanceRun(store, ollama, run.id).catch(e => console.error('[nova-runtime] workflow run failed', run.id, e.message || e));
+      }
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/workflows\/runs\/([^/]+)\/reject$/, handler: async (req, res, [runId]) => {
+      sendJson(res, 200, workflowEngine.resolveApprovalNode(store, decodeURIComponent(runId), 'reject'));
+    },
+  },
+
+  /* ---- Phase 3: sandboxed skill runner ---- */
+  {
+    method: 'POST', pattern: /^\/api\/skills\/([^/]+)\/run$/, handler: async (req, res, [id]) => {
+      const skillId = decodeURIComponent(id);
+      const body = await readJsonBody(req);
+      const skill = store.get('skills', skillId);
+      if (!skill) { sendJson(res, 404, { error: 'Unknown skill: ' + skillId }); return; }
+      if (!skill.enabled) { sendJson(res, 400, { error: 'Skill "' + skill.name + '" is disabled.' }); return; }
+      if (!REAL_SKILL_IDS.has(skillId)) {
+        sendJson(res, 501, { error: 'No real sandboxed implementation for "' + skill.name + '" yet.' });
+        return;
+      }
+      if (NETWORK_SKILL_IDS.has(skillId)) {
+        const prefs = store.get('preferences', 'default');
+        if (!prefs || !prefs.webAccess) {
+          const finishedAt = new Date().toISOString();
+          skill.audit = skill.audit || [];
+          skill.audit.push({ at: finishedAt, action: 'Run blocked', detail: 'Refused — workspace is LOCAL ONLY. Enable Settings > Privacy > "Allow network access" to run this skill.' });
+          store.put('skills', skill);
+          sendJson(res, 403, { error: 'Blocked by workspace privacy setting: network access is off (LOCAL ONLY). Enable it in Settings > Privacy to run "' + skill.name + '".' });
+          return;
+        }
+      }
+      const startedAt = new Date().toISOString();
+      try {
+        const result = await runSkillSandboxed(skill, body.inputs, async (toolName, args) => {
+          const server = mcpManager.findServerForTool(store, toolName);
+          if (!server) { const e = new Error('No connected MCP server advertises tool "' + toolName + '"'); e.statusCode = 502; throw e; }
+          return mcpManager.gatedCall(store, server.id, toolName, args, { wait: true, origin: 'skill', skillName: skill.name });
+        });
+        const finishedAt = new Date().toISOString();
+        skill.lastRun = finishedAt;
+        skill.runCount = (skill.runCount || 0) + 1;
+        skill.health = { ok: true, lastCheck: finishedAt, detail: 'Ran successfully.' };
+        skill.audit = skill.audit || [];
+        skill.audit.push({ at: finishedAt, action: 'Run', detail: summarizeSkillResult(skillId, result) });
+        store.put('skills', skill);
+        sendJson(res, 200, { skill, result, startedAt, finishedAt });
+      } catch (e) {
+        const finishedAt = new Date().toISOString();
+        skill.audit = skill.audit || [];
+        skill.audit.push({ at: finishedAt, action: 'Run failed', detail: e.message || String(e) });
+        store.put('skills', skill);
+        throw e;
+      }
+    },
+  },
+  /* ---- Phase 5: real automation runs (was a client Math.random()<0.12
+     coin-flip with a jittered sleep()) — the actual pipeline now lives in
+     lib/scheduler.js so a manual "Run now" click, a scheduled tick, and a
+     real ingest event all share the exact same code path. ---- */
+  {
+    method: 'POST', pattern: /^\/api\/automations\/([^/]+)\/run$/, handler: async (req, res, [id]) => {
+      const autoId = decodeURIComponent(id);
+      const result = await scheduler.runAutomation(store, ollama, autoId, { origin: 'manual' });
+      sendJson(res, 200, result);
+    },
+  },
+  /* ---- Phase 5 scheduler: create/configure automations with a real
+     structured trigger, and expose the ticker's own live status. ---- */
+  {
+    method: 'POST', pattern: /^\/api\/automations$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      sendJson(res, 201, scheduler.createAutomation(store, body));
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/automations\/([^/]+)\/configure$/, handler: async (req, res, [id]) => {
+      const body = await readJsonBody(req);
+      sendJson(res, 200, scheduler.configureAutomation(store, decodeURIComponent(id), body));
+    },
+  },
+  { method: 'GET', pattern: /^\/api\/scheduler\/status$/, handler: async (req, res) => sendJson(res, 200, scheduler.getSchedulerStatus(store)) },
+
+  /* ---- Phase 5: real fixed-benchmark evaluation runs ---- */
+  {
+    method: 'POST', pattern: /^\/api\/evaluations\/run$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      if (!body.modelId) { sendJson(res, 400, { error: 'Expected {modelId}' }); return; }
+      const exec = logExecution(store, 'inference', 'Evaluation · ' + evalBench.DATASET_NAME, 'running', 'Started', body.modelId);
+      try {
+        const result = await evalBench.runEvaluation(store, ollama, telemetry, body.modelId);
+        const model = store.get('models', body.modelId);
+        const label = '#' + (20 + store.all('evaluations').length);
+        const row = {
+          id: uid('eval'), label, modelId: body.modelId, modelLabel: model ? (model.name + ' ' + model.quant) : body.modelId,
+          dataset: result.dataset, temperature: result.temperature,
+          accuracy: result.accuracy, grounded: result.grounded, citation: result.citation,
+          avgTtft: result.avgTtft, decode: result.decode, peakRam: result.peakRam, peakVram: result.peakVram,
+          createdAt: new Date().toISOString(),
+        };
+        store.put('evaluations', row);
+        const exRow = store.get('executions', exec.id);
+        if (exRow) { exRow.status = 'success'; exRow.finishedAt = new Date().toISOString(); exRow.detail = result.accuracy + '% accuracy over ' + evalBench.BENCH_SET.length + ' fixed item(s)'; store.put('executions', exRow); }
+        sendJson(res, 200, { evaluation: row, perItem: result.perItem });
+      } catch (e) {
+        const exRow = store.get('executions', exec.id);
+        if (exRow) { exRow.status = 'error'; exRow.finishedAt = new Date().toISOString(); exRow.detail = e.message || String(e); store.put('executions', exRow); }
+        throw e;
+      }
+    },
+  },
+];
+
+// Skills with a real sandboxed entrypoint under skills/ (Phase 3, +webfetch
+// in Phase 5). Anything else still runs on the frontend's pre-existing
+// simulated path — labeled as such in the UI — rather than faking a real
+// run here.
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_webfetch']);
+
+// Skills that genuinely reach the network when they run — gated below by
+// the workspace's own privacy preference, not just a descriptive UI label.
+// Real enforcement: this refuses to even start the sandboxed worker when
+// Settings > Privacy > "Allow network access" is off, so toggling that
+// setting actually determines whether the request happens, the same way
+// the frontend's computePrivacyState() describes it as happening.
+const NETWORK_SKILL_IDS = new Set(['skl_webfetch']);
+
+// Turns a real skill result into a short audit-trail summary carrying the
+// actual numbers, matching the house style of the pre-existing seed audit
+// entries (e.g. "Linted 6 files, 2 findings") instead of a canned string
+// that would be identical whether the run found anything or not.
+function summarizeSkillResult(skillId, result) {
+  if (skillId === 'skl_codelint' && result && typeof result === 'object') {
+    return 'Real sandboxed run — scanned ' + (result.filesScanned || 0) + ' file(s), ' +
+      ((result.findings || []).length) + ' finding(s).';
+  }
+  if (skillId === 'skl_filesearch' && result && typeof result === 'object') {
+    return 'Real sandboxed run — ' + ((result.matches || []).length) + ' match(es) for "' + (result.query || '') + '".';
+  }
+  if (skillId === 'skl_webfetch' && result && typeof result === 'object') {
+    return 'Real fetch — HTTP ' + result.statusCode + ' from ' + result.url + ' (' + result.bytesRead + ' byte(s)' + (result.truncated ? ', truncated' : '') + ').';
+  }
+  return 'Real sandboxed run completed.';
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, 'http://localhost');
+  const pathname = decodeURI(url.pathname);
+
+  if (pathname.startsWith('/api/')) {
+    for (const route of routes) {
+      if (route.method !== req.method) continue;
+      const match = pathname.match(route.pattern);
+      if (!match) continue;
+      try {
+        await route.handler(req, res, match.slice(1));
+      } catch (e) {
+        sendError(res, e);
+      }
+      return;
+    }
+    sendJson(res, 404, { error: 'No such API route: ' + req.method + ' ' + pathname });
+    return;
+  }
+
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    serveStatic(req, res, pathname);
+    return;
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed' });
+});
+
+server.listen(PORT, () => {
+  console.log(`NOVA Runtime listening on http://127.0.0.1:${PORT}`);
+  console.log(`  data dir:    ${DATA_DIR}`);
+  console.log(`  ollama host: ${ollama.host}`);
+  console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
+  // A real child MCP server process never survives a restart — reconcile
+  // any stale 'connected' status in the DB to 'disconnected' before
+  // anything tries to resume work that might depend on one (below).
+  const reconciled = mcpManager.reconcileOnStartup(store);
+  if (reconciled) console.log(`  reconciled:  ${reconciled} MCP server row(s) marked disconnected (no process survives a restart)`);
+  // Phase 4: any workflow run left 'running' from before this process
+  // started (crash, restart, redeploy) resumes from its last persisted
+  // node rather than being silently abandoned.
+  const resumed = workflowEngine.resumeInFlightRuns(store, ollama);
+  if (resumed) console.log(`  resumed:     ${resumed} in-flight workflow run(s)`);
+  // Phase 5: the real automations scheduler + event receiver — starts
+  // ticking immediately, independent of any browser tab being open.
+  const schedStatus = scheduler.startScheduler(store, ollama);
+  console.log(`  scheduler:   ticking every ${schedStatus.tickMs / 1000}s` +
+    (schedStatus.lastCatchUp ? ` (rescheduled ${schedStatus.lastCatchUp.rescheduled} overdue automation(s) from startup)` : ''));
+});
+
+function shutdown() {
+  console.log('\nShutting down NOVA Runtime...');
+  mcpManager.shutdownAll(); // real child MCP server processes — close them, don't orphan
+  server.close(() => process.exit(0));
+}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en"><head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260910-23-0835dca","C":{"Abril Fatface":"YACgEZbkUVE,0","Alfa Slab One":"YACgEYS9sJU,0","Anton":"YACgEcYqQ-A,0","Archivo":"YAHO2-t-jNE,0","Arial":"YAGyDvJ_4Ts,0","Bebas Neue":"YACgESME5ew,0","Bricolage Grotesque":"YAFyMcdwzpc,0","Canva Sans":"YAFLd8sKbwc,2","Caveat":"YALBs2ploWQ,0","Comic Sans MS":"YAHO2VMiyZo,0","Cormorant Garamond":"YAFdJhX-538,0","Courier New":"YAGzXiGs0_8,0","DM Sans":"YAD1aU3sLnI,0","DM Serif Display":"YAD1aYG82rc,0","Forum":"YACgEcnnqB4,0","Fraunces":"YAEul-FRQw4,0","Georgia":"YAGzXkO0pEM,0","Helvetica Neue":"YAFcf6CtJfI,0","Impact":"YAFcfnjI7Vk,0","Inter":"YAFdJvSyp_k,3","Iowan Old Style":"YAGNIFa8j9o,0","Jacques Francois":"YAHO2a5g66Q,0","JetBrains Mono":"YAFdJksXcAk,0","Libre Baskerville":"YACgEUFdPdA,0","Manrope":"YAHO2b2feC4,0","Merriweather":"YACgEXvHxxs,0","Montserrat":"YADLjI9qxTA,0","Nunito":"YACgEX8C5Gg,0","Oleo Script":"YACgEQQ14jI,0","Phantom Sans":"YAHO2E8Pb88,0","Playfair Display":"YACgEYmuCJE,0","Poppins":"YAFdJjbTu24,1","Press Start 2P":"YAFyGr-8pmQ,0","Quicksand":"YADWjpfPmdk,0","Raleway":"YACgEVg3xZg,0","Segoe UI":"YAHNdRD1Klw,0","Source Sans 3":"YAG4lO1Mj10,0","Spectral":"YAHO2rVUHIM,0","Times New Roman":"YAGzXW3gftg,0","Times":"YAGzXW3gftg,0","Ubuntu":"YACgERDU--Q,0","Work Sans":"YAGXhLOKv44,0","Yellowtail":"YACgEYG4kG4,0","ui-monospace":"YADlN8CFZ8Q,0","ui-sans-serif":"YACkoN-xg4g,0"}}');</script><script src="/_sdk/c21197326e9a1154.telemetry_sdk.js" integrity="sha512-Aqwl+NmLtKBcMQM4HY+W9lmBHa+zP5MqSEuYfCjkzt4xeOSv2xNz81cCp7JyXBVrY+zojg5o94FHY/R31v2d3Q=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOVA // Local Intelligence Console</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/efe904fe8a212716.data_sdk.js" integrity="sha512-oiO0pmn5llS1uDeB2l690YywxqOe/a0U1kzY6RGaLZXtyh9YjTk1CUoK/bJUugc1QbUaJMJ3IE1MtpNY5NBZCw=="></script>
+  <script src="/_sdk/6125e8aa3c264a2d.resizing_sdk.js" integrity="sha512-+j9iK2FF/yFSTU389rFqKj3v0s1ELh1r0aj3mqpsVRZujaeWi0WgN7jmTcWLcBq91dz3NCEyXqMtHbwpOxhDYg=="></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=Work+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#090b0e;--panel:#11151a;--panel2:#151a20;--line:#29313a;--ink:#f0f3f5;--muted:#8b98a7;--amber:#f5ab35;--green:#61d19d;--red:#ff7272;--blue:#78b7ff}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"Work Sans",sans-serif;overflow:hidden}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.28;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:28px 28px;mask-image:linear-gradient(to bottom,black,transparent 85%)}
+    body.no-grid:before{display:none}.mono{font-family:"Space Mono",monospace}.shell{width:100%;min-height:calc(100 * min(var(--vh,1vh),1vh));display:grid;grid-template-columns:222px minmax(0,1fr);position:relative}
+    .rail,.session-pane,.inspector{background:#11151af2;border-color:var(--line)}.rail{padding:15px 11px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px;z-index:20}.app{display:grid;grid-template-rows:58px minmax(0,1fr) 25px;min-width:0}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 17px;border-bottom:1px solid var(--line);background:#0c0f13f2}.brand{display:flex;align-items:center;gap:9px;padding:5px 8px}.nova-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--amber);border-radius:8px;color:var(--amber);box-shadow:0 0 22px #f5ab3530}
+    .nav-button{width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;color:var(--muted);font-size:13px;text-align:left;transition:.16s}.nav-button:hover,.nav-button.active{color:var(--ink);background:#ffffff0a}.nav-button.active{box-shadow:inset 2px 0 var(--amber)}
+    button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}.icon-button,.quiet-button,.action-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:7px;transition:.16s}
+    .icon-button,.quiet-button{border:1px solid var(--line);background:#ffffff06;color:var(--muted)}.icon-button{height:33px;width:33px}.quiet-button{padding:8px 10px}.quiet-button:hover,.icon-button:hover{border-color:#596a7b;color:var(--ink)}.action-button{padding:9px 11px;background:var(--amber);color:#21160a;font-weight:700}.action-button:hover{filter:brightness(1.09);transform:translateY(-1px)}
+    .label{font:10px "Space Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px #61d19d19}.pulse{animation:pulse 1.4s infinite}
+    .runtime-badge{padding:4px 7px;border:1px solid #f5ab3555;background:#f5ab3512;border-radius:5px;color:#ffd68e;font:10px "Space Mono",monospace}.runtime-badge.complete{border-color:#61d19d55;background:#61d19d10;color:#9ee6c4}.runtime-badge.error,.runtime-badge.cancelled{border-color:#ff727255;background:#ff727210;color:#ffb0b0}
+    .workspace{height:100%;display:grid;grid-template-columns:258px minmax(430px,1fr) 332px;overflow:hidden}.session-pane{border-right:1px solid var(--line);padding:14px;overflow:auto}.conversation{min-width:0;display:flex;flex-direction:column;background:linear-gradient(150deg,#0d1014de,#090b0eee);position:relative}.inspector{border-left:1px solid var(--line);padding:14px;overflow:auto}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}.session{padding:9px;border:1px solid transparent;border-radius:8px;margin-top:4px}.session:hover,.session.selected{background:#ffffff09;border-color:#ffffff12}.message-list{flex:1;overflow:auto;padding:18px clamp(16px,4vw,48px)}.message{max-width:850px;margin:0 auto 18px;animation:rise .2s ease both}.bubble{white-space:pre-wrap;line-height:1.6;border:1px solid var(--line);background:#12171d;padding:13px 15px;border-radius:11px}.message.user .bubble{margin-left:auto;background:#f5ab3511;border-color:#f5ab3545}.message-tools{opacity:0;transition:.15s}.message:hover .message-tools{opacity:1}
+    .composer-wrap{padding:9px clamp(16px,4vw,48px) 16px;background:linear-gradient(transparent,#090b0e 32%)}.composer{max-width:850px;margin:auto;background:#11161c;border:1px solid #3d4754;border-radius:12px;padding:9px;box-shadow:0 14px 36px #0007}textarea{width:100%;min-height:46px;max-height:130px;background:transparent;border:0;color:var(--ink);resize:none;padding:7px;outline:0;font:inherit}
+    .view{height:100%;overflow:auto;padding:24px clamp(16px,4vw,42px);display:none}.view.active{display:block}.metric{padding:9px;border:1px solid #ffffff0d;border-radius:7px;background:#ffffff05}.metric-value{font:11px "Space Mono",monospace;margin-top:4px}.progress{height:5px;border-radius:99px;background:#ffffff0e;overflow:hidden}.progress span{display:block;height:100%;background:var(--amber);transition:width .25s}
+    .tab{padding:7px 8px;color:var(--muted);font:10px "Space Mono",monospace;border-bottom:1px solid transparent}.tab.active{color:#ffd68e;border-color:var(--amber)}.tab-panel{display:none}.tab-panel.active{display:block}.toggle{width:34px;height:19px;border-radius:20px;background:#36404b;padding:2px;transition:.18s}.toggle:after{content:"";display:block;width:15px;height:15px;border-radius:50%;background:#cbd3db;transition:.18s}.toggle.on{background:#ae751d}.toggle.on:after{transform:translateX(15px);background:#fff1d4}.range{accent-color:var(--amber);width:100%}
+    .modal{position:fixed;inset:0;padding:18px;display:none;align-items:center;justify-content:center;background:#000000ad;z-index:50}.modal.open{display:flex;animation:fade .15s ease}.modal-card{width:min(850px,100%);max-height:88%;overflow:auto;background:#11161c;border:1px solid #3c4754;border-radius:14px;box-shadow:0 30px 90px #000;animation:rise .2s ease}.toast{position:fixed;right:18px;bottom:34px;z-index:80;padding:11px 13px;border:1px solid #506071;border-radius:8px;background:#1a2129;transform:translateY(20px);opacity:0;transition:.22s}.toast.show{opacity:1;transform:none}
+    .chip{padding:4px 7px;border:1px solid #f5ab3540;background:#f5ab350d;border-radius:5px;color:#ffd68e;font:9px "Space Mono",monospace}.skeleton{height:12px;border-radius:5px;background:linear-gradient(90deg,#ffffff08,#ffffff14,#ffffff08);background-size:180% 100%;animation:shine 1.2s infinite}
+    .spark{display:flex;align-items:end;height:26px;gap:2px}.spark i{width:4px;background:var(--amber);opacity:.7;border-radius:2px}.dense .panel{border-radius:7px}.dense .view{padding-top:15px}.drawer-close{display:none}
+    @keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes pulse{50%{box-shadow:0 0 0 8px #61d19d00}}@keyframes shine{to{background-position:-180% 0}}
+    @media(max-width:1100px){.workspace{grid-template-columns:245px minmax(0,1fr)}.inspector{position:absolute;right:0;top:58px;bottom:25px;width:332px;transform:translateX(105%);transition:transform .22s;z-index:25;box-shadow:-20px 0 40px #0009}.inspector.open{transform:none}.drawer-close{display:inline-flex}}
+    @media(max-width:760px){body{overflow:auto}.shell{display:block;min-height:calc(100 * min(var(--vh,1vh),1vh))}.rail{position:fixed;inset:0 auto 0 0;width:254px;transform:translateX(-110%);transition:.2s;box-shadow:20px 0 40px #0009}.rail.open{transform:none}.workspace{display:block}.session-pane{position:fixed;z-index:24;left:0;top:58px;bottom:25px;width:280px;transform:translateX(-105%);transition:.2s;box-shadow:20px 0 40px #0009}.session-pane.open{transform:none}.conversation{height:calc(100 * min(var(--vh,1vh),1vh) - 83px)}.top-hide{display:none}.message-list{padding:15px}.composer-wrap{padding:8px 10px 13px}.inspector{width:min(332px,94vw)}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
+ </head>
+ <body data-template-id="__page-root" style="background: rgb(9, 11, 14);">
+  <div id="shell" class="shell">
+   <aside id="rail" class="rail" aria-label="Primary navigation">
+    <div class="flex items-center justify-between">
+     <div class="brand">
+      <div class="nova-mark">
+       <i data-lucide="sparkles" width="16"></i>
+      </div><strong>NOVA</strong>
+     </div><button id="railToggle" class="icon-button" aria-label="Collapse navigation"><i data-lucide="panel-left-close" width="16"></i></button>
+    </div><button id="newSessionBtn" data-template-id="new-session-button" class="canva-button action-button w-full" style="background: rgb(245, 171, 53); color: rgb(33, 22, 10); font-weight: 700; font-style: normal; font-size: 16px;">New session</button>
+    <nav class="space-y-1"><button class="nav-button active" data-view="console"><i data-lucide="messages-square" width="16"></i>Sessions</button> <button class="nav-button" data-action="search"><i data-lucide="search" width="16"></i>Search</button> <button class="nav-button" data-view="knowledge"><i data-lucide="database" width="16"></i>Knowledge</button> <button class="nav-button" data-view="retrieval"><i data-lucide="scan-search" width="16"></i>Retrieval Lab</button> <button class="nav-button" data-view="automations"><i data-lucide="workflow" width="16"></i>Automations</button> <button class="nav-button" data-view="evaluations"><i data-lucide="flask-conical" width="16"></i>Evaluations</button> <button class="nav-button" data-view="runtime"><i data-lucide="activity" width="16"></i>Runtime</button> <button class="nav-button" data-view="trace"><i data-lucide="list-tree" width="16"></i>Activity / Trace</button> <button class="nav-button" data-view="diagnostics"><i data-lucide="stethoscope" width="16"></i>Diagnostics</button> <button class="nav-button" data-view="settings"><i data-lucide="settings-2" width="16"></i>Settings</button>
+    </nav>
+    <div class="mt-auto panel p-3 text-xs">
+     <div class="label mb-2">
+      Storage
+     </div>
+     <div class="flex items-center gap-2">
+      <span id="storageDot" class="status-dot"></span><span id="storageStatus">local workspace</span>
+     </div>
+    </div>
+   </aside>
+   <section class="app">
+    <header class="topbar">
+     <div class="flex items-center gap-2 min-w-0"><button id="mobileNav" class="icon-button hidden max-[760px]:inline-flex" aria-label="Open navigation"><i data-lucide="menu" width="16"></i></button> <button id="mobileSessions" class="icon-button hidden max-[760px]:inline-flex" aria-label="Open sessions"><i data-lucide="history" width="16"></i></button> <span id="eventPulse" class="status-dot pulse"></span> <span id="runtimeBadge" data-template-id="runtime-state-label" class="canva-tag runtime-badge" style="background: rgba(245, 171, 53, 0.07); color: rgb(255, 214, 142); font-weight: 700; font-style: normal; font-size: 10px;">IDLE</span> <span id="runtimePhase" class="mono text-[10px] text-slate-400 top-hide">awaiting prompt</span> <span id="runtimeElapsed" class="mono text-[10px] text-slate-500 top-hide">00:00.000</span>
+     </div>
+     <div class="flex items-center gap-2"><span id="activeModelTop" class="mono text-[10px] text-slate-300 top-hide"></span> <button id="pauseBtn" class="quiet-button text-xs hidden"><i data-lucide="pause" width="13"></i><span id="pauseText">Pause</span></button> <button id="cancelBtn" class="icon-button hidden" aria-label="Cancel runtime"><i data-lucide="square" width="14"></i></button> <button id="commandBtn" data-template-id="command-button" class="canva-button quiet-button text-xs" style="background: rgba(255, 255, 255, 0.024); color: rgb(214, 221, 228); font-weight: 600; font-style: normal; font-size: 12px;">Command</button> <button id="inspectorBtn" class="icon-button" aria-label="Toggle context inspector"><i data-lucide="panel-right" width="16"></i></button>
+     </div>
+    </header>
+    <main class="min-h-0">
+     <section id="consoleView" class="workspace view active p-0">
+      <aside id="sessionsPanel" class="session-pane" aria-label="Session history">
+       <div class="flex items-center justify-between mb-3">
+        <h2 data-template-id="sessions-heading" class="canva-text font-semibold" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 24px;">Sessions</h2><span id="sessionCount" class="mono text-[10px] text-slate-500"></span>
+       </div><label for="sessionSearch" class="sr-only">Search sessions</label> <input id="sessionSearch" data-template-id="session-search" class="canva-input w-full rounded-lg border border-slate-700 bg-transparent p-2 text-sm" type="search" placeholder="Search sessions" style="background: rgb(17, 21, 26); color: rgb(214, 221, 228); font-weight: 400; font-style: normal; font-size: 13px;">
+       <div id="sessionList" class="mt-3"></div>
+      </aside>
+      <section class="conversation" aria-label="Conversation">
+       <header class="border-b border-slate-800 px-5 py-3 flex justify-between gap-3 items-center">
+        <div class="min-w-0">
+         <div class="flex gap-2 items-center">
+          <h1 id="sessionTitle" class="font-semibold text-sm truncate"></h1><span id="pinnedMark" class="hidden text-amber-300"><i data-lucide="pin" width="12"></i></span>
+         </div>
+         <p id="sessionMeta" class="mono text-[9px] text-slate-500 mt-1"></p>
+        </div>
+        <div class="flex gap-1">
+         <button id="renameSession" class="icon-button" aria-label="Rename session"><i data-lucide="pencil" width="14"></i></button><button id="snapshotBtn" class="icon-button" aria-label="Create snapshot"><i data-lucide="camera" width="14"></i></button><button id="forkBtn" class="icon-button" aria-label="Fork session"><i data-lucide="git-fork" width="14"></i></button><button id="exportBtn" class="icon-button" aria-label="Export session"><i data-lucide="download" width="14"></i></button><button id="sessionMore" class="icon-button" aria-label="More session actions"><i data-lucide="ellipsis" width="14"></i></button>
+        </div>
+       </header>
+       <div id="messageList" class="message-list"></div>
+       <div id="emptyState" class="max-w-[720px] mx-auto mt-16 px-5 text-center hidden">
+        <div class="nova-mark mx-auto mb-4">
+         <i data-lucide="bot" width="16"></i>
+        </div>
+        <h2 data-template-id="empty-heading" class="canva-text font-semibold" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 24px;">Begin in private.</h2>
+        <p data-template-id="empty-copy" class="canva-text text-slate-400 mt-2" style="color: rgb(139, 152, 167); font-weight: 400; font-style: normal; font-size: 16px;">Ask NOVA to work with the context you choose. This interface simulates local inference.</p>
+        <div class="grid sm:grid-cols-2 gap-3 mt-6 text-left"><button class="quick-card panel p-3" data-prompt="Summarize the key documents in my local folder."><strong>Summarize a local folder</strong><span class="block text-xs text-slate-500 mt-1">Map files into a brief.</span></button> <button class="quick-card panel p-3" data-prompt="Analyze this private codebase and identify its architecture."><strong>Analyze a codebase</strong><span class="block text-xs text-slate-500 mt-1">Find patterns and risks.</span></button> <button class="quick-card panel p-3" data-prompt="Draft a concise project update from my private notes."><strong>Draft from private notes</strong><span class="block text-xs text-slate-500 mt-1">Turn context into clarity.</span></button> <button class="quick-card panel p-3" data-prompt="Run a local model benchmark and summarize the results."><strong>Run a model benchmark</strong><span class="block text-xs text-slate-500 mt-1">Measure local performance.</span></button>
+        </div>
+       </div>
+       <div class="composer-wrap">
+        <div class="composer">
+         <div id="contextChips" class="flex gap-1 flex-wrap px-1 pb-2"></div><label for="composer" class="sr-only">Message NOVA</label><textarea id="composer" placeholder="Message NOVA locally…"></textarea>
+         <div class="flex items-center justify-between gap-2 pt-2">
+          <div class="flex gap-2">
+           <button id="attachBtn" class="icon-button" aria-label="Attach local file"><i data-lucide="paperclip" width="15"></i></button><button id="voiceBtn" class="icon-button" aria-label="Toggle voice state"><i data-lucide="mic" width="15"></i></button><button id="retrievalToggle" class="quiet-button mono text-[9px]">RAG ON</button>
+          </div>
+          <div class="flex gap-2">
+           <select id="seedSelect" class="rounded border border-slate-700 bg-transparent p-2 mono text-[10px]" aria-label="Generation seed"><option value="auto">SEED AUTO</option><option value="42">SEED 42</option><option value="777">SEED 777</option></select><button id="composerModel" class="quiet-button mono text-[10px]">MODEL</button><button id="sendBtn" class="action-button" aria-label="Run prompt"><i data-lucide="arrow-up" width="15"></i></button>
+          </div>
+         </div>
+        </div>
+        <div class="max-w-[850px] mx-auto mt-2 flex justify-between mono text-[9px] text-slate-600">
+         <span id="generationStatus">SIMULATED LOCAL INFERENCE</span><span id="tokenCounter">0 TOKENS</span>
+        </div>
+       </div>
+      </section>
+      <aside id="inspector" class="inspector" aria-label="Context inspector">
+       <div class="flex justify-between items-center mb-3">
+        <h2 data-template-id="inspector-heading" class="canva-text font-semibold" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 24px;">Context inspector</h2><button id="closeInspector" class="icon-button drawer-close" aria-label="Close inspector"><i data-lucide="x" width="14"></i></button>
+       </div>
+       <div id="inspectorTabs" class="flex overflow-auto border-b border-slate-800 mb-3">
+        <button class="tab active" data-tab="context">CONTEXT</button><button class="tab" data-tab="sources">SOURCES</button><button class="tab" data-tab="files">FILES</button><button class="tab" data-tab="retrieval">RAG</button><button class="tab" data-tab="inference">INFER</button><button class="tab" data-tab="runtime">RUNTIME</button><button class="tab" data-tab="trace">TRACE</button>
+       </div>
+       <section id="tab-context" class="tab-panel active">
+        <div class="panel p-3">
+         <div class="flex justify-between">
+          <span class="label">Token debugger</span><span id="contextUsage" class="mono text-[10px] text-amber-300">12,841 / 32,768</span>
+         </div>
+         <div class="progress mt-3">
+          <span id="contextBar" style="width:39%"></span>
+         </div>
+         <div id="contextBreakdown" class="space-y-2 mt-4 text-xs"></div>
+         <p id="budgetWarning" class="text-xs text-amber-200 mt-3 hidden">Context budget warning: over 80% allocated.</p>
+        </div>
+        <div class="panel p-3 mt-3">
+         <div class="label mb-2">
+          Privacy runtime
+         </div>
+         <div id="privacyReadout" class="text-xs space-y-2"></div>
+        </div>
+       </section>
+       <section id="tab-sources" class="tab-panel">
+        <div class="panel p-3">
+         <div class="label mb-3">
+          Selected provenance
+         </div>
+         <div id="sourceList" class="space-y-2 text-xs"></div><button id="graphBtn" class="quiet-button text-xs mt-3">Expand provenance graph</button>
+         <div id="provenanceGraph" class="hidden mono text-[9px] text-slate-400 mt-3 leading-6">
+          query<br>
+          └─ candidate chunks (8)<br>
+          &nbsp;&nbsp;├─ private-notes.md#18<br>
+          &nbsp;&nbsp;└─ architecture-map.pdf#42<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;└─ prompt / retrieved context
+         </div>
+        </div>
+       </section>
+       <section id="tab-files" class="tab-panel">
+        <button id="dropZone" class="panel w-full p-4 border-dashed text-center"><i data-lucide="folder-up" width="18" class="mx-auto text-amber-300"></i><span class="block text-xs mt-2">Add local file or folder</span><span class="mono text-[9px] text-slate-500">INDEXED IN THIS WORKSPACE</span></button>
+        <div id="fileList" class="space-y-2 mt-3"></div>
+       </section>
+       <section id="tab-retrieval" class="tab-panel">
+        <div class="panel p-3">
+         <div class="label mb-3">
+          Source weighting
+         </div><label class="text-xs">Private notes <input class="range mt-1" type="range" value="80"></label><label class="text-xs block mt-3">Architecture <input class="range mt-1" type="range" value="64"></label>
+         <div class="flex flex-wrap gap-1 mt-3">
+          <span class="chip">private-notes</span><span class="chip">codebase</span><span class="chip">research</span>
+         </div>
+        </div>
+       </section>
+       <section id="tab-inference" class="tab-panel">
+        <div class="panel p-3 space-y-3">
+         <label class="block text-xs">Temperature <span id="tempValue" class="float-right mono text-amber-300">0.7</span><input id="tempRange" class="range mt-1" type="range" min="0" max="1.5" step=".1"></label><label class="block text-xs">Top P <span id="topValue" class="float-right mono text-amber-300">0.9</span><input id="topRange" class="range mt-1" type="range" min=".1" max="1" step=".1"></label><label class="block text-xs">Top K <span id="topKValue" class="float-right mono text-amber-300">40</span><input id="topKRange" class="range mt-1" type="range" min="1" max="100"></label><label class="block text-xs">Repeat penalty <span id="repeatValue" class="float-right mono text-amber-300">1.1</span><input id="repeatRange" class="range mt-1" type="range" min="1" max="1.5" step=".1"></label><label class="block text-xs">Max output <span id="maxValue" class="float-right mono text-amber-300">768</span><input id="maxRange" class="range mt-1" type="range" min="128" max="2048" step="128"></label>
+         <div class="flex justify-between text-xs">
+          <span>Streaming</span><button id="streamToggle" class="toggle on" aria-label="Toggle streaming"></button>
+         </div>
+        </div>
+       </section>
+       <section id="tab-runtime" class="tab-panel">
+        <div id="inspectorTelemetry" class="grid grid-cols-2 gap-2"></div>
+       </section>
+       <section id="tab-trace" class="tab-panel">
+        <div id="miniTrace" class="panel p-3 mono text-[9px] leading-5 text-slate-400"></div>
+       </section>
+      </aside>
+     </section>
+     <section id="knowledgeView" class="view">
+      <div class="flex flex-wrap justify-between gap-4">
+       <div>
+        <p class="label">Local RAG workbench</p>
+        <h1 data-template-id="knowledge-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Knowledge</h1>
+       </div><button id="indexBtn" data-template-id="index-button" class="canva-button action-button" style="background: rgb(245, 171, 53); color: rgb(33, 22, 10); font-weight: 700; font-style: normal; font-size: 16px;">Index folder</button>
+      </div>
+      <div class="flex gap-2 overflow-auto mt-5">
+       <button class="quiet-button text-xs knowledge-sub active">Collections</button><button class="quiet-button text-xs knowledge-sub">Files</button><button class="quiet-button text-xs knowledge-sub">Index</button><button class="quiet-button text-xs knowledge-sub">Chunks</button><button class="quiet-button text-xs knowledge-sub">Embeddings</button>
+      </div>
+      <div id="indexProgress" class="hidden panel p-4 mt-4">
+       <div class="flex justify-between text-sm">
+        <span id="indexLabel">Indexing selected local folder</span><span id="indexPct" class="mono text-amber-300">0%</span>
+       </div>
+       <div class="progress mt-3">
+        <span id="indexBar"></span>
+       </div>
+       <div class="flex gap-2 mt-3">
+        <button id="pauseIndex" class="quiet-button text-xs">Pause</button><button id="cancelIndex" class="quiet-button text-xs">Cancel</button>
+       </div>
+      </div>
+      <div id="knowledgeCards" class="grid md:grid-cols-3 gap-4 mt-5"></div>
+      <section class="panel p-4 mt-5 overflow-auto">
+       <h2 class="font-semibold text-sm">Chunk explorer</h2>
+       <div id="chunkTable" class="mt-3 min-w-[650px] text-xs"></div>
+      </section>
+     </section>
+     <section id="retrievalView" class="view">
+      <p class="label">Local retrieval evaluation</p>
+      <h1 data-template-id="retrieval-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Retrieval Lab</h1>
+      <div class="panel p-4 mt-5">
+       <label for="retrievalQuery" class="text-xs">Query</label>
+       <div class="flex gap-2 mt-2">
+        <input id="retrievalQuery" class="flex-1 rounded border border-slate-700 bg-transparent p-2 text-sm" value="Summarize architecture decisions from private notes."><select id="collectionSelect" class="rounded border border-slate-700 bg-transparent p-2 text-xs"><option>All collections</option><option>private-notes</option><option>codebase</option></select><button id="runRetrieval" class="action-button text-xs">Run retrieval</button>
+       </div>
+       <div class="flex gap-3 mt-4 text-xs">
+        <label>Rerank <button id="rerankToggle" class="toggle on" aria-label="Toggle reranking"></button></label><span class="chip">EST. 1,120 TOKENS</span>
+       </div>
+      </div>
+      <div id="retrievalResults" class="grid lg:grid-cols-2 gap-4 mt-5"></div>
+     </section>
+     <section id="automationsView" class="view">
+      <p class="label">Local jobs</p>
+      <h1 data-template-id="automations-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Automations</h1>
+      <div id="automationList" class="grid lg:grid-cols-2 gap-4 mt-5"></div>
+      <section class="panel p-4 mt-5">
+       <h2 class="font-semibold text-sm">Jobs</h2>
+       <div id="runHistory" class="mt-3 space-y-2 text-xs"></div>
+      </section>
+     </section>
+     <section id="evaluationsView" class="view">
+      <p class="label">Experiment comparison · simulated</p>
+      <h1 data-template-id="evaluations-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Evaluations</h1>
+      <div class="panel p-4 mt-5 flex flex-wrap gap-3 items-end">
+       <label class="text-xs">A model<select id="evalModelA" class="block mt-1 bg-transparent border border-slate-700 rounded p-2"><option>Llama 3.1 8B</option><option>Mistral 7B</option></select></label><label class="text-xs">B model<select id="evalModelB" class="block mt-1 bg-transparent border border-slate-700 rounded p-2"><option>Phi-3 Mini</option><option>WebGPU demo</option></select></label><label class="text-xs">Dataset<select class="block mt-1 bg-transparent border border-slate-700 rounded p-2"><option>Private RAG QA</option><option>Code reasoning</option></select></label><button id="runEval" class="action-button text-xs">Run evaluation</button>
+      </div>
+      <div id="evaluationCards" class="grid md:grid-cols-3 gap-4 mt-5"></div>
+      <div id="comparisonTable" class="panel p-4 mt-5 overflow-auto"></div>
+     </section>
+     <section id="runtimeView" class="view">
+      <p class="label">Simulated local runtime</p>
+      <h1 data-template-id="runtime-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Runtime</h1>
+      <div id="runtimeCards" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5"></div>
+     </section>
+     <section id="traceView" class="view">
+      <div class="flex flex-wrap gap-3 justify-between">
+       <div>
+        <p class="label">Observable events</p>
+        <h1 data-template-id="trace-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Activity / Trace</h1>
+       </div><button id="clearTrace" class="quiet-button text-xs">Clear log</button>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-5" id="traceFilters"></div><label for="traceSearch" class="sr-only">Search runtime events</label><input id="traceSearch" class="mt-4 w-full rounded border border-slate-700 bg-transparent p-2 text-sm" placeholder="Search events">
+      <div id="traceLog" class="panel p-4 mt-4 mono text-[10px] leading-6"></div>
+     </section>
+     <section id="diagnosticsView" class="view">
+      <p class="label">Runtime readiness</p>
+      <h1 data-template-id="diagnostics-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Diagnostics</h1><button id="runDiagnostics" class="action-button text-xs mt-5"><i data-lucide="play" width="14"></i>Run diagnostics</button>
+      <div id="diagnosticList" class="grid md:grid-cols-2 gap-4 mt-5"></div>
+     </section>
+     <section id="settingsView" class="view">
+      <p class="label">Console configuration</p>
+      <h1 data-template-id="settings-title" class="canva-text font-semibold mt-1" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 32px;">Settings</h1>
+      <div class="grid lg:grid-cols-2 gap-4 mt-5">
+       <section class="panel p-4">
+        <h2 class="font-semibold">Privacy</h2><label class="block text-xs mt-3">Runtime policy<select id="privacySelect" class="block w-full mt-2 rounded border border-slate-700 bg-transparent p-2"><option>LOCAL ONLY</option><option>NETWORK ALLOWED</option><option>REMOTE MODEL</option></select></label>
+        <div class="flex justify-between mt-3 text-xs">
+         <span>Telemetry</span><button id="telemetryToggle" class="toggle" aria-label="Toggle telemetry"></button>
+        </div>
+       </section>
+       <section class="panel p-4">
+        <h2 class="font-semibold">Appearance</h2>
+        <div class="flex justify-between mt-3 text-xs">
+         <span>Grid texture</span><button id="gridToggle" class="toggle on" aria-label="Toggle grid texture"></button>
+        </div>
+        <div class="flex justify-between mt-3 text-xs">
+         <span>Reduced motion</span><button id="motionToggle" class="toggle" aria-label="Toggle reduced motion"></button>
+        </div>
+        <div class="flex justify-between mt-3 text-xs">
+         <span>Compact density</span><button id="densityToggle" class="toggle" aria-label="Toggle compact density"></button>
+        </div>
+       </section>
+       <section class="panel p-4">
+        <h2 class="font-semibold">Shortcuts</h2>
+        <p class="mono text-xs text-slate-400 mt-3">⌘ / CTRL + K — command palette<br>
+         ENTER — run prompt<br>
+         SHIFT + ENTER — newline<br>
+         ESC — close overlays</p>
+       </section>
+       <section class="panel p-4">
+        <h2 class="font-semibold">Storage</h2>
+        <p id="storageDetail" class="text-xs text-slate-400 mt-3">Workspace state is available locally.</p><button id="resetDemo" class="quiet-button text-xs mt-3 text-red-200">Reset demo data</button>
+       </section>
+      </div>
+     </section>
+    </main>
+    <footer id="footerNote" data-template-id="footer-note" class="canva-footer mono text-center text-[10px] text-slate-600 border-t border-slate-800" style="color: rgb(100, 113, 128); font-weight: 400; font-style: normal; font-size: 10px;">Prototype runtime • No data leaves this workspace</footer>
+   </section>
+  </div>
+  <div id="modelModal" class="modal" role="dialog" aria-modal="true" aria-label="Model registry">
+   <div class="modal-card">
+    <div class="p-5 border-b border-slate-700 flex justify-between">
+     <div>
+      <h2 data-template-id="model-modal-title" class="canva-text font-semibold" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 24px;">Local model registry</h2>
+      <p class="text-xs text-slate-500 mt-1">Lifecycle actions are deterministic simulated local operations.</p>
+     </div><button class="icon-button modal-close" aria-label="Close"><i data-lucide="x" width="15"></i></button>
+    </div>
+    <div id="modelList" class="p-4 grid gap-3"></div>
+   </div>
+  </div>
+  <div id="commandModal" class="modal" role="dialog" aria-modal="true" aria-label="Command palette">
+   <div class="modal-card">
+    <div class="p-4 border-b border-slate-700">
+     <label for="commandSearch" class="sr-only">Command search</label><input id="commandSearch" class="w-full bg-transparent outline-none" placeholder="Type a command…">
+    </div>
+    <div id="commandList"></div>
+   </div>
+  </div>
+  <div id="exportModal" class="modal" role="dialog" aria-modal="true" aria-label="Export session">
+   <div class="modal-card p-5">
+    <div class="flex justify-between">
+     <div>
+      <h2 data-template-id="export-title" class="canva-text font-semibold" style="color: rgb(240, 243, 245); font-weight: 600; font-style: normal; font-size: 24px;">Export session</h2>
+      <p class="text-xs text-slate-500 mt-1">A prototype export is prepared in the active workspace.</p>
+     </div><button class="icon-button modal-close" aria-label="Close"><i data-lucide="x" width="15"></i></button>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mt-5">
+     <button class="panel p-3 export-choice" data-format="JSON">JSON</button><button class="panel p-3 export-choice" data-format="Markdown">Markdown</button><button class="panel p-3 export-choice" data-format="Text">Plain text</button>
+    </div>
+   </div>
+  </div>
+  <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-label="Confirm action">
+   <div class="modal-card p-5">
+    <h2 id="confirmTitle" class="font-semibold">Confirm action</h2>
+    <p id="confirmCopy" class="text-sm text-slate-400 mt-2"></p>
+    <div class="flex justify-end gap-2 mt-5">
+     <button id="confirmCancel" class="quiet-button text-xs">Cancel</button><button id="confirmAccept" class="action-button text-xs">Confirm</button>
+    </div>
+   </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/_sdk/272ef45b59d4dc52.editing_sdk.js" integrity="sha512-jXJGUPqNpp7UF5Lx24vFZkryVpYX2oQEfyTWbRvdQf5fKZknlCTQbgKcvJ3KXYQnORmtnADU8wvkguAYAq4PNw=="></script>
+  <script>
+    const $=id=>document.getElementById(id);
+    const now=()=>new Date().toISOString();
+    const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
+    const escape=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+    const stateNames=["IDLE","PREPARING","RETRIEVING","PREFILL","GENERATING","TOOL/RUNTIME","COMPLETE","QUEUED","CANCELLING","CANCELLED","ERROR"];
+    const models=[
+      {id:"llama",name:"Llama 3.1 8B Instruct",runtime:"llama.cpp",format:"GGUF",quant:"Q4_K_M",params:"8B",disk:"4.9 GB",ram:"6.8 GB",ctx:"32,768",gpu:"24",prompt:"182",speed:"43.7",ttft:"246",status:"LOADED"},
+      {id:"mistral",name:"Mistral 7B Instruct",runtime:"llama.cpp",format:"GGUF",quant:"Q5_K_M",params:"7B",disk:"5.2 GB",ram:"7.4 GB",ctx:"32,768",gpu:"18",prompt:"156",speed:"38.4",ttft:"274",status:"AVAILABLE"},
+      {id:"phi",name:"Phi-3 Mini",runtime:"onnx",format:"ONNX",quant:"INT4",params:"3.8B",disk:"2.4 GB",ram:"4.1 GB",ctx:"16,384",gpu:"12",prompt:"205",speed:"52.1",ttft:"181",status:"AVAILABLE"},
+      {id:"webgpu",name:"WebGPU demo model",runtime:"WebGPU",format:"WebLLM",quant:"Q4",params:"1.7B",disk:"1.1 GB",ram:"2.8 GB",ctx:"8,192",gpu:"100",prompt:"78",speed:"20.6",ttft:"412",status:"UNLOADED"}
+    ];
+    const defaultPrefs={privacy:"LOCAL ONLY",telemetry:false,grid:true,reduced:false,dense:false,retrieval:true,streaming:true,temperature:.7,topP:.9,topK:40,repeat:1.1,maxTokens:768,seed:"auto",modelId:"llama",view:"console"};
+    let prefs={...defaultPrefs},sessions=[],activeSessionId=null,events=[],runtime={state:"IDLE",phase:"awaiting prompt",started:0,paused:false},generation=null,db=null,records=[];
+    const memory={};
+    function toast(message){const t=$("toast");t.textContent=message;t.classList.add("show");clearTimeout(t.timer);t.timer=setTimeout(()=>t.classList.remove("show"),2500)}
+    function localKey(store){return "nova.v3."+store}
+    async function openRepo(){return new Promise(resolve=>{try{const req=indexedDB.open("nova_local_console",1);req.onupgradeneeded=e=>e.target.result.createObjectStore("stores");req.onsuccess=e=>{db=e.target.result;resolve(true)};req.onerror=()=>resolve(false)}catch(e){resolve(false)}})}
+    async function readStore(store){if(db)return new Promise(resolve=>{const tx=db.transaction("stores","readonly");const r=tx.objectStore("stores").get(store);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>resolve(null)});try{return JSON.parse(localStorage.getItem(localKey(store))||"null")}catch{return null}}
+    async function writeStore(store,value){memory[store]=value;if(db)return new Promise(resolve=>{const tx=db.transaction("stores","readwrite");tx.objectStore("stores").put(value,store);tx.oncomplete=()=>resolve();tx.onerror=()=>resolve()});localStorage.setItem(localKey(store),JSON.stringify(value))}
+    async function persist(){await writeStore("sessions",sessions);await writeStore("preferences",prefs);await writeStore("runtimeEvents",events);await writeStore("runtimeState",runtime);await writeStore("models",models);await writeStore("modelProfiles",{balanced:{name:"Balanced local",adapter:"llama.cpp",sampling:"0.7 / 0.9"}});await writeStore("knowledge",{collections:["private-notes","codebase","research"]});await writeStore("documents",files);await writeStore("chunks",chunks);await writeStore("automations",automations);await writeStore("evaluations",evaluations);await writeStore("telemetry",telemetry)}
+    function seedData(){
+      sessions=[{id:"s1",title:"Architecture review",pinned:true,archived:false,tags:["codebase"],updated:now(),messages:[{role:"user",content:"Map the architecture decisions in the private codebase."},{role:"assistant",content:"I assembled a local evidence map across the selected architecture notes. The system separates ingestion, retrieval, runtime orchestration, and the visible console. The strongest recommendation is to keep runtime state observable and context selection explicit.",stats:{prompt:12841,completion:167,ttft:246,speed:"43.7",seed:"auto"},sources:true}]}];
+      activeSessionId="s1";events=["06:07:21.041 SESSION prompt submitted","06:07:21.043 CONTEXT 12,841 tokens assembled","06:07:21.057 RETRIEVAL searching 3 collections","06:07:21.091 RETRIEVAL 8 chunks → 4 selected","06:07:21.104 MODEL llama-3.1-8b-q4 loaded","06:07:21.127 PREFILL started","06:07:21.286 GENERATION first token","06:07:21.287 METRIC TTFT 246 ms","06:07:22.811 METRIC 43.7 tok/s","06:07:25.102 COMPLETE 167 tokens"];
+    }
+    const files=[{name:"private-notes.md",size:"182 KB",type:"MD",chunks:18,status:"indexed"},{name:"architecture-map.pdf",size:"2.4 MB",type:"PDF",chunks:42,status:"indexed"},{name:"local-research.txt",size:"68 KB",type:"TXT",chunks:9,status:"indexed"}];
+    const chunks=[["private-notes.md","chunk_018","Runtime boundaries and prompt assembly procedures.","214","0.94"],["architecture-map.pdf","chunk_042","The console surfaces local model execution state.","382","0.89"],["local-research.txt","chunk_009","Privacy requirements and retrieval provenance.","164","0.81"]];
+    const automations=[{name:"Watch private folder",trigger:"On folder change",model:"Llama 3.1 8B",collections:"private-notes",status:"Enabled",last:"Today 06:01",next:"On change",duration:"18s",tokens:"344"},{name:"Daily local brief",trigger:"Daily 09:00",model:"Phi-3 Mini",collections:"research",status:"Draft",last:"Never",next:"—",duration:"—",tokens:"—"}];
+    const evaluations=[{name:"Evaluation #024",model:"Llama 3.1 8B",dataset:"Private RAG QA",accuracy:"92%",grounded:"96%",citation:"94%",ttft:"246 ms",decode:"43.7",ram:"6.8 GB",vram:"4.1 GB"}];
+    const telemetry={cpu:"18%",ram:"11.2 GB",gpu:"41%",vram:"4.1 GB",prompt:"182 tok/s",decode:"43.7 tok/s",ttft:"246 ms",queue:"0",thermal:"Nominal",kv:"39%",load:"100%",profile:"Balanced local"};
+
+    function session(){return sessions.find(s=>s.id===activeSessionId)}
+    function model(){return models.find(m=>m.id===prefs.modelId)||models[0]}
+    function stamp(type,text){const d=new Date();const time=d.toTimeString().slice(0,8)+"."+String(d.getMilliseconds()).padStart(3,"0");events.unshift(`${time} ${type} ${text}`);if(events.length>120)events.pop();persist();renderTrace()}
+    function setRuntime(state,phase){runtime.state=state;runtime.phase=phase;runtime.started=Date.now();const badge=$("runtimeBadge");badge.textContent=state;badge.className="canva-tag runtime-badge "+(state==="COMPLETE"?"complete":state==="ERROR"||state==="CANCELLED"?"error":"");$("runtimePhase").textContent=phase;$("cancelBtn").classList.toggle("hidden",!["PREPARING","RETRIEVING","PREFILL","GENERATING","CANCELLING"].includes(state));$("pauseBtn").classList.toggle("hidden",state!=="GENERATING");$("eventPulse").style.background=state==="ERROR"? "var(--red)":state==="COMPLETE"?"var(--green)":"var(--amber)";persist()}
+    function tick(){if(runtime.state!=="IDLE"&&!runtime.paused){const ms=Date.now()-runtime.started;$("runtimeElapsed").textContent=`${String(Math.floor(ms/60000)).padStart(2,"0")}:${String(Math.floor(ms/1000)%60).padStart(2,"0")}.${String(ms%1000).padStart(3,"0")}`}}setInterval(tick,60);
+    function render(){
+      document.body.classList.toggle("no-grid",!prefs.grid);document.body.classList.toggle("dense",prefs.dense);document.body.classList.toggle("reduce-motion",prefs.reduced);
+      $("privacySelect").value=prefs.privacy;$("activeModelTop").textContent=model().name;$("composerModel").textContent=model().name.toUpperCase();$("retrievalToggle").textContent=prefs.retrieval?"RAG ON":"RAG OFF";$("seedSelect").value=prefs.seed;
+      [$("telemetryToggle"),$("gridToggle"),$("motionToggle"),$("densityToggle"),$("streamToggle")].forEach((el,i)=>el.classList.toggle("on",[prefs.telemetry,prefs.grid,prefs.reduced,prefs.dense,prefs.streaming][i]));
+      renderSessions();renderMessages();renderInspector();renderKnowledge();renderAutomations();renderEvaluations();renderRuntime();renderDiagnostics();renderTrace();
+      $("footerNote").textContent=prefs.privacy==="LOCAL ONLY"?"Prototype runtime • No data leaves this workspace":prefs.privacy==="NETWORK ALLOWED"?"Prototype runtime • Network access enabled":"Prototype runtime • Remote model active";
+    }
+    function renderSessions(){
+      const q=$("sessionSearch").value.toLowerCase();const groups=[["PINNED",sessions.filter(s=>s.pinned&&!s.archived)],["TODAY",sessions.filter(s=>!s.pinned&&!s.archived)],["ARCHIVED",sessions.filter(s=>s.archived)]];
+      $("sessionCount").textContent=sessions.length; $("sessionList").innerHTML=groups.map(([name,list])=>list.filter(s=>s.title.toLowerCase().includes(q)).length?`<div class="label mt-4 mb-1">${name}</div>`+list.filter(s=>s.title.toLowerCase().includes(q)).map(s=>`<div class="session ${s.id===activeSessionId?"selected":""}" data-session="${s.id}"><div class="flex gap-2 items-center"><i data-lucide="${s.pinned?"pin":"message-square"}" width="13" class="text-amber-300"></i><span class="flex-1 truncate text-sm">${escape(s.title)}</span><button class="session-menu icon-button !w-6 !h-6" data-id="${s.id}" aria-label="Session actions"><i data-lucide="ellipsis" width="12"></i></button></div><div class="mono text-[9px] text-slate-500 mt-1">${s.tags.join(" · ")||"local"} · ${s.messages.length} msgs</div></div>`).join(""):"").join("");
+      document.querySelectorAll("[data-session]").forEach(el=>el.onclick=e=>{if(e.target.closest("button"))return;activeSessionId=el.dataset.session;render();persist()});
+      document.querySelectorAll(".session-menu").forEach(b=>b.onclick=e=>{e.stopPropagation();sessionAction(b.dataset.id)});lucide.createIcons();
+    }
+    function renderMessages(){
+      const s=session();if(!s)return; $("sessionTitle").textContent=s.title;$("pinnedMark").classList.toggle("hidden",!s.pinned);$("sessionMeta").textContent=`${model().name} · balanced profile · ${s.archived?"ARCHIVED":"ACTIVE"}`;
+      $("emptyState").classList.toggle("hidden",s.messages.length>0);$("messageList").innerHTML=s.messages.map((m,i)=>`<article class="message ${m.role}"><div class="flex justify-between mb-2"><span class="label">${m.role==="user"?"YOU":"NOVA / LOCAL"}</span>${m.role==="assistant"?`<div class="message-tools flex gap-1"><button class="icon-button !w-7 !h-7 msg-copy" data-i="${i}" aria-label="Copy"><i data-lucide="copy" width="12"></i></button><button class="icon-button !w-7 !h-7 msg-regenerate" data-i="${i}" aria-label="Regenerate"><i data-lucide="refresh-cw" width="12"></i></button><button class="icon-button !w-7 !h-7 msg-branch" data-i="${i}" aria-label="Branch from message"><i data-lucide="git-fork" width="12"></i></button><button class="icon-button !w-7 !h-7 msg-context" aria-label="Inspect context"><i data-lucide="scan-search" width="12"></i></button></div>`:""}</div><div class="bubble">${escape(m.content)}</div>${m.role==="assistant"&&m.stats?`<div class="panel p-3 mt-2 text-[10px]"><div class="flex flex-wrap gap-x-4 gap-y-1 mono text-slate-400"><span>PROMPT ${m.stats.prompt}</span><span>COMPLETION ${m.stats.completion}</span><span>TTFT ${m.stats.ttft}MS</span><span>DECODE ${m.stats.speed} TOK/S</span><span>SEED ${m.stats.seed}</span><span>PROFILE BALANCED</span></div>${m.sources?`<details class="mt-3"><summary class="cursor-pointer text-xs text-amber-200">Retrieved context · 4 passages</summary><div class="mt-2 space-y-2 text-xs text-slate-400"><div class="metric">private-notes.md · chunk_018 · similarity 0.94 · 214 tokens · selected for runtime boundaries</div><div class="metric">architecture-map.pdf · chunk_042 · similarity 0.89 · 382 tokens · selected for interface evidence</div></div></details>`:""}</div>`:""}</article>`).join("");
+      document.querySelectorAll(".msg-copy").forEach(b=>b.onclick=()=>navigator.clipboard?.writeText(s.messages[b.dataset.i].content).then(()=>toast("Response copied.")));
+      document.querySelectorAll(".msg-regenerate").forEach(b=>b.onclick=()=>regenerate(Number(b.dataset.i)));
+      document.querySelectorAll(".msg-branch").forEach(b=>b.onclick=()=>forkSession(Number(b.dataset.i)));
+      document.querySelectorAll(".msg-context").forEach(b=>b.onclick=()=>{openInspector("context");toast("Context debugger opened.");}); $("messageList").scrollTop=$("messageList").scrollHeight;lucide.createIcons();
+    }
+    function renderInspector(){
+      const used=Math.min(32768,12841+(session()?.messages.length||0)*620+files.length*90);const pct=Math.round(used/32768*100);$("contextUsage").textContent=`${used.toLocaleString()} / 32,768`;$("contextBar").style.width=pct+"%";$("contextBar").style.background=pct>=100?"var(--red)":pct>80?"var(--amber)":"var(--amber)";$("budgetWarning").classList.toggle("hidden",pct<80);
+      $("contextBreakdown").innerHTML=[["System","1,482"],["Conversation",String(3291+(session()?.messages.length||0)*312)],["Retrieved context",prefs.retrieval?"5,328":"0"],["Files","1,104"],["Instructions","1,636"]].map(x=>`<div class="flex justify-between"><span>${x[0]}</span><span class="mono text-slate-400">${x[1]}</span></div>`).join("");
+      $("privacyReadout").innerHTML=`<div>Local inference <b class="float-right text-green-300">${prefs.privacy==="REMOTE MODEL"?"DISABLED":"ENABLED"}</b></div><div>Local embeddings <b class="float-right text-green-300">ENABLED</b></div><div>Network <b class="float-right ${prefs.privacy==="LOCAL ONLY"?"text-green-300":"text-amber-200"}">${prefs.privacy==="LOCAL ONLY"?"DISABLED":"ENABLED"}</b></div><div>Telemetry <b class="float-right">${prefs.telemetry?"ENABLED":"DISABLED"}</b></div>`;
+      $("fileList").innerHTML=files.map((f,i)=>`<div class="panel p-2 text-xs"><div class="flex justify-between"><span>${f.name}</span><button class="remove-file text-red-200" data-i="${i}" aria-label="Remove file">×</button></div><div class="mono text-[9px] text-slate-500 mt-1">${f.size} · ${f.type} · ${f.chunks} chunks · ${f.status}</div></div>`).join("");
+      document.querySelectorAll(".remove-file").forEach(b=>b.onclick=()=>{files.splice(b.dataset.i,1);toast("File removed from local context.");render();persist()});
+      $("inspectorTelemetry").innerHTML=Object.entries(telemetry).slice(0,8).map(([k,v])=>`<div class="metric"><div class="label">${k}</div><div class="metric-value">${v}</div></div>`).join("");
+      $("miniTrace").innerHTML=events.slice(0,7).map(e=>`<div>${escape(e)}</div>`).join("");
+      [["tempRange","temperature","tempValue"],["topRange","topP","topValue"],["topKRange","topK","topKValue"],["repeatRange","repeat","repeatValue"],["maxRange","maxTokens","maxValue"]].forEach(([id,key,label])=>{$(id).value=prefs[key];$(label).textContent=prefs[key]});
+    }
+    function renderKnowledge(){$("knowledgeCards").innerHTML=[["private-notes","6 docs","18 chunks","healthy"],["codebase","12 docs","42 chunks","healthy"],["research","3 docs","9 chunks","ready"]].map(x=>`<article class="panel p-4"><div class="flex justify-between"><i data-lucide="database" width="17" class="text-amber-300"></i><span class="mono text-[9px] text-green-300">${x[3]}</span></div><h2 class="font-semibold text-sm mt-4">${x[0]}</h2><p class="mono text-[10px] text-slate-500 mt-2">${x[1]} · ${x[2]} · bge-small local</p><button class="quiet-button text-xs mt-4 reindex">Re-index</button></article>`).join("");$("chunkTable").innerHTML=chunks.map(c=>`<div class="grid grid-cols-5 gap-3 border-b border-slate-800 py-3"><span>${c[0]}</span><span class="mono">${c[1]}</span><span>${c[2]}</span><span>${c[3]} tok</span><span class="text-amber-200">${c[4]}</span></div>`).join("");document.querySelectorAll(".reindex").forEach(b=>b.onclick=startIndex);lucide.createIcons()}
+    function renderAutomations(){$("automationList").innerHTML=automations.map((a,i)=>`<article class="panel p-4"><div class="flex justify-between gap-4"><div><h2 class="font-semibold text-sm">${a.name}</h2><p class="text-xs text-slate-400 mt-1">${a.trigger} · ${a.model}</p></div><span class="runtime-badge ${a.status==="Enabled"?"complete":""}">${a.status.toUpperCase()}</span></div><div class="grid grid-cols-2 gap-2 mt-4 text-[10px] mono text-slate-400"><span>COLL ${a.collections}</span><span>LAST ${a.last}</span><span>NEXT ${a.next}</span><span>TOK ${a.tokens}</span></div><div class="flex gap-2 mt-4"><button class="quiet-button text-xs auto-toggle" data-i="${i}">Edit / ${a.status==="Enabled"?"Disable":"Enable"}</button><button class="quiet-button text-xs auto-duplicate" data-i="${i}">Duplicate</button><button class="action-button text-xs auto-run" data-i="${i}">Run</button></div></article>`).join("");document.querySelectorAll(".auto-toggle").forEach(b=>b.onclick=()=>{let a=automations[b.dataset.i];a.status=a.status==="Enabled"?"Draft":"Enabled";renderAutomations();persist()});document.querySelectorAll(".auto-duplicate").forEach(b=>{b.onclick=()=>{let a=automations[b.dataset.i];automations.push({...a,name:a.name+" copy",status:"Draft"});renderAutomations();persist();toast("Automation duplicated.")}});document.querySelectorAll(".auto-run").forEach(b=>b.onclick=()=>runAutomation(Number(b.dataset.i)));lucide.createIcons()}
+    function renderEvaluations(){$("evaluationCards").innerHTML=evaluations.map(e=>`<article class="panel p-4"><span class="label">Simulated result</span><h2 class="font-semibold text-sm mt-2">${e.name}</h2><p class="text-xs text-slate-400 mt-2">${e.model} · ${e.dataset}</p><div class="text-2xl text-amber-200 font-semibold mt-4">${e.accuracy}</div><div class="progress mt-2"><span style="width:${e.accuracy}"></span></div><p class="mono text-[9px] text-slate-500 mt-3">GROUNDED ${e.grounded} · CITE ${e.citation}</p></article>`).join("");let e=evaluations[0];$("comparisonTable").innerHTML=`<h2 class="font-semibold text-sm mb-3">Comparison table</h2><table class="w-full min-w-[650px] text-xs"><thead class="text-slate-500"><tr><th class="text-left p-2">Model</th><th>Temp</th><th>Accuracy</th><th>Grounded</th><th>Citation</th><th>Avg TTFT</th><th>Decode</th><th>Peak RAM</th><th>Peak VRAM</th></tr></thead><tbody><tr><td class="p-2">${e.model}</td><td class="text-center">0.7</td><td class="text-center">${e.accuracy}</td><td class="text-center">${e.grounded}</td><td class="text-center">${e.citation}</td><td class="text-center">${e.ttft}</td><td class="text-center">${e.decode}</td><td class="text-center">${e.ram}</td><td class="text-center">${e.vram}</td></tr></tbody></table>`}
+    function renderRuntime(){$("runtimeCards").innerHTML=Object.entries(telemetry).map(([k,v],i)=>`<article class="panel p-4"><p class="label">${k}</p><div class="font-semibold mt-2">${v}</div><div class="spark mt-3">${[8,17,11,22,16,25,18,20].map((h,j)=>`<i style="height:${h+(i+j)%6}px"></i>`).join("")}</div></article>`).join("")}
+    function renderDiagnostics(){const checks=[["Model adapter","PASS"],["Embeddings","PASS"],["Storage","PASS"],["GPU availability","WARNING"],["Context capacity","PASS"],["Persistence health","PASS"],["Network policy",prefs.privacy==="LOCAL ONLY"?"DISABLED":"WARNING"]];$("diagnosticList").innerHTML=checks.map(c=>`<article class="panel p-4 flex justify-between"><span>${c[0]}</span><span class="mono text-[10px] ${c[1]==="PASS"?"text-green-300":c[1]==="WARNING"?"text-amber-200":"text-slate-500"}">${c[1]}</span></article>`).join("")}
+    function renderTrace(){const filter=window.traceFilter||"ALL",q=($("traceSearch")?.value||"").toLowerCase();$("traceFilters").innerHTML=["ALL","SESSION","MODEL","RAG","FILE","AUTOMATION","ERROR","METRIC"].map(x=>`<button class="quiet-button text-[10px] ${filter===x?"border-amber-500 text-amber-200":""}" data-filter="${x}">${x}</button>`).join("");if($("traceLog"))$("traceLog").innerHTML=events.filter(e=>(filter==="ALL"||e.includes(filter==="RAG"?"RETRIEVAL":filter))&&e.toLowerCase().includes(q)).map(e=>`<div>${escape(e)}</div>`).join("")||"<span class='text-slate-500'>No matching runtime events.</span>";document.querySelectorAll("[data-filter]").forEach(b=>b.onclick=()=>{window.traceFilter=b.dataset.filter;renderTrace()})}
+    function openInspector(tab){$("inspector").classList.add("open");document.querySelector(`.tab[data-tab="${tab}"]`).click()}
+    function openModal(id){$(id).classList.add("open")}function closeModals(){document.querySelectorAll(".modal").forEach(m=>m.classList.remove("open"))}
+    function confirmAction(title,copy,fn){$("confirmTitle").textContent=title;$("confirmCopy").textContent=copy;openModal("confirmModal");$("confirmAccept").onclick=()=>{closeModals();fn()}}
+    async function createSession(){const s={id:uid(),title:"New local session",pinned:false,archived:false,tags:["local"],updated:now(),messages:[]};sessions.unshift(s);activeSessionId=s.id;stamp("SESSION","new local session created");render();persist();toast("Fresh local session created.")}
+    function sessionAction(id){const s=sessions.find(x=>x.id===id);confirmAction(s.pinned?"Unpin session?":"Pin session?","This updates the local session grouping.",()=>{s.pinned=!s.pinned;render();persist()})}
+    function renameSession(){const s=session(),input=document.createElement("input");input.value=s.title;input.className="bg-transparent border border-amber-500 rounded p-1 text-sm";$("sessionTitle").replaceWith(input);input.focus();input.onkeydown=e=>{if(e.key==="Enter"){s.title=input.value.trim()||s.title;render();persist()}if(e.key==="Escape")render()};input.onblur=()=>{s.title=input.value.trim()||s.title;render();persist()}}
+    function forkSession(index){const s=session();const copy={...s,id:uid(),title:s.title+" / branch",pinned:false,messages:s.messages.slice(0,index+1),updated:now()};sessions.unshift(copy);activeSessionId=copy.id;stamp("SESSION","branch created from message");render();persist();toast("Session branch created.")}
+    function regenerate(index){session().messages.splice(index,1);render();startRun("regenerate local answer")}
+    function responseFor(prompt){return prompt.toLowerCase().includes("benchmark")?"The local benchmark completed against the selected prototype profile. Llama 3.1 8B maintained 43.7 decode tok/s with a 246 ms TTFT while preserving grounded references across the selected local corpus.":"I processed the request with deterministic local context. The assembled evidence emphasizes explicit boundaries, observable execution phases, and provenance for retrieved passages. No external service was required for this simulated response."}
+    function send(){const text=$("composer").value.trim();if(!text||generation)return;if(!session())createSession();session().messages.push({role:"user",content:text});session().title=session().title==="New local session"?text.slice(0,38):session().title;$("composer").value="";render();persist();startRun(text)}
+    function startRun(prompt){
+      const phases=[["PREPARING","assembling local request",210,"SESSION","prompt submitted"],...(prefs.retrieval?[["RETRIEVING","searching 3 local collections",290,"RETRIEVAL","8 chunks → 4 selected"]]:[]),["PREFILL","preparing selected context",210,"PREFILL","started"],["GENERATING","streaming simulated decode",0,"GENERATION","first token"]];let step=0;
+      function next(){if(!generation)return;let p=phases[step++];setRuntime(p[0],p[1]);stamp(p[3],p[4]);if(p[0]==="GENERATING")streamResponse(prompt);else generation.timer=setTimeout(next,p[2])} generation={timer:null,prompt};next();
+    }
+    function streamResponse(prompt){const full=responseFor(prompt),msg={role:"assistant",content:"",stats:{prompt:12841,completion:0,ttft:246,speed:model().speed,seed:prefs.seed==="auto"?"auto":prefs.seed},sources:prefs.retrieval};session().messages.push(msg);let i=0;generation.timer=setInterval(()=>{if(runtime.paused)return;i+=Math.max(3,Math.ceil(full.length/27));msg.content=full.slice(0,i);msg.stats.completion=Math.ceil(i/4);$("tokenCounter").textContent=`${msg.stats.completion} TOKENS`;renderMessages();if(i>=full.length){clearInterval(generation.timer);generation=null;msg.stats.completion=167;setRuntime("COMPLETE","local response complete");stamp("METRIC",`${model().speed} tok/s`);stamp("COMPLETE","167 tokens");$("generationStatus").textContent="LOCAL RESPONSE COMPLETE";render();persist()}},55)}
+    function cancelRun(){if(!generation)return;setRuntime("CANCELLING","draining decode queue");stamp("SESSION","cancellation requested");clearTimeout(generation.timer);clearInterval(generation.timer);setTimeout(()=>{generation=null;setRuntime("CANCELLED","generation cancelled");stamp("SESSION","generation cancelled");$("generationStatus").textContent="GENERATION STOPPED";render();persist()},220)}
+    function pauseRun(){if(runtime.state!=="GENERATING")return;runtime.paused=!runtime.paused;$("pauseText").textContent=runtime.paused?"Resume":"Pause";$("runtimePhase").textContent=runtime.paused?"generation paused":"streaming simulated decode";stamp("RUNTIME",runtime.paused?"generation paused":"generation resumed")}
+    function modelModal(){const list=$("modelList");list.innerHTML=models.map(m=>`<article class="panel p-4 ${m.id===model().id?"border-amber-500":""}"><div class="flex justify-between gap-4"><div><h3 class="font-semibold">${m.name}</h3><p class="mono text-[9px] text-slate-500 mt-1">${m.runtime} · ${m.format} · ${m.quant} · ${m.params}</p></div><span class="runtime-badge ${m.status==="LOADED"?"complete":""}">${m.status}</span></div><div class="grid grid-cols-3 gap-2 mt-4 text-[9px] mono text-slate-400"><span>DISK ${m.disk}</span><span>RAM ${m.ram}</span><span>CTX ${m.ctx}</span><span>GPU ${m.gpu}%</span><span>P ${m.prompt}</span><span>G ${m.speed} TOK/S</span><span>TTFT ${m.ttft}MS</span></div><div class="flex flex-wrap gap-2 mt-4"><button class="action-button text-xs model-select" data-id="${m.id}">Select</button><button class="quiet-button text-xs model-life" data-id="${m.id}">${m.status==="LOADED"?"Unload":"Load"}</button><button class="quiet-button text-xs model-progress" data-id="${m.id}">Benchmark</button><button class="quiet-button text-xs model-progress" data-id="${m.id}">Download</button><button class="quiet-button text-xs model-progress" data-id="${m.id}">Import</button><button class="quiet-button text-xs">Duplicate profile</button><button class="quiet-button text-xs model-reveal">Reveal file</button><button class="quiet-button text-xs model-delete text-red-200" data-id="${m.id}">Delete</button></div></article>`).join("");
+      document.querySelectorAll(".model-select").forEach(b=>b.onclick=()=>{prefs.modelId=b.dataset.id;stamp("MODEL",`${model().name} selected`);render();persist();closeModals();toast("Active local model updated.")});
+      document.querySelectorAll(".model-life").forEach(b=>b.onclick=()=>{let m=models.find(x=>x.id===b.dataset.id);m.status=m.status==="LOADED"?"UNLOADED":"LOADED";models.forEach(x=>{if(x.id!==m.id&&x.status==="LOADED")x.status="AVAILABLE"});toast(`${m.name} ${m.status.toLowerCase()}.`);modelModal();render();persist()});
+      document.querySelectorAll(".model-progress").forEach(b=>b.onclick=()=>simProgress(b,b.textContent+" simulation"));
+      document.querySelectorAll(".model-reveal").forEach(b=>b.onclick=()=>toast("Simulated local model directory revealed."));
+      document.querySelectorAll(".model-delete").forEach(b=>b.onclick=()=>confirmAction("Delete model profile?","The simulated model registry entry will be removed.",()=>{let i=models.findIndex(m=>m.id===b.dataset.id);if(i>=0)models.splice(i,1);prefs.modelId=models[0].id;closeModals();render();persist()}));openModal("modelModal");lucide.createIcons();
+    }
+    function simProgress(button,label){button.disabled=true;let p=0;const original=button.textContent;const t=setInterval(()=>{p+=20;button.textContent=`${label} ${p}%`;if(p>=100){clearInterval(t);button.disabled=false;button.textContent=original;toast(`${label} complete.`);stamp("MODEL",`${label} complete`) }},180)}
+    function startIndex(){let p=0,paused=false;$("indexProgress").classList.remove("hidden");const t=setInterval(()=>{if(paused)return;p+=10;$("indexPct").textContent=p+"%";$("indexBar").style.width=p+"%";if(p>=100){clearInterval(t);$("indexLabel").textContent="Local index complete";stamp("FILE","folder indexing completed");toast("Folder indexed locally.");persist()}},180);$("pauseIndex").onclick=()=>{paused=!paused;$("pauseIndex").textContent=paused?"Resume":"Pause"};$("cancelIndex").onclick=()=>{clearInterval(t);$("indexLabel").textContent="Indexing cancelled";stamp("FILE","folder indexing cancelled")}}
+    function runAutomation(i){const a=automations[i];a.status="Running";renderAutomations();stamp("AUTOMATION",`${a.name} queued`);setTimeout(()=>{a.status="Success";a.last="Just now";a.duration="12s";a.tokens="392";$("runHistory").insertAdjacentHTML("afterbegin",`<div class="flex justify-between"><span>${a.name}</span><span class="mono text-green-300">SUCCESS · 392 TOK</span></div>`);stamp("AUTOMATION",`${a.name} success`);renderAutomations();persist();toast("Automation job completed.")},850)}
+    function runEvaluation(){const b=$("runEval");simProgress(b,"Evaluation");stamp("METRIC","evaluation #025 queued");setTimeout(()=>{evaluations.unshift({name:"Evaluation #025",model:$("evalModelA").value,dataset:"Private RAG QA",accuracy:"94%",grounded:"97%",citation:"95%",ttft:"231 ms",decode:"45.1",ram:"6.9 GB",vram:"4.2 GB"});renderEvaluations();persist();toast("Simulated comparison available.")},1000)}
+    function commandPalette(){const commands=[["New session",createSession],["Open model registry",modelModal],["Open retrieval lab",()=>showView("retrieval")],["Open runtime",()=>showView("runtime")],["Export session",()=>openModal("exportModal")],["Run diagnostics",()=>showView("diagnostics")],["Toggle inspector",()=>$("inspector").classList.toggle("open")]];window.commands=commands;function draw(){const q=$("commandSearch").value.toLowerCase();$("commandList").innerHTML=commands.filter(c=>c[0].toLowerCase().includes(q)).map((c,i)=>`<button class="w-full text-left p-4 border-b border-slate-800 command-choice" data-i="${i}">${c[0]}</button>`).join("");document.querySelectorAll(".command-choice").forEach(b=>b.onclick=()=>{commands[b.dataset.i][1]();closeModals()})}$("commandSearch").value="";$("commandSearch").oninput=draw;draw();openModal("commandModal");$("commandSearch").focus()}
+    function showView(name){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(name+"View").classList.add("active");document.querySelectorAll(".nav-button").forEach(b=>b.classList.toggle("active",b.dataset.view===name));prefs.view=name;persist()}
+    async function init(){const indexed=await openRepo();$("storageStatus").textContent=indexed?"IndexedDB workspace":"local fallback";let stored=await readStore("sessions");let storedPrefs=await readStore("preferences");let storedEvents=await readStore("runtimeEvents");if(stored&&stored.length){sessions=stored;activeSessionId=sessions[0].id}else seedData();prefs={...defaultPrefs,...(storedPrefs||{})};events=storedEvents||events;setRuntime("IDLE","awaiting prompt");render();showView(prefs.view||"console");persist();if(window.dataSdk){const handler={onDataChanged(data){records=data}};const result=await window.dataSdk.init(handler);if(!result.isOk)toast("Canva Sheet bridge unavailable; local workspace remains active.")}}
+    $("newSessionBtn").onclick=createSession;$("sendBtn").onclick=send;$("composer").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}};$("sessionSearch").oninput=renderSessions;
+    $("composerModel").onclick=modelModal;$("commandBtn").onclick=commandPalette;$("cancelBtn").onclick=cancelRun;$("pauseBtn").onclick=pauseRun;$("retrievalToggle").onclick=()=>{prefs.retrieval=!prefs.retrieval;render();persist()};$("seedSelect").onchange=e=>{prefs.seed=e.target.value;persist()};$("attachBtn").onclick=()=>{files.push({name:"attached-local-notes.txt",size:"24 KB",type:"TXT",chunks:4,status:"selected"});$("contextChips").innerHTML='<span class="chip">attached-local-notes.txt ×</span>';renderInspector();persist();toast("Local file selected.")};$("voiceBtn").onclick=e=>{e.currentTarget.classList.toggle("text-amber-300");toast(e.currentTarget.classList.contains("text-amber-300")?"Voice state enabled.":"Voice state stopped.")};
+    document.querySelectorAll(".quick-card").forEach(b=>b.onclick=()=>{$("composer").value=b.dataset.prompt;send()});document.querySelectorAll(".nav-button").forEach(b=>b.onclick=()=>b.dataset.action==="search"?commandPalette():b.dataset.view&&showView(b.dataset.view));
+    $("inspectorBtn").onclick=()=>$("inspector").classList.toggle("open");$("closeInspector").onclick=()=>$("inspector").classList.remove("open");$("railToggle").onclick=()=>$("rail").classList.toggle("open");$("mobileNav").onclick=()=>$("rail").classList.toggle("open");$("mobileSessions").onclick=()=>$("sessionsPanel").classList.toggle("open");
+    $("renameSession").onclick=renameSession;$("snapshotBtn").onclick=()=>{stamp("SESSION","snapshot captured");toast("Local session snapshot captured.")};$("forkBtn").onclick=()=>forkSession(session().messages.length);$("exportBtn").onclick=()=>$("exportModal").classList.add("open");$("sessionMore").onclick=()=>confirmAction("Archive session?","The session remains available in Archived.",()=>{session().archived=true;render();persist()});
+    $("dropZone").onclick=()=>{$("attachBtn").click();openInspector("files")};$("graphBtn").onclick=()=>$("provenanceGraph").classList.toggle("hidden");document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("tab-"+b.dataset.tab).classList.add("active")});
+    [["tempRange","temperature"],["topRange","topP"],["topKRange","topK"],["repeatRange","repeat"],["maxRange","maxTokens"]].forEach(([id,key])=>$(id).oninput=e=>{prefs[key]=Number(e.target.value);renderInspector();persist()});$("streamToggle").onclick=()=>{prefs.streaming=!prefs.streaming;render();persist()};
+    $("indexBtn").onclick=startIndex;$("runRetrieval").onclick=()=>{stamp("RETRIEVAL","Retrieval Lab query executed");$("retrievalResults").innerHTML=chunks.map((c,i)=>`<details class="panel p-4"><summary class="cursor-pointer"><b>${c[0]}</b> <span class="float-right text-amber-200">${c[4]}</span></summary><p class="text-xs text-slate-400 mt-3">${c[2]}</p><p class="mono text-[9px] text-slate-500 mt-2">${c[1]} · ${c[3]} tokens · selected because semantic overlap matches query</p></details>`).join("");toast("Deterministic local retrieval complete.")};$("rerankToggle").onclick=e=>e.currentTarget.classList.toggle("on");$("runEval").onclick=runEvaluation;$("runDiagnostics").onclick=e=>simProgress(e.currentTarget,"Diagnostics");
+    $("privacySelect").onchange=e=>{prefs.privacy=e.target.value;render();persist();stamp("RUNTIME",`privacy runtime ${prefs.privacy}`)};$("telemetryToggle").onclick=()=>{prefs.telemetry=!prefs.telemetry;render();persist()};$("gridToggle").onclick=()=>{prefs.grid=!prefs.grid;render();persist()};$("motionToggle").onclick=()=>{prefs.reduced=!prefs.reduced;render();persist()};$("densityToggle").onclick=()=>{prefs.dense=!prefs.dense;render();persist()};
+    $("resetDemo").onclick=()=>confirmAction("Reset demo data?","This clears locally saved NOVA workspace data and restores the initial prototype.",async()=>{if(db){const tx=db.transaction("stores","readwrite");tx.objectStore("stores").clear()}Object.keys(localStorage).filter(k=>k.startsWith("nova.v3.")).forEach(k=>localStorage.removeItem(k));prefs={...defaultPrefs};seedData();render();persist();toast("Demo workspace reset.")});
+    $("clearTrace").onclick=()=>{events=[];renderTrace();persist()};$("traceSearch").oninput=renderTrace;document.querySelectorAll(".export-choice").forEach(b=>b.onclick=()=>{toast(`${b.dataset.format} export prepared in this prototype.`);closeModals()});
+    document.querySelectorAll(".modal-close").forEach(b=>b.onclick=closeModals);document.querySelectorAll(".modal").forEach(m=>m.onclick=e=>{if(e.target===m)closeModals()});
+    document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();commandPalette()}if(e.key==="Escape"){closeModals();$("inspector").classList.remove("open");$("rail").classList.remove("open");$("sessionsPanel").classList.remove("open")}if(e.key==="Enter"&&$("commandModal").classList.contains("open")&&window.commands?.length){window.commands[0][1]();closeModals()}});
+    lucide.createIcons();init();
+  </script>
+ 
+</body></html>

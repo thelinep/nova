@@ -6,3 +6,7 @@
 
 /.next-helpers/
 /.next-roadmap/
+
+# Supervisor runtime state/log for the district collector (regenerated, not data)
+/data/event-planners/supervisor-state.json
+/data/event-planners/supervisor.log

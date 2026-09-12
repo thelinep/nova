@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeStore } from '@/lib/knowledge/store';
 import { chunkText } from '@/lib/knowledge/chunker';
-
-function extractTextFromHtml(html: string): string {
-  return html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+import { collectUrl, validateCollectionUrl } from '@/lib/knowledge';
+import { isLocalRequest, localOnlyResponse } from '@/lib/local-only';
 
 export async function POST(request: NextRequest) {
+  if (!isLocalRequest(request)) return localOnlyResponse();
   try {
     const body = await request.json();
     const { type = 'text', key, title, content, url, chunkSize, chunkOverlap } = body;
@@ -27,14 +21,16 @@ export async function POST(request: NextRequest) {
 
     if (type === 'url' && url) {
       sourceType = 'url';
-      sourceKey = url;
-      sourceTitle = title || url;
-      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-      if (!res.ok) {
-        return NextResponse.json({ error: `Failed to fetch URL: ${res.status}` }, { status: 502 });
-      }
-      const html = await res.text();
-      textContent = extractTextFromHtml(html);
+      // Collection goes through the same guarded path as the Knowledge
+      // Collector UI (private-address/SSRF checks, redirect rejection, a
+      // streamed 2MB cap) instead of an unguarded direct fetch() -- a raw
+      // fetch of a user-supplied URL here would otherwise let this endpoint
+      // be used to probe or hit internal network addresses.
+      const validatedUrl = validateCollectionUrl(url);
+      sourceKey = validatedUrl;
+      const collected = await collectUrl(validatedUrl);
+      sourceTitle = title || collected.title || validatedUrl;
+      textContent = collected.content;
     } else if (type === 'document' && content) {
       sourceType = 'document';
     } else if (type === 'text' && content) {

@@ -2,10 +2,12 @@ import {NextRequest,NextResponse} from 'next/server';
 import {execFile} from 'node:child_process';
 import path from 'node:path';
 const studio=require('@/lib/event-planners/studio.cjs');
+import {isLocalRequest,localOnlyResponse} from '@/lib/local-only';
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
-export async function GET(){return NextResponse.json(await studio.get(),{headers:{'Cache-Control':'no-store'}});}
+export async function GET(req:NextRequest){if(!isLocalRequest(req))return localOnlyResponse();return NextResponse.json(await studio.get(),{headers:{'Cache-Control':'no-store'}});}
 export async function POST(req:NextRequest){
+ if(!isLocalRequest(req))return localOnlyResponse();
  const origin=req.headers.get('origin');
  if(!origin||!['http://'+req.headers.get('host'),'https://'+req.headers.get('host')].includes(origin))return NextResponse.json({error:'Same-origin request required'},{status:403});
  try{const body=await req.json();if(body.action==='save')return NextResponse.json(await studio.save(body));

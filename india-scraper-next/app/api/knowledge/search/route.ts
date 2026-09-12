@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeStore } from '@/lib/knowledge/store';
+import { isLocalRequest, localOnlyResponse } from '@/lib/local-only';
 
 export async function GET(request: NextRequest) {
+  if (!isLocalRequest(request)) return localOnlyResponse();
   try {
     const searchParams = request.nextUrl.searchParams;
     const q = searchParams.get('q');

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collectUrl, expandUrlPattern, savePattern, saveSource, validateCollectionUrl } from '@/lib/knowledge';
+import { isLocalRequest, localOnlyResponse } from '@/lib/local-only';
 
 export const runtime = 'nodejs';
 
 type Payload = { type?: string; url?: unknown; urls?: unknown; pattern?: unknown; start?: unknown; end?: unknown; label?: unknown; title?: unknown; content?: unknown };
 
 export async function POST(request: NextRequest) {
+  if (!isLocalRequest(request)) return localOnlyResponse();
   let body: Payload;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }); }
   try {

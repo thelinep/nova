@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { KnowledgeStore } from '@/lib/knowledge/store';
 import { chunkBusinessRecord } from '@/lib/knowledge/chunker';
+import { isLocalRequest, localOnlyResponse } from '@/lib/local-only';
 
 export async function POST(request: NextRequest) {
+  if (!isLocalRequest(request)) return localOnlyResponse();
   try {
     const body = await request.json().catch(() => ({}));
     const { category } = body;
