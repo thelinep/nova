@@ -29,3 +29,10 @@ test('one active command is enforced per workspace',async()=>{
   await assert.rejects(()=>runner.run(store,scanner,changes,dataDir,{rootId:root.id,action:'diagnostics'}),/already active/);
   runner._active.delete(root.id);
 });
+
+test('restart recovery marks orphaned commands interrupted',()=>{
+  const store=memoryStore();store.put('workspaceRuns',{id:'run_orphan',rootId:'root_1',status:'running',startedAt:new Date().toISOString()});
+  assert.equal(runner.recoverInterrupted(store),1);
+  assert.equal(store.get('workspaceRuns','run_orphan').status,'interrupted');
+  assert.equal(store.get('workspaceRuns','run_orphan').recovery.resumable,false);
+});

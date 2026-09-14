@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const scanner = require('../lib/workspace-scanner');
-const { proposeChange, checkProposal, approveProposal, executeProposal } = require('../lib/workspace-changes');
+const { proposeChange, checkProposal, approveProposal, executeProposal, createBatch, checkBatch, approveBatch, executeBatch } = require('../lib/workspace-changes');
 
 function memoryStore(){const stores=new Map();return{all(name){return[...(stores.get(name)?.values()||[])];},get(name,id){return stores.get(name)?.get(id)||null;},put(name,row){if(!stores.has(name))stores.set(name,new Map());stores.get(name).set(row.id,row);return row;}};}
 
@@ -62,4 +62,24 @@ test('each original-workspace write requires approval and records rollback evide
   assert.equal(applied.rollback.originalSha256,proposal.sourceSha256);
   assert.equal(applied.approval.consumedAt,applied.appliedAt);
   assert.throws(()=>executeProposal(store,scanner,dataDir,proposal.id),/needs an unused explicit approval/);
+});
+
+test('multi-file batches validate dependency order and apply atomically after one approval',()=>{
+  const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-root-')),dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-data-'));
+  fs.writeFileSync(path.join(rootPath,'config.json'),'{"enabled":false}\n');
+  fs.writeFileSync(path.join(rootPath,'main.js'),'const enabled = false;\n');
+  const store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  const batch=createBatch(store,scanner,{rootId:root.id,summary:'Enable feature across config and code',changes:[
+    {relativePath:'main.js',find:'false',replacement:'true',dependsOn:['config.json']},
+    {relativePath:'config.json',find:'false',replacement:'true'},
+  ]});
+  assert.deepEqual(batch.orderedFiles,['config.json','main.js']);
+  assert.throws(()=>executeBatch(store,scanner,dataDir,batch.id),/explicit approval/);
+  assert.equal(checkBatch(store,scanner,dataDir,batch.id).status,'checks-passed');
+  const approved=approveBatch(store,scanner,batch.id);
+  assert.equal(approved.approval.hashes.length,2);
+  const applied=executeBatch(store,scanner,dataDir,batch.id);
+  assert.equal(fs.readFileSync(path.join(rootPath,'config.json'),'utf8'),'{"enabled":true}\n');
+  assert.equal(fs.readFileSync(path.join(rootPath,'main.js'),'utf8'),'const enabled = true;\n');
+  assert.equal(fs.readFileSync(path.join(applied.rollback.directory,'config.json'),'utf8'),'{"enabled":false}\n');
 });

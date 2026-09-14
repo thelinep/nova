@@ -222,9 +222,15 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/check$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspaceChanges.checkProposal(store, workspaceScanner, DATA_DIR, decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.approveProposal(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.approved',proposalId:result.id,affectedFiles:result.approval.affectedFiles});sendJson(res,200,result);} },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.executeProposal(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.executed',proposalId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
+  { method: 'GET', pattern: /^\/api\/workspace\/change-batches$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceChangeBatches').reverse()) },
+  { method: 'POST', pattern: /^\/api\/workspace\/change-batches$/, handler: async (req,res)=>sendJson(res,201,workspaceChanges.createBatch(store,workspaceScanner,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/check$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceChanges.checkBatch(store,workspaceScanner,DATA_DIR,decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/approve$/, handler: async (_req,res,[id])=>{const result=workspaceChanges.approveBatch(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.batch.approved',batchId:result.id,approval:result.approval});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/execute$/, handler: async (_req,res,[id])=>{const result=workspaceChanges.executeBatch(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.batch.executed',batchId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
   { method: 'GET', pattern: /^\/api\/workspace\/runs$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRuns').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/roots\/([^/]+)\/commands\/allow$/, handler: async (req, res, [id]) => {const body=await readJsonBody(req),root=workspaceRunner.allowRepository(store,workspaceScanner,decodeURIComponent(id),body.actions),permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:root.commandAllowlist.actions.map(x=>'command:'+x),source:'explicit-command-allowlist'});desktopSecurity.appendAudit(DATA_DIR,{action:'command.allowlist.granted',rootId:root.id,permissionId:permission.id,actions:root.commandAllowlist.actions});sendJson(res,200,root);} },
   { method: 'POST', pattern: /^\/api\/workspace\/runs$/, handler: async (req, res) => sendJson(res, 200, await workspaceRunner.run(store,workspaceScanner,workspaceChanges,DATA_DIR,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/runs\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceRunner.cancel(store,decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/workspace\/git$/, handler: async (req, res) => {const rootId=new URL(req.url,'http://localhost').searchParams.get('rootId');sendJson(res,200,workspaceGit.snapshot(store,workspaceScanner,rootId));} },
   { method: 'GET', pattern: /^\/api\/workspace\/git\/drafts$/, handler: async (_req, res) => sendJson(res,200,store.all('workspaceGitDrafts').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/git\/drafts$/, handler: async (req, res) => {const result=workspaceGit.createDraft(store,workspaceScanner,await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'git.draft.created',draftId:result.id,stagedFiles:result.stagedFiles,diffSha256:result.stagedDiffSha256});sendJson(res,201,result);} },
@@ -633,6 +639,8 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`  data dir:    ${DATA_DIR}`);
   console.log(`  ollama host: ${ollama.host}`);
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
+  const interruptedRuns=workspaceRunner.recoverInterrupted(store);
+  if(interruptedRuns)console.log(`  recovered:   ${interruptedRuns} interrupted workspace run(s)`);
   // A real child MCP server process never survives a restart — reconcile
   // any stale 'connected' status in the DB to 'disconnected' before
   // anything tries to resume work that might depend on one (below).

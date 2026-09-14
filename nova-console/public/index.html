@@ -634,7 +634,7 @@ function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
    rewriting them to await a promise was explicitly out of scope for making
    the seam swap invisible. */
 const STORE_NAMES = ['sessions','models','modelProfiles','knowledgeCollections','knowledgeDocuments','knowledgeChunks','automations','automationRuns','evaluations','preferences','runtimeEvents','collectionRuns',
-  'skills','mcpServers','agents','workflows','workflowRuns','executions','workspaceRoots','workspaceReports','workspacePlans','workspaceChanges','workspaceRuns','workspaceGitDrafts'];
+  'skills','mcpServers','agents','workflows','workflowRuns','executions','workspaceRoots','workspaceReports','workspacePlans','workspaceChanges','workspaceChangeBatches','workspaceRuns','workspaceGitDrafts'];
 const DB = {}; STORE_NAMES.forEach(n => DB[n] = []);
 let backendHealthy = true;
 function apiUrl(p){ return p; } // same-origin — NOVA Runtime serves this file and the API from one port
