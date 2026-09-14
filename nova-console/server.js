@@ -18,6 +18,7 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const { STORE_NAMES, openDb, Store } = require('./lib/db');
 const { OllamaClient } = require('./lib/ollama');
 const { TelemetryReader } = require('./lib/telemetry');
@@ -29,10 +30,29 @@ const workflowEngine = require('./lib/workflow-engine');
 const evalBench = require('./lib/eval-bench');
 const scheduler = require('./lib/scheduler');
 const { uid, logExecution } = require('./lib/exec-log');
+const { checkLocalAccess } = require('./lib/local-access');
+const collectorWorkflows = require('./lib/collector-workflows');
+const workspaceScanner = require('./lib/workspace-scanner');
+const workspacePlanner = require('./lib/workspace-planner');
+const workspaceChanges = require('./lib/workspace-changes');
+const workspaceRunner = require('./lib/workspace-runner');
+const workspaceGit = require('./lib/workspace-git');
+const desktopSecurity = require('./lib/desktop-security');
 
-const PORT = Number(process.env.PORT) || 8787;
+const PORT = process.env.PORT === undefined ? 8787 : Number(process.env.PORT);
+if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('PORT must be an integer from 0 to 65535');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const WORKSPACE_ROOT = path.resolve(__dirname, '..');
+
+function gitSnapshot() {
+  try {
+    const branch = execFileSync('git', ['branch', '--show-current'], { cwd: WORKSPACE_ROOT, encoding: 'utf8', timeout: 3000 }).trim();
+    const head = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: WORKSPACE_ROOT, encoding: 'utf8', timeout: 3000 }).trim();
+    const lines = execFileSync('git', ['status', '--short'], { cwd: WORKSPACE_ROOT, encoding: 'utf8', timeout: 3000 }).trim().split('\n').filter(Boolean);
+    return { available: true, branch, head, changed: lines.length, files: lines.slice(0, 100), sampledAt: new Date().toISOString() };
+  } catch (error) { return { available: false, error: error.message, sampledAt: new Date().toISOString() }; }
+}
 
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
@@ -93,13 +113,19 @@ function readJsonBody(req) {
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
 function serveStatic(req, res, pathname) {
   let rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-  const filePath = path.join(PUBLIC_DIR, rel);
-  if (!filePath.startsWith(PUBLIC_DIR)) { sendJson(res, 403, { error: 'Forbidden' }); return; }
-  fs.readFile(filePath, (err, data) => {
+  const filePath = path.resolve(PUBLIC_DIR, rel);
+  if (filePath !== PUBLIC_DIR && !filePath.startsWith(PUBLIC_DIR + path.sep)) { sendJson(res, 403, { error: 'Forbidden' }); return; }
+  fs.realpath(filePath, (resolveError, canonical) => {
+    if (resolveError || (canonical !== PUBLIC_DIR && !canonical.startsWith(PUBLIC_DIR + path.sep))) { sendJson(res, resolveError?.code==='ENOENT'?404:403, { error: resolveError?.code==='ENOENT'?'Not found':'Forbidden' }); return; }
+    fs.lstat(filePath, (linkError, stat) => {
+      if (linkError || stat.isSymbolicLink()) { sendJson(res, linkError?404:403, { error: linkError?'Not found':'Forbidden' }); return; }
+      fs.readFile(canonical, (err, data) => {
     if (err) { sendJson(res, 404, { error: 'Not found' }); return; }
-    const ext = path.extname(filePath);
+    const ext = path.extname(canonical);
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': data.length });
     res.end(data);
+      });
+    });
   });
 }
 
@@ -180,6 +206,40 @@ async function syncModelsFromOllama() {
 /* --------------------------------- routes -------------------------------- */
 
 const routes = [
+  { method: 'GET', pattern: /^\/api\/workspace\/roots$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRoots')) },
+  { method: 'POST', pattern: /^\/api\/workspace\/roots$/, handler: async (req, res) => {const root=workspaceScanner.approveRoot(store,await readJsonBody(req));const permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:['filesystem:read'],source:'explicit-root-approval'});desktopSecurity.appendAudit(DATA_DIR,{action:'permission.granted',rootId:root.id,permissionId:permission.id,exactPath:root.path});sendJson(res,201,root);} },
+  { method: 'DELETE', pattern: /^\/api\/workspace\/roots\/([^/]+)$/, handler: async (_req, res, [id]) => {const rootId=decodeURIComponent(id);store.delete('workspaceRoots',rootId);for(const permission of store.all('workspacePermissions').filter(x=>x.rootId===rootId)){permission.status='revoked';permission.revokedAt=new Date().toISOString();store.put('workspacePermissions',permission);}desktopSecurity.appendAudit(DATA_DIR,{action:'permission.revoked',rootId});sendJson(res, 200, { ok:true });} },
+  { method: 'POST', pattern: /^\/api\/workspace\/scan$/, handler: async (req, res) => sendJson(res, 200, workspaceScanner.scanWorkspace(store, await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/search$/, handler: async (req, res) => sendJson(res, 200, workspaceScanner.searchWorkspace(store, await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/structured-report$/, handler: async (req, res) => sendJson(res, 200, workspaceScanner.createStructuredReport(store, await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/workspace\/reports$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceReports').reverse()) },
+  { method: 'GET', pattern: /^\/api\/workspace\/plans$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspacePlans').reverse()) },
+  { method: 'POST', pattern: /^\/api\/workspace\/plans\/from-conversation$/, handler: async (req, res) => sendJson(res, 200, workspacePlanner.createConversationPlan(store, await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/plans\/([^/]+)\/root$/, handler: async (req, res, [id]) => { const body=await readJsonBody(req); sendJson(res, 200, workspacePlanner.setPlanRoot(store, decodeURIComponent(id), body.rootId)); } },
+  { method: 'POST', pattern: /^\/api\/workspace\/plans\/([^/]+)\/run$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspacePlanner.runPlan(store, workspaceScanner, decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/workspace\/changes$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceChanges').reverse()) },
+  { method: 'POST', pattern: /^\/api\/workspace\/changes$/, handler: async (req, res) => sendJson(res, 201, workspaceChanges.proposeChange(store, workspaceScanner, await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/check$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspaceChanges.checkProposal(store, workspaceScanner, DATA_DIR, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.approveProposal(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.approved',proposalId:result.id,affectedFiles:result.approval.affectedFiles});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.executeProposal(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.executed',proposalId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
+  { method: 'GET', pattern: /^\/api\/workspace\/runs$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRuns').reverse()) },
+  { method: 'POST', pattern: /^\/api\/workspace\/roots\/([^/]+)\/commands\/allow$/, handler: async (req, res, [id]) => {const body=await readJsonBody(req),root=workspaceRunner.allowRepository(store,workspaceScanner,decodeURIComponent(id),body.actions),permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:root.commandAllowlist.actions.map(x=>'command:'+x),source:'explicit-command-allowlist'});desktopSecurity.appendAudit(DATA_DIR,{action:'command.allowlist.granted',rootId:root.id,permissionId:permission.id,actions:root.commandAllowlist.actions});sendJson(res,200,root);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/runs$/, handler: async (req, res) => sendJson(res, 200, await workspaceRunner.run(store,workspaceScanner,workspaceChanges,DATA_DIR,await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/workspace\/git$/, handler: async (req, res) => {const rootId=new URL(req.url,'http://localhost').searchParams.get('rootId');sendJson(res,200,workspaceGit.snapshot(store,workspaceScanner,rootId));} },
+  { method: 'GET', pattern: /^\/api\/workspace\/git\/drafts$/, handler: async (_req, res) => sendJson(res,200,store.all('workspaceGitDrafts').reverse()) },
+  { method: 'POST', pattern: /^\/api\/workspace\/git\/drafts$/, handler: async (req, res) => {const result=workspaceGit.createDraft(store,workspaceScanner,await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'git.draft.created',draftId:result.id,stagedFiles:result.stagedFiles,diffSha256:result.stagedDiffSha256});sendJson(res,201,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/git\/drafts\/([^/]+)\/review$/, handler: async (_req, res, [id]) => {const result=workspaceGit.reviewDraft(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'git.draft.reviewed',draftId:result.id,exactFiles:result.review.exactFiles,diffSha256:result.review.stagedDiffSha256});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/git\/drafts\/([^/]+)\/commit$/, handler: async (_req, res, [id]) => {const result=workspaceGit.commitDraft(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'git.commit.created',draftId:result.id,commit:result.commit});sendJson(res,200,result);} },
+  { method: 'GET', pattern: /^\/api\/security\/permissions$/, handler: async (_req, res) => sendJson(res,200,store.all('workspacePermissions').reverse()) },
+  { method: 'GET', pattern: /^\/api\/security\/audit$/, handler: async (_req, res) => sendJson(res,200,desktopSecurity.readAudit(DATA_DIR).reverse().slice(0,200)) },
+  { method: 'GET', pattern: /^\/api\/security\/backups$/, handler: async (_req, res) => sendJson(res,200,store.all('securityBackups').reverse()) },
+  { method: 'POST', pattern: /^\/api\/security\/backups$/, handler: async (req, res) => {const body=await readJsonBody(req),backup=desktopSecurity.createBackup(store,DATA_DIR,body.label);desktopSecurity.appendAudit(DATA_DIR,{action:'backup.created',backupId:backup.id,sha256:backup.sha256});sendJson(res,201,backup);} },
+  { method: 'POST', pattern: /^\/api\/security\/backups\/([^/]+)\/restore$/, handler: async (_req, res, [id]) => {const result=desktopSecurity.restoreBackup(store,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'backup.restored',...result});sendJson(res,200,result);} },
+  { method: 'GET', pattern: /^\/api\/git\/status$/, handler: async (_req, res) => sendJson(res, 200, gitSnapshot()) },
+  { method: 'GET', pattern: /^\/api\/collector\/runs$/, handler: async (_req, res) => sendJson(res, 200, store.all('collectionRuns')) },
+  { method: 'POST', pattern: /^\/api\/collector\/plans$/, handler: async (req, res) => sendJson(res, 201, collectorWorkflows.createPlan(store, await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => sendJson(res, 200, collectorWorkflows.approvePlan(store, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => sendJson(res, 202, collectorWorkflows.executePlan(store, decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/health$/, handler: async (req, res) => sendJson(res, 200, { ok: true, pid: process.pid, dataDir: DATA_DIR }) },
 
   { method: 'GET', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => sendJson(res, 200, store.all(decodeURIComponent(name))) },
@@ -530,8 +590,19 @@ function summarizeSkillResult(skillId, result) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
-  const pathname = decodeURI(url.pathname);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  const denied = checkLocalAccess(req, server.address().port);
+  if (denied) { sendJson(res, 403, { error: denied }); return; }
+  let pathname;
+  try {
+    const url = new URL(req.url, 'http://localhost');
+    pathname = decodeURI(url.pathname);
+  } catch {
+    sendJson(res, 400, { error: 'Malformed request URL' });
+    return;
+  }
 
   if (pathname.startsWith('/api/')) {
     for (const route of routes) {
@@ -557,8 +628,8 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, 405, { error: 'Method not allowed' });
 });
 
-server.listen(PORT, () => {
-  console.log(`NOVA Runtime listening on http://127.0.0.1:${PORT}`);
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`NOVA Runtime listening on http://127.0.0.1:${server.address().port}`);
   console.log(`  data dir:    ${DATA_DIR}`);
   console.log(`  ollama host: ${ollama.host}`);
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
@@ -586,3 +657,5 @@ function shutdown() {
 }
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+
+module.exports = { server };

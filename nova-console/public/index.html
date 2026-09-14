@@ -1,4 +1,7 @@
 <title>NOVA Console</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.min.js"></script>
@@ -26,6 +29,28 @@
     --font-ui:"Work Sans",-apple-system,Segoe UI,sans-serif;
     --font-mono:"Space Mono","SF Mono",monospace;
   }
+  :root[data-theme="dawn"]{
+    --bg:#f5f7fa; --bg-wash:#eef2f6;
+    --panel:#ffffff; --panel2:#f2f5f8; --panel3:#e8edf3;
+    --line:#cbd5e1; --line-soft:#e1e7ee;
+    --ink:#172033; --ink-dim:#334155;
+    --muted:#64748b; --muted-dim:#7a8798;
+    --amber:#d97706; --amber-ink:#fffaf0; --amber-soft:#d9770618; --amber-line:#d9770655;
+    --green:#16845b; --green-soft:#16845b18;
+    --blue:#2879b8; --blue-soft:#2879b818;
+    --violet:#7657b9; --violet-soft:#7657b918;
+    --red:#c34545; --red-soft:#c3454518;
+  }
+  :root[data-theme="contrast"]{
+    --bg:#000; --bg-wash:#000; --panel:#080808; --panel2:#101010; --panel3:#181818;
+    --line:#707070; --line-soft:#3d3d3d; --ink:#fff; --ink-dim:#fff;
+    --muted:#e4e4e4; --muted-dim:#b9b9b9; --amber:#ffbd32; --amber-ink:#000;
+    --green:#5dffad; --green-soft:#5dffad22; --blue:#72c8ff; --blue-soft:#72c8ff22;
+  }
+  :root[data-theme="dawn"] body::before{opacity:.12;background-image:linear-gradient(#17203312 1px,transparent 1px),linear-gradient(90deg,#17203312 1px,transparent 1px);}
+  :root[data-theme="dawn"] .rail{background:rgba(247,249,252,.94);}
+  :root[data-theme="dawn"] .topbar{background:#ffffffdc;}
+  :root[data-theme="dawn"] .statusbar{background:#fff;}
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
   body{
@@ -197,7 +222,9 @@
   .convo-title-wrap{min-width:0;}
   .convo-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .convo-sub{font:10.5px var(--font-mono);color:var(--muted-dim);margin-top:2px;}
-  .msg-list{flex:1;overflow-y:auto;padding:22px clamp(14px,3vw,48px) 10px;}
+  /* Allow the message region to shrink and scroll. Without min-height:0,
+     its empty-state content can force the composer below the status bar. */
+  .msg-list{flex:1;min-height:0;overflow-y:auto;padding:22px clamp(14px,3vw,48px) 10px;}
   .msg{max-width:760px;margin:0 auto 18px;}
   .msg-role{font:10px var(--font-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted-dim);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
   .bubble{border:1px solid var(--line);background:#12171f;border-radius:11px;padding:13px 15px;line-height:1.62;font-size:13.5px;white-space:pre-wrap;}
@@ -382,6 +409,7 @@
       <div class="nav-label rail-text">Workspace</div>
       <button class="nav-item active" data-view="console"><span data-lucide="messages-square"></span><span class="rail-text">Console</span></button>
       <button class="nav-item" data-view="sessions"><span data-lucide="history"></span><span class="rail-text">Sessions</span></button>
+      <button class="nav-item" data-view="workspace"><span data-lucide="folder-search-2"></span><span class="rail-text">Local Workspace</span></button>
     </div>
     <div class="nav-group">
       <div class="nav-label rail-text">Intelligence</div>
@@ -400,12 +428,15 @@
       <button class="nav-item" data-view="mcp"><span data-lucide="plug-zap"></span><span class="rail-text">MCP Registry</span></button>
       <button class="nav-item" data-view="agents"><span data-lucide="bot"></span><span class="rail-text">Agents</span></button>
       <button class="nav-item" data-view="workflows"><span data-lucide="git-branch"></span><span class="rail-text">Workflows</span></button>
+      <button class="nav-item" data-view="collector"><span data-lucide="map-pinned"></span><span class="rail-text">Collector</span></button>
       <button class="nav-item" data-view="graph"><span data-lucide="share-2"></span><span class="rail-text">Capability Graph</span></button>
+      <button class="nav-item" data-view="browser"><span data-lucide="globe-2"></span><span class="rail-text">Provider Browser</span></button>
     </div>
     <div class="nav-group">
       <div class="nav-label rail-text">System</div>
       <button class="nav-item" data-view="runtime"><span data-lucide="activity"></span><span class="rail-text">Runtime</span><span class="dot" id="railRuntimeDot"></span></button>
       <button class="nav-item" data-view="trace"><span data-lucide="terminal"></span><span class="rail-text">Trace</span></button>
+      <button class="nav-item" data-view="git"><span data-lucide="git-compare-arrows"></span><span class="rail-text">Git Updates</span></button>
       <button class="nav-item" data-view="history"><span data-lucide="list-tree"></span><span class="rail-text">Execution History</span></button>
       <button class="nav-item" data-view="diagnostics"><span data-lucide="stethoscope"></span><span class="rail-text">Diagnostics</span></button>
       <button class="nav-item" data-view="settings"><span data-lucide="settings-2"></span><span class="rail-text">Settings</span></button>
@@ -501,6 +532,7 @@
 
       <!-- ===================== SESSIONS ===================== -->
       <section id="sessionsView" class="view"><div class="view-pad"><!-- VIEW:sessions --></div></section>
+      <section id="workspaceView" class="view"><div class="view-pad"><!-- VIEW:workspace --></div></section>
       <!-- ===================== MODELS ===================== -->
       <section id="modelsView" class="view"><div class="view-pad"><!-- VIEW:models --></div></section>
       <!-- ===================== KNOWLEDGE ===================== -->
@@ -519,8 +551,12 @@
       <section id="agentsView" class="view"><div class="view-pad"><!-- VIEW:agents --></div></section>
       <!-- ===================== WORKFLOWS ===================== -->
       <section id="workflowsView" class="view"><div class="view-pad"><!-- VIEW:workflows --></div></section>
+      <section id="collectorView" class="view"><div class="view-pad"><!-- VIEW:collector --></div></section>
+      <section id="gitView" class="view"><div class="view-pad"><!-- VIEW:git --></div></section>
       <!-- ===================== CAPABILITY GRAPH ===================== -->
       <section id="graphView" class="view"><div class="view-pad"><!-- VIEW:graph --></div></section>
+      <!-- ===================== PROVIDER BROWSER ===================== -->
+      <section id="browserView" class="view"><div class="view-pad"><!-- VIEW:browser --></div></section>
       <!-- ===================== EXECUTION HISTORY ===================== -->
       <section id="historyView" class="view"><div class="view-pad"><!-- VIEW:history --></div></section>
       <!-- ===================== RUNTIME ===================== -->
@@ -597,8 +633,8 @@ function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
    background) because dozens of call sites across 17 views rely on that —
    rewriting them to await a promise was explicitly out of scope for making
    the seam swap invisible. */
-const STORE_NAMES = ['sessions','models','modelProfiles','knowledgeCollections','knowledgeDocuments','knowledgeChunks','automations','automationRuns','evaluations','preferences','runtimeEvents',
-  'skills','mcpServers','agents','workflows','workflowRuns','executions'];
+const STORE_NAMES = ['sessions','models','modelProfiles','knowledgeCollections','knowledgeDocuments','knowledgeChunks','automations','automationRuns','evaluations','preferences','runtimeEvents','collectionRuns',
+  'skills','mcpServers','agents','workflows','workflowRuns','executions','workspaceRoots','workspaceReports','workspacePlans','workspaceChanges','workspaceRuns','workspaceGitDrafts'];
 const DB = {}; STORE_NAMES.forEach(n => DB[n] = []);
 let backendHealthy = true;
 function apiUrl(p){ return p; } // same-origin — NOVA Runtime serves this file and the API from one port
@@ -680,10 +716,28 @@ async function refreshMcpApprovals(){
 const DEFAULT_PREFS = {
   id:'default', webAccess:false, telemetry:false, retrieval:true, citations:true, streaming:true,
   temperature:0.7, topP:0.9, topK:40, repeatPenalty:1.10, seed:null, maxTokens:2048,
-  inspectorTab:'context', grid:true, seeded:false, ollamaSynced:false,
+  inspectorTab:'context', grid:true, seeded:false, ollamaSynced:false, theme:'dark', language:'en',
 };
 function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
+
+const LANGUAGE_LABELS = {
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स'},
+};
+function applyAppearance(){
+  const p = getPrefs();
+  document.documentElement.dataset.theme = p.theme || 'dark';
+  document.documentElement.lang = p.language || 'en';
+  const labels = LANGUAGE_LABELS[p.language] || LANGUAGE_LABELS.en;
+  $$('.nav-item[data-view]').forEach(button => {
+    const label = labels[button.dataset.view];
+    const text = button.querySelector('.rail-text');
+    if (label && text) text.textContent = label;
+  });
+  const current = $('topbarViewLabel');
+  if (current) current.textContent = labels[currentView] || VIEW_LABELS[currentView] || currentView;
+}
 
 /* ===================== RUNTIME TRACE (append-only, really unbounded) =====================
    Every event this session logs is written straight to SQLite via idbPut —
@@ -1065,15 +1119,17 @@ let mcpBusyServerIds = new Set(); // servers with a connect/disconnect in flight
 let skillRunBusyIds = new Set();
 let abSelectedSkills = new Set();
 let abSelectedMcp = new Set();
+let gitSnapshot = null;
+let gitAutoRefresh = true;
 
 const PIPELINE = {
   state:'IDLE', detail:'', sessionId:null,
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', models:'Models', knowledge:'Knowledge',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
-  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', graph:'Capability Graph',
+  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
@@ -1110,13 +1166,13 @@ function showView(name){
   $$('.view').forEach(v => v.classList.remove('active'));
   const target = $(name + 'View'); if (target) target.classList.add('active');
   $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === name));
-  $('topbarViewLabel').textContent = VIEW_LABELS[name] || name;
+  $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, models:renderModelsView, knowledge:renderKnowledgeView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
-    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, graph:renderGraphView,
-    runtime:renderRuntimeView, trace:renderTraceView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView,
+    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
+    runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView,
   };
   if (renderers[name]) renderers[name]();
   if (name === 'console') renderConsole();
@@ -1153,6 +1209,7 @@ async function init(){
   await syncModelsFromOllamaIfAvailable();
   if (!activeSessionId && DB.sessions.length) activeSessionId = visibleSessions().filter(s=>!s.archived)[0]?.id || null;
   inspectorTab = getPrefs().inspectorTab || 'context';
+  applyAppearance();
   renderShellChrome();
   renderConsole();
   startTelemetryLoop();
@@ -1163,6 +1220,8 @@ async function init(){
   setInterval(refreshMcpApprovals, 3000);
   setInterval(refreshEventTotal, 15000);
   setInterval(refreshSchedulerStatus, 15000);
+  setInterval(()=>{ if (gitAutoRefresh) refreshGitStatus(); }, 10000);
+  refreshGitStatus();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -1377,10 +1436,12 @@ function msgHtml(m){
       <button class="icon-btn msg-regen" style="width:22px;height:22px" title="Regenerate" data-id="${m.id}"><span data-lucide="refresh-cw" style="width:10px;height:10px"></span></button>
       <button class="icon-btn msg-save" style="width:22px;height:22px" title="Save to knowledge" data-id="${m.id}"><span data-lucide="bookmark-plus" style="width:10px;height:10px"></span></button>
     </span>` : '';
+  const planAction = m.workspacePlanId ? `<div style="margin-top:8px"><button class="btn btn-line btn-sm msg-review-plan" data-plan-id="${escapeHtml(m.workspacePlanId)}"><span data-lucide="clipboard-list" style="width:13px;height:13px"></span>Review scan plan</button></div>` : '';
   return `<div class="msg ${m.role}">
     <div class="msg-role"><span>${m.role==='user'?'YOU':'NOVA / LOCAL'}</span>${tools}</div>
     <div class="bubble">${escapeHtml(m.content)}</div>
     ${cites?`<div class="msg-cites">${cites}</div>`:''}
+    ${planAction}
     ${stats}
   </div>`;
 }
@@ -1388,6 +1449,7 @@ function bindMsgEvents(){
   $$('.msg-copy').forEach(b=>b.onclick=()=>{ const s=activeSession(); const m=s.messages.find(x=>x.id===b.dataset.id); navigator.clipboard?.writeText(m.content).then(()=>toast('Copied.')); });
   $$('.msg-regen').forEach(b=>b.onclick=()=>regenerateMessage(b.dataset.id));
   $$('.msg-save').forEach(b=>b.onclick=()=>{ const s=activeSession(); const m=s.messages.find(x=>x.id===b.dataset.id); toast('Saved excerpt to Knowledge (simulated).'); logEvent('FILE','saved assistant excerpt to knowledge'); });
+  $$('.msg-review-plan').forEach(b=>b.onclick=()=>{workspaceSelectedPlanId=b.dataset.planId;showView('workspace');});
 }
 function regenerateMessage(msgId){
   const s = activeSession(); if (!s) return;
@@ -1463,7 +1525,22 @@ async function sendMessage(){
   s.updatedAt = nowIso(); idbPut('sessions', s);
   renderConvo(); renderSessList();
   logEvent('SESSION', 'prompt submitted · session '+s.id);
+  if(await draftWorkspacePlanFromConversation(s,text))return;
   await runPipeline(s, text);
+}
+
+async function draftWorkspacePlanFromConversation(session,text){
+  try{
+    const response=await fetch(apiUrl('/api/workspace/plans/from-conversation'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:text,sessionId:session.id})});
+    if(!response.ok)return false;
+    const data=await response.json();if(!data.matched)return false;
+    const plan=data.plan,index=DB.workspacePlans.findIndex(x=>x.id===plan.id);if(index>=0)DB.workspacePlans[index]=plan;else DB.workspacePlans.push(plan);
+    const folder=plan.rootSelectionRequired?'Folder: selection required in Local Workspace.':'Folder: '+plan.folders.map(x=>x.path).join(', ')+'.';
+    const content=(data.reused?'Reused an equivalent saved scan plan.':'Created a reviewable scan plan.')+' '+folder+' Tools: '+plan.tools.join(', ')+'. Expected output: '+plan.expectedOutput.join('; ')+'. Permissions: read-only access to the approved root; no local-folder writes, command execution, or network access.';
+    session.messages.push({id:uid('msg'),role:'assistant',content,createdAt:nowIso(),workspacePlanId:plan.id});
+    session.updatedAt=nowIso();idbPut('sessions',session);renderConvo();renderSessList();logEvent('WORKFLOW','workspace scan plan drafted · '+plan.id);setPipelineState('COMPLETE','scan plan ready for review');
+    return true;
+  }catch(_){return false;}
 }
 
 async function runPipeline(s, promptText){
@@ -3134,6 +3211,135 @@ function renderGraphView(){
   `;
 }
 
+/* ===================== marker: RENDER:PROVIDER-BROWSER ===================== */
+const PROVIDER_BROWSER_SITES = [
+  {name:'Codex', description:'Code, review, and ship work with your ChatGPT account.', url:'https://chatgpt.com/codex', icon:'code-2'},
+  {name:'Claude', description:'Open your Claude account in NOVA’s provider browser.', url:'https://claude.ai/new', icon:'sparkles'},
+  {name:'Gemini', description:'Open your Gemini account in NOVA’s provider browser.', url:'https://gemini.google.com', icon:'bot'},
+  {name:'Perplexity', description:'Open Perplexity in NOVA’s provider browser.', url:'https://www.perplexity.ai', icon:'search'},
+];
+
+async function openProviderBrowser(url){
+  const target = url.trim();
+  if (!target) return toast('Enter a provider address.');
+  try {
+    if (window.__TAURI__?.core?.invoke) await window.__TAURI__.core.invoke('open_provider_browser', {url:target});
+    else window.open(target, '_blank', 'noopener');
+    toast('Opened in the NOVA Provider Browser.');
+  } catch (error) {
+    toast(typeof error === 'string' ? error : (error?.message || 'Could not open that address.'));
+  }
+}
+
+async function refreshGitStatus(){
+  try {
+    const response = await fetch(apiUrl('/api/git/status'));
+    if (!response.ok) return;
+    const next = await response.json();
+    if (gitSnapshot && next.available && (next.head !== gitSnapshot.head || next.changed !== gitSnapshot.changed)) toast(`Git updated: ${next.changed} changed file${next.changed===1?'':'s'}.`);
+    gitSnapshot = next;
+    if (currentView === 'git') renderGitView();
+  } catch (_) {}
+}
+function renderGitView(){
+  const pad = $('gitView').querySelector('.view-pad'); const g = gitSnapshot;
+  pad.innerHTML = `<div class="view-head"><span class="eyebrow">System</span><h1 class="view-title">Git Updates</h1><p class="view-desc">Live local workspace changes. Refreshes every 10 seconds and notifies when branch, commit, or changed-file count changes.</p><div class="cap-toolbar"><button class="btn btn-line" id="gitRefresh">Refresh now</button><label class="tag-chip"><input id="gitAuto" type="checkbox" ${gitAutoRefresh?'checked':''}> Auto-refresh</label></div></div>${!g?'<p class="empty-hint">Reading local Git status…</p>':!g.available?`<p class="empty-hint">Git status unavailable: ${escapeHtml(g.error||'unknown error')}</p>`:`<div class="panel" style="padding:15px"><div class="mono">${escapeHtml(g.branch||'detached')} · ${escapeHtml(g.head)} · ${g.changed} changed file${g.changed===1?'':'s'}</div><div class="cap-section-label">Working tree</div>${g.files.length?`<pre style="white-space:pre-wrap;margin:0;color:var(--muted)">${escapeHtml(g.files.join('\n'))}</pre>`:'<p class="empty-hint">Clean working tree.</p>'}</div>`}`;
+  $('#gitRefresh').onclick = () => refreshGitStatus();
+  $('#gitAuto').onchange = event => { gitAutoRefresh = event.currentTarget.checked; toast(gitAutoRefresh ? 'Git auto-refresh enabled.' : 'Git auto-refresh paused.'); };
+}
+
+let workspaceSelectedRootId = null;
+let workspaceSelectedReportId = null;
+let workspaceSelectedPlanId = null;
+let workspaceSelectedChangeId = null;
+function workspaceBytes(bytes){ return bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KB':(bytes/1048576).toFixed(1)+' MB'; }
+function workspaceCitation(item){ return `<button class="tag-chip workspace-citation" data-citation="${escapeHtml(item.citation)}" title="Copy file citation">${escapeHtml(item.relativePath)}:${item.line||1}</button>`; }
+async function renderWorkspaceView(){
+  const pad=$('workspaceView').querySelector('.view-pad'); let roots=[],reports=[],plans=[],changes=[],runs=[],permissions=[],backups=[],audit=[],gitView=null,gitDrafts=[];
+  try { const responses=await Promise.all([fetch(apiUrl('/api/workspace/roots')),fetch(apiUrl('/api/workspace/reports')),fetch(apiUrl('/api/workspace/plans')),fetch(apiUrl('/api/workspace/changes')),fetch(apiUrl('/api/workspace/runs')),fetch(apiUrl('/api/security/permissions')),fetch(apiUrl('/api/security/backups')),fetch(apiUrl('/api/security/audit'))]); if(responses[0].ok)roots=await responses[0].json();if(responses[1].ok)reports=await responses[1].json();if(responses[2].ok)plans=await responses[2].json();if(responses[3].ok)changes=await responses[3].json();if(responses[4].ok)runs=await responses[4].json();if(responses[5].ok)permissions=await responses[5].json();if(responses[6].ok)backups=await responses[6].json();if(responses[7].ok)audit=await responses[7].json(); } catch(_) {}
+  if(!roots.some(x=>x.id===workspaceSelectedRootId))workspaceSelectedRootId=roots[0]?.id||null;
+  if(!reports.some(x=>x.id===workspaceSelectedReportId))workspaceSelectedReportId=reports[0]?.id||null;
+  if(!plans.some(x=>x.id===workspaceSelectedPlanId))workspaceSelectedPlanId=plans[0]?.id||null;
+  if(!changes.some(x=>x.id===workspaceSelectedChangeId))workspaceSelectedChangeId=changes[0]?.id||null;
+  if(workspaceSelectedRootId){try{const [gitResponse,draftResponse]=await Promise.all([fetch(apiUrl('/api/workspace/git?rootId='+encodeURIComponent(workspaceSelectedRootId))),fetch(apiUrl('/api/workspace/git/drafts'))]);if(gitResponse.ok)gitView=await gitResponse.json();if(draftResponse.ok)gitDrafts=(await draftResponse.json()).filter(x=>x.rootId===workspaceSelectedRootId);}catch(_){} }
+  const selected=roots.find(x=>x.id===workspaceSelectedRootId), report=reports.find(x=>x.id===workspaceSelectedReportId);
+  const plan=plans.find(x=>x.id===workspaceSelectedPlanId);
+  const change=changes.find(x=>x.id===workspaceSelectedChangeId);
+  const options=roots.map(x=>`<option value="${x.id}" ${x.id===workspaceSelectedRootId?'selected':''}>${escapeHtml(x.label)} — ${escapeHtml(x.path)}</option>`).join('');
+  const reportRows=reports.slice(0,25).map(x=>`<button class="rail-btn workspace-report" data-id="${x.id}" style="border:1px solid var(--line-soft);margin-top:6px;display:flex;justify-content:space-between"><span><strong>${x.type==='workspace-search'?'Search: '+escapeHtml(x.query):x.type==='workspace-structured'?'Structured report':'Folder scan'}</strong><span class="mono" style="display:block;font-size:10px;color:var(--muted-dim);margin-top:3px">${escapeHtml(x.rootPath)} · ${fmtRelDate(x.completedAt)}</span></span><span class="badge badge-green">${x.type==='workspace-search'?(x.matches||[]).length:x.type==='workspace-structured'?(x.sections||[]).length:(x.summary?.files||0)}</span></button>`).join('');
+  const planHtml=plan?`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Conversation scan plan</span><h2 style="font-size:16px;margin:5px 0">${escapeHtml(plan.request)}</h2></div><span class="badge ${plan.status==='completed'?'badge-green':'badge-amber'}">${escapeHtml(plan.status)}</span></div><div class="kv" style="margin-top:10px"><span>Folders</span><span>${plan.folders.length?plan.folders.map(x=>escapeHtml(x.path)+' (read-only)').join(', '):'Selection required'}</span><span>Tools</span><span>${escapeHtml(plan.tools.join(', '))}</span><span>Expected output</span><span>${escapeHtml(plan.expectedOutput.join('; '))}</span><span>Read permission</span><span>${escapeHtml(plan.permissions.read.scope)}</span><span>Write permission</span><span>No writes to local folders; NOVA plan/report store only</span><span>Commands / network</span><span>Disabled / disabled</span><span>Created</span><span class="mono">${escapeHtml(plan.createdAt)}</span></div><div style="display:flex;gap:8px;margin-top:12px">${plan.rootSelectionRequired&&selected?'<button class="btn btn-line" id="workspaceAssignPlanRoot">Use selected approved root</button>':''}${plan.status==='draft'?`<button class="btn btn-amber" id="workspaceRunPlan" ${plan.rootSelectionRequired?'disabled':''}>Run plan</button>`:''}</div><div class="cap-section-label">Saved plans</div><div style="display:flex;gap:6px;flex-wrap:wrap">${plans.slice(0,20).map(x=>`<button class="tag-chip workspace-plan" data-id="${x.id}">${escapeHtml(x.request.slice(0,46))}${x.request.length>46?'…':''}</button>`).join('')}</div></div>`:'';
+  const changeHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Draft code changes</span><h2 style="font-size:16px;margin:5px 0">Propose an exact replacement</h2></div><span class="badge">Every write requires approval</span></div><div class="card-grid cols-2" style="margin-top:10px"><div><label class="eyebrow" for="workspaceChangePath">Scanned relative file</label><input id="workspaceChangePath" aria-label="Scanned relative file" placeholder="src/example.js" style="width:100%;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><label class="eyebrow" for="workspaceChangeFind">Exact text to replace</label><textarea id="workspaceChangeFind" aria-label="Exact text to replace" style="width:100%;min-height:90px;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea><label class="eyebrow" for="workspaceChangeReplacement">Replacement</label><textarea id="workspaceChangeReplacement" aria-label="Replacement" style="width:100%;min-height:90px;margin-top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea></div><div><label class="eyebrow" for="workspaceChangeImpact">Impact explanation</label><textarea id="workspaceChangeImpact" aria-label="Impact explanation" placeholder="What changes and why" style="width:100%;min-height:90px;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea><button class="btn btn-amber" id="workspaceProposeChange" ${selected?'':'disabled'}>Create patch proposal</button><p class="empty-hint">Creating and checking a proposal cannot modify the approved folder. Safe checks run against a bounded copy under NOVA's data directory.</p><div class="cap-section-label">Saved proposals</div><div style="display:flex;gap:6px;flex-wrap:wrap">${changes.slice(0,20).map(x=>`<button class="tag-chip workspace-change" data-id="${x.id}">${escapeHtml(x.relativePath)} · ${escapeHtml(x.status)}</button>`).join('')||'<span class="empty-hint">No proposals yet.</span>'}</div></div></div>${change?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(change.relativePath)}</strong><span class="badge ${['checks-passed','applied'].includes(change.status)?'badge-green':change.status==='checks-failed'?'badge-red':'badge-amber'}">${escapeHtml(change.status)}</span></div><p style="font-size:12px;color:var(--muted)">${escapeHtml(change.impact)}</p><pre aria-label="Proposed unified diff" style="white-space:pre-wrap;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:12px;color:var(--ink-dim);font-size:11px">${escapeHtml(change.diff)}</pre><div class="kv"><span>Original write</span><span>${change.status==='approved'?'Approved for this batch':change.status==='applied'?'Completed':'Disabled'}</span><span>Before SHA-256</span><span class="mono">${escapeHtml(change.sourceSha256)}</span><span>After SHA-256</span><span class="mono">${escapeHtml(change.proposedSha256)}</span><span>Workspace-copy write</span><span>Allowed</span><span>Network</span><span>Disabled</span>${change.copy?`<span>Copy</span><span class="mono">${escapeHtml(change.copy.path)}</span>`:''}${change.approval?`<span>Approval</span><span class="mono">${escapeHtml(change.approval.id)} · ${escapeHtml(change.approval.approvedAt)}</span>`:''}${change.rollback?`<span>Rollback backup</span><span class="mono">${escapeHtml(change.rollback.backupPath)}</span><span>Rollback guidance</span><span>${escapeHtml(change.rollback.instructions)}</span>`:''}</div><div class="cap-section-label">Validation results</div>${(change.checks||[]).map(x=>`<div style="padding:6px 0"><span class="badge ${x.status==='passed'?'badge-green':x.status==='failed'?'badge-red':''}">${escapeHtml(x.status)}</span> <strong style="font-size:12px">${escapeHtml(x.name)}</strong><span style="font-size:11px;color:var(--muted);margin-left:6px">${escapeHtml(x.detail)}</span></div>`).join('')||'<p class="empty-hint">Checks have not run.</p>'}${change.status==='draft'?'<button class="btn btn-line" id="workspaceCheckChange" style="margin-top:10px">Run safe checks in workspace copy</button>':''}${change.status==='checks-passed'?'<button class="btn btn-amber" id="workspaceApproveChange" style="margin-top:10px">Approve this write batch</button>':''}${change.status==='approved'?'<div class="approval-banner" style="margin-top:10px"><span>Approval applies once to the listed file and hashes.</span><button class="btn btn-amber" id="workspaceExecuteChange">Write approved batch</button></div>':''}</article>`:''}</div>`;
+  const rootRuns=runs.filter(x=>x.rootId===workspaceSelectedRootId),latestRun=rootRuns[0];
+  const executionHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Local execution workspace</span><h2 style="font-size:16px;margin:5px 0">Controlled repository commands</h2></div><span class="badge ${selected?.commandAllowlist?'badge-green':'badge-amber'}">${selected?.commandAllowlist?'Allowlisted':'Approval required'}</span></div><p class="empty-hint">Tests, formatting, and builds run in bounded copies. Git status and diagnostics are read-only. One run per workspace, with fixed timeouts and 256 KiB output limits.</p>${selected?.commandAllowlist?`<div style="display:flex;gap:7px;flex-wrap:wrap">${selected.commandAllowlist.actions.map(action=>`<button class="btn btn-line workspace-command" data-action="${action}">${escapeHtml(action)}</button>`).join('')}</div>`:`<div id="workspaceCommandChoices" style="display:flex;gap:7px;flex-wrap:wrap">${['test','format','build','git-status','diagnostics'].map(action=>`<label class="tag-chip"><input type="checkbox" value="${action}" checked> ${action}</label>`).join('')}</div><button class="btn btn-amber" id="workspaceAllowCommands" ${selected?'':'disabled'} style="margin-top:10px">Approve repository command allowlist</button>`}${latestRun?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:12px"><div style="display:flex;justify-content:space-between"><strong>${escapeHtml(latestRun.action)}</strong><span class="badge ${latestRun.status==='passed'?'badge-green':latestRun.status==='running'?'badge-amber':'badge-red'}">${escapeHtml(latestRun.status)}</span></div><div class="kv" style="margin-top:8px"><span>Timeout</span><span>${latestRun.command?.timeoutMs||'—'} ms</span><span>Output limit</span><span>${workspaceBytes(latestRun.outputLimitBytes)}</span><span>Working location</span><span class="mono">${escapeHtml(latestRun.command?.cwd||'—')}</span></div><pre aria-label="Command output" style="white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px;font-size:11px">${escapeHtml(latestRun.output||'(no output)')}${latestRun.truncated?'\n[output truncated]':''}</pre></article>`:''}</div>`;
+  const gitDraft=gitDrafts[0];
+  const gitHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Git workflow</span><h2 style="font-size:16px;margin:5px 0">Live changes and reviewed commits</h2></div><button class="btn btn-line" id="workspaceGitRefresh">Refresh</button></div>${gitView?`<div class="kv"><span>Branch</span><span>${escapeHtml(gitView.branch||'detached')}</span><span>HEAD</span><span class="mono">${escapeHtml(gitView.head)}</span><span>Sampled</span><span class="mono">${escapeHtml(gitView.sampledAt)}</span></div><div class="cap-section-label">Branches</div><div style="display:flex;gap:6px;flex-wrap:wrap">${gitView.branches.map(x=>`<span class="tag-chip">${x.current?'● ':''}${escapeHtml(x.name)} · ${escapeHtml(x.sha)}</span>`).join('')}</div><div class="cap-section-label">Exact changed files</div><div id="workspaceGitFiles">${gitView.status.map(row=>`<label style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)"><input type="checkbox" value="${escapeHtml(row.path)}"><span class="mono">${escapeHtml(row.code)} ${escapeHtml(row.path)}${row.fromPath?' ← '+escapeHtml(row.fromPath):''}</span></label>`).join('')||'<p class="empty-hint">Working tree is clean.</p>'}</div><label class="eyebrow" for="workspaceCommitMessage" style="display:block;margin-top:12px">Draft commit message</label><input id="workspaceCommitMessage" aria-label="Draft commit message" maxlength="200" style="width:100%;margin:6px 0 8px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspaceCreateGitDraft" ${gitView.status.length?'':'disabled'}>Stage selected files and create draft</button><div class="card-grid cols-2" style="margin-top:14px"><div><div class="cap-section-label">Working diff</div><pre aria-label="Working diff" style="white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--bg);padding:10px;font-size:10.5px">${escapeHtml(gitView.workingDiff||'(none)')}</pre></div><div><div class="cap-section-label">Staged diff</div><pre aria-label="Staged diff" style="white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--bg);padding:10px;font-size:10.5px">${escapeHtml(gitView.stagedDiff||'(none)')}</pre></div></div><div class="cap-section-label">Test evidence</div>${gitView.testEvidence.map(x=>`<div class="mono" style="padding:5px 0">${escapeHtml(x.id)} · ${escapeHtml(x.status)} · ${escapeHtml(x.finishedAt||x.startedAt)}</div>`).join('')||'<p class="empty-hint">No controlled test run recorded for this repository.</p>'}`:'<p class="empty-hint">Select and approve the exact Git repository root to inspect Git evidence.</p>'}${gitDraft?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:12px"><div style="display:flex;justify-content:space-between"><strong>Commit draft: ${escapeHtml(gitDraft.message||'(message required)')}</strong><span class="badge ${gitDraft.status==='committed'?'badge-green':'badge-amber'}">${escapeHtml(gitDraft.status)}</span></div><div class="cap-section-label">Exact staged files</div>${gitDraft.stagedFiles.map(file=>`<div class="mono" style="padding:4px 0">${escapeHtml(file)}</div>`).join('')}<div class="mono" style="font-size:10px;color:var(--muted);margin:8px 0">Staged diff SHA-256: ${escapeHtml(gitDraft.stagedDiffSha256)}</div><pre aria-label="Reviewed staged diff" style="white-space:pre-wrap;max-height:300px;overflow:auto;background:var(--bg);padding:10px;font-size:10.5px">${escapeHtml(gitDraft.stagedDiff)}</pre>${gitDraft.status==='awaiting-review'?'<button class="btn btn-amber" id="workspaceReviewGitDraft">I reviewed these exact staged files and diff</button>':''}${gitDraft.status==='reviewed'?'<div class="approval-banner"><span>The reviewed staged snapshot is unchanged.</span><button class="btn btn-amber" id="workspaceCommitGitDraft">Create commit</button></div>':''}${gitDraft.commit?`<div class="kv"><span>Commit</span><span class="mono">${escapeHtml(gitDraft.commit.sha)}</span><span>Committed</span><span>${escapeHtml(gitDraft.commit.committedAt)}</span></div>`:''}</article>`:''}</div>`;
+  const securityHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div><span class="eyebrow">Desktop security</span><h2 style="font-size:16px;margin:5px 0">Permissions, encrypted audit, backup and restore</h2></div><div class="card-grid cols-3" style="margin-top:12px"><div><strong>${permissions.filter(x=>x.status==='active').length}</strong><div class="empty-hint">active permission records</div></div><div><strong>${audit.length}</strong><div class="empty-hint">verified encrypted audit entries shown</div></div><div><strong>${backups.length}</strong><div class="empty-hint">encrypted local backups</div></div></div><div style="display:flex;gap:8px;margin-top:12px"><input id="workspaceBackupLabel" aria-label="Backup label" placeholder="Backup label" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspaceCreateBackup">Create encrypted backup</button></div><div class="cap-section-label">Backups</div>${backups.slice(0,10).map(x=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--line-soft)"><span><strong>${escapeHtml(x.label)}</strong><span class="mono" style="display:block;font-size:10px">${escapeHtml(x.createdAt)} · ${escapeHtml(x.sha256.slice(0,16))}…</span></span><button class="btn btn-line workspace-restore" data-id="${x.id}">Restore</button></div>`).join('')||'<p class="empty-hint">No backups yet.</p>'}<div class="cap-section-label">Encrypted audit trail</div>${audit.slice(0,20).map(x=>`<div class="mono" style="font-size:10.5px;padding:5px 0">${escapeHtml(x.at)} · ${escapeHtml(x.event?.action||'event')} · ${escapeHtml(x.recordHash.slice(0,16))}…</div>`).join('')||'<p class="empty-hint">No security events yet.</p>'}<p class="empty-hint">Audit and backup payloads use AES-256-GCM at rest. Keys and files are restricted to the local NOVA data directory.</p></div>`;
+  let detail='<p class="empty-hint">Run a scan or search to create a cited, persisted report.</p>';
+  if(report?.type==='workspace-scan'){
+    const git=report.summary.git||{},languages=(report.summary.languages||[]).map(x=>`<span class="tag-chip">${escapeHtml(x.language)} · ${x.files}</span>`).join(''),deps=(report.summary.dependencyFiles||[]).map(workspaceCitation).join('');
+    detail=`<div class="kv tnum"><span>Files observed</span><span>${report.summary.files}${report.truncated?' (capped)':''}</span><span>Observed size</span><span>${workspaceBytes(report.summary.totalBytes)}</span><span>Git state</span><span>${git.available?escapeHtml((git.branch||'detached')+' @ '+git.head+' · '+git.changed+' changed'):escapeHtml(git.reason||'Unavailable')}</span><span>Read-only</span><span>Yes</span></div><div class="cap-section-label">Languages</div><div style="display:flex;gap:6px;flex-wrap:wrap">${languages||'<span class="empty-hint">No recognized source files.</span>'}</div><div class="cap-section-label">Dependency files</div><div style="display:flex;gap:6px;flex-wrap:wrap">${deps||'<span class="empty-hint">No recognized manifests.</span>'}</div><div class="cap-section-label">Limitations</div><ul style="font-size:12px;color:var(--muted)">${(report.limitations||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>`;
+  } else if(report?.type==='workspace-search'){
+    detail=`<div class="kv tnum"><span>Query</span><span>${escapeHtml(report.query)}</span><span>Files searched</span><span>${report.searchedFiles}</span><span>Matches</span><span>${(report.matches||[]).length}${report.truncated?' (capped)':''}</span><span>Read-only</span><span>Yes</span></div><div class="cap-section-label">Cited matches</div>${(report.matches||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid var(--line-soft)">${workspaceCitation(x)}<div class="mono" style="font-size:10.5px;color:var(--muted);margin-top:5px;white-space:pre-wrap">${escapeHtml(x.preview)}</div></div>`).join('')||'<p class="empty-hint">No matches.</p>'}`;
+  } else if(report?.type==='workspace-structured'){
+    detail=`<div class="kv tnum"><span>Scope</span><span>${escapeHtml(report.scope.rootPath)}</span><span>Files considered</span><span>${report.scope.filesConsidered}${report.scope.truncated?' (capped)':''}</span><span>Completed</span><span>${escapeHtml(report.completedAt)}</span><span>Read-only</span><span>Yes</span></div>${(report.sections||[]).map(section=>`<article style="padding:14px 0;border-top:1px solid var(--line-soft);margin-top:12px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(section.title)}</strong><span class="badge ${section.status==='clear'||section.status==='configured'?'badge-green':section.status==='unavailable'?'':'badge-amber'}">${escapeHtml(section.status)}</span></div><p style="font-size:12px;color:var(--muted)">${escapeHtml(section.summary)}</p>${(section.findings||[]).slice(0,200).map(f=>`<div style="padding:7px 0"><span class="badge ${f.severity==='warning'?'badge-amber':''}">${escapeHtml(f.severity)}</span> <strong style="font-size:12px">${escapeHtml(f.title)}</strong><div style="margin-top:4px">${workspaceCitation(f)}</div><div class="mono" style="font-size:10.5px;color:var(--muted);margin-top:4px">${escapeHtml(f.detail)}</div></div>`).join('')||'<p class="empty-hint">No findings in this profile.</p>'}<div class="mono" style="font-size:10px;color:var(--muted-dim)">${(section.limitations||[]).map(escapeHtml).join(' · ')}</div></article>`).join('')}`;
+  }
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">Read-only intelligence</span><h1 class="view-title">Local Workspace</h1><p class="view-desc">Approve exact local folders, inspect code and Git state, and save reports with file-and-line citations. Scans never modify selected folders.</p></div></div><div class="panel" style="padding:16px"><div class="eyebrow">Approve a local root</div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="workspaceRootPath" aria-label="Local folder path" placeholder="/Users/you/Documents/project" style="min-width:300px;flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><input id="workspaceRootLabel" aria-label="Folder label" placeholder="Project label" style="min-width:150px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspaceApproveRoot">Approve root</button></div><p class="empty-hint" style="padding:8px 0 0">Approval covers only the exact resolved directory. Filesystem roots are refused and symbolic links are not followed.</p></div><div class="card-grid cols-2" style="margin-top:16px"><div class="panel" style="padding:16px"><div class="eyebrow">Approved roots</div>${roots.length?`<select id="workspaceRootSelect" aria-label="Approved local root" style="width:100%;margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px">${options}</select><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-amber" id="workspaceScan">Scan folder</button><button class="btn btn-line" id="workspaceRevoke">Revoke approval</button></div><div style="display:flex;gap:8px;margin-top:12px"><input id="workspaceSearchQuery" aria-label="Search local workspace" placeholder="Search names and content" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-line" id="workspaceSearch">Search</button></div><div class="cap-section-label">Structured report profiles</div><div id="workspaceProfiles" style="display:flex;gap:6px;flex-wrap:wrap">${[['code-health','Code health'],['security-signals','Security signals'],['test-status','Test status'],['documentation-gaps','Documentation gaps'],['duplicate-files','Duplicate files'],['repository-changes','Repository changes']].map(([id,label])=>`<label class="tag-chip"><input type="checkbox" value="${id}" checked> ${label}</label>`).join('')}</div><button class="btn btn-amber" id="workspaceStructuredReport" style="margin-top:10px">Generate structured report</button>`:'<p class="empty-hint">No local roots approved.</p>'}</div><div class="panel" style="padding:16px"><div class="eyebrow">Persisted reports</div>${reportRows||'<p class="empty-hint">No reports yet.</p>'}</div></div><div class="panel" style="padding:16px;margin-top:16px"><div class="eyebrow">Report inspection</div><div style="margin-top:12px">${detail}</div></div>`;
+  pad.querySelector('.view-head').insertAdjacentHTML('afterend',planHtml+changeHtml+executionHtml+gitHtml+securityHtml);
+  $('workspaceRootPath').insertAdjacentHTML('afterend','<button class="btn btn-line" id="workspacePickRoot">Choose folder…</button>');
+  const request=async(url,body)=>{const response=await fetch(apiUrl(url),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error);return data;};
+  $('workspaceApproveRoot').onclick=async()=>{try{const data=await request('/api/workspace/roots',{path:$('workspaceRootPath').value.trim(),label:$('workspaceRootLabel').value.trim()});workspaceSelectedRootId=data.id;await renderWorkspaceView();toast('Local root approved.');}catch(error){toast(error.message);}};
+  if($('workspacePickRoot'))$('workspacePickRoot').onclick=async()=>{try{if(!window.__TAURI__?.core?.invoke)return toast('Native folder selection is available in the NOVA desktop app.');const selectedPath=await window.__TAURI__.core.invoke('pick_local_folder');$('workspaceRootPath').value=selectedPath;}catch(error){toast(typeof error==='string'?error:(error?.message||'Folder selection cancelled.'));}};
+  if($('workspaceRootSelect'))$('workspaceRootSelect').onchange=e=>{workspaceSelectedRootId=e.target.value;renderWorkspaceView();};
+  if($('workspaceScan'))$('workspaceScan').onclick=async()=>{try{toast('Scanning approved root…');const data=await request('/api/workspace/scan',{rootId:workspaceSelectedRootId});workspaceSelectedReportId=data.id;toast('Read-only scan complete.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  if($('workspaceSearch'))$('workspaceSearch').onclick=async()=>{try{const query=$('workspaceSearchQuery').value.trim();if(!query)return toast('Enter a search query.');const data=await request('/api/workspace/search',{rootId:workspaceSelectedRootId,query});workspaceSelectedReportId=data.id;toast('Search report saved.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  if($('workspaceStructuredReport'))$('workspaceStructuredReport').onclick=async()=>{try{const profiles=[...$('workspaceProfiles').querySelectorAll('input:checked')].map(x=>x.value);if(!profiles.length)return toast('Select at least one report profile.');toast('Generating structured report…');const data=await request('/api/workspace/structured-report',{rootId:workspaceSelectedRootId,profiles});workspaceSelectedReportId=data.id;toast('Structured report saved.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  if($('workspaceAssignPlanRoot'))$('workspaceAssignPlanRoot').onclick=async()=>{try{await request('/api/workspace/plans/'+encodeURIComponent(plan.id)+'/root',{rootId:workspaceSelectedRootId});toast('Approved root assigned.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  if($('workspaceRunPlan'))$('workspaceRunPlan').onclick=async()=>{try{toast('Running approved read-only plan…');const data=await request('/api/workspace/plans/'+encodeURIComponent(plan.id)+'/run',{});workspaceSelectedReportId=data.report.id;toast('Plan completed and report saved.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  if($('workspaceProposeChange'))$('workspaceProposeChange').onclick=async()=>{try{const data=await request('/api/workspace/changes',{rootId:workspaceSelectedRootId,relativePath:$('workspaceChangePath').value.trim(),find:$('workspaceChangeFind').value,replacement:$('workspaceChangeReplacement').value,impact:$('workspaceChangeImpact').value.trim()});workspaceSelectedChangeId=data.id;toast('Patch proposal created.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  if($('workspaceCheckChange'))$('workspaceCheckChange').onclick=async()=>{try{toast('Checking patch in an isolated workspace copy…');await request('/api/workspace/changes/'+encodeURIComponent(change.id)+'/check',{});toast('Safe checks completed.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}};
+  if($('workspaceApproveChange'))$('workspaceApproveChange').onclick=async()=>{try{await request('/api/workspace/changes/'+encodeURIComponent(change.id)+'/approve',{});toast('Write batch explicitly approved.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}};
+  if($('workspaceExecuteChange'))$('workspaceExecuteChange').onclick=async()=>{try{await request('/api/workspace/changes/'+encodeURIComponent(change.id)+'/execute',{});toast('Approved write completed with rollback evidence.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}};
+  if($('workspaceAllowCommands'))$('workspaceAllowCommands').onclick=async()=>{try{const actions=[...$('workspaceCommandChoices').querySelectorAll('input:checked')].map(x=>x.value);await request('/api/workspace/roots/'+encodeURIComponent(workspaceSelectedRootId)+'/commands/allow',{actions});toast('Repository command allowlist approved.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  $$('.workspace-command').forEach(button=>button.onclick=async()=>{try{toast('Running controlled '+button.dataset.action+' command…');await request('/api/workspace/runs',{rootId:workspaceSelectedRootId,action:button.dataset.action});toast('Controlled command finished.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}});
+  if($('workspaceGitRefresh'))$('workspaceGitRefresh').onclick=()=>renderWorkspaceView();
+  if($('workspaceCreateGitDraft'))$('workspaceCreateGitDraft').onclick=async()=>{try{const files=[...$('workspaceGitFiles').querySelectorAll('input:checked')].map(x=>x.value),message=$('workspaceCommitMessage').value.trim();if(!files.length)return toast('Select the exact files to stage.');await request('/api/workspace/git/drafts',{rootId:workspaceSelectedRootId,files,message});toast('Commit draft created. Review the exact staged snapshot.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}};
+  if($('workspaceReviewGitDraft'))$('workspaceReviewGitDraft').onclick=async()=>{try{await request('/api/workspace/git/drafts/'+encodeURIComponent(gitDraft.id)+'/review',{});toast('Exact staged snapshot reviewed.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}};
+  if($('workspaceCommitGitDraft'))$('workspaceCommitGitDraft').onclick=async()=>{try{await request('/api/workspace/git/drafts/'+encodeURIComponent(gitDraft.id)+'/commit',{});toast('Reviewed draft committed.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}};
+  if($('workspaceCreateBackup'))$('workspaceCreateBackup').onclick=async()=>{try{await request('/api/security/backups',{label:$('workspaceBackupLabel').value.trim()||'Manual backup'});toast('Encrypted local backup created.');renderWorkspaceView();}catch(error){toast(error.message);}};
+  $$('.workspace-restore').forEach(button=>button.onclick=async()=>{try{await request('/api/security/backups/'+encodeURIComponent(button.dataset.id)+'/restore',{});toast('Backup restored; a pre-restore safety backup was retained.');renderWorkspaceView();}catch(error){toast(error.message);}});
+  if($('workspaceRevoke'))$('workspaceRevoke').onclick=async()=>{await fetch(apiUrl('/api/workspace/roots/'+encodeURIComponent(workspaceSelectedRootId)),{method:'DELETE'});workspaceSelectedRootId=null;toast('Root approval revoked.');renderWorkspaceView();};
+  $$('.workspace-report').forEach(x=>x.onclick=()=>{workspaceSelectedReportId=x.dataset.id;renderWorkspaceView();});
+  $$('.workspace-plan').forEach(x=>x.onclick=()=>{workspaceSelectedPlanId=x.dataset.id;renderWorkspaceView();});
+  $$('.workspace-change').forEach(x=>x.onclick=()=>{workspaceSelectedChangeId=x.dataset.id;renderWorkspaceView();});
+  $$('.workspace-citation').forEach(x=>x.onclick=async()=>{try{await navigator.clipboard.writeText(x.dataset.citation);toast('File citation copied.');}catch(_){toast(x.dataset.citation);}});
+  if(window.lucide)lucide.createIcons();
+}
+
+async function renderCollectorView(){
+  const pad = $('collectorView').querySelector('.view-pad');
+  let runs = [];
+  try { const r = await fetch(apiUrl('/api/collector/runs')); if (r.ok) runs = await r.json(); } catch (_) {}
+  const row = r => `<article class="panel" style="padding:15px;margin-top:10px"><div style="display:flex;justify-content:space-between;gap:10px"><strong>${escapeHtml(r.geography)} · ${escapeHtml(r.categories.join(', '))}</strong><span class="badge ${r.status==='completed'?'badge-green':r.status==='awaiting_approval'?'badge-amber':'badge-blue'}">${escapeHtml(r.status)}</span></div><p class="empty-hint" style="padding:8px 0">${r.queryCount} sequential queries · ${escapeHtml(r.source)}<br>${escapeHtml(r.limitation)}</p><div class="mono" style="font-size:11px">${(r.checkpoints||[]).map(x=>escapeHtml(x.at+' · '+x.status+' · '+x.detail)).join('<br>')||'No checkpoints yet.'}</div>${r.status==='awaiting_approval'?`<button class="btn btn-amber collector-approve" data-id="${r.id}" style="margin-top:10px">Approve batch</button>`:r.status==='approved'?`<button class="btn btn-amber collector-execute" data-id="${r.id}" style="margin-top:10px">Execute sequentially</button>`:''}</article>`;
+  pad.innerHTML = `<div class="view-head"><span class="eyebrow">Operations</span><h1 class="view-title">Collector</h1><p class="view-desc">Plan and review bounded local source collection. Every external batch requires approval and stops on access challenges.</p></div><div class="panel" style="padding:15px"><label class="eyebrow">Delhi venue categories</label><div class="multi-pick" style="margin:10px 0">${['banquet halls','wedding venues','conference centres','party halls'].map(x=>`<label class="tag-chip"><input type="checkbox" value="${x}" checked> ${x}</label>`).join('')}</div><button class="btn btn-amber" id="collectorPlan">Create reviewable plan</button></div><div class="cap-section-label">Persisted collection runs</div>${runs.length?runs.map(row).join(''):'<p class="empty-hint">No collector runs yet.</p>'}`;
+  $('#collectorPlan').onclick = async () => { const categories=[...pad.querySelectorAll('input:checked')].map(x=>x.value); const r=await fetch(apiUrl('/api/collector/plans'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({geography:'Delhi',categories})}); if(!r.ok) return toast((await r.json()).error); toast('Collector plan created for review.'); renderCollectorView(); };
+  $$('.collector-approve').forEach(b=>b.onclick=async()=>{await fetch(apiUrl('/api/collector/runs/'+b.dataset.id+'/approve'),{method:'POST'});toast('Batch approved.');renderCollectorView();});
+  $$('.collector-execute').forEach(b=>b.onclick=async()=>{const r=await fetch(apiUrl('/api/collector/runs/'+b.dataset.id+'/execute'),{method:'POST'});const d=await r.json();toast(r.ok?'Collection started.':d.error);renderCollectorView();});
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderBrowserView(){
+  const root = $('browserView').querySelector('.view-pad');
+  root.innerHTML = `
+    <div class="view-head"><div><span class="eyebrow">Capabilities</span><h1 class="view-title">Provider Browser</h1><p class="view-desc">Open AI providers in a separate NOVA browser window. Sign in directly with each provider; NOVA never asks for or stores provider passwords.</p></div></div>
+    <div class="panel" style="padding:14px;margin-bottom:14px"><div class="eyebrow" style="margin-bottom:8px">Open a secure address</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="providerBrowserUrl" aria-label="Provider address" placeholder="https://your-provider.example" style="flex:1;min-width:240px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:#0c1117"><button class="btn btn-amber" id="providerBrowserOpenCustom"><span data-lucide="external-link" style="width:14px;height:14px"></span>Open</button></div><p class="empty-hint" style="padding:10px 0 0;margin:0">HTTPS addresses are allowed. Local development addresses may use <code>http://localhost</code> or <code>http://127.0.0.1</code>.</p></div>
+    <div class="card-grid cols-2">${PROVIDER_BROWSER_SITES.map(site=>`<article class="panel" style="padding:16px"><div style="display:flex;gap:8px;align-items:center"><span data-lucide="${site.icon}" style="width:17px;height:17px;color:var(--amber)"></span><strong>${escapeHtml(site.name)}</strong></div><p style="margin:9px 0 14px;color:var(--muted);font-size:12.5px;line-height:1.45">${escapeHtml(site.description)}</p><button class="btn btn-line provider-browser-launch" data-url="${site.url}">Open ${escapeHtml(site.name)}</button></article>`).join('')}</div>
+    <div class="runtime-inline" style="margin-top:18px">Provider pages run under each provider’s own account and policies. Opening a page does not connect it to NOVA sessions, knowledge, tools, or automations.</div>`;
+  $$('.provider-browser-launch').forEach(button => button.onclick = () => openProviderBrowser(button.dataset.url));
+  $('providerBrowserOpenCustom').onclick = () => openProviderBrowser($('providerBrowserUrl').value);
+  $('providerBrowserUrl').onkeydown = event => { if (event.key === 'Enter') openProviderBrowser(event.currentTarget.value); };
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ===================== marker: RENDER:RUNTIME ===================== */
 function runtimeGaugeHtml(label, val, max, unit, barClass, spanStyle){
   const available = val!=null && max!=null && max>0;
@@ -3474,6 +3680,11 @@ function renderSettingsView(){
     </div>
     <div class="card-grid cols-2">
       <div class="panel" style="padding:16px">
+        <div class="eyebrow" style="margin-bottom:12px">Appearance</div>
+        <label style="display:grid;gap:6px;padding:8px 0;border-bottom:1px solid var(--line-soft)"><span style="font-size:12.5px">Theme</span><select id="setTheme" aria-label="Theme" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px"><option value="dark" ${p.theme==='dark'?'selected':''}>Dark</option><option value="dawn" ${p.theme==='dawn'?'selected':''}>Dawn</option><option value="contrast" ${p.theme==='contrast'?'selected':''}>High contrast</option></select></label>
+        <label style="display:grid;gap:6px;padding:12px 0 0"><span style="font-size:12.5px">Interface language</span><select id="setLanguage" aria-label="Interface language" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px"><option value="en" ${p.language==='en'?'selected':''}>English</option><option value="hi" ${p.language==='hi'?'selected':''}>हिन्दी</option></select><span style="font-size:11px;color:var(--muted-dim)">Updates navigation and workspace chrome. Your conversation and source content are unchanged.</span></label>
+      </div>
+      <div class="panel" style="padding:16px">
         <div class="eyebrow" style="margin-bottom:12px">Defaults for new sessions</div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line-soft)"><span style="font-size:12.5px">Retrieval on by default</span><button class="toggle ${p.retrieval?'on':''}" id="setRetrieval"></button></div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line-soft)"><span style="font-size:12.5px">Citations on by default</span><button class="toggle ${p.citations?'on':''}" id="setCitations"></button></div>
@@ -3501,6 +3712,8 @@ function renderSettingsView(){
 function bindSettingsViewEvents(){
   const bind = (id, key) => { const el = $(id); el.onclick = () => { const val = !getPrefs()[key]; setPrefs({[key]:val}); el.classList.toggle('on', val); renderShellChrome(); }; };
   bind('setRetrieval','retrieval'); bind('setCitations','citations'); bind('setStreaming','streaming'); bind('setWebAccess','webAccess'); bind('setTelemetry','telemetry');
+  $('setTheme').onchange = e => { setPrefs({theme:e.target.value}); applyAppearance(); renderShellChrome(); toast('Theme updated.'); };
+  $('setLanguage').onchange = e => { setPrefs({language:e.target.value}); applyAppearance(); renderSettingsView(); toast('Language updated.'); };
   $('resetWorkspaceBtn').onclick = () => {
     const btn = $('resetWorkspaceBtn');
     if (btn.dataset.confirm) { idbClearAll().then(()=>location.reload()); }
@@ -3513,6 +3726,7 @@ const COMMANDS = [
   {label:'New session', icon:'plus', run:()=>createSession()},
   {label:'Go to Console', icon:'messages-square', run:()=>showView('console')},
   {label:'Go to Sessions', icon:'history', run:()=>showView('sessions')},
+  {label:'Go to Local Workspace', icon:'folder-search-2', run:()=>showView('workspace')},
   {label:'Go to Models', icon:'cpu', run:()=>showView('models')},
   {label:'Go to Knowledge', icon:'database', run:()=>showView('knowledge')},
   {label:'Go to Retrieval Lab', icon:'flask-conical', run:()=>showView('retrieval')},

@@ -8,10 +8,16 @@
   "scripts": {
     "start": "node --no-warnings server.js",
     "dev": "node --no-warnings --watch server.js",
-    "launch": "node packaging/launch.js"
+    "launch": "node packaging/launch.js",
+    "test": "node --test tests/*.test.js",
+    "test:ui": "playwright test",
+    "test:e2e": "playwright test"
   },
   "engines": {
     "node": ">=22.5.0"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
 }
