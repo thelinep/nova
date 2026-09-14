@@ -260,6 +260,46 @@ mod tests {
         assert!(!is_allowed_browser_url("http://example.com"));
         assert!(!is_allowed_browser_url("file:///private/data.txt"));
         assert!(!is_allowed_browser_url("javascript:alert(1)"));
+        assert!(!is_allowed_browser_url("data:text/html,unsafe"));
+        assert!(!is_allowed_browser_url("ftp://example.com"));
+        assert!(!is_allowed_browser_url(""));
+    }
+
+    #[test]
+    fn menu_bar_declares_expected_visible_actions() {
+        let source = include_str!("main.rs");
+        for item in ["Show NOVA", "Hide NOVA", "Refresh workspace", "Quit NOVA"] {
+            assert!(source.contains(item), "missing menu item: {item}");
+        }
+        assert!(source.contains("nova-menu-bar"));
+        assert!(source.contains("window.location.reload()"));
+    }
+
+    #[test]
+    fn server_process_uses_bundled_server_and_private_data_directory() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("resource_dir.join(\"server.js\")"));
+        assert!(source.contains(".env(\"DATA_DIR\", data_dir)"));
+        assert!(source.contains("Command::new(\"node\")"));
+        assert!(source.contains("Stdio::from(stdout)"));
+        assert!(source.contains("Stdio::from(log)"));
+    }
+
+    #[test]
+    fn shutdown_only_kills_a_server_owned_by_this_instance() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("struct ServerChild(Option<Arc<Mutex<Child>>>)"));
+        assert!(source.contains("if server_healthy()"));
+        assert!(source.contains("if let Some(child) = &child.0"));
+    }
+
+    #[test]
+    fn provider_browser_has_stable_label_and_minimum_window_size() {
+        let source = include_str!("main.rs");
+        assert_eq!(PROVIDER_BROWSER_LABEL, "provider-browser");
+        assert!(source.contains(".min_inner_size(900.0, 620.0)"));
+        assert!(source.contains("window.show()"));
+        assert!(source.contains("window.set_focus()"));
     }
 }
 

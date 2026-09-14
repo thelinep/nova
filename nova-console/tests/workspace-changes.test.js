@@ -83,3 +83,76 @@ test('multi-file batches validate dependency order and apply atomically after on
   assert.equal(fs.readFileSync(path.join(rootPath,'main.js'),'utf8'),'const enabled = true;\n');
   assert.equal(fs.readFileSync(path.join(applied.rollback.directory,'config.json'),'utf8'),'{"enabled":false}\n');
 });
+
+test('multi-file batches reject duplicate files, missing dependencies, and cycles',()=>{
+  const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-invalid-'));
+  fs.writeFileSync(path.join(rootPath,'a.txt'),'a=old\n');fs.writeFileSync(path.join(rootPath,'b.txt'),'b=old\n');
+  const store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  assert.throws(()=>createBatch(store,scanner,{rootId:root.id,changes:[
+    {relativePath:'a.txt',find:'old',replacement:'new'},
+    {relativePath:'a.txt',find:'old',replacement:'newer'},
+  ]}),/only once/);
+  assert.throws(()=>createBatch(store,scanner,{rootId:root.id,changes:[
+    {relativePath:'a.txt',find:'old',replacement:'new',dependsOn:['missing.txt']},
+    {relativePath:'b.txt',find:'old',replacement:'new'},
+  ]}),/Unknown change dependency/);
+  assert.throws(()=>createBatch(store,scanner,{rootId:root.id,changes:[
+    {relativePath:'a.txt',find:'old',replacement:'new',dependsOn:['b.txt']},
+    {relativePath:'b.txt',find:'old',replacement:'new',dependsOn:['a.txt']},
+  ]}),/cycle/);
+});
+
+test('a batch with one invalid parser result cannot be approved',()=>{
+  const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-parser-')),dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-data-'));
+  fs.writeFileSync(path.join(rootPath,'a.json'),'{"ok":false}\n');fs.writeFileSync(path.join(rootPath,'b.js'),'const ok = false;\n');
+  const store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  const batch=createBatch(store,scanner,{rootId:root.id,changes:[
+    {relativePath:'a.json',find:'false',replacement:'broken'},
+    {relativePath:'b.js',find:'false',replacement:'true'},
+  ]});
+  const checked=checkBatch(store,scanner,dataDir,batch.id);
+  assert.equal(checked.status,'checks-failed');
+  assert.equal(checked.checks.find(check=>check.file==='a.json').status,'failed');
+  assert.throws(()=>approveBatch(store,scanner,batch.id),/must pass validation/);
+  assert.equal(fs.readFileSync(path.join(rootPath,'a.json'),'utf8'),'{"ok":false}\n');
+});
+
+test('source changes invalidate batch validation and approval fingerprints',()=>{
+  const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-race-')),dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-data-'));
+  fs.writeFileSync(path.join(rootPath,'a.txt'),'old\n');fs.writeFileSync(path.join(rootPath,'b.txt'),'old\n');
+  const store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  let batch=createBatch(store,scanner,{rootId:root.id,changes:[{relativePath:'a.txt',find:'old',replacement:'new'},{relativePath:'b.txt',find:'old',replacement:'new'}]});
+  fs.writeFileSync(path.join(rootPath,'b.txt'),'external\n');
+  assert.throws(()=>checkBatch(store,scanner,dataDir,batch.id),/Source changed/);
+  fs.writeFileSync(path.join(rootPath,'b.txt'),'old\n');
+  batch=createBatch(store,scanner,{rootId:root.id,changes:[{relativePath:'a.txt',find:'old',replacement:'new'},{relativePath:'b.txt',find:'old',replacement:'new'}]});
+  checkBatch(store,scanner,dataDir,batch.id);
+  fs.writeFileSync(path.join(rootPath,'a.txt'),'external\n');
+  assert.throws(()=>approveBatch(store,scanner,batch.id),/Source changed after validation/);
+});
+
+test('approved batches stop before writing when any source changed',()=>{
+  const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-approved-race-')),dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-data-'));
+  fs.writeFileSync(path.join(rootPath,'a.txt'),'old\n');fs.writeFileSync(path.join(rootPath,'b.txt'),'old\n');
+  const store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  const batch=createBatch(store,scanner,{rootId:root.id,changes:[{relativePath:'a.txt',find:'old',replacement:'new'},{relativePath:'b.txt',find:'old',replacement:'new'}]});
+  checkBatch(store,scanner,dataDir,batch.id);approveBatch(store,scanner,batch.id);
+  fs.writeFileSync(path.join(rootPath,'b.txt'),'external\n');
+  assert.throws(()=>executeBatch(store,scanner,dataDir,batch.id),/Source changed after approval/);
+  assert.equal(fs.readFileSync(path.join(rootPath,'a.txt'),'utf8'),'old\n');
+  assert.equal(store.get('workspaceChangeBatches',batch.id).approval.consumedAt,null);
+});
+
+test('a mid-write failure restores every file already changed',()=>{
+  const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-rollback-')),dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-batch-data-'));
+  fs.writeFileSync(path.join(rootPath,'a.txt'),'old-a\n');fs.writeFileSync(path.join(rootPath,'b.txt'),'old-b\n');
+  const store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  const batch=createBatch(store,scanner,{rootId:root.id,changes:[{relativePath:'a.txt',find:'old-a',replacement:'new-a'},{relativePath:'b.txt',find:'old-b',replacement:'new-b'}]});
+  checkBatch(store,scanner,dataDir,batch.id);approveBatch(store,scanner,batch.id);
+  const rename=fs.renameSync;let calls=0;
+  fs.renameSync=(from,to)=>{calls++;if(calls===2)throw new Error('injected write failure');return rename(from,to);};
+  try{assert.throws(()=>executeBatch(store,scanner,dataDir,batch.id),/all changed files were rolled back/);}finally{fs.renameSync=rename;}
+  assert.equal(fs.readFileSync(path.join(rootPath,'a.txt'),'utf8'),'old-a\n');
+  assert.equal(fs.readFileSync(path.join(rootPath,'b.txt'),'utf8'),'old-b\n');
+  assert.equal(store.get('workspaceChangeBatches',batch.id).status,'approved');
+});

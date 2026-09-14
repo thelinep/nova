@@ -74,4 +74,4 @@ function cancel(store,id){const record=store.get('workspaceRuns',id);if(!record)
 
 function recoverInterrupted(store){let count=0;for(const record of store.all('workspaceRuns'))if(record.status==='running'){record.status='interrupted';record.finishedAt=new Date().toISOString();record.recovery={reason:'NOVA restarted while the command was active.',resumable:false};store.put('workspaceRuns',record);count++;}return count;}
 
-module.exports={allowRepository,run,cancel,recoverInterrupted,commandFor,constants:{OUTPUT_LIMIT,ACTIONS},_active:active};
+module.exports={allowRepository,run,cancel,recoverInterrupted,commandFor,capture,constants:{OUTPUT_LIMIT,ACTIONS},_active:active};

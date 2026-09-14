@@ -36,3 +36,33 @@ test('restart recovery marks orphaned commands interrupted',()=>{
   assert.equal(store.get('workspaceRuns','run_orphan').status,'interrupted');
   assert.equal(store.get('workspaceRuns','run_orphan').recovery.resumable,false);
 });
+
+test('command capture enforces timeout and records termination',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'nova-capture-'));
+  const result=await runner.capture(process.execPath,['-e','setInterval(()=>{},1000)'],{cwd:root,timeoutMs:80,homeDir:root,cacheDir:root});
+  assert.equal(result.timedOut,true);assert.notEqual(result.signal,null);
+});
+
+test('command capture truncates output at the declared byte ceiling',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'nova-capture-'));
+  const result=await runner.capture(process.execPath,['-e',`process.stdout.write('x'.repeat(${runner.constants.OUTPUT_LIMIT+4096}))`],{cwd:root,timeoutMs:5000,homeDir:root,cacheDir:root});
+  assert.equal(result.code,0);assert.equal(result.truncated,true);assert.equal(result.output.length,runner.constants.OUTPUT_LIMIT);
+});
+
+test('an active command can be cancelled and leaves the workspace copy isolated',async()=>{
+  const rootPath=fixture(),dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-runner-cancel-')),store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  fs.writeFileSync(path.join(rootPath,'package.json'),JSON.stringify({scripts:{test:'node -e "setInterval(()=>{},1000)"'}}));
+  runner.allowRepository(store,scanner,root.id,['test']);
+  const promise=runner.run(store,scanner,changes,dataDir,{rootId:root.id,action:'test'});
+  let record;for(let i=0;i<100;i++){record=store.all('workspaceRuns')[0];if(record&&runner._active.get(root.id)?.child)break;await new Promise(resolve=>setTimeout(resolve,10));}
+  assert.ok(record);runner.cancel(store,record.id);
+  const result=await promise;
+  assert.equal(result.status,'cancelled');assert.equal(result.cancelRequested,true);assert.ok(result.workspaceCopy.path.startsWith(dataDir));
+  assert.equal(runner._active.has(root.id),false);
+});
+
+test('finished and unknown commands cannot be cancelled',()=>{
+  const store=memoryStore();store.put('workspaceRuns',{id:'done',rootId:'root',status:'passed'});
+  assert.throws(()=>runner.cancel(store,'missing'),/Unknown workspace run/);
+  assert.throws(()=>runner.cancel(store,'done'),/Only an active run/);
+});
