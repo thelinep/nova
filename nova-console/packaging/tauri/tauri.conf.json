@@ -8,6 +8,7 @@
     "frontendDist": "../../public"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "NOVA Runtime",
@@ -24,6 +25,14 @@
   "bundle": {
     "active": true,
     "targets": ["deb", "appimage", "dmg", "nsis"],
-    "icon": []
+    "icon": ["icons/icon.icns"],
+    "resources": {
+      "../../server.js": "server.js",
+      "../../package.json": "package.json",
+      "../../lib/**/*": "lib/",
+      "../../mcp-servers/**/*": "mcp-servers/",
+      "../../skills/**/*": "skills/",
+      "../../public/**/*": "public/"
+    }
   }
 }

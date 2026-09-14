@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-window-local-server",
+  "description": "Allow NOVA's loopback-served main UI to invoke its local provider-window command.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["http://127.0.0.1:8787/*"]
+  },
+    "permissions": ["core:default", "allow-open-provider-browser", "allow-pick-local-folder"]
+}
