@@ -92,7 +92,7 @@ export function fetchViaAddress(
         method: 'GET',
         servername: isHttps ? url.hostname : undefined,
         headers: {
-          Host: url.hostname,
+          Host: url.host,
           'User-Agent': 'BrahminiKnowledgeCollector/1.0 (+local collection)',
         },
         timeout: timeoutMs,

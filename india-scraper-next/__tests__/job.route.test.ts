@@ -13,7 +13,7 @@ import { GET } from '@/app/api/job/[jobId]/route';
 const mockedGetJob = getJob as jest.Mock;
 
 function makeRequest(): NextRequest {
-  return new NextRequest(new Request('http://localhost/api/job/abc'));
+  return new NextRequest(new Request('http://localhost/api/job/abc', { headers: { Host: 'localhost' } }));
 }
 
 function ctx(jobId: string) {

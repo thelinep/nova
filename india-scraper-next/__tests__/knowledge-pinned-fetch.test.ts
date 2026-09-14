@@ -9,7 +9,10 @@ async function withServer(
   run: (port: number) => Promise<void>,
 ): Promise<void> {
   const server = http.createServer(handler);
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
   try {
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('Failed to start test server');
@@ -58,6 +61,7 @@ describe('fetchViaAddress (pinned connection)', () => {
           sent += chunk.length;
           res.write(chunk);
         }, 0);
+        res.once('close', () => clearInterval(interval));
       },
       async (port) => {
         const url = new URL(`http://example.invalid:${port}/`);

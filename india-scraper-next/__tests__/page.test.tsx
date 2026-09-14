@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import Home from '@/app/page';
 
 // Collector tests isolate the independent Maataa workspace; its full flow is browser-tested.
@@ -28,13 +28,14 @@ describe('Home page', () => {
     });
   });
 
-  afterEach(() => {
-    jest.runOnlyPendingTimers();
+  afterEach(async () => {
+    cleanup();
+    await act(async () => { await jest.runOnlyPendingTimersAsync(); });
     jest.useRealTimers();
   });
 
   it('renders heading and input', async () => {
-    render(<Home />);
+    await act(async () => { render(<Home />); });
     expect(screen.getByText(/India Business Collector/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/plumbers, dentists/i)).toBeInTheDocument();
   });
@@ -46,7 +47,7 @@ describe('Home page', () => {
 
   it('alerts when starting scrape without a category', async () => {
     const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
-    render(<Home />);
+    await act(async () => { render(<Home />); });
     fireEvent.click(screen.getByText('Start Scraping'));
     expect(alertSpy).toHaveBeenCalledWith('Enter a category');
     alertSpy.mockRestore();

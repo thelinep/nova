@@ -27,7 +27,7 @@ test.describe('India Business Scraper browser journeys', () => {
     await mockResults(page);
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: /India Business Scraper/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /India Business Collector/i })).toBeVisible();
     await expect(page.getByPlaceholder(/plumbers, dentists/i)).toBeVisible();
     await expect(page.getByTestId('results-table')).toContainText('No data found');
     await expect(page.getByText('Showing latest 0 records')).toBeVisible();

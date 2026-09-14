@@ -32,11 +32,19 @@ function mockAll(rows: any[], err: Error | null = null) {
 }
 
 function makeRequest(url: string): NextRequest {
-  return new NextRequest(new Request(url));
+  return new NextRequest(new Request(url, { headers: { Host: new URL(url).host } }));
 }
 
 describe('GET /api/districts', () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it('rejects absent or nonlocal Host headers before accessing the database', async () => {
+    for (const host of [undefined, 'attacker.example', 'localhost.attacker.example']) {
+      const req = new NextRequest('http://localhost/api/districts', { headers: host ? { Host: host } : {} });
+      expect((await districtsGET(req)).status).toBe(403);
+    }
+    expect(mockedDb.all).not.toHaveBeenCalled();
+  });
 
   it('returns list of districts', async () => {
     const rows = [

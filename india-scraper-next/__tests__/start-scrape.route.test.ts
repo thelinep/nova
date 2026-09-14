@@ -32,7 +32,7 @@ function post(body: any): NextRequest {
   return new NextRequest(
     new Request('http://localhost/api/start-scrape', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Host: 'localhost' },
       body: JSON.stringify(body),
     })
   );

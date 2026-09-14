@@ -42,7 +42,10 @@ const mockedDb = db as unknown as {
 };
 
 function makeRequest(url: string, body?: any): NextRequest {
-  return new NextRequest(new Request(url, body ? { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : undefined));
+  return new NextRequest(new Request(url, {
+    ...(body ? { method: 'POST', body: JSON.stringify(body) } : {}),
+    headers: { Host: new URL(url).host, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+  }));
 }
 
 describe('POST /api/knowledge/ingest', () => {
