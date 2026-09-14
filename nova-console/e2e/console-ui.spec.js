@@ -153,4 +153,25 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.getByText('E2E security backup')).toBeVisible();
     await expect(page.getByText('backup.created')).toBeVisible();
   });
+
+  test('reviews and applies an ordered multi-file batch with rollback evidence', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-view="workspace"]').click();
+    await page.getByLabel('Local folder path').fill('/private/tmp/nova-e2e-workspace');
+    await page.getByLabel('Folder label').fill('Batch fixture');
+    await page.getByRole('button', { name: 'Approve root' }).click();
+    await page.getByLabel('Multi-file batch changes').fill(JSON.stringify([
+      {relativePath:'batch-main.js',find:'false',replacement:'true',dependsOn:['batch-config.json']},
+      {relativePath:'batch-config.json',find:'false',replacement:'true'},
+    ]));
+    await page.getByLabel('Batch summary').fill('Enable feature after configuration');
+    await page.getByRole('button', { name: 'Create multi-file batch' }).click();
+    await expect(page.getByText('batch-config.json → batch-main.js')).toBeVisible();
+    await expect(page.getByLabel('Combined batch diff')).toContainText('+{"enabled":true}');
+    await page.getByRole('button', { name: 'Validate entire batch' }).click();
+    await page.getByRole('button', { name: 'Approve exact batch' }).click();
+    await page.getByRole('button', { name: 'Apply atomically' }).click();
+    await expect(page.getByText('Applied 2 files.')).toBeVisible();
+    await expect(page.getByText('Rollback', {exact:true})).toBeVisible();
+  });
 });

@@ -246,6 +246,9 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/collector\/plans$/, handler: async (req, res) => sendJson(res, 201, collectorWorkflows.createPlan(store, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => sendJson(res, 200, collectorWorkflows.approvePlan(store, decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => sendJson(res, 202, collectorWorkflows.executePlan(store, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, collectorWorkflows.cancelRun(store, decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/collector\/evidence$/, handler: async (_req, res) => sendJson(res, 200, store.all('collectorEvidence').reverse()) },
+  { method: 'GET', pattern: /^\/api\/collector\/venues$/, handler: async (_req, res) => sendJson(res, 200, store.all('venueObservations').reverse()) },
   { method: 'GET', pattern: /^\/api\/health$/, handler: async (req, res) => sendJson(res, 200, { ok: true, pid: process.pid, dataDir: DATA_DIR }) },
 
   { method: 'GET', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => sendJson(res, 200, store.all(decodeURIComponent(name))) },
@@ -641,6 +644,8 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
   const interruptedRuns=workspaceRunner.recoverInterrupted(store);
   if(interruptedRuns)console.log(`  recovered:   ${interruptedRuns} interrupted workspace run(s)`);
+  const interruptedCollectors=collectorWorkflows.recoverInterrupted(store);
+  if(interruptedCollectors)console.log(`  recovered:   ${interruptedCollectors} interrupted collector run(s)`);
   // A real child MCP server process never survives a restart — reconcile
   // any stale 'connected' status in the DB to 'disconnected' before
   // anything tries to resume work that might depend on one (below).
