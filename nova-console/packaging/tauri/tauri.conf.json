@@ -32,7 +32,8 @@
       "../../lib/**/*": "lib/",
       "../../mcp-servers/**/*": "mcp-servers/",
       "../../skills/**/*": "skills/",
-      "../../public/**/*": "public/"
+      "../../public/**/*": "public/",
+      "../runtime/node/bin/node": "node/bin/node"
     }
   }
 }

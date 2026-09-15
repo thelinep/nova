@@ -15,7 +15,7 @@
 // ===========================================================================
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::fs::OpenOptions;
+use std::fs::{write, OpenOptions};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
@@ -126,7 +126,7 @@ fn spawn_server(resource_dir: &Path, data_dir: &Path) -> std::io::Result<Child> 
         .append(true)
         .open(server_log_path(data_dir))?;
     let stdout = log.try_clone()?;
-    Command::new("node")
+    Command::new(node_executable(resource_dir))
         .arg("--no-warnings")
         .arg(server_path)
         .current_dir(resource_dir)
@@ -134,6 +134,25 @@ fn spawn_server(resource_dir: &Path, data_dir: &Path) -> std::io::Result<Child> 
         .stdout(Stdio::from(stdout))
         .stderr(Stdio::from(log))
         .spawn()
+}
+
+fn node_executable(resource_dir: &Path) -> std::path::PathBuf {
+    let bundled = resource_dir.join("node/bin/node");
+    if bundled.is_file() {
+        bundled
+    } else {
+        std::path::PathBuf::from("node")
+    }
+}
+
+fn migrate_data_dir(data_dir: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(data_dir)?;
+    let marker = data_dir.join("runtime-schema-version");
+    let current = std::fs::read_to_string(&marker).unwrap_or_default();
+    if current.trim() != "1" {
+        write(marker, b"1\n")?;
+    }
+    Ok(())
 }
 
 fn server_log_path(data_dir: &Path) -> std::path::PathBuf {
@@ -190,7 +209,10 @@ fn pick_local_folder() -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
         let output = Command::new("osascript")
-            .args(["-e", "POSIX path of (choose folder with prompt \"Approve a local folder for NOVA\")"])
+            .args([
+                "-e",
+                "POSIX path of (choose folder with prompt \"Approve a local folder for NOVA\")",
+            ])
             .output()
             .map_err(|error| format!("Could not open the native folder picker: {error}"))?;
         if !output.status.success() {
@@ -199,7 +221,10 @@ fn pick_local_folder() -> Result<String, String> {
         let selected = String::from_utf8_lossy(&output.stdout).trim().to_string();
         let canonical = std::fs::canonicalize(&selected)
             .map_err(|error| format!("Selected folder is unavailable: {error}"))?;
-        return canonical.into_os_string().into_string().map_err(|_| "Selected path is not valid UTF-8.".into());
+        return canonical
+            .into_os_string()
+            .into_string()
+            .map_err(|_| "Selected path is not valid UTF-8.".into());
     }
     #[cfg(not(target_os = "macos"))]
     Err("The native folder picker is not configured for this platform yet.".into())
@@ -280,9 +305,36 @@ mod tests {
         let source = include_str!("main.rs");
         assert!(source.contains("resource_dir.join(\"server.js\")"));
         assert!(source.contains(".env(\"DATA_DIR\", data_dir)"));
-        assert!(source.contains("Command::new(\"node\")"));
+        assert!(source.contains("Command::new(node_executable(resource_dir))"));
         assert!(source.contains("Stdio::from(stdout)"));
         assert!(source.contains("Stdio::from(log)"));
+    }
+
+    #[test]
+    fn bundled_node_is_preferred_with_a_system_fallback_for_development() {
+        let temp = std::env::temp_dir().join(format!("nova-node-test-{}", std::process::id()));
+        let bundled = temp.join("node/bin/node");
+        std::fs::create_dir_all(bundled.parent().unwrap()).unwrap();
+        std::fs::write(&bundled, b"").unwrap();
+        assert_eq!(node_executable(&temp), bundled);
+        std::fs::remove_dir_all(&temp).unwrap();
+        assert_eq!(
+            node_executable(Path::new("/path/without/bundle")),
+            Path::new("node")
+        );
+    }
+
+    #[test]
+    fn data_migration_writes_an_idempotent_schema_marker() {
+        let temp = std::env::temp_dir().join(format!("nova-migrate-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&temp);
+        migrate_data_dir(&temp).unwrap();
+        migrate_data_dir(&temp).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(temp.join("runtime-schema-version")).unwrap(),
+            "1\n"
+        );
+        std::fs::remove_dir_all(temp).unwrap();
     }
 
     #[test]
@@ -305,10 +357,14 @@ mod tests {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![open_provider_browser, pick_local_folder])
+        .invoke_handler(tauri::generate_handler![
+            open_provider_browser,
+            pick_local_folder
+        ])
         .setup(|app| {
             let resource_dir = app.path().resource_dir()?;
             let data_dir = app.path().app_data_dir()?;
+            migrate_data_dir(&data_dir)?;
             let child = if server_healthy() {
                 None
             } else {
@@ -316,6 +372,16 @@ fn main() {
                 let deadline = Instant::now() + HEALTH_TIMEOUT;
                 while Instant::now() < deadline && !server_healthy() {
                     thread::sleep(Duration::from_millis(250));
+                }
+                if !server_healthy() {
+                    if let Ok(mut process) = child.lock() {
+                        let _ = process.kill();
+                    }
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::TimedOut,
+                        "Bundled NOVA server did not become healthy.",
+                    )
+                    .into());
                 }
                 Some(child)
             };

@@ -32,6 +32,7 @@ const scheduler = require('./lib/scheduler');
 const { uid, logExecution } = require('./lib/exec-log');
 const { checkLocalAccess } = require('./lib/local-access');
 const collectorWorkflows = require('./lib/collector-workflows');
+const codePlanner = require('./lib/code-planner');
 const workspaceScanner = require('./lib/workspace-scanner');
 const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
@@ -217,6 +218,7 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/workspace\/plans\/from-conversation$/, handler: async (req, res) => sendJson(res, 200, workspacePlanner.createConversationPlan(store, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/plans\/([^/]+)\/root$/, handler: async (req, res, [id]) => { const body=await readJsonBody(req); sendJson(res, 200, workspacePlanner.setPlanRoot(store, decodeURIComponent(id), body.rootId)); } },
   { method: 'POST', pattern: /^\/api\/workspace\/plans\/([^/]+)\/run$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspacePlanner.runPlan(store, workspaceScanner, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/code-plan$/, handler: async (req,res)=>sendJson(res,201,await codePlanner.plan(store,workspaceScanner,workspaceChanges,ollama,await readJsonBody(req))) },
   { method: 'GET', pattern: /^\/api\/workspace\/changes$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceChanges').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes$/, handler: async (req, res) => sendJson(res, 201, workspaceChanges.proposeChange(store, workspaceScanner, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/check$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspaceChanges.checkProposal(store, workspaceScanner, DATA_DIR, decodeURIComponent(id))) },
