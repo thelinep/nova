@@ -1,22 +1,20 @@
 // ===========================================================================
 // NOVA Runtime — Tauri v2 main process (Phase 5)
 //
-// Spawns the project's own, unmodified server.js as a child process using
-// the system `node` binary (the same expectation packaging/launch.js and
-// this README document honestly: this does not bundle a Node runtime —
-// doing that is real future work, not attempted here), polls its real
+// Spawns the project's own, unmodified server.js with the bundled Node
+// runtime (and a system Node fallback for development), polls its real
 // /api/health route the same way the Electron main process and the plain
 // launcher script both do, and only then shows the window that
 // tauri.conf.json points at NOVA Runtime's own URL.
 //
 // VERIFIED STATUS: built offline and launch-checked on macOS. The app bundle
-// carries the server resources; it still relies on a system `node` executable
-// at runtime and remains ad-hoc signed until release signing is configured.
+// carries the server resources and Node runtime; it remains ad-hoc signed
+// until release signing is configured.
 // ===========================================================================
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::fs::{write, OpenOptions};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -106,17 +104,81 @@ fn ureq_get_health() -> std::io::Result<String> {
 
     let mut stream = TcpStream::connect(("127.0.0.1", PORT))?;
     stream.set_read_timeout(Some(Duration::from_millis(800)))?;
-    stream
-        .write_all(b"GET /api/health HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")?;
-    let mut buf = [0u8; 64];
-    let n = stream.read(&mut buf)?;
-    let text = String::from_utf8_lossy(&buf[..n]);
-    Ok(text.into_owned())
+    stream.write_all(
+        b"GET /api/health HTTP/1.1\r\nHost: 127.0.0.1:8787\r\nConnection: close\r\n\r\n",
+    )?;
+    let mut response = String::new();
+    stream.read_to_string(&mut response)?;
+    Ok(response)
 }
 
-// `None` means another NOVA instance already owns the healthy local server.
-// We may use that server, but must never kill it on shutdown.
-struct ServerChild(Option<Arc<Mutex<Child>>>);
+fn matching_server_pid(response: &str, data_dir: &Path) -> Option<u32> {
+    if !health_response_is_success(response) {
+        return None;
+    }
+    let body = response.split_once("\r\n\r\n")?.1;
+    let health: serde_json::Value = serde_json::from_str(body).ok()?;
+    if health.get("ok")?.as_bool()? != true
+        || health.get("dataDir")?.as_str()? != data_dir.to_str()?
+    {
+        return None;
+    }
+    health.get("pid")?.as_u64()?.try_into().ok()
+}
+
+enum ServerProcess {
+    Spawned(Arc<Mutex<Child>>),
+    Recovered(u32),
+}
+
+struct ServerChild(ServerProcess);
+
+struct InstanceLock(PathBuf);
+
+fn process_is_running(pid: u32) -> bool {
+    Command::new("kill")
+        .args(["-0", &pid.to_string()])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+fn acquire_instance_lock(data_dir: &Path) -> std::io::Result<Option<InstanceLock>> {
+    let path = data_dir.join("nova-runtime.pid");
+    for _ in 0..2 {
+        match OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(mut file) => {
+                use std::io::Write;
+                writeln!(file, "{}", std::process::id())?;
+                return Ok(Some(InstanceLock(path)));
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                let existing_pid = std::fs::read_to_string(&path)
+                    .ok()
+                    .and_then(|value| value.trim().parse::<u32>().ok());
+                if existing_pid.is_some_and(process_is_running) {
+                    return Ok(None);
+                }
+                std::fs::remove_file(&path)?;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(None)
+}
+
+fn activate_existing_instance() {
+    #[cfg(target_os = "macos")]
+    let _ = Command::new("osascript")
+        .args([
+            "-e",
+            "tell application id \"com.brahmini.nova-runtime\" to activate",
+        ])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn();
+}
 
 fn spawn_server(resource_dir: &Path, data_dir: &Path) -> std::io::Result<Child> {
     let server_path = resource_dir.join("server.js");
@@ -246,6 +308,22 @@ mod tests {
     }
 
     #[test]
+    fn health_probe_uses_the_servers_exact_loopback_authority() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("Host: 127.0.0.1:8787"));
+    }
+
+    #[test]
+    fn recovered_server_must_report_the_exact_application_data_directory() {
+        let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"ok\":true,\"pid\":1234,\"dataDir\":\"/tmp/nova-data\"}";
+        assert_eq!(
+            matching_server_pid(response, Path::new("/tmp/nova-data")),
+            Some(1234)
+        );
+        assert_eq!(matching_server_pid(response, Path::new("/tmp/other")), None);
+    }
+
+    #[test]
     fn writes_server_logs_inside_the_application_data_directory() {
         let data_dir = Path::new("/tmp/nova-runtime-test-data");
         assert_eq!(
@@ -338,11 +416,27 @@ mod tests {
     }
 
     #[test]
+    fn instance_lock_replaces_stale_pid_and_is_removed_with_its_owner() {
+        let temp = std::env::temp_dir().join(format!("nova-instance-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&temp);
+        std::fs::create_dir_all(&temp).unwrap();
+        std::fs::write(temp.join("nova-runtime.pid"), "4294967295\n").unwrap();
+        let lock = acquire_instance_lock(&temp).unwrap().unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&lock.0).unwrap().trim(),
+            std::process::id().to_string()
+        );
+        std::fs::remove_file(&lock.0).unwrap();
+        std::fs::remove_dir_all(temp).unwrap();
+    }
+
+    #[test]
     fn shutdown_only_kills_a_server_owned_by_this_instance() {
         let source = include_str!("main.rs");
-        assert!(source.contains("struct ServerChild(Option<Arc<Mutex<Child>>>)"));
-        assert!(source.contains("if server_healthy()"));
-        assert!(source.contains("if let Some(child) = &child.0"));
+        assert!(source.contains("enum ServerProcess"));
+        assert!(source.contains("ServerProcess::Spawned"));
+        assert!(source.contains("ServerProcess::Recovered"));
+        assert!(source.contains("matching_server_pid"));
     }
 
     #[test]
@@ -365,8 +459,21 @@ fn main() {
             let resource_dir = app.path().resource_dir()?;
             let data_dir = app.path().app_data_dir()?;
             migrate_data_dir(&data_dir)?;
-            let child = if server_healthy() {
-                None
+            let Some(instance_lock) = acquire_instance_lock(&data_dir)? else {
+                activate_existing_instance();
+                std::process::exit(0);
+            };
+            app.manage(instance_lock);
+            let child = if let Ok(response) = ureq_get_health() {
+                if let Some(pid) = matching_server_pid(&response, &data_dir) {
+                    ServerProcess::Recovered(pid)
+                } else {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::AddrInUse,
+                        "Port 8787 is occupied by a server outside this NOVA data directory.",
+                    )
+                    .into());
+                }
             } else {
                 let child = Arc::new(Mutex::new(spawn_server(&resource_dir, &data_dir)?));
                 let deadline = Instant::now() + HEALTH_TIMEOUT;
@@ -383,7 +490,7 @@ fn main() {
                     )
                     .into());
                 }
-                Some(child)
+                ServerProcess::Spawned(child)
             };
             app.manage(ServerChild(child));
             Ok(())
@@ -404,11 +511,18 @@ fn main() {
                 tauri::RunEvent::Exit | tauri::RunEvent::ExitRequested { .. }
             ) {
                 let child = app_handle.state::<ServerChild>();
-                if let Some(child) = &child.0 {
-                    if let Ok(mut process) = child.lock() {
-                        let _ = process.kill();
-                    };
+                match &child.0 {
+                    ServerProcess::Spawned(child) => {
+                        if let Ok(mut process) = child.lock() {
+                            let _ = process.kill();
+                        };
+                    }
+                    ServerProcess::Recovered(pid) => {
+                        let _ = Command::new("kill").arg(pid.to_string()).status();
+                    }
                 }
+                let lock = app_handle.state::<InstanceLock>();
+                let _ = std::fs::remove_file(&lock.0);
             }
         });
 }
