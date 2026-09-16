@@ -29,6 +29,24 @@ test('draft patch preserves original and runs syntax checks in a bounded workspa
   assert.equal(checked.checks.find(item=>item.name==='JavaScript syntax').status,'passed');
 });
 
+test('semantic acceptance checks run against the isolated copy and block omitted targets',()=>{
+  const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-semantic-root-'));
+  const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-semantic-data-'));
+  fs.writeFileSync(path.join(rootPath,'app.js'),'const enabled = false;\n');
+  const store=memoryStore(),root=scanner.approveRoot(store,{path:rootPath});
+  const proposal=proposeChange(store,scanner,{rootId:root.id,relativePath:'app.js',find:'false',replacement:'true'});
+  proposal.acceptanceChecks=[
+    {type:'target-changed',relativePath:'app.js',description:'app.js is changed'},
+    {type:'replacement-present',relativePath:'app.js',text:'true',description:'enabled value is present'},
+    {type:'source-removed',relativePath:'app.js',text:'false',description:'disabled value is absent'},
+  ];store.put('workspaceChanges',proposal);
+  const checked=checkProposal(store,scanner,dataDir,proposal.id);
+  assert.equal(checked.semanticValidation.status,'passed');
+  assert.equal(checked.checks.filter(x=>x.name.startsWith('Acceptance:')).length,3);
+  proposal.acceptanceChecks=[{type:'missing-target',relativePath:'config.json',description:'config.json is changed'}];proposal.status='draft';store.put('workspaceChanges',proposal);
+  assert.equal(checkProposal(store,scanner,dataDir,proposal.id).status,'checks-failed');
+});
+
 test('patch proposals reject ambiguous text, path escape and stale source',()=>{
   const rootPath=fs.mkdtempSync(path.join(os.tmpdir(),'nova-change-root-'));
   const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'nova-change-data-'));

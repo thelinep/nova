@@ -52,6 +52,18 @@ class OllamaClient {
     }
   }
 
+  /** Read authoritative model metadata used by production capability gates. */
+  async show(modelName, signal) {
+    const res = await fetch(this.url('/api/show'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelName }),
+      signal,
+    });
+    if (!res.ok) throw new Error(`Ollama model inspection failed: ${res.status} ${await res.text().catch(() => '')}`);
+    return res.json();
+  }
+
   /** Preload a model into memory without generating anything — Ollama's
    *  documented trick is an empty-prompt /api/generate call. */
   async load(modelName, keepAlive) {
@@ -123,10 +135,12 @@ class OllamaClient {
     const body = { model: modelName, messages, stream: false };
     if (opts.tools && opts.tools.length) body.tools = opts.tools;
     if (opts.options) body.options = opts.options;
+    if (opts.format) body.format = opts.format;
     const res = await fetch(this.url('/api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: opts.signal,
     });
     if (!res.ok) throw new Error(`Ollama chat failed: ${res.status} ${await res.text().catch(() => '')}`);
     return res.json();

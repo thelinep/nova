@@ -633,8 +633,8 @@ function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
    background) because dozens of call sites across 17 views rely on that —
    rewriting them to await a promise was explicitly out of scope for making
    the seam swap invisible. */
-const STORE_NAMES = ['sessions','models','modelProfiles','knowledgeCollections','knowledgeDocuments','knowledgeChunks','automations','automationRuns','evaluations','preferences','runtimeEvents','collectionRuns',
-  'skills','mcpServers','agents','workflows','workflowRuns','executions','workspaceRoots','workspaceReports','workspacePlans','workspaceChanges','workspaceChangeBatches','workspaceRuns','workspaceGitDrafts','collectorEvidence','venueObservations'];
+const STORE_NAMES = ['sessions','models','modelProfiles','modelQualifications','knowledgeCollections','knowledgeDocuments','knowledgeChunks','automations','automationRuns','evaluations','preferences','runtimeEvents','collectionRuns',
+  'skills','mcpServers','agents','workflows','workflowRuns','executions','workspaceRoots','workspaceReports','workspacePlans','workspacePlanningAttempts','workspaceChanges','workspaceChangeBatches','workspaceRuns','workspaceGitDrafts','collectorEvidence','venueObservations'];
 const DB = {}; STORE_NAMES.forEach(n => DB[n] = []);
 let backendHealthy = true;
 function apiUrl(p){ return p; } // same-origin — NOVA Runtime serves this file and the API from one port
@@ -1530,10 +1530,35 @@ async function sendMessage(){
   await runPipeline(s, text);
 }
 
-async function draftCodePlanFromConversation(session,text){
+async function draftCodePlanFromConversation(session,text,generate=false){
   if(!/\b(fix|change|edit|patch|refactor|implement|update)\b/i.test(text)||!/\b(code|file|project|repo|repository|bug|feature)\b/i.test(text))return false;
   const model=modelById(session.modelId);if(!workspaceSelectedRootId||!model||model.runtime!=='ollama'||!ollamaStatus.reachable)return false;
-  try{setPipelineState('PREPARING','asking '+model.name+' for a code-change draft');const response=await fetch(apiUrl('/api/workspace/code-plan'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rootId:workspaceSelectedRootId,modelId:model.id,request:text})});const data=await response.json();if(!response.ok)throw new Error(data.error);if(data.type==='workspace-change-batch'){workspaceSelectedBatchId=data.id;DB.workspaceChangeBatches.push(data);}else{workspaceSelectedChangeId=data.id;DB.workspaceChanges.push(data);}session.messages.push({id:uid('msg'),role:'assistant',content:`Created a reviewable ${data.type==='workspace-change-batch'?'multi-file batch':'patch proposal'} using ${model.name}. No source file was changed. Open Local Workspace to inspect the exact diff, run isolated validation, and approve any write.`,createdAt:nowIso()});session.updatedAt=nowIso();idbPut('sessions',session);renderConvo();setPipelineState('COMPLETE','code draft ready for review');return true;}catch(error){session.messages.push({id:uid('msg'),role:'assistant',content:'I could not create a safe code draft: '+error.message,createdAt:nowIso()});idbPut('sessions',session);renderConvo();setPipelineState('ERROR','code planning failed');return true;}
+  if (!generate) {
+    const previewRootId = workspaceSelectedRootId;
+    try {
+      const response = await fetch(apiUrl('/api/workspace/code-plan/preview'), {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rootId:workspaceSelectedRootId,request:text})});
+      const preview = await response.json();
+      if (!response.ok) throw new Error(preview.error);
+      session.messages.push({id:uid('msg'),role:'assistant',content:[
+        'Code planning preview',
+        preview.clarification || preview.blocker || 'Ready to generate a reviewable draft.',
+        'Planned files: '+(preview.plannedFiles||[]).join(', '),
+        'Qualified model: '+(preview.selectedModel ? preview.selectedModel.name+' · '+preview.selectedModel.digest : 'none selected'),
+        'Qualification: '+JSON.stringify(preview.qualification||preview.qualificationMatrix||null),
+        'Omitted scope: '+JSON.stringify(preview.repositoryScope||'not yet determined'),
+        'Expected checks: '+(preview.expectedChecks||[]).join('; ')
+      ].join('\n'),createdAt:nowIso()});
+      idbPut('sessions',session);renderConvo();
+      if(preview.ready){
+        const button=document.createElement('button');button.className='btn';button.textContent='Generate code draft';
+        button.onclick=()=>{button.remove();if(workspaceSelectedRootId!==previewRootId){toast('Workspace changed. Request a new planning preview.');return;}draftCodePlanFromConversation(session,text,true);};
+        document.querySelector('.msg.assistant:last-child .bubble')?.appendChild(button);
+      }
+    } catch(error) { toast('Planning preview: '+error.message); }
+    return true;
+  }
+  const controller = new AbortController(); PIPELINE.abortController = controller;
+  try{setPipelineState('PREPARING','asking '+model.name+' for a code-change draft');const response=await fetch(apiUrl('/api/workspace/code-plan'),{signal:controller.signal,method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rootId:workspaceSelectedRootId,modelId:model.id,request:text})});const data=await response.json();if(!response.ok)throw new Error(data.error);if(data.type==='workspace-change-batch'){workspaceSelectedBatchId=data.id;DB.workspaceChangeBatches.push(data);}else{workspaceSelectedChangeId=data.id;DB.workspaceChanges.push(data);}session.messages.push({id:uid('msg'),role:'assistant',content:`Created a reviewable ${data.type==='workspace-change-batch'?'multi-file batch':'patch proposal'} using ${data.planner?.modelId || model.name}. No source file was changed. Open Local Workspace to inspect the exact diff, run isolated validation, and approve any write.`,createdAt:nowIso()});session.updatedAt=nowIso();idbPut('sessions',session);renderConvo();setPipelineState('COMPLETE','code draft ready for review');return true;}catch(error){session.messages.push({id:uid('msg'),role:'assistant',content:'I could not create a safe code draft: '+error.message,createdAt:nowIso()});idbPut('sessions',session);renderConvo();setPipelineState('ERROR','code planning failed');return true;}finally{if(PIPELINE.abortController===controller)PIPELINE.abortController=null;}
 }
 
 async function draftWorkspacePlanFromConversation(session,text){
@@ -1981,7 +2006,7 @@ function bindModelsViewEvents(){
   };
   $$('.model-load').forEach(b=>b.onclick=async ()=>{
     const m = modelById(b.dataset.id); if (!m) return;
-    if (m.runtime !== 'ollama'){ m.loaded = true; idbPut('models', m); logEvent('MODEL', m.name+' loaded (simulated — not an Ollama model)'); renderModelsView(); renderShellChrome(); toast(m.name+' loaded.'); return; }
+    if (m.runtime !== 'ollama'){ if(!getPrefs().demoMode){toast('This is a demo model. Enable Demo mode explicitly in Settings to simulate loading it.');return;} m.loaded = true; idbPut('models', m); logEvent('MODEL', m.name+' loaded (simulated — not an Ollama model)'); renderModelsView(); renderShellChrome(); toast(m.name+' loaded (simulated).'); return; }
     b.disabled = true; b.textContent = 'Loading…'; toast('Loading '+m.name+' into Ollama…');
     try {
       const r = await fetch(apiUrl('/api/models/'+encodeURIComponent(m.id)+'/load'), {method:'POST'});
@@ -1993,7 +2018,7 @@ function bindModelsViewEvents(){
   });
   $$('.model-unload').forEach(b=>b.onclick=async ()=>{
     const m = modelById(b.dataset.id); if (!m) return;
-    if (m.runtime !== 'ollama'){ m.loaded = false; idbPut('models', m); logEvent('MODEL', m.name+' unloaded (simulated)'); renderModelsView(); renderShellChrome(); toast(m.name+' unloaded.'); return; }
+    if (m.runtime !== 'ollama'){ if(!getPrefs().demoMode){toast('This is a demo model. Enable Demo mode explicitly in Settings to simulate unloading it.');return;} m.loaded = false; idbPut('models', m); logEvent('MODEL', m.name+' unloaded (simulated)'); renderModelsView(); renderShellChrome(); toast(m.name+' unloaded (simulated).'); return; }
     b.disabled = true; b.textContent = 'Unloading…';
     try {
       const r = await fetch(apiUrl('/api/models/'+encodeURIComponent(m.id)+'/unload'), {method:'POST'});
@@ -2011,6 +2036,7 @@ function bindModelsViewEvents(){
   $$('.model-benchmark').forEach(b=>b.onclick=async ()=>{
     const m = modelById(b.dataset.id); if (!m) return;
     if (m.runtime !== 'ollama'){
+      if(!getPrefs().demoMode){toast('This is a demo model. Enable Demo mode explicitly in Settings to run a simulated benchmark.');return;}
       toast('Benchmarking '+m.name+'…'); logEvent('MODEL','benchmark started · '+m.name+' (simulated)');
       await sleep(900);
       m.promptTps = Math.round((m.promptTps||60)*rand(0.96,1.05));
@@ -3646,7 +3672,7 @@ async function refreshEventTotal(){
 function runDiagnostics(silent){
   const checks = [];
   checks.push({name:'NOVA Runtime backend', ok: backendHealthy, detail: backendHealthy ? 'Connected — persisting to SQLite via the local API.' : 'Cannot reach the NOVA Runtime backend on this origin. Is `node server.js` running?'});
-  checks.push({name:'Ollama inference engine', ok: ollamaStatus.reachable, detail: ollamaStatus.reachable ? ollamaStatus.models.length+' model(s) available at '+ollamaStatus.host+'.' : 'Not reachable at '+(ollamaStatus.host||'—')+'. Generation will fall back to the simulated reply path. Run `ollama serve`.'});
+  checks.push({name:'Ollama inference engine', ok: ollamaStatus.reachable, detail: ollamaStatus.reachable ? ollamaStatus.models.length+' model(s) available at '+ollamaStatus.host+'.' : 'Not reachable at '+(ollamaStatus.host||'—')+'. Real generation is unavailable. Demo replies require explicitly enabling Demo mode in Settings. Run `ollama serve`.'});
   checks.push({name:'Model loaded', ok: !!loadedModel(), detail: loadedModel() ? loadedModel().name+' ('+loadedModel().runtime+')' : 'No model is currently loaded.'});
   checks.push({name:'Knowledge index', ok: DB.knowledgeCollections.every(c=>c.status!=='pending'), detail: DB.knowledgeCollections.filter(c=>c.status==='stale').length+' stale, '+DB.knowledgeCollections.filter(c=>c.status==='pending').length+' pending collection(s).'});
   checks.push({name:'Privacy boundary', ok: computePrivacyState().level!=='REMOTE MODEL', detail: computePrivacyState().level});

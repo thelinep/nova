@@ -68,6 +68,8 @@ test('real HTTP boundary, persisted CRUD, restart, validation and loopback-only 
     const record = { id: 'phase12-session', title: 'Persistence check', messages: [] };
     const mutation = { method: 'PUT', headers: { Origin: app.base, 'Content-Type': 'application/json' }, body: JSON.stringify(record) };
     assert.equal((await request(app.base, '/api/store/sessions', mutation)).status, 200);
+    assert.equal((await request(app.base, '/api/store/modelQualifications', mutation)).status, 403);
+    assert.equal((await request(app.base, '/api/store/modelQualifications/fake', { method:'DELETE', headers:mutation.headers })).status, 403);
     for (const origin of [undefined, 'null', 'https://evil.example', app.base.replace('127.0.0.1', 'localhost')]) {
       const blocked = await request(app.base, '/api/store/_clear-all', { method: 'POST', headers: origin ? { Origin: origin } : {} });
       assert.equal(blocked.status, 403);

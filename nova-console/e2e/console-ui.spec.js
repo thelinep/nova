@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 test.describe('NOVA Console interactions', () => {
   test('keeps the composer visible and sends a message in a new session', async ({ page }) => {
     await page.goto('/');
+    await page.locator('#newSessionBtn').click();
     const composer = page.locator('#composer');
     await expect(composer).toBeVisible();
     await expect(composer).toBeInViewport();
@@ -46,6 +47,18 @@ test.describe('NOVA Console interactions', () => {
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dawn');
     await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
+  });
+
+  test('keeps demo mode disabled until the user explicitly opts in', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-view="settings"]').click();
+    const demoMode = page.getByLabel('Demo mode');
+    await expect(demoMode).not.toHaveClass(/\bon\b/);
+    await demoMode.click();
+    await expect(demoMode).toHaveClass(/\bon\b/);
+    await page.reload();
+    await page.locator('[data-view="settings"]').click();
+    await expect(page.getByLabel('Demo mode')).toHaveClass(/\bon\b/);
   });
 
   test('approves and scans an exact local workspace root', async ({ page }) => {

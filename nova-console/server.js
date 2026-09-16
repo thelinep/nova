@@ -33,6 +33,7 @@ const { uid, logExecution } = require('./lib/exec-log');
 const { checkLocalAccess } = require('./lib/local-access');
 const collectorWorkflows = require('./lib/collector-workflows');
 const codePlanner = require('./lib/code-planner');
+const modelQualifications = require('./lib/model-qualifications');
 const workspaceScanner = require('./lib/workspace-scanner');
 const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
@@ -137,8 +138,11 @@ function serveStatic(req, res, pathname) {
  *  console). Anything Ollama doesn't expose (context window, GPU layer
  *  count) is left null rather than guessed — the frontend already renders
  *  null as "—". promptTps/genTps/ttft come from benchmark(), not here. */
-function mapOllamaTagToModel(tag, runningNames, existing) {
+function mapOllamaTagToModel(tag, runningNames, existing, metadata) {
   const prior = existing || {};
+  const info = (metadata && metadata.model_info) || {};
+  const contextKey = Object.keys(info).find(key => key.endsWith('.context_length'));
+  const contextLength = Number(contextKey ? info[contextKey] : 0) || null;
   return {
     id: tag.name,
     name: tag.name,
@@ -149,7 +153,7 @@ function mapOllamaTagToModel(tag, runningNames, existing) {
     diskGb: typeof tag.size === 'number' ? tag.size / 1e9 : null,
     ramGb: prior.ramGb != null ? prior.ramGb : null,
     ctx: prior.ctx != null ? prior.ctx : null,
-    ctxMax: prior.ctxMax != null ? prior.ctxMax : null,
+    ctxMax: contextLength || (prior.ctxMax != null ? prior.ctxMax : null),
     gpuLayers: prior.gpuLayers != null ? prior.gpuLayers : '—',
     gpuLayersMax: prior.gpuLayersMax != null ? prior.gpuLayersMax : '—',
     promptTps: prior.promptTps != null ? prior.promptTps : null,
@@ -159,6 +163,11 @@ function mapOllamaTagToModel(tag, runningNames, existing) {
     runtimeKind: 'local',
     family: (tag.details && tag.details.family) || null,
     modifiedAt: tag.modified_at || null,
+    capabilities: Array.isArray(metadata && metadata.capabilities) ? metadata.capabilities : (prior.capabilities || []),
+    hasChatTemplate: metadata ? Boolean(metadata.template) : (prior.hasChatTemplate || false),
+    capabilityCheckedAt: metadata ? new Date().toISOString() : (prior.capabilityCheckedAt || null),
+    digest: tag.digest || prior.digest || null,
+    codePlanningQualification: tag.digest ? modelQualifications.summary(store, tag.digest) : null,
   };
 }
 
@@ -170,7 +179,11 @@ async function syncModelsFromOllama() {
     throw err;
   }
   const existingById = new Map(store.all('models').map(m => [m.id, m]));
-  const mapped = status.models.map(tag => mapOllamaTagToModel(tag, status.runningModelNames, existingById.get(tag.name)));
+  const inspected = await Promise.all(status.models.map(async tag => {
+    try { return await ollama.show(tag.name); }
+    catch (_) { return null; }
+  }));
+  const mapped = status.models.map((tag, index) => mapOllamaTagToModel(tag, status.runningModelNames, existingById.get(tag.name), inspected[index]));
   // Replace only the models that came from Ollama (runtimeKind local/ollama
   // rows not present in this tag list are left alone — e.g. a remote/API
   // model entry the user added by hand has nothing to do with `ollama list`).
@@ -218,8 +231,19 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/workspace\/plans\/from-conversation$/, handler: async (req, res) => sendJson(res, 200, workspacePlanner.createConversationPlan(store, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/plans\/([^/]+)\/root$/, handler: async (req, res, [id]) => { const body=await readJsonBody(req); sendJson(res, 200, workspacePlanner.setPlanRoot(store, decodeURIComponent(id), body.rootId)); } },
   { method: 'POST', pattern: /^\/api\/workspace\/plans\/([^/]+)\/run$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspacePlanner.runPlan(store, workspaceScanner, decodeURIComponent(id))) },
-  { method: 'POST', pattern: /^\/api\/workspace\/code-plan$/, handler: async (req,res)=>sendJson(res,201,await codePlanner.plan(store,workspaceScanner,workspaceChanges,ollama,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/code-plan\/preview$/, handler: async (req,res)=>sendJson(res,200,await codePlanner.preview(store,workspaceScanner,ollama,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/code-plan$/, handler: async (req, res) => {
+    const controller = new AbortController();
+    const cancel = () => { if (!res.writableEnded) controller.abort(); };
+    res.once('close', cancel);
+    try {
+      const input = await readJsonBody(req);
+      const draft = await codePlanner.plan(store, workspaceScanner, workspaceChanges, ollama, input, { signal: controller.signal });
+      if (!res.destroyed) sendJson(res, 201, draft);
+    } finally { res.removeListener('close', cancel); }
+  } },
   { method: 'GET', pattern: /^\/api\/workspace\/changes$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceChanges').reverse()) },
+  { method: 'GET', pattern: /^\/api\/model-qualifications$/, handler: async (_req,res)=>sendJson(res,200,store.all('modelQualifications').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes$/, handler: async (req, res) => sendJson(res, 201, workspaceChanges.proposeChange(store, workspaceScanner, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/check$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspaceChanges.checkProposal(store, workspaceScanner, DATA_DIR, decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.approveProposal(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.approved',proposalId:result.id,affectedFiles:result.approval.affectedFiles});sendJson(res,200,result);} },
@@ -272,8 +296,8 @@ const routes = [
       sendJson(res, 200, store.page(decodeURIComponent(name), { limit, beforeUpdatedAt: before }));
     },
   },
-  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req); sendJson(res, 200, store.put(decodeURIComponent(name), body)); } },
-  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { store.delete(decodeURIComponent(name), decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req); if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are written only by the local validation runner.'}); sendJson(res, 200, store.put(decodeURIComponent(name), body)); } },
+  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are read-only.'}); store.delete(decodeURIComponent(name), decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
   { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); sendJson(res, 200, { ok: true }); } },
 
   { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
