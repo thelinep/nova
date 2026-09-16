@@ -1,0 +1,273 @@
+{
+  "complete": true,
+  "checkedAt": "2026-09-15T15:45:19.426Z",
+  "host": "http://127.0.0.1:11434",
+  "results": [
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "single-file",
+      "startedAt": "2026-09-15T15:43:31.351Z",
+      "completedAt": "2026-09-15T15:43:43.720Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"The greeting in sample.js is updated to 'hello nova'\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"const greeting = \\\"hello\\\";\",\"replacement\":\"const greeting = \\\"hello nova\\\";\",\"dependsOn\":[],\"impact\":\"Minor\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 138,
+          "outputTokens": 68
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-15T15:43:43.721Z",
+      "completedAt": "2026-09-15T15:43:57.526Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Enable the feature\",\n\"acceptanceCriteria\": [\n{\n\"description\": \"The 'enabled' property is set to true in both config.json and main.js\"\n}\n],\n\"changes\": [\n{\n\"relativePath\": \"config.json\",\n\"find\": \"false\",\n\"replacement\": \"true\",\n\"dependsOn\": [],\n\"impact\": \"Enabled the feature\"\n},\n{\n\"relativePath\": \"main.js\",\n\"find\": \"const enabled = false;\",\n\"replacement\": \"const enabled = true;\",\n\"dependsOn\": [\"config.json\"],\n\"impact\": \"Updated main.js to reflect the new config value\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 162,
+          "outputTokens": 130
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 2,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-15T15:43:57.527Z",
+      "completedAt": "2026-09-15T15:43:57.540Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-15T15:43:57.540Z",
+      "completedAt": "2026-09-15T15:44:04.591Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Update limit in target.js\",\n\"acceptanceCriteria\": [\n{\"description\": \"The value of the `limit` variable is updated to 3\"}\n],\n\"changes\": [\n{\n\"relativePath\": \"target.js\",\n\"find\": \"const limit = 2;\",\n\"replacement\": \"const limit = 3;\",\n\"dependsOn\": [],\n\"impact\": \"Updated the value of the `limit` variable\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 140,
+          "outputTokens": 92
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "single-file",
+      "startedAt": "2026-09-15T15:44:04.591Z",
+      "completedAt": "2026-09-15T15:44:19.513Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Change greeting in sample.js to \\\"hello nova\\\"\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 56
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3.2:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-15T15:44:19.513Z",
+      "completedAt": "2026-09-15T15:44:38.487Z",
+      "generationEvidence": [
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    \"The value of 'enabled' in config.json is now true\"\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 172,
+          "outputTokens": 152
+        },
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    {\n      \"description\": \"The value of 'enabled' in config.json is now true\"\n    },\n    {\n      \"description\": \"The value of 'enabled' in main.js is now true\"\n    }\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 311,
+          "outputTokens": 181
+        }
+      ],
+      "status": "failed",
+      "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once."
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-15T15:44:38.488Z",
+      "completedAt": "2026-09-15T15:44:38.489Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-15T15:44:38.490Z",
+      "completedAt": "2026-09-15T15:44:44.753Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "single-file",
+      "startedAt": "2026-09-15T15:44:44.754Z",
+      "completedAt": "2026-09-15T15:44:53.388Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Change greeting in sample.js to \\\"hello nova\\\"\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 56
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "maataa:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-15T15:44:53.389Z",
+      "completedAt": "2026-09-15T15:45:13.035Z",
+      "generationEvidence": [
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    \"The value of 'enabled' in config.json is now true\"\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 172,
+          "outputTokens": 152
+        },
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    {\n      \"description\": \"The value of 'enabled' in config.json is now true\"\n    },\n    {\n      \"description\": \"The value of 'enabled' in main.js is now true\"\n    }\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 311,
+          "outputTokens": 181
+        }
+      ],
+      "status": "failed",
+      "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once."
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-15T15:45:13.037Z",
+      "completedAt": "2026-09-15T15:45:13.038Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-15T15:45:13.038Z",
+      "completedAt": "2026-09-15T15:45:19.426Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    }
+  ]
+}
