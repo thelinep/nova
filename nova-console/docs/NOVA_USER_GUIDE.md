@@ -154,6 +154,21 @@ Start with a small, low-risk task:
 
 Workflows are restart-resilient, but a restart cannot make an unavailable model, disconnected MCP server, rejected approval, or invalid input succeed. Treat any publishing, deletion, or external-effect node as a review point.
 
+### Local Workspace code changes
+
+In **Local Workspace**, approve a project folder first. NOVA can then draft code changes, either from a chat request or from JSON you enter. A change batch can hold up to 50 operations:
+
+- **edit**: replace one exact text region in an existing file
+- **create**: add a new file with its full content; the file must not exist yet
+- **delete**: remove an existing file
+- **rename**: move an existing file to a path that does not exist yet
+
+Every path must stay inside the approved folder. NOVA refuses paths through symbolic links and anything inside `.git`, `node_modules`, `dist`, `build`, `target`, `.next`, `coverage`, or `.cache`. Each file can appear in only one operation per batch.
+
+Validation runs the whole batch in a copy under NOVA's data folder, so your folder is untouched until you approve. After approval, **Apply atomically** writes every operation or none of them: if one fails, the ones already applied are undone. **Roll back batch** restores every file and removes any folders the batch created. Rollback is refused if any affected file changed after the batch was applied.
+
+For chat requests, name the file you want created, for example "Create src/date.js that exports formatDate". Model output is limited to 1,024 tokens per plan, so ask for small files or split larger features into several requests.
+
 ### Provider Browser
 
 Use **Provider Browser** to open Codex, Claude, Gemini, Perplexity, or another HTTPS provider in a separate NOVA-owned browser window. This is useful when a task needs a provider-specific account alongside your local NOVA workspace.
