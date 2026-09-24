@@ -21,10 +21,8 @@ next-env.d.ts
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # Debug logs
 npm-debug.log*
@@ -69,15 +67,12 @@ Thumbs.db
 *.db-wal
 *.db-shm
 
-# Isolated integration build
-.next-tlps/
+# Isolated Next.js build dirs (.next-tlps, .next-maataa, .next-event-*, ...)
+.next-*/
 
-.next-event-planners/
+# Compiler caches
+.swc/
 
-.next-event-studio/
-
-.next-event-counters/
-
-.next-event-filters/
-
-.next-event-map/
+# Local scratch and assistant output (not source)
+/tmp/
+/Claude outputs/

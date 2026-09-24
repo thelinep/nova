@@ -1,11 +1,6 @@
 
 # Local Maataa conversation and publication data
 /data/maataa/
-/.next-maataa/
-/.next-maataa-final/
-
-/.next-helpers/
-/.next-roadmap/
 
 # Supervisor runtime state/log for the district collector (regenerated, not data)
 /data/event-planners/supervisor-state.json
