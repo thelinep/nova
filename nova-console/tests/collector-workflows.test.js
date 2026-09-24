@@ -21,6 +21,18 @@ test('collector recovery pauses interrupted runs with a resumable checkpoint not
   assert.equal(store.get('collectionRuns','run_2').status,'completed');
 });
 
+test('paused runs require fresh approval and retain persisted checkpoint progress',()=>{
+  const store=memoryStore();store.put('collectionRuns',{id:'run_1',status:'paused',startedAt:'2026-09-15T00:00:00Z',checkpoints:[]});
+  const resumed=collector.approvePlan(store,'run_1');assert.equal(resumed.status,'approved');assert.ok(resumed.resumedAt);assert.equal(resumed.checkpoints[0].status,'resume-approved');
+});
+
+test('challenge evidence stops the batch regardless of runner exit code',()=>{
+  assert.equal(collector.classifyExit([{status:'blocked'}],'',0),'challenge-stopped');
+  assert.equal(collector.classifyExit([],'Google CAPTCHA challenge',1),'challenge-stopped');
+  assert.equal(collector.classifyExit([],'Invalid collector evidence: count',0),'paused');
+  assert.equal(collector.classifyExit([{status:'limited_view'}],'',0),'completed');
+});
+
 test('inactive collector runs cannot be cancelled',()=>{
   const store=memoryStore();store.put('collectionRuns',{id:'run_1',status:'paused',checkpoints:[]});
   assert.throws(()=>collector.cancelRun(store,'missing'),/Unknown collection run/);

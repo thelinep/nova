@@ -3,9 +3,11 @@
 const CATEGORIES = new Set(['banquet halls', 'wedding venues', 'conference centres', 'party halls']);
 const { spawn } = require('node:child_process');
 const path = require('node:path');
+const evidenceStore = require('./collector-evidence');
 const INDIA_SCRAPER_ROOT = path.resolve(__dirname, '../../india-scraper-next');
 const RUNNER = path.join(INDIA_SCRAPER_ROOT, 'scripts/run-delhi-venue-queries.cjs');
 let active = null;
+function classifyExit(evidence, detail, code, cancelRequested=false) { if(cancelRequested)return'cancelled';if(evidence.some(x=>x.status==='blocked')||/challenge|blocked|captcha/i.test(detail))return'challenge-stopped';if(code===0&&!/Invalid collector evidence:/i.test(detail))return'completed';return'paused'; }
 function uid() { return 'col_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function cleanCategories(input) {
   const values = Array.isArray(input) ? input : [];
@@ -24,8 +26,8 @@ function createPlan(store, body) {
 function approvePlan(store, id) {
   const run = store.get('collectionRuns', id);
   if (!run) throw Object.assign(new Error('Unknown collection run.'), { statusCode: 404 });
-  if (run.status !== 'awaiting_approval') throw Object.assign(new Error('Collection run is not awaiting approval.'), { statusCode: 400 });
-  run.status = 'approved'; run.approvedAt = new Date().toISOString(); store.put('collectionRuns', run); return run;
+  if (!['awaiting_approval','paused','challenge-stopped'].includes(run.status)) throw Object.assign(new Error('Collection run is not awaiting approval or resumable.'), { statusCode: 400 });
+  const at=new Date().toISOString();run.status = 'approved'; run.approvedAt = at;if(run.startedAt){run.resumedAt=at;run.checkpoints.push({at,status:'resume-approved',detail:'User approved resume from persisted query-history checkpoints.'});}store.put('collectionRuns', run); return run;
 }
 function executePlan(store, id) {
   const run = store.get('collectionRuns', id);
@@ -33,15 +35,15 @@ function executePlan(store, id) {
   if (run.status !== 'approved') throw Object.assign(new Error('Approve the collection run before execution.'), { statusCode: 400 });
   if (active) throw Object.assign(new Error('Another collector run is active.'), { statusCode: 409 });
   if (run.categories.length !== CATEGORIES.size) throw Object.assign(new Error('The installed Delhi runner currently executes the four approved venue categories as one bounded batch.'), { statusCode: 400 });
-  run.status = 'running'; run.startedAt = new Date().toISOString(); run.completedQueries=0;run.checkpoints.push({ at: run.startedAt, status: 'started', detail: 'Launching fixed local Delhi venue runner.' }); store.put('collectionRuns', run);
+  const priorEvidence=store.all('collectorEvidence').filter(x=>x.runId===id);run.status = 'running'; run.startedAt = run.startedAt||new Date().toISOString(); run.lastStartedAt=new Date().toISOString();run.completedQueries=priorEvidence.length;run.checkpoints.push({ at: run.lastStartedAt, status: priorEvidence.length?'resumed':'started', detail: priorEvidence.length?`Resuming after ${priorEvidence.length} persisted query checkpoint(s).`:'Launching fixed local Delhi venue runner.' }); store.put('collectionRuns', run);
   const child = spawn(process.execPath, [RUNNER], { cwd: INDIA_SCRAPER_ROOT, stdio: ['ignore', 'pipe', 'pipe'], shell: false, detached:process.platform!=='win32' });active={id,child};
   let detail = '';
-  let pending='';child.stdout.on('data',chunk=>{pending+=chunk.toString();const lines=pending.split(/\r?\n/);pending=lines.pop();for(const line of lines){if(!line.trim())continue;const row=store.get('collectionRuns',id);if(!row)continue;try{const result=JSON.parse(line);const at=new Date().toISOString(),evidence={id:'evidence_'+id+'_'+String(row.completedQueries||0).padStart(3,'0'),runId:id,sourceUrl:result.sourceUrl||result.url||'https://www.google.com/maps',methodId:result.methodId,district:result.district,category:String(result.methodId||'').replace(/^venue-/,'').replace(/-/g,' '),startedAt:result.startedAt||at,finishedAt:result.finishedAt||at,status:result.status||'observed',resultCount:Number(result.resultCount??result.count??result.rawRecords?.length??0),limitation:result.limitation||row.limitation,rawRecords:result.rawRecords||result.records||[],rawResult:result};store.put('collectorEvidence',evidence);for(const [index,raw] of evidence.rawRecords.entries()){const key=String(raw.place_id||raw.placeId||raw.maps_url||raw.url||raw.name||index);store.put('venueObservations',{id:'venue_'+require('node:crypto').createHash('sha256').update(key).digest('hex').slice(0,20),runId:id,evidenceId:evidence.id,category:evidence.category,district:evidence.district,districtAssociation:'unverified',observedAt:evidence.finishedAt,sourceUrl:evidence.sourceUrl,raw});}row.completedQueries=(row.completedQueries||0)+1;row.checkpoints.push({at,status:evidence.status,detail:`${evidence.district} · ${evidence.methodId} · ${evidence.resultCount} result(s)`});store.put('collectionRuns',row);}catch(_){detail=(detail+'\n'+line).slice(-4000);}}});
+  let pending='';child.stdout.on('data',chunk=>{pending+=chunk.toString();const lines=pending.split(/\r?\n/);pending=lines.pop();for(const line of lines){if(!line.trim())continue;const row=store.get('collectionRuns',id);if(!row)continue;try{const result=JSON.parse(line);const evidence=evidenceStore.persist(store,row,result);row.completedQueries=store.all('collectorEvidence').filter(x=>x.runId===id).length;row.checkpoints.push({at:evidence.finishedAt,status:evidence.status,queryHistoryId:evidence.queryHistoryId,detail:`${evidence.district} · ${evidence.methodId} · ${evidence.resultCount} result(s)`});store.put('collectionRuns',row);}catch(error){detail=(detail+'\nInvalid collector evidence: '+error.message).slice(-4000);try{child.kill('SIGTERM');}catch(_){}}}});
   child.stderr.on('data', chunk => { detail = (detail + chunk).slice(-4000); });
   child.on('error', error => { const row = store.get('collectionRuns', id); if (row) { row.status = 'failed'; row.finishedAt = new Date().toISOString(); row.checkpoints.push({ at: row.finishedAt, status: 'failed', detail: error.message }); store.put('collectionRuns', row); } active = null; });
-  child.on('exit', code => { const row = store.get('collectionRuns', id); if (row) { const challenged=/challenge|blocked|captcha/i.test(detail);row.status = row.cancelRequested?'cancelled':code === 0 ? 'completed':challenged?'challenge-stopped':'paused'; row.finishedAt = new Date().toISOString(); row.checkpoints.push({ at: row.finishedAt, status: row.status, detail: detail || `Runner exited with code ${code}.` }); store.put('collectionRuns', row); } active = null; });
+  child.on('exit', code => { const row = store.get('collectionRuns', id); if (row) { const evidence=store.all('collectorEvidence').filter(x=>x.runId===id);row.status=classifyExit(evidence,detail,code,row.cancelRequested);row.finishedAt = new Date().toISOString(); row.checkpoints.push({ at: row.finishedAt, status: row.status, detail: detail || `Runner exited with code ${code}.` }); store.put('collectionRuns', row); } active = null; });
   return run;
 }
 function cancelRun(store,id){const run=store.get('collectionRuns',id);if(!run)throw Object.assign(new Error('Unknown collection run.'),{statusCode:404});if(!active||active.id!==id||run.status!=='running')throw Object.assign(new Error('Collector run is not active.'),{statusCode:409});run.cancelRequested=true;run.cancelRequestedAt=new Date().toISOString();run.checkpoints.push({at:run.cancelRequestedAt,status:'cancelling',detail:'User requested cancellation.'});store.put('collectionRuns',run);try{process.platform==='win32'?active.child.kill('SIGTERM'):process.kill(-active.child.pid,'SIGTERM');}catch(_){}return run;}
 function recoverInterrupted(store){let count=0;for(const run of store.all('collectionRuns'))if(run.status==='running'){run.status='paused';run.finishedAt=new Date().toISOString();run.checkpoints.push({at:run.finishedAt,status:'paused',detail:'NOVA restarted; runner checkpoint will be reused on the next approved execution.'});store.put('collectionRuns',run);count++;}return count;}
-module.exports = { createPlan, approvePlan, executePlan, cancelRun, recoverInterrupted };
+module.exports = { createPlan, approvePlan, executePlan, cancelRun, recoverInterrupted, classifyExit };

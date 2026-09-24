@@ -1,0 +1,249 @@
+{
+  "complete": true,
+  "checkedAt": "2026-09-15T08:44:23.781Z",
+  "host": "http://127.0.0.1:11434",
+  "results": [
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "single-file",
+      "startedAt": "2026-09-15T08:42:58.153Z",
+      "completedAt": "2026-09-15T08:43:12.666Z",
+      "generationEvidence": {
+        "content": "{\n\"summary\": \"Update greeting in sample.js\",\n\"changes\": [\n{\n\"relativePath\": \"sample.js\",\n\"find\": \"const greeting = \\\"hello\\\";\",\n\"replacement\": \"const greeting = \\\"hello nova\\\";\",\n\"dependsOn\": [],\n\"impact\": \"Minor\"\n}\n]\n}",
+        "doneReason": "stop",
+        "promptTokens": 148,
+        "outputTokens": 62
+      },
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-15T08:43:12.667Z",
+      "completedAt": "2026-09-15T08:43:24.838Z",
+      "generationEvidence": {
+        "content": "{\n\"summary\": \"Enable the feature by changing false to true in config.json and main.js, with main.js depending on config.json\",\n\"changes\": [\n{\n\"relativePath\": \"config.json\",\n\"find\": \"false\",\n\"replacement\": \"true\"\n},\n{\n\"relativePath\": \"main.js\",\n\"find\": \"const enabled = false;\",\n\"replacement\": \"const enabled = true;\",\n\"dependsOn\": [\"config.json\"]\n}\n]\n}",
+        "doneReason": "stop",
+        "promptTokens": 172,
+        "outputTokens": 93
+      },
+      "status": "passed",
+      "filesPresented": 2,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-15T08:43:24.839Z",
+      "completedAt": "2026-09-15T08:43:30.306Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Improve sample.js\",\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"greeting = \\\"hello\\\";\",\"replacement\":\"const greeting = 'Hello';\",\"dependsOn\":[],\"impact\":\"Improved variable initialization\"}]}",
+        "doneReason": "stop",
+        "promptTokens": 136,
+        "outputTokens": 47
+      },
+      "status": "failed",
+      "error": "Missing expected rejection."
+    },
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-15T08:43:30.307Z",
+      "completedAt": "2026-09-15T08:43:36.640Z",
+      "generationEvidence": {
+        "content": "{\n\"summary\": \"Update limit in target.js\",\n\"changes\": [\n{\n\"relativePath\": \"target.js\",\n\"find\": \"limit = 2;\",\n\"replacement\": \"limit = 3;\",\n\"dependsOn\": [],\n\"impact\": \"Minor code change\"\n}\n]\n}",
+        "doneReason": "stop",
+        "promptTokens": 150,
+        "outputTokens": 59
+      },
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "single-file",
+      "startedAt": "2026-09-15T08:43:36.640Z",
+      "completedAt": "2026-09-15T08:43:58.356Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Update greeting in sample.js\",\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"greeting = \\\"hello\\\";\",\"replacement\":\"greeting = \\\"hello nova\\\";\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+        "doneReason": "stop",
+        "promptTokens": 158,
+        "outputTokens": 53
+      },
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3.2:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-15T08:43:58.357Z",
+      "completedAt": "2026-09-15T08:44:04.618Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Enable feature: change false to true in config.json and main.js\",\"changes\":[{\"relativePath\":\"config.json\",\"find\":\"\\\\\\\"enabled\\\\\\\":false\\\\\",\",\":\"\\\\\\\"enabled\\\\\\\":true\\\\\",\",\":[]}]}",
+        "doneReason": "stop",
+        "promptTokens": 182,
+        "outputTokens": 50
+      },
+      "status": "failed",
+      "error": "Every model change needs exact find and replacement text."
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-15T08:44:04.619Z",
+      "completedAt": "2026-09-15T08:44:06.911Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Improve code formatting and add documentation\",\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"const \",\"replacement\":\"const greeting = \",\",\":\",\"}]}",
+        "doneReason": "stop",
+        "promptTokens": 146,
+        "outputTokens": 35
+      },
+      "status": "failed",
+      "error": "Missing expected rejection."
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-15T08:44:06.911Z",
+      "completedAt": "2026-09-15T08:44:11.211Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Changed limit from 2 to 3 in target.js\",\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserved all other contents.\"}]}",
+        "doneReason": "stop",
+        "promptTokens": 160,
+        "outputTokens": 55
+      },
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "single-file",
+      "startedAt": "2026-09-15T08:44:11.212Z",
+      "completedAt": "2026-09-15T08:44:15.424Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Update greeting in sample.js\",\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"greeting = \\\"hello\\\";\",\"replacement\":\"greeting = \\\"hello nova\\\";\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+        "doneReason": "stop",
+        "promptTokens": 158,
+        "outputTokens": 53
+      },
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "maataa:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-15T08:44:15.425Z",
+      "completedAt": "2026-09-15T08:44:18.882Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Enable feature: change false to true in config.json and main.js\",\"changes\":[{\"relativePath\":\"config.json\",\"find\":\"\\\\\\\"enabled\\\\\\\":false\\\\\",\",\":\"\\\\\\\"enabled\\\\\\\":true\\\\\",\",\":[]}]}",
+        "doneReason": "stop",
+        "promptTokens": 182,
+        "outputTokens": 50
+      },
+      "status": "failed",
+      "error": "Every model change needs exact find and replacement text."
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-15T08:44:18.882Z",
+      "completedAt": "2026-09-15T08:44:20.747Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Improve code formatting and add documentation\",\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"const \",\"replacement\":\"const greeting = \",\",\":\",\"}]}",
+        "doneReason": "stop",
+        "promptTokens": 146,
+        "outputTokens": 35
+      },
+      "status": "failed",
+      "error": "Missing expected rejection."
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-15T08:44:20.747Z",
+      "completedAt": "2026-09-15T08:44:23.778Z",
+      "generationEvidence": {
+        "content": "{\"summary\":\"Changed limit from 2 to 3 in target.js\",\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserved all other contents.\"}]}",
+        "doneReason": "stop",
+        "promptTokens": 160,
+        "outputTokens": 55
+      },
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    }
+  ]
+}

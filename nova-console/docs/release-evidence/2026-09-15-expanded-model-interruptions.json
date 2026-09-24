@@ -1,0 +1,55 @@
+{
+  "complete": true,
+  "checkedAt": "2026-09-15T14:47:51.267Z",
+  "host": "http://127.0.0.1:11434",
+  "results": [
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "timeout",
+      "startedAt": "2026-09-15T14:47:49.902Z",
+      "completedAt": "2026-09-15T14:47:50.597Z",
+      "status": "passed"
+    },
+    {
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-15T14:47:50.598Z",
+      "completedAt": "2026-09-15T14:47:50.740Z",
+      "status": "passed"
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "timeout",
+      "startedAt": "2026-09-15T14:47:50.740Z",
+      "completedAt": "2026-09-15T14:47:50.903Z",
+      "status": "passed"
+    },
+    {
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-15T14:47:50.903Z",
+      "completedAt": "2026-09-15T14:47:51.016Z",
+      "status": "passed"
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "timeout",
+      "startedAt": "2026-09-15T14:47:51.016Z",
+      "completedAt": "2026-09-15T14:47:51.162Z",
+      "status": "passed"
+    },
+    {
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-15T14:47:51.162Z",
+      "completedAt": "2026-09-15T14:47:51.267Z",
+      "status": "passed"
+    }
+  ]
+}

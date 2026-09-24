@@ -18,10 +18,10 @@ const fs = require('node:fs');
 const { DatabaseSync } = require('node:sqlite');
 
 const STORE_NAMES = [
-  'sessions', 'models', 'modelProfiles', 'knowledgeCollections', 'knowledgeDocuments',
+  'sessions', 'models', 'modelProfiles', 'modelQualifications', 'knowledgeCollections', 'knowledgeDocuments',
   'knowledgeChunks', 'automations', 'automationRuns', 'evaluations', 'preferences',
   'runtimeEvents', 'skills', 'mcpServers', 'agents', 'workflows', 'workflowRuns', 'executions', 'collectionRuns', 'collectorEvidence', 'venueObservations',
-  'workspaceRoots', 'workspaceReports', 'workspacePlans', 'workspaceChanges', 'workspaceChangeBatches', 'workspaceRuns', 'workspaceGitDrafts', 'workspaceGitActions', 'workspacePermissions', 'securityBackups',
+  'workspaceRoots', 'workspaceReports', 'workspacePlans', 'workspacePlanningAttempts', 'workspaceChanges', 'workspaceChangeBatches', 'workspaceRuns', 'workspaceGitDrafts', 'workspaceGitActions', 'workspacePermissions', 'securityBackups',
 ];
 
 function openDb(dataDir) {
