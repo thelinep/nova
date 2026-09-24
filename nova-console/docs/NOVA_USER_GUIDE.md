@@ -167,6 +167,15 @@ In **Local Workspace**, use **New project** to start an app from a template. Cho
 
 **Preview files** lists every file that would be written, without touching disk. **Create project** then builds the project in a hidden staging folder, runs `git init` on branch `main`, and moves it into place in one step, so a failure never leaves a half-made folder. If your git `user.name` and `user.email` are set, NOVA also makes an initial commit. The new folder is approved automatically, so you can scan it, draft changes, and run its tests straight away. Every template's `npm test` works before anything is installed. NOVA does not download packages during this step.
 
+### Install packages and run the dev server
+
+Controlled commands only run after you approve an allowlist for the project's Git repository. Two actions support day-to-day app development:
+
+- **install** runs `npm ci` (when `package-lock.json` exists) or `npm install` in the project folder. It downloads packages, so it only runs while **Settings > Privacy > Allow network access** is on. Package install scripts (such as `postinstall`) are skipped unless you tick **allow install scripts** for that run.
+- **dev** runs the project's `dev` script (or `start`) in the project folder, bound to `127.0.0.1`, so changes you apply show up straight away. NOVA shows the server's address when it appears in the output, streams the log live, and keeps one dev server per project. **Stop dev server** ends it, and NOVA stops every dev server when it quits.
+
+Install and dev run in the background, and the output panel updates every second. Tests and builds still run in a separate copy of the project, and they reuse the project's installed packages. Projects approved before this version can add the new actions with **Add install and dev to allowlist**.
+
 ### Local Workspace code changes
 
 In **Local Workspace**, approve a project folder first. NOVA can then draft code changes, either from a chat request or from JSON you enter. A change batch can hold up to 50 operations:

@@ -263,6 +263,7 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/workspace\/runs$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRuns').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/roots\/([^/]+)\/commands\/allow$/, handler: async (req, res, [id]) => {const body=await readJsonBody(req),root=workspaceRunner.allowRepository(store,workspaceScanner,decodeURIComponent(id),body.actions),permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:root.commandAllowlist.actions.map(x=>'command:'+x),source:'explicit-command-allowlist'});desktopSecurity.appendAudit(DATA_DIR,{action:'command.allowlist.granted',rootId:root.id,permissionId:permission.id,actions:root.commandAllowlist.actions});sendJson(res,200,root);} },
   { method: 'POST', pattern: /^\/api\/workspace\/runs$/, handler: async (req, res) => sendJson(res, 200, await workspaceRunner.run(store,workspaceScanner,workspaceChanges,DATA_DIR,await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/workspace\/runs\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,workspaceRunner.getRun(store,decodeURIComponent(id),new URL(req.url,'http://127.0.0.1').searchParams.get('since'))) },
   { method: 'POST', pattern: /^\/api\/workspace\/runs\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceRunner.cancel(store,decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/workspace\/git$/, handler: async (req, res) => {const rootId=new URL(req.url,'http://localhost').searchParams.get('rootId');sendJson(res,200,workspaceGit.snapshot(store,workspaceScanner,rootId));} },
   { method: 'GET', pattern: /^\/api\/workspace\/git\/drafts$/, handler: async (_req, res) => sendJson(res,200,store.all('workspaceGitDrafts').reverse()) },
@@ -710,6 +711,7 @@ server.listen(PORT, '127.0.0.1', () => {
 function shutdown() {
   console.log('\nShutting down NOVA Runtime...');
   mcpManager.shutdownAll(); // real child MCP server processes — close them, don't orphan
+  workspaceRunner.stopAll(); // dev servers and commands run in their own process groups
   server.close(() => process.exit(0));
 }
 process.on('SIGINT', shutdown);
