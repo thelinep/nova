@@ -117,7 +117,9 @@ Start an evaluation only after syncing the intended model from Ollama. Compare c
 
 ### Skills
 
-Skills are capability modules that declare the MCP tools and permissions they need. NOVA includes local skills such as file search, web fetch, and code linting.
+Skills are capability modules that declare the MCP tools and permissions they need. NOVA includes local skills such as file search, web fetch, code linting, and session summarizing.
+
+The Session Summarizer condenses the active session, or text you paste into its card, using a local Ollama model. Every sentence cites the numbered source messages or passages it came from, and ids the model invents are removed. It reads a session only while its `session:read` permission is granted, and it refuses API or demo models. In workflows, a summarize step summarizes the previous step's output. Long input is summarized in parts and then combined, up to 200,000 characters.
 
 - Inspect the permission list before enabling a skill.
 - Enable or disable skills from the registry.

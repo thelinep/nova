@@ -25,6 +25,7 @@ const { TelemetryReader } = require('./lib/telemetry');
 const { ingestDocument, reindexCollection, searchKnowledge, deleteDocument } = require('./lib/knowledge');
 const mcpManager = require('./lib/mcp-manager');
 const { runSkillSandboxed } = require('./lib/skill-runner');
+const { buildSkillHost } = require('./lib/skill-host');
 const { runAgentLoop } = require('./lib/agent-loop');
 const workflowEngine = require('./lib/workflow-engine');
 const evalBench = require('./lib/eval-bench');
@@ -524,7 +525,7 @@ const routes = [
           const server = mcpManager.findServerForTool(store, toolName);
           if (!server) { const e = new Error('No connected MCP server advertises tool "' + toolName + '"'); e.statusCode = 502; throw e; }
           return mcpManager.gatedCall(store, server.id, toolName, args, { wait: true, origin: 'skill', skillName: skill.name });
-        });
+        }, buildSkillHost(store, ollama, skill));
         const finishedAt = new Date().toISOString();
         skill.lastRun = finishedAt;
         skill.runCount = (skill.runCount || 0) + 1;
@@ -603,7 +604,7 @@ const routes = [
 // in Phase 5). Anything else still runs on the frontend's pre-existing
 // simulated path — labeled as such in the UI — rather than faking a real
 // run here.
-const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_webfetch']);
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_webfetch', 'skl_summarize']);
 
 // Skills that genuinely reach the network when they run — gated below by
 // the workspace's own privacy preference, not just a descriptive UI label.
@@ -627,6 +628,10 @@ function summarizeSkillResult(skillId, result) {
   }
   if (skillId === 'skl_webfetch' && result && typeof result === 'object') {
     return 'Real fetch — HTTP ' + result.statusCode + ' from ' + result.url + ' (' + result.bytesRead + ' byte(s)' + (result.truncated ? ', truncated' : '') + ').';
+  }
+  if (skillId === 'skl_summarize' && result && typeof result === 'object') {
+    return 'Real summary — ' + result.wordCount + ' word(s), ' + ((result.citations || []).length) + ' citation(s) from ' +
+      (result.source ? result.source.segments : 0) + ' passage(s) via ' + (result.model || 'local model') + ' (' + result.strategy + ').';
   }
   return 'Real sandboxed run completed.';
 }

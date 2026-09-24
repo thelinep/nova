@@ -16,19 +16,26 @@ const { validateManifest } = require('./skill-schema');
 const SKILLS_DIR = path.join(__dirname, '..', 'skills');
 const WORKER_PATH = path.join(__dirname, 'skill-worker.js');
 const RUN_TIMEOUT_MS = 60000;
+// Model-backed skills make several local inference calls; give them longer.
+const SKILL_TIMEOUT_MS = { skl_summarize: 240000 };
+const MAX_TIMEOUT_MS = 300000;
 
 function httpErr(statusCode, message) { const e = new Error(message); e.statusCode = statusCode; return e; }
 
 /** @param skill the DB.skills row. @param inputs plain object passed to the
  *  module's run(). @param gatedCall (toolName, args) => Promise<result>,
- *  already bound to the right MCP server and approval policy by the caller. */
-function runSkillSandboxed(skill, inputs, gatedCall) {
+ *  already bound to the right MCP server and approval policy by the caller.
+ *  @param host optional {methodName: async (args) => result} from
+ *  lib/skill-host.js; only these names are exposed to the worker. */
+function runSkillSandboxed(skill, inputs, gatedCall, host) {
   const manifestCheck = validateManifest(skill.manifest);
   if (!manifestCheck.valid) {
     throw httpErr(400, 'Skill manifest for "' + skill.name + '" failed validation: ' + manifestCheck.errors.join('; '));
   }
   const entryName = skill.id.replace(/^skl_/, '') + '.js';
   const entrypointPath = path.join(SKILLS_DIR, entryName);
+  const hostMethods = Object.keys(host || {}).filter(name => typeof host[name] === 'function');
+  const timeoutMs = Math.min(MAX_TIMEOUT_MS, Number(skill.manifest && skill.manifest.timeoutMs) || SKILL_TIMEOUT_MS[skill.id] || RUN_TIMEOUT_MS);
 
   return new Promise((resolve, reject) => {
     let worker;
@@ -38,6 +45,7 @@ function runSkillSandboxed(skill, inputs, gatedCall) {
           entrypointPath,
           inputs: inputs || {},
           requiredTools: (skill.manifest && skill.manifest.requiredTools) || [],
+          hostMethods,
         },
       });
     } catch (e) {
@@ -47,8 +55,8 @@ function runSkillSandboxed(skill, inputs, gatedCall) {
 
     const timer = setTimeout(() => {
       worker.terminate();
-      reject(httpErr(504, 'Skill "' + skill.name + '" timed out after ' + RUN_TIMEOUT_MS + 'ms'));
-    }, RUN_TIMEOUT_MS);
+      reject(httpErr(504, 'Skill "' + skill.name + '" timed out after ' + timeoutMs + 'ms'));
+    }, timeoutMs);
 
     worker.on('message', async msg => {
       if (msg.type === 'tool-call') {
@@ -57,6 +65,16 @@ function runSkillSandboxed(skill, inputs, gatedCall) {
           worker.postMessage({ type: 'tool-result', callId: msg.callId, result });
         } catch (e) {
           worker.postMessage({ type: 'tool-result', callId: msg.callId, error: e.message || String(e) });
+        }
+        return;
+      }
+      if (msg.type === 'host-call') {
+        try {
+          if (!hostMethods.includes(msg.method)) throw new Error('Host method "' + msg.method + '" is not granted to this skill');
+          const result = await host[msg.method](msg.args || {});
+          worker.postMessage({ type: 'host-result', callId: msg.callId, result });
+        } catch (e) {
+          worker.postMessage({ type: 'host-result', callId: msg.callId, error: e.message || String(e) });
         }
         return;
       }

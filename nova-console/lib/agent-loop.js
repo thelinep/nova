@@ -19,6 +19,7 @@
  * ========================================================================= */
 const mcpManager = require('./mcp-manager');
 const { runSkillSandboxed } = require('./skill-runner');
+const { buildSkillHost } = require('./skill-host');
 
 const MAX_TOOL_ROUNDS = 6;
 
@@ -27,7 +28,7 @@ const MAX_TOOL_ROUNDS = 6;
 // tool (an agent may legitimately have it configured), but calling it
 // returns an honestly-labeled simulated result instead of pretending to
 // run code that doesn't exist.
-const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch']);
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_summarize']);
 
 function jsonSchemaFromManifestInputs(inputNames) {
   const properties = {};
@@ -95,12 +96,11 @@ function buildToolSpecs(store, agent) {
  *  fake. */
 async function runSimulatedSkill(skill) {
   await new Promise(r => setTimeout(r, 300 + Math.random() * 250));
-  if (skill.id === 'skl_summarize') return { summary: '(simulated) Summary of the requested content.', citations: [] };
   if (skill.id === 'skl_translate') return { text: '(simulated) Translated text.' };
   return { note: '(simulated) No real implementation for this skill yet.' };
 }
 
-async function executeTool(store, owners, name, args, origin) {
+async function executeTool(store, owners, name, args, origin, runtime = {}) {
   const owner = owners.get(name);
   if (!owner) throw Object.assign(new Error('Tool "' + name + '" is not available to this agent'), { statusCode: 400 });
 
@@ -112,7 +112,7 @@ async function executeTool(store, owners, name, args, origin) {
         const server = mcpManager.findServerForTool(store, toolName);
         if (!server) throw Object.assign(new Error('No connected MCP server advertises tool "' + toolName + '"'), { statusCode: 502 });
         return mcpManager.gatedCall(store, server.id, toolName, toolArgs, { wait: true, origin, skillName: skill.name });
-      });
+      }, buildSkillHost(store, runtime.ollama, skill, { modelId: runtime.modelId }));
     }
     return runSimulatedSkill(skill);
   }
@@ -168,7 +168,7 @@ async function runAgentLoop(store, ollama, agent, instruction, context, origin) 
       const args = parseToolArgs(call);
       let resultText;
       try {
-        const result = await executeTool(store, owners, name, args, origin || 'agent');
+        const result = await executeTool(store, owners, name, args, origin || 'agent', { ollama, modelId: agent.modelId });
         resultText = typeof result === 'string' ? result : JSON.stringify(result);
       } catch (e) {
         resultText = 'Error: ' + (e.message || String(e));

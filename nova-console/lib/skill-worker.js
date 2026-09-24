@@ -23,7 +23,7 @@
 const { parentPort, workerData } = require('worker_threads');
 
 async function main() {
-  const { entrypointPath, inputs, requiredTools } = workerData;
+  const { entrypointPath, inputs, requiredTools, hostMethods } = workerData;
 
   let mod;
   try {
@@ -40,7 +40,7 @@ async function main() {
   let callSeq = 1;
   const pending = new Map();
   parentPort.on('message', msg => {
-    if (msg && msg.type === 'tool-result' && pending.has(msg.callId)) {
+    if (msg && (msg.type === 'tool-result' || msg.type === 'host-result') && pending.has(msg.callId)) {
       const p = pending.get(msg.callId);
       pending.delete(msg.callId);
       if (msg.error) p.reject(new Error(msg.error));
@@ -57,8 +57,19 @@ async function main() {
     });
   }
 
+  // Host methods (lib/skill-host.js) round-trip the same way; only the
+  // names the main thread granted exist on this object.
+  const host = {};
+  for (const method of hostMethods || []) {
+    host[method] = (args) => new Promise((resolve, reject) => {
+      const callId = callSeq++;
+      pending.set(callId, { resolve, reject });
+      parentPort.postMessage({ type: 'host-call', callId, method, args: args || {} });
+    });
+  }
+
   try {
-    const result = await mod.run(inputs || {}, tools);
+    const result = await mod.run(inputs || {}, tools, host);
     parentPort.postMessage({ type: 'done', result });
   } catch (e) {
     parentPort.postMessage({ type: 'error', error: e.message || String(e) });

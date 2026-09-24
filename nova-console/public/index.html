@@ -916,7 +916,7 @@ async function seedIfEmpty(){
     {id:'skl_summarize', name:'Session Summarizer', version:'1.2.0', category:'Text', status:'installed', enabled:true,
      description:'Condenses a session or document into a short, cited summary using the active model.',
      permissions:[{scope:'session:read', label:'Read active session content', granted:true}, {scope:'network', label:'Network access', granted:false}],
-     manifest:{entrypoint:'summarize.run(context)', inputs:['sessionId','maxWords'], outputs:['summary','citations'], requiredTools:[]},
+     manifest:{entrypoint:'summarize.run(context)', inputs:['sessionId','text','maxWords','focus'], outputs:['summary','citations'], requiredTools:[], requiredHost:['readSession','generate']},
      health:{ok:true, lastCheck:nowIso(), detail:'Manifest valid, no missing tool references.'},
      installedAt:new Date(t0-30*864e5).toISOString(), lastRun:new Date(t0-2*3600e3).toISOString(), runCount:14,
      audit:[{at:new Date(t0-30*864e5).toISOString(), action:'Installed', detail:'v1.2.0 from local catalog'},
@@ -2573,7 +2573,7 @@ function bindEvaluationsViewEvents(){
 /* ===================== marker: RENDER:SKILLS ===================== */
 const SKILL_STATUS_BADGE = {installed:'badge-green', available:'badge-blue', disabled:'badge-red', needs_update:'badge-amber'};
 function skillById(id){ return DB.skills.find(s=>s.id===id); }
-const REAL_SKILL_IDS = new Set(['skl_codelint','skl_filesearch','skl_webfetch']); // mirrors server.js's REAL_SKILL_IDS, for labeling only — the server is what actually enforces it
+const REAL_SKILL_IDS = new Set(['skl_codelint','skl_filesearch','skl_webfetch','skl_summarize']); // mirrors server.js's REAL_SKILL_IDS, for labeling only — the server is what actually enforces it
 const NETWORK_SKILL_IDS = new Set(['skl_webfetch']); // mirrors server.js's NETWORK_SKILL_IDS — labeling only, the server's own gate is what actually blocks the run
 function skillCardHtml(s){
   const open = skillsExpandedId === s.id;
@@ -2595,11 +2595,13 @@ function skillCardHtml(s){
     </div>
     <div class="cap-card-desc">${escapeHtml(s.description)}</div>
     ${installed ? `<div style="font-size:11px;color:var(--muted-dim);margin:-2px 0 8px">${
+      s.id==='skl_summarize' ? 'Runs for real on a local Ollama model, in a sandboxed worker. It reads a session only while session:read is granted, and cites the messages it used.' :
       NETWORK_SKILL_IDS.has(s.id) ? 'Runs for real, in a sandboxed worker — a genuine HTTP request. The server refuses to start it while the workspace is LOCAL ONLY (Settings > Privacy).' :
       isReal ? 'Runs for real, in a sandboxed worker thread — its declared MCP tools are gated by their server’s approval policy.' :
       'Still on the simulated path — needs a real session-transcript API before this one can run for real.'
     }</div>` : ''}
     ${installed && s.id==='skl_filesearch' ? `<input type="text" class="skill-query-input mono" data-id="${s.id}" placeholder="Search query, e.g. cosineSimilarity" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
+    ${installed && s.id==='skl_summarize' ? `<textarea class="skill-text-input" data-id="${s.id}" rows="3" placeholder="Paste text to summarize, or leave empty to summarize the active session" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
     ${installed && s.id==='skl_webfetch' ? `<input type="text" class="skill-url-input mono" data-id="${s.id}" placeholder="https://example.com/page" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
     <div class="cap-card-actions">
       ${!installed ? `<button class="btn btn-amber btn-sm skill-install" data-id="${s.id}">Install</button>` :
@@ -2678,6 +2680,13 @@ function bindSkillsView(){
       if (!query) { toast('Enter a search query first.'); return; }
       inputs = { query, scope: 'lib' };
     }
+    if (s.id === 'skl_summarize') {
+      const t = document.querySelector('.skill-text-input[data-id="'+s.id+'"]');
+      const text = t ? t.value.trim() : '';
+      if (text) inputs = { text, maxWords: 120 };
+      else if (activeSessionId) inputs = { sessionId: activeSessionId, maxWords: 120 };
+      else { toast('Paste some text or open a session first.'); return; }
+    }
     if (s.id === 'skl_webfetch') {
       const u = document.querySelector('.skill-url-input[data-id="'+s.id+'"]');
       const url = u ? u.value.trim() : '';
@@ -2696,6 +2705,9 @@ function bindSkillsView(){
       idbPut('skills', data.skill);
       updateExecution(ex.id, {status:'success', detail:'Completed — '+JSON.stringify(data.result).slice(0,160)});
       logEvent('SKILL', s.name+' run completed — '+JSON.stringify(data.result).slice(0,160));
+      if (s.id === 'skl_summarize' && data.result && data.result.summary) {
+        updateExecution(ex.id, {status:'success', detail:data.result.summary.slice(0,400)});
+      }
       toast(s.name+' completed.');
     } catch(e) {
       updateExecution(ex.id, {status:'failed', detail:e.message});

@@ -21,9 +21,10 @@
  * ========================================================================= */
 const { runAgentLoop } = require('./agent-loop');
 const { runSkillSandboxed } = require('./skill-runner');
+const { buildSkillHost } = require('./skill-host');
 const mcpManager = require('./mcp-manager');
 
-const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch']);
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_summarize']);
 
 // Workflow nodes carry a server reference but no explicit tool+args field
 // (a real gap in the node schema — flagged here rather than silently
@@ -72,11 +73,14 @@ async function runNode(store, ollama, node, context) {
     if (!skill) throw new Error('Workflow references unknown skill "' + node.ref + '"');
     if (!skill.enabled) throw new Error('Skill "' + skill.name + '" is disabled');
     if (REAL_SKILL_IDS.has(node.ref)) {
-      const result = await runSkillSandboxed(skill, {}, async (toolName, args) => {
+      // Text skills summarize whatever the previous node produced.
+      const inputs = node.ref === 'skl_summarize' ? { text: context || node.label, focus: node.label } : {};
+      const result = await runSkillSandboxed(skill, inputs, async (toolName, args) => {
         const server = mcpManager.findServerForTool(store, toolName);
         if (!server) throw Object.assign(new Error('No connected MCP server advertises tool "' + toolName + '"'), { statusCode: 502 });
         return mcpManager.gatedCall(store, server.id, toolName, args, { wait: true, origin: 'workflow' });
-      });
+      }, buildSkillHost(store, ollama, skill));
+      if (node.ref === 'skl_summarize') return result.summary;
       return JSON.stringify(result);
     }
     await new Promise(r => setTimeout(r, 400 + Math.random() * 300));

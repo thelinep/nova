@@ -22,6 +22,8 @@ const SKILL_MANIFEST_SCHEMA = {
     inputs: { type: 'array', items: { type: 'string' } },
     outputs: { type: 'array', items: { type: 'string' } },
     requiredTools: { type: 'array', items: { type: 'string' } },
+    requiredHost: { type: 'array', items: { type: 'string', enum: ['readSession', 'generate'] } },
+    timeoutMs: { type: 'integer' },
   },
 };
 
