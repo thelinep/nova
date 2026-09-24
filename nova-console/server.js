@@ -39,6 +39,7 @@ const workspaceScanner = require('./lib/workspace-scanner');
 const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
 const workspaceProjects = require('./lib/workspace-projects');
+const devLoop = require('./lib/dev-loop');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
@@ -250,6 +251,10 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/check$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspaceChanges.checkProposal(store, workspaceScanner, DATA_DIR, decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.approveProposal(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.approved',proposalId:result.id,affectedFiles:result.approval.affectedFiles});sendJson(res,200,result);} },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.executeProposal(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.executed',proposalId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
+  { method: 'GET', pattern: /^\/api\/workspace\/loops$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceLoops').reverse()) },
+  { method: 'GET', pattern: /^\/api\/workspace\/loops\/([^/]+)$/, handler: async (_req,res,[id])=>{const loop=store.get('workspaceLoops',decodeURIComponent(id));if(!loop){sendJson(res,404,{error:'Unknown development loop.'});return;}sendJson(res,200,loop);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/loops$/, handler: async (req,res)=>{const {loop}=devLoop.startLoop(store,{scanner:workspaceScanner,changes:workspaceChanges,runner:workspaceRunner,planner:codePlanner,ollama,dataDir:DATA_DIR},await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.loop.started',loopId:loop.id,rootId:loop.rootId,maxAttempts:loop.maxAttempts});sendJson(res,201,loop);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/loops\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,devLoop.cancelLoop(store,decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/workspace\/project-templates$/, handler: async (_req,res)=>sendJson(res,200,workspaceProjects.listTemplates()) },
   { method: 'GET', pattern: /^\/api\/workspace\/projects$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceProjects').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/projects$/, handler: async (req,res)=>sendJson(res,201,workspaceProjects.draftProject(store,workspaceScanner,await readJsonBody(req))) },
@@ -689,6 +694,8 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
   const interruptedRuns=workspaceRunner.recoverInterrupted(store);
   if(interruptedRuns)console.log(`  recovered:   ${interruptedRuns} interrupted workspace run(s)`);
+  const interruptedLoops=devLoop.recoverInterrupted(store);
+  if(interruptedLoops)console.log(`  recovered:   ${interruptedLoops} interrupted development loop(s)`);
   const interruptedCollectors=collectorWorkflows.recoverInterrupted(store);
   if(interruptedCollectors)console.log(`  recovered:   ${interruptedCollectors} interrupted collector run(s)`);
   // A real child MCP server process never survives a restart — reconcile

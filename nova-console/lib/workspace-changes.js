@@ -156,12 +156,14 @@ function executeProposal(store,scanner,dataDir,id){
  *   create  { operation:'create', relativePath, content }   file must not exist
  *   delete  { operation:'delete', relativePath }           file must exist
  *   rename  { operation:'rename', relativePath, toPath }   destination must not exist
+ *   overwrite { operation:'overwrite', relativePath, content } whole-file replacement
+ *           of an existing text file (used by the development loop)
  * Every path stays inside the approved root, never passes through a symlink,
  * and never touches generated or VCS folders (.git, node_modules, ...). Each
  * path may appear in only one operation. Preconditions are fingerprinted at
  * draft time and re-verified at check, approval, execution and rollback.
  * ------------------------------------------------------------------------- */
-const OPERATIONS=new Set(['edit','create','delete','rename']);
+const OPERATIONS=new Set(['edit','create','delete','rename','overwrite']);
 const PROTECTED_SEGMENTS=new Set(['.git','node_modules','target','.next','dist','build','coverage','.cache']);
 const MAX_BATCH_CHANGES=50;
 const ABSENT='absent';
@@ -215,6 +217,12 @@ function draftOperation(scanner,store,rootId,item){
     const proposed=target.content.replace(find,replacement);
     if(proposed===target.content)throw error('The change has no effect: '+target.relativePath);
     return {...base,relativePath:target.relativePath,paths:[target.relativePath],sourcePath:target.path,sourceSha256:hash(target.content),proposedSha256:hash(proposed),find,replacement,diff:unifiedDiff(target.relativePath,target.content,proposed)};
+  }
+  if(op==='overwrite'){
+    const target=targetFile(scanner,store,rootId,item.relativePath),content=String(item.content??'');
+    assertText(content,target.relativePath);
+    if(content===target.content)throw error('The change has no effect: '+target.relativePath);
+    return {...base,relativePath:target.relativePath,paths:[target.relativePath],sourcePath:target.path,sourceSha256:hash(target.content),proposedSha256:hash(content),content,diff:unifiedDiff(target.relativePath,target.content,content)};
   }
   if(op==='create'){
     const target=plannedPath(root,item.relativePath),content=String(item.content??'');
@@ -271,7 +279,7 @@ function verifyPreconditions(scanner,store,batch,stage){
 
 function contentAfter(change,current){
   if(change.operation==='edit')return current.replace(change.find,change.replacement);
-  if(change.operation==='create')return change.content;
+  if(change.operation==='create'||change.operation==='overwrite')return change.content;
   return null;
 }
 
@@ -293,7 +301,7 @@ function checkBatch(store,scanner,dataDir,id){
     const copied=path.join(copyPath,change.relativePath);
     let status='passed',detail='Operation applied in isolated copy.';
     try{
-      if(change.operation==='edit'||change.operation==='create'){
+      if(change.operation==='edit'||change.operation==='create'||change.operation==='overwrite'){
         const current=change.operation==='edit'?fs.readFileSync(change.sourcePath,'utf8'):'';
         const proposed=contentAfter(change,current);
         fs.mkdirSync(path.dirname(copied),{recursive:true});fs.writeFileSync(copied,proposed,'utf8');
@@ -346,7 +354,7 @@ function atomicWrite(target,content,mode,tag){
 /** Applies one operation. Returns the function that undoes it and the
  *  folders it had to create. */
 function applyOperation(root,change,prepared,tag){
-  if(change.operation==='edit'){
+  if(change.operation==='edit'||change.operation==='overwrite'){
     atomicWrite(change.sourcePath,prepared.proposed,prepared.mode,tag);
     return {dirs:[],undo:()=>fs.writeFileSync(change.sourcePath,prepared.original,{mode:prepared.mode})};
   }
@@ -371,7 +379,7 @@ function executeBatch(store,scanner,dataDir,id){
   const prepared=batch.changes.map(change=>{
     if(change.operation==='create')return {};
     const original=fs.readFileSync(change.sourcePath),mode=fs.statSync(change.sourcePath).mode;
-    if(change.operation!=='edit')return {original,mode};
+    if(change.operation!=='edit'&&change.operation!=='overwrite')return {original,mode};
     const proposed=contentAfter(change,original.toString('utf8'));
     if(hash(proposed)!==change.proposedSha256)throw error('Approved hash mismatch: '+change.relativePath,409);
     return {original,mode,proposed};
@@ -407,7 +415,7 @@ function rollbackBatch(store,scanner,dataDir,id){
   });
   for(const change of [...batch.changes].reverse()){
     const backup=path.join(batch.rollback.directory,change.relativePath);
-    if(change.operation==='edit'||change.operation==='delete'){const mode=fs.existsSync(change.sourcePath)?fs.statSync(change.sourcePath).mode:undefined;ensureParents(root.path,change.sourcePath);fs.writeFileSync(change.sourcePath,fs.readFileSync(backup),mode==null?undefined:{mode});}
+    if(change.operation==='edit'||change.operation==='overwrite'||change.operation==='delete'){const mode=fs.existsSync(change.sourcePath)?fs.statSync(change.sourcePath).mode:undefined;ensureParents(root.path,change.sourcePath);fs.writeFileSync(change.sourcePath,fs.readFileSync(backup),mode==null?undefined:{mode});}
     else if(change.operation==='create')fs.rmSync(change.sourcePath,{force:true});
     else{ensureParents(root.path,change.sourcePath);fs.renameSync(change.destinationPath,change.sourcePath);}
   }

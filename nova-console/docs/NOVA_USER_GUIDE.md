@@ -176,6 +176,18 @@ Controlled commands only run after you approve an allowlist for the project's Gi
 
 Install and dev run in the background, and the output panel updates every second. Tests and builds still run in a separate copy of the project, and they reuse the project's installed packages. Projects approved before this version can add the new actions with **Add install and dev to allowlist**.
 
+### Development loop
+
+The **Development loop** in Local Workspace keeps trying a change until the project's tests pass. Describe the change (name the file, for example "Fix src/math.js so add returns the sum of both numbers"), pick a local Ollama model and a maximum number of attempts (1 to 5, default 3), then **Start loop**. The project's `test` command must be allowlisted.
+
+NOVA works in a private copy of the project, with the installed packages linked in:
+
+1. It runs the tests once to record the starting point.
+2. It asks the model for a plan, applies it to the copy, checks new or changed JSON and JavaScript files for syntax errors, and runs the tests.
+3. If the tests fail, or the plan could not be applied, NOVA sends the failing output back to the model and tries again with the copy as it now stands.
+
+Each attempt's plan, operations and test output stay visible. When the tests pass, NOVA turns the net change into a normal change batch and runs its safe checks. **Review the prepared batch** takes you to it, and nothing in your project changes until you approve and apply it. If the attempts run out, no batch is prepared. If you edit one of the affected files while the loop runs, the loop stops with a conflict instead of overwriting your edit. **Cancel loop** stops it at any point, and a loop that was running when NOVA quit is marked interrupted.
+
 ### Local Workspace code changes
 
 In **Local Workspace**, approve a project folder first. NOVA can then draft code changes, either from a chat request or from JSON you enter. A change batch can hold up to 50 operations:
