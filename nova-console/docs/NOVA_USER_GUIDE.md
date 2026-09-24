@@ -154,6 +154,19 @@ Start with a small, low-risk task:
 
 Workflows are restart-resilient, but a restart cannot make an unavailable model, disconnected MCP server, rejected approval, or invalid input succeed. Treat any publishing, deletion, or external-effect node as a review point.
 
+### Start a new project
+
+In **Local Workspace**, use **New project** to start an app from a template. Choose an approved parent folder, a project name (lowercase letters, numbers, dashes or underscores), an optional title, and a template:
+
+| Template | What you get | Install needed |
+| --- | --- | --- |
+| Node API | JSON API on Node's built-in HTTP server, with a health route and tests | No |
+| Static website | HTML, CSS and JavaScript, a local preview server, and a build step | No |
+| React app (Vite) | React single-page app | Yes, before `dev` or `build` |
+| Next.js app | Next.js App Router project in JavaScript | Yes, before `dev` or `build` |
+
+**Preview files** lists every file that would be written, without touching disk. **Create project** then builds the project in a hidden staging folder, runs `git init` on branch `main`, and moves it into place in one step, so a failure never leaves a half-made folder. If your git `user.name` and `user.email` are set, NOVA also makes an initial commit. The new folder is approved automatically, so you can scan it, draft changes, and run its tests straight away. Every template's `npm test` works before anything is installed. NOVA does not download packages during this step.
+
 ### Local Workspace code changes
 
 In **Local Workspace**, approve a project folder first. NOVA can then draft code changes, either from a chat request or from JSON you enter. A change batch can hold up to 50 operations:

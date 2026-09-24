@@ -38,6 +38,7 @@ const modelQualifications = require('./lib/model-qualifications');
 const workspaceScanner = require('./lib/workspace-scanner');
 const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
+const workspaceProjects = require('./lib/workspace-projects');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
@@ -249,6 +250,10 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/check$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspaceChanges.checkProposal(store, workspaceScanner, DATA_DIR, decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.approveProposal(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.approved',proposalId:result.id,affectedFiles:result.approval.affectedFiles});sendJson(res,200,result);} },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.executeProposal(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.executed',proposalId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
+  { method: 'GET', pattern: /^\/api\/workspace\/project-templates$/, handler: async (_req,res)=>sendJson(res,200,workspaceProjects.listTemplates()) },
+  { method: 'GET', pattern: /^\/api\/workspace\/projects$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceProjects').reverse()) },
+  { method: 'POST', pattern: /^\/api\/workspace\/projects$/, handler: async (req,res)=>sendJson(res,201,workspaceProjects.draftProject(store,workspaceScanner,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/projects\/([^/]+)\/create$/, handler: async (_req,res,[id])=>{const result=workspaceProjects.createProject(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.project.created',projectId:result.id,path:result.created.path,template:result.template,files:result.created.files,commit:result.created.commit});sendJson(res,200,result);} },
   { method: 'GET', pattern: /^\/api\/workspace\/change-batches$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceChangeBatches').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/change-batches$/, handler: async (req,res)=>sendJson(res,201,workspaceChanges.createBatch(store,workspaceScanner,await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/check$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceChanges.checkBatch(store,workspaceScanner,DATA_DIR,decodeURIComponent(id))) },
