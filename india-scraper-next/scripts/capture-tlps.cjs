@@ -3,8 +3,10 @@ const fs=require('node:fs/promises');
 const path=require('node:path');
 (async()=>{
   const baseURL=process.env.TLPS_CAPTURE_URL||'http://127.0.0.1:3194';
-  const directory=path.join(process.cwd(),'docs/tlps-validation');
-  await fs.mkdir(directory,{recursive:true});
+  // Provenance stays in the code repo; screenshots go to the brahmini-data submodule.
+  const evidenceDirectory=path.join(process.cwd(),'docs/tlps-validation');
+  const directory=path.join(process.cwd(),'data/tlps/media/tlps-validation');
+  await fs.mkdir(directory,{recursive:true});await fs.mkdir(evidenceDirectory,{recursive:true});
   const browser=await chromium.launch({headless:true});
   try {
     const page=await browser.newPage({viewport:{width:1440,height:1150}});
@@ -36,7 +38,7 @@ const path=require('node:path');
     await page.screenshot({path:path.join(directory,'campaign-desktop.png'),fullPage:true});
     const buildDirectory=process.env.BRAHMINI_NEXT_DIST_DIR||'.next-tlps';
     const provenance={capturedAt:new Date().toISOString(),baseURL,buildId:(await fs.readFile(path.join(process.cwd(),buildDirectory,'BUILD_ID'),'utf8')).trim(),query:'Mumbai',corpus:'global',matches:queryResult.total,pageErrors,mobileOverflow,screenshots:['locations-desktop.png','locations-mobile.png','campaign-desktop.png']};
-    await fs.writeFile(path.join(directory,'capture.json'),JSON.stringify(provenance,null,2)+'\n');
+    await fs.writeFile(path.join(evidenceDirectory,'capture.json'),JSON.stringify(provenance,null,2)+'\n');
     console.log(JSON.stringify(provenance,null,2));
     if(pageErrors.length||mobileOverflow)process.exitCode=1;
   } finally {await browser.close();}

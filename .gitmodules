@@ -1,0 +1,3 @@
+[submodule "india-scraper-next/data/tlps"]
+	path = india-scraper-next/data/tlps
+	url = https://github.com/thelinep/brahmini-data.git

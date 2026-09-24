@@ -23,6 +23,10 @@ stays unreachable from other machines:
   reach the process -- it is defense-in-depth, not the actual boundary.
   The loopback bind above is what actually keeps other machines out.
 
+## Data submodule
+
+Location data and validation screenshots live in a separate repository, [brahmini-data](https://github.com/thelinep/brahmini-data), mounted as a git submodule at `data/tlps`. Clone with `git clone --recurse-submodules`, or run `git submodule update --init` in an existing clone. The generated `data/tlps/catalog.db` is rebuilt with `npm run locations:import` and is never committed.
+
 ## Start locally
 
 ```bash
