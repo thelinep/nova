@@ -20,4 +20,4 @@ The API is available at `/api/roadmap` only on loopback hosts. Evidence links us
 - Playwright verified the live metrics, one evidence link, desktop rendering at 1440 px and mobile rendering at 390 px. No page errors or horizontal mobile overflow were observed.
 - Local boundary checks: non-loopback Host returned 403, unknown evidence returned 404, allowlisted evidence returned 200.
 
-Screenshots are stored in `docs/roadmap-validation/`.
+Screenshots are stored in the brahmini-data submodule at `data/tlps/media/roadmap-validation/`.

@@ -11,7 +11,7 @@ Base commit: `f5a6e91`.
 - **19 source-file checksums match.** SQLite integrity and bounded-query checks pass. Index counts: campaign **55,731**; GeoNames **708,222**; total **763,953**; execution ready **0**.
 - Derived SQLite catalogue: approximately **299 MiB**. It is ignored by Git and reproducible. The initial 993 MiB per-record-compression index was removed and replaced with block compression.
 - Source IDs and complete original record JSON remain inspectable. Compressed campaign assets preserve their uncompressed checksums; global assets are byte-identical to the supplied snapshot.
-- Native desktop/mobile and campaign screenshots plus exact build ID are in `tlps-validation/`. These captures demonstrate the observed surfaces, not production deployment or comprehensive workflow certification.
+- Native desktop/mobile and campaign screenshots are in the brahmini-data submodule at `data/tlps/media/tlps-validation/`, and the exact build ID is in `tlps-validation/capture.json`. These captures demonstrate the observed surfaces, not production deployment or comprehensive workflow certification.
 
 ## Bugs resolved during absorption
 
