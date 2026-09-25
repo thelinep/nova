@@ -7,7 +7,10 @@
  *   binary  WHISPER_BIN, else `whisper-cli` / `whisper-cpp` / `whisper` on PATH
  *   model   WHISPER_MODEL, else the first ggml-*.bin in <DATA_DIR>/models/whisper
  *   ffmpeg  FFMPEG_BIN, else `ffmpeg` on PATH; converts any accepted audio to
- *           the 16 kHz mono WAV whisper.cpp expects
+ *           the 16 kHz mono WAV whisper.cpp expects. If ffmpeg is missing or
+ *           will not start (for example after a failed Homebrew upgrade),
+ *           macOS's built-in `afconvert` is used instead for WAV, AIFF, MP3,
+ *           M4A and FLAC.
  * Transcription runs in the background. The result (full text plus
  * timestamped segments) is stored on the media record and, when a
  * collection is chosen, added to Knowledge so it can be searched, cited
@@ -41,15 +44,28 @@ function findModel(dataDir) {
   catch (_) { return null; }
 }
 
+const AFCONVERT_MIMES = new Set(['audio/wav', 'audio/aiff', 'audio/mpeg', 'audio/mp4', 'audio/flac']);
+
+/** True when the program starts and exits cleanly with the given args. */
+function runs(file, args) {
+  try { execFileSync(file, args, { stdio: 'ignore', timeout: 8000 }); return true; } catch (_) { return false; }
+}
+
 function status(dataDir) {
   const binary = process.env.WHISPER_BIN && fs.existsSync(process.env.WHISPER_BIN) ? process.env.WHISPER_BIN : which(['whisper-cli', 'whisper-cpp', 'whisper']);
-  const ffmpeg = process.env.FFMPEG_BIN && fs.existsSync(process.env.FFMPEG_BIN) ? process.env.FFMPEG_BIN : which(['ffmpeg']);
+  const ffmpegPath = process.env.FFMPEG_BIN && fs.existsSync(process.env.FFMPEG_BIN) ? process.env.FFMPEG_BIN : which(['ffmpeg']);
+  const ffmpeg = ffmpegPath && runs(ffmpegPath, ['-version']) ? ffmpegPath : null;
+  const afconvert = process.env.AFCONVERT_BIN && fs.existsSync(process.env.AFCONVERT_BIN) ? process.env.AFCONVERT_BIN : which(['afconvert']);
+  const converter = ffmpeg ? 'ffmpeg' : afconvert ? 'afconvert' : null;
   const model = findModel(dataDir);
   const missing = [];
   if (!binary) missing.push('whisper.cpp (brew install whisper-cpp)');
-  if (!ffmpeg) missing.push('ffmpeg (brew install ffmpeg)');
+  if (!converter) missing.push(ffmpegPath ? 'a working ffmpeg (the installed one does not start; reinstall with brew reinstall ffmpeg)' : 'ffmpeg (brew install ffmpeg)');
   if (!model) missing.push(`a whisper model file, e.g. ggml-base.en.bin, in ${path.join(dataDir, 'models', 'whisper')} (or set WHISPER_MODEL)`);
-  return { ready: missing.length === 0, binary, ffmpeg, model, modelName: model ? path.basename(model) : null, missing };
+  const notes = [];
+  if (ffmpegPath && !ffmpeg) notes.push(afconvert ? 'The installed ffmpeg does not start, so macOS afconvert is used: WAV, AIFF, MP3, M4A and FLAC work; OGG and WebM need a working ffmpeg.' : 'The installed ffmpeg does not start.');
+  else if (!ffmpeg && afconvert) notes.push('Using macOS afconvert: WAV, AIFF, MP3, M4A and FLAC work; OGG and WebM need ffmpeg.');
+  return { ready: missing.length === 0, binary, ffmpeg, afconvert, converter, model, modelName: model ? path.basename(model) : null, missing, notes };
 }
 
 function run(file, args, timeoutMs) {
@@ -81,7 +97,9 @@ async function transcribeNow(store, dataDir, deps, record, options) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-whisper-'));
   try {
     const wav = path.join(work, 'input.wav');
-    await run(tools.ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', media.filePath(dataDir, record), '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav], 20 * 60 * 1000);
+    const input = media.filePath(dataDir, record);
+    if (tools.converter === 'ffmpeg') await run(tools.ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', input, '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav], 20 * 60 * 1000);
+    else await run(tools.afconvert, ['-f', 'WAVE', '-d', 'LEI16@16000', '-c', '1', input, wav], 20 * 60 * 1000);
     const args = ['-m', tools.model, '-f', wav, '-oj', '-of', path.join(work, 'out'), '-np'];
     if (options.language) args.push('-l', options.language);
     await run(tools.binary, args, TIMEOUT_MS);
@@ -100,6 +118,7 @@ function start(store, dataDir, deps, id, options = {}) {
   if (running.has(record.id)) throw error('This file is already being transcribed.', 409);
   const tools = status(dataDir);
   if (!tools.ready) throw error('Transcription needs ' + tools.missing.join(', ') + '.', 412);
+  if (tools.converter === 'afconvert' && !AFCONVERT_MIMES.has(record.mime)) throw error(`${record.originalName} is ${record.mime.replace('audio/', '').toUpperCase()}, which needs a working ffmpeg. Convert it to WAV, MP3 or M4A, or reinstall ffmpeg.`, 415);
   if (options.collectionId && !store.get('knowledgeCollections', options.collectionId)) throw error('Unknown knowledge collection.', 404);
   const language = options.language && /^[a-z]{2}$/.test(options.language) ? options.language : null;
   record.transcription = { status: 'running', startedAt: new Date().toISOString(), collectionId: options.collectionId || null, language, error: null };

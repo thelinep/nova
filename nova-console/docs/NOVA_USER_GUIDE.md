@@ -160,7 +160,7 @@ Open **Media** in the sidebar. Everything here runs on your computer, and each i
 
 - **Images in chat.** Use the paperclip in the composer, or **Attach to chat** in Media, to add PNG, JPEG, WebP or GIF images to your next message. Reading images needs a vision model, for example `ollama pull llama3.2-vision` or `ollama pull llava`, then sync models. A text-only model is refused with a message saying so.
 - **Image generation (ComfyUI).** Start ComfyUI on this computer (NOVA looks at `http://127.0.0.1:8188`; set `COMFYUI_URL` to change the port). Only local addresses are accepted. Choose a checkpoint, size, steps, CFG, seed and sampler, then **Generate**. Each image is saved with its prompt, negative prompt, checkpoint and seed; **Reuse settings** loads them back.
-- **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
+- **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
 
 ### Pre-production skills
 

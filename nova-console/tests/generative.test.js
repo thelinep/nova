@@ -40,7 +40,7 @@ test('transcription reports exactly what is missing, then runs whisper and files
     assert.equal(missing.ready, false);
     assert.equal(missing.missing.length, 3);
     // Fake ffmpeg copies input to output; fake whisper writes whisper.cpp -oj JSON.
-    fs.writeFileSync(path.join(bin, 'ffmpeg'), '#!/bin/sh\nin="";out=""\nwhile [ $# -gt 0 ]; do case "$1" in -i) in="$2"; shift;; esac; out="$1"; shift; done\n/bin/cp "$in" "$out"\n', { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, 'ffmpeg'), '#!/bin/sh\n[ "$1" = "-version" ] && exit 0\nin="";out=""\nwhile [ $# -gt 0 ]; do case "$1" in -i) in="$2"; shift;; esac; out="$1"; shift; done\n/bin/cp "$in" "$out"\n', { mode: 0o755 });
     fs.writeFileSync(path.join(bin, 'whisper-cli'), `#!/bin/sh\nwhile [ $# -gt 0 ]; do case "$1" in -of) of="$2"; shift;; esac; shift; done\n/bin/cat > "$of.json" <<'J'\n{"transcription":[{"offsets":{"from":0,"to":2500},"text":" Rolling on scene four."},{"offsets":{"from":62000,"to":65000},"text":" Cut, moving on."}]}\nJ\n`, { mode: 0o755 });
     fs.mkdirSync(path.join(dir, 'models', 'whisper'), { recursive: true }); fs.writeFileSync(path.join(dir, 'models', 'whisper', 'ggml-base.en.bin'), 'x');
     assert.equal(transcriber.status(dir).ready, true);
@@ -143,4 +143,29 @@ test('treatment and call sheet skills render Markdown; a second invalid reply fa
   assert.match(r2.markdown, /Nearest hospital: TBC/);
   assert.match(calls[0].messages[1].content, /date: 2026-10-02/);
   await assert.rejects(() => runSkillSandboxed(call, { text: 'x' }, null, buildSkillHost(db, fakeOllama(['{}', 'not json'], []), call)), /still invalid after one repair/);
+});
+
+test('a broken ffmpeg falls back to macOS afconvert, which refuses formats it cannot read', async () => {
+  const db = store(), dir = tmp('nova-af-'), bin = tmp('nova-afbin-');
+  const saved = { ...process.env };
+  try {
+    process.env.PATH = bin; delete process.env.WHISPER_BIN; delete process.env.WHISPER_MODEL; delete process.env.FFMPEG_BIN; delete process.env.AFCONVERT_BIN;
+    fs.writeFileSync(path.join(bin, 'ffmpeg'), '#!/bin/sh\necho "dyld: Library not loaded" >&2\nexit 134\n', { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, 'afconvert'), '#!/bin/sh\nfor last; do :; done\nfor a; do case "$a" in -*) ;; *) [ -z "$src" ] && [ "$a" != "WAVE" ] && [ "$a" != "LEI16@16000" ] && [ "$a" != "1" ] && src="$a";; esac; done\n/bin/cp "$src" "$last"\n', { mode: 0o755 });
+    fs.writeFileSync(path.join(bin, 'whisper-cli'), `#!/bin/sh\nwhile [ $# -gt 0 ]; do case "$1" in -of) of="$2"; shift;; esac; shift; done\n/bin/cat > "$of.json" <<'J'\n{"transcription":[{"offsets":{"from":0,"to":900},"text":" Hello."}]}\nJ\n`, { mode: 0o755 });
+    fs.mkdirSync(path.join(dir, 'models', 'whisper'), { recursive: true }); fs.writeFileSync(path.join(dir, 'models', 'whisper', 'ggml-base.en.bin'), 'x');
+    const st = transcriber.status(dir);
+    assert.equal(st.ready, true);
+    assert.equal(st.converter, 'afconvert');
+    assert.equal(st.ffmpeg, null);
+    assert.match(st.notes.join(' '), /does not start/);
+    const audio = media.saveMedia(db, dir, { buffer: WAV, originalName: 'memo.wav' });
+    const { done } = transcriber.start(db, dir, {}, audio.id, {});
+    await done;
+    assert.equal(db.get('media', audio.id).transcript.text, '[00:00:00] Hello.');
+    const ogg = media.saveMedia(db, dir, { buffer: Buffer.concat([Buffer.from('OggS'), Buffer.alloc(40)]), originalName: 'clip.ogg' });
+    assert.throws(() => transcriber.start(db, dir, {}, ogg.id, {}), /needs a working ffmpeg/);
+    fs.rmSync(path.join(bin, 'afconvert'));
+    assert.match(transcriber.status(dir).missing.join(' '), /installed one does not start/);
+  } finally { process.env = saved; }
 });

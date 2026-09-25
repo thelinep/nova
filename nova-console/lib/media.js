@@ -29,6 +29,7 @@ function sniff(buffer) {
   if (b.length >= 12 && s(0, 4) === 'RIFF' && s(8, 12) === 'WAVE') return { kind: 'audio', mime: 'audio/wav', ext: '.wav' };
   if (b.length >= 3 && s(0, 3) === 'ID3') return { kind: 'audio', mime: 'audio/mpeg', ext: '.mp3' };
   if (b.length >= 2 && b[0] === 0xff && (b[1] & 0xe0) === 0xe0) return { kind: 'audio', mime: 'audio/mpeg', ext: '.mp3' };
+  if (b.length >= 12 && s(0, 4) === 'FORM' && (s(8, 12) === 'AIFF' || s(8, 12) === 'AIFC')) return { kind: 'audio', mime: 'audio/aiff', ext: '.aiff' };
   if (b.length >= 4 && s(0, 4) === 'OggS') return { kind: 'audio', mime: 'audio/ogg', ext: '.ogg' };
   if (b.length >= 4 && s(0, 4) === 'fLaC') return { kind: 'audio', mime: 'audio/flac', ext: '.flac' };
   if (b.length >= 12 && s(4, 8) === 'ftyp') return { kind: 'audio', mime: 'audio/mp4', ext: '.m4a' };
@@ -41,7 +42,7 @@ function cleanName(name) { return String(name || 'file').replace(/[\\/\0]/g, '_'
 function saveMedia(store, dataDir, { buffer, originalName, source = 'upload', provenance = null, expectKind = null }) {
   if (!Buffer.isBuffer(buffer) || !buffer.length) throw error('The file is empty.');
   const type = sniff(buffer);
-  if (!type) throw error('Unsupported file type. Use PNG, JPEG, WebP or GIF images, or WAV, MP3, M4A, OGG, FLAC or WebM audio.', 415);
+  if (!type) throw error('Unsupported file type. Use PNG, JPEG, WebP or GIF images, or WAV, AIFF, MP3, M4A, OGG, FLAC or WebM audio.', 415);
   if (expectKind && type.kind !== expectKind) throw error(`Expected ${expectKind === 'image' ? 'an image' : 'an audio file'}.`, 415);
   if (buffer.length > LIMITS[type.kind]) throw error(`${type.kind === 'image' ? 'Images' : 'Audio files'} are limited to ${LIMITS[type.kind] / 1024 / 1024} MB.`, 413);
   const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');

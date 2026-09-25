@@ -2868,6 +2868,7 @@ async function renderMediaView(){
         <div style="display:flex;justify-content:space-between;gap:8px"><div><span class="eyebrow">Speech to text · whisper.cpp</span><h2 style="font-size:16px;margin:5px 0">Upload and transcribe</h2></div><span class="badge ${stt.ready?'badge-green':'badge-amber'}">${stt.ready?'Ready · '+escapeHtml(stt.modelName||''):'Setup needed'}</span></div>
         <p class="empty-hint">Upload images to use in chat, or audio (interviews, dailies, voice notes) to transcribe. Transcripts can go straight into a Knowledge collection for search, citations and summaries.</p>
         ${stt.ready?'':`<p class="empty-hint">Transcription needs: ${stt.missing.map(escapeHtml).join('; ')}.</p>`}
+        ${(stt.notes||[]).map(n=>`<p class="empty-hint">${escapeHtml(n)}</p>`).join('')}
         <input id="mediaUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,audio/*" multiple aria-label="Upload images or audio" style="margin-top:6px">
       </div>
     </div>
