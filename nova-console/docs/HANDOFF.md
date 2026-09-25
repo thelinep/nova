@@ -17,8 +17,12 @@ Context for continuing NOVA work inside NOVA itself. Load this file into a knowl
 | New projects from templates | `lib/workspace-projects.js`, `lib/project-templates.js` | Node API, static site, React (Vite), Next.js |
 | Package install and dev server | `lib/workspace-runner.js` | Install needs Settings > Privacy > Allow network access; dev bound to 127.0.0.1 |
 | Development loop | `lib/dev-loop.js` | Plan, apply to private copy, test, retry (1-5 attempts); result is a batch you approve |
+| Vision in chat, media store | `lib/media.js`, `server.js` | Images/audio/video detected from bytes; vision models only |
+| Transcription | `lib/transcribe.js` | whisper.cpp + ffmpeg, afconvert fallback; audio and video |
+| Image generation | `lib/image-gen.js` | Local ComfyUI on 8188 or 8000; recipe saved per image |
+| Image to video | `lib/video-gen.js` | Camera moves/animatics via ffmpeg; AI motion via ComfyUI Wan 2.2 TI2V 5B |
 
-Tests at handoff: `npm test` 113/113 in `nova-console`; scraper Jest 133/133 and node tests 10/10.
+Tests at handoff: `npm test` 127/127 (updated 2026-09-25) in `nova-console`; scraper Jest 133/133 and node tests 10/10.
 
 ## Known limits
 

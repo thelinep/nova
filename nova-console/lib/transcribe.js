@@ -98,7 +98,7 @@ async function transcribeNow(store, dataDir, deps, record, options) {
   try {
     const wav = path.join(work, 'input.wav');
     const input = media.filePath(dataDir, record);
-    if (tools.converter === 'ffmpeg') await run(tools.ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', input, '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav], 20 * 60 * 1000);
+    if (tools.converter === 'ffmpeg') await run(tools.ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', input, '-vn', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav], 20 * 60 * 1000);
     else await run(tools.afconvert, ['-f', 'WAVE', '-d', 'LEI16@16000', '-c', '1', input, wav], 20 * 60 * 1000);
     const args = ['-m', tools.model, '-f', wav, '-oj', '-of', path.join(work, 'out'), '-np'];
     if (options.language) args.push('-l', options.language);
@@ -114,10 +114,11 @@ async function transcribeNow(store, dataDir, deps, record, options) {
 /** Starts a background transcription and returns the updated record. */
 function start(store, dataDir, deps, id, options = {}) {
   const record = media.getMedia(store, id);
-  if (record.kind !== 'audio') throw error('Only audio files can be transcribed.');
+  if (record.kind !== 'audio' && record.kind !== 'video') throw error('Only audio and video files can be transcribed.');
   if (running.has(record.id)) throw error('This file is already being transcribed.', 409);
   const tools = status(dataDir);
   if (!tools.ready) throw error('Transcription needs ' + tools.missing.join(', ') + '.', 412);
+  if (tools.converter === 'afconvert' && record.kind === 'video') throw error('Transcribing video needs a working ffmpeg to pull out the sound (brew reinstall ffmpeg).', 415);
   if (tools.converter === 'afconvert' && !AFCONVERT_MIMES.has(record.mime)) throw error(`${record.originalName} is ${record.mime.replace('audio/', '').toUpperCase()}, which needs a working ffmpeg. Convert it to WAV, MP3 or M4A, or reinstall ffmpeg.`, 415);
   if (options.collectionId && !store.get('knowledgeCollections', options.collectionId)) throw error('Unknown knowledge collection.', 404);
   const language = options.language && /^[a-z]{2}$/.test(options.language) ? options.language : null;

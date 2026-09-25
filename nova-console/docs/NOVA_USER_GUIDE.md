@@ -154,13 +154,17 @@ Start with a small, low-risk task:
 
 Workflows are restart-resilient, but a restart cannot make an unavailable model, disconnected MCP server, rejected approval, or invalid input succeed. Treat any publishing, deletion, or external-effect node as a review point.
 
-### Media: images, audio and transcripts
+### Media: images, video, audio and transcripts
 
 Open **Media** in the sidebar. Everything here runs on your computer, and each item keeps the settings that made it.
 
 - **Images in chat.** Use the paperclip in the composer, or **Attach to chat** in Media, to add PNG, JPEG, WebP or GIF images to your next message. Reading images needs a vision model, for example `ollama pull llama3.2-vision` or `ollama pull llava`, then sync models. A text-only model is refused with a message saying so.
 - **Image generation (ComfyUI).** Start ComfyUI on this computer. NOVA finds it on port 8188 (manual install) or 8000 (ComfyUI Desktop); set `COMFYUI_URL` for any other local port. Only local addresses are accepted. Choose a checkpoint, size, steps, CFG, seed and sampler, then **Generate**. Each image is saved with its prompt, negative prompt, checkpoint and seed; **Reuse settings** loads them back.
-- **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
+- **Image to video.** Press **Animate** on any image in the library to add it as a shot in **Animate stills**. Two engines:
+  - **Camera moves** (needs ffmpeg). Pick a push in, pull out, pan or tilt and a length for each shot, reorder them, choose a size (16:9, 2.39:1 scope, 1:1, 9:16) and frame rate, then **Render**. One shot makes a clip; several make an animatic joined in order. Renders in seconds, no AI model.
+  - **AI motion** (ComfyUI + Wan 2.2 5B). The first shot and your motion prompt go to your local ComfyUI, and the picture itself moves. ComfyUI needs three files: `wan2.2_ti2v_5B_fp16.safetensors` in `models/diffusion_models`, `umt5_xxl_fp16.safetensors` in `models/text_encoders` (the fp8 version does not run on Apple Silicon), and `wan2.2_vae.safetensors` in `models/vae`, from the Comfy-Org repackaged Wan 2.1/2.2 repositories on Hugging Face (about 21 GB together). NOVA lists whatever is missing. Clips are 1 to 5 seconds at 24 fps; on a Mac start at 480p and 2 seconds, because each second can take several minutes.
+  Videos play in the library, can be downloaded, and keep a recipe (shots and moves, or prompt, seed, steps and models). MP4 and MOV uploads are accepted too.
+- **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM) or video (MP4, MOV; needs a working ffmpeg), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
 
 ### Pre-production skills
 

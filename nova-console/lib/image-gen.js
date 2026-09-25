@@ -104,24 +104,28 @@ function graph(s) {
   };
 }
 
+/** Polls ComfyUI's history until the prompt finishes, fails, times out or is cancelled. */
+async function waitForOutputs(store, job, promptId, timeoutMs, label = 'Generation') {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (job.cancelRequested) { await call('/interrupt', { method: 'POST' }).catch(() => {}); throw error('Cancelled.', 499); }
+    const history = await (await call('/history/' + encodeURIComponent(promptId))).json();
+    const entry = history[promptId];
+    if (entry?.status?.status_str === 'error') throw error('ComfyUI reported an error: ' + JSON.stringify(entry.status.messages || []).slice(0, 400), 502);
+    if (entry?.outputs && Object.keys(entry.outputs).length) return entry.outputs;
+    await new Promise(r => setTimeout(r, POLL_MS));
+    const latest = store.get('generationJobs', job.id); if (latest) job.cancelRequested = latest.cancelRequested;
+  }
+  throw error(label + ' timed out.', 504);
+}
+
 async function runGeneration(store, dataDir, job, settings) {
   const clientId = 'nova-' + crypto.randomBytes(6).toString('hex');
   const queued = await (await call('/prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: graph(settings), client_id: clientId }) })).json();
   const promptId = queued.prompt_id;
   if (!promptId) throw error('ComfyUI did not accept the job: ' + JSON.stringify(queued.node_errors || queued).slice(0, 300), 502);
   job.promptId = promptId; store.put('generationJobs', job);
-  const deadline = Date.now() + TIMEOUT_MS;
-  let outputs = null;
-  while (Date.now() < deadline) {
-    if (job.cancelRequested) { await call('/interrupt', { method: 'POST' }).catch(() => {}); throw error('Cancelled.', 499); }
-    const history = await (await call('/history/' + encodeURIComponent(promptId))).json();
-    const entry = history[promptId];
-    if (entry?.status?.status_str === 'error') throw error('ComfyUI reported an error: ' + JSON.stringify(entry.status.messages || []).slice(0, 400), 502);
-    if (entry?.outputs && Object.keys(entry.outputs).length) { outputs = entry.outputs; break; }
-    await new Promise(r => setTimeout(r, POLL_MS));
-    const latest = store.get('generationJobs', job.id); if (latest) job.cancelRequested = latest.cancelRequested;
-  }
-  if (!outputs) throw error('Image generation timed out.', 504);
+  const outputs = await waitForOutputs(store, job, promptId, TIMEOUT_MS, 'Image generation');
   const images = Object.values(outputs).flatMap(o => o.images || []);
   if (!images.length) throw error('ComfyUI finished without producing an image.', 502);
   const saved = [];
@@ -164,4 +168,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { status, generate, cancel, normalise, graph, recoverInterrupted, baseUrl, SAMPLERS };
+module.exports = { status, generate, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };

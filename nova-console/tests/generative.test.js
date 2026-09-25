@@ -56,7 +56,7 @@ test('transcription reports exactly what is missing, then runs whisper and files
     assert.equal(after.transcription.knowledgeDocumentId, 'kd_1');
     assert.equal(ingested[0].name, 'take4.wav (transcript)');
     const image = media.saveMedia(db, dir, { buffer: PNG, originalName: 'x.png' });
-    assert.throws(() => transcriber.start(db, dir, {}, image.id), /Only audio/);
+    assert.throws(() => transcriber.start(db, dir, {}, image.id), /Only audio and video/);
   } finally { process.env = saved; }
 });
 

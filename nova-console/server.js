@@ -43,6 +43,7 @@ const devLoop = require('./lib/dev-loop');
 const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
+const videoGen = require('./lib/video-gen');
 const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
@@ -250,14 +251,26 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/media$/, handler: async (_req, res) => sendJson(res, 200, store.all('media').reverse()) },
   { method: 'POST', pattern: /^\/api\/media$/, handler: async (req, res) => {
       const name = decodeURIComponent(String(req.headers['x-file-name'] || 'upload'));
-      const buffer = await readRawBody(req, media.LIMITS.audio);
+      const buffer = await readRawBody(req, Math.max(...Object.values(media.LIMITS)));
       sendJson(res, 201, media.saveMedia(store, DATA_DIR, { buffer, originalName: name, source: 'upload' }));
     } },
   { method: 'GET', pattern: /^\/api\/media\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, media.getMedia(store, decodeURIComponent(id))) },
-  { method: 'GET', pattern: /^\/api\/media\/([^/]+)\/file$/, handler: async (_req, res, [id]) => {
+  { method: 'GET', pattern: /^\/api\/media\/([^/]+)\/file$/, handler: async (req, res, [id]) => {
       const record = media.getMedia(store, decodeURIComponent(id));
       const file = media.filePath(DATA_DIR, record);
-      res.writeHead(200, { 'Content-Type': record.mime, 'Content-Length': fs.statSync(file).size, 'Cache-Control': 'private, max-age=31536000, immutable', 'Content-Disposition': `inline; filename="${record.id}${path.extname(record.fileName)}"` });
+      const size = fs.statSync(file).size;
+      const headers = { 'Content-Type': record.mime, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=31536000, immutable', 'Content-Disposition': `inline; filename="${record.id}${path.extname(record.fileName)}"` };
+      // Video and audio players seek with Range requests (Safari requires them).
+      const range = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ''));
+      if (range && (range[1] || range[2])) {
+        let start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+        let end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+        if (start >= size || start > end) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }); res.end(); return; }
+        res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1 });
+        fs.createReadStream(file, { start, end }).pipe(res);
+        return;
+      }
+      res.writeHead(200, { ...headers, 'Content-Length': size });
       fs.createReadStream(file).pipe(res);
     } },
   { method: 'DELETE', pattern: /^\/api\/media\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, media.deleteMedia(store, DATA_DIR, decodeURIComponent(id))) },
@@ -274,6 +287,17 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/images\/generate$/, handler: async (req, res) => {
       const { job } = await imageGen.generate(store, DATA_DIR, await readJsonBody(req));
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.image.generation.started', jobId: job.id, checkpoint: job.settings.checkpoint });
+      sendJson(res, 202, job);
+    } },
+  { method: 'GET', pattern: /^\/api\/video\/status$/, handler: async (_req, res) => sendJson(res, 200, await videoGen.status(DATA_DIR)) },
+  { method: 'POST', pattern: /^\/api\/video\/camera-moves$/, handler: async (req, res) => {
+      const { job } = videoGen.startMotion(store, DATA_DIR, await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.camera-moves.started', jobId: job.id, shots: job.settings.shots.length });
+      sendJson(res, 202, job);
+    } },
+  { method: 'POST', pattern: /^\/api\/video\/animate$/, handler: async (req, res) => {
+      const { job } = await videoGen.startAi(store, DATA_DIR, await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.ai.started', jobId: job.id, mediaId: job.settings.mediaId });
       sendJson(res, 202, job);
     } },
   { method: 'POST', pattern: /^\/api\/images\/jobs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, imageGen.cancel(store, decodeURIComponent(id))) },
