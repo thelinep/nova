@@ -88,6 +88,9 @@ test.describe('NOVA Console interactions', () => {
     await page.locator('[data-view="skills"]').click();
     for (const name of ['Treatment Writer', 'Shot List', 'Call Sheet']) await expect(page.getByText(name, { exact: true })).toBeVisible();
     await expect(page.locator('.skill-text-input[data-id="skl_shotlist"]')).toBeVisible();
+    await expect(page.getByLabel('Translate into')).toHaveValue('Hindi');
+    await expect(page.locator('.skill-text-input[data-id="skl_pptx"]')).toBeVisible();
+    await expect(page.getByText('Still on the simulated path')).toHaveCount(0);
   });
 
   test('every sidebar view opens without a script error', async ({ page }) => {

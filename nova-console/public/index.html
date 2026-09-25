@@ -800,6 +800,8 @@ const FIRST_PARTY_EXTRA_SKILLS = [
   {id:'skl_treatment', name:'Treatment Writer', version:'1.0.0', category:'Pre-production', description:'Turns a brief, notes or script pages into a treatment: logline, synopsis, characters, themes, tone, visual style and structure. Local model only.', manifest:{entrypoint:'treatment.run(context)', inputs:['text','sessionId','title','format','runtime','audience'], outputs:['data','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
   {id:'skl_shotlist', name:'Shot List', version:'1.0.0', category:'Pre-production', description:'Breaks scenes or script pages into a numbered shot list with size, angle, movement, lens and estimated duration. Local model only.', manifest:{entrypoint:'shotlist.run(context)', inputs:['text','sessionId','title','style','cameraKit'], outputs:['data','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
   {id:'skl_callsheet', name:'Call Sheet', version:'1.0.0', category:'Pre-production', description:"Drafts one shoot day's call sheet: general call, location, schedule, cast and crew calls, notes. Unknown facts are left as TBC. Local model only.", manifest:{entrypoint:'callsheet.run(context)', inputs:['text','sessionId','production','shootDay','date','generalCall','location','director','producer'], outputs:['data','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
+  {id:'skl_translate', name:'Translate', version:'2.0.0', category:'Text', description:'Translates pasted text or the open chat into another language on a local model, keeping formatting, names and screenplay layout.', manifest:{entrypoint:'translate.run(context)', inputs:['text','sessionId','targetLang','sourceLang','tone'], outputs:['text','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
+  {id:'skl_pptx', name:'Export to Slides', version:'2.0.0', category:'Export', description:'Turns notes, a brief or the open chat into a slide deck with speaker notes, as Marp Markdown you can open in Marp and export to PowerPoint or PDF. Local model only.', manifest:{entrypoint:'pptx.run(context)', inputs:['text','sessionId','title','audience','slideCount'], outputs:['data','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
 ];
 async function seedIfEmpty(){
   if (getPrefs().seeded && DB.sessions.length) return;
@@ -951,20 +953,6 @@ async function seedIfEmpty(){
      installedAt:new Date(t0-12*864e5).toISOString(), lastRun:new Date(t0-40*60e3).toISOString(), runCount:7,
      audit:[{at:new Date(t0-12*864e5).toISOString(), action:'Installed', detail:'v2.0.0 from local catalog'},
             {at:new Date(t0-40*60e3).toISOString(), action:'Run', detail:'Linted 6 files, 2 findings'}]},
-    {id:'skl_pptx', name:'Export to Slides', version:'1.0.0', category:'Export', status:'available', enabled:false,
-     description:'Packages a session or summary into a slide-deck file. Not yet installed.',
-     permissions:[{scope:'session:read', label:'Read active session content', granted:false}],
-     manifest:{entrypoint:'pptx.run(sessionId)', inputs:['sessionId'], outputs:['file'], requiredTools:[]},
-     health:{ok:true, lastCheck:null, detail:'Not installed — health unknown until installed.'},
-     installedAt:null, lastRun:null, runCount:0, audit:[]},
-    {id:'skl_translate', name:'Translate', version:'1.1.0', category:'Text', status:'needs_update', enabled:true,
-     description:'Translates session content between languages using the active model.',
-     permissions:[{scope:'session:read', label:'Read active session content', granted:true}],
-     manifest:{entrypoint:'translate.run(sessionId,targetLang)', inputs:['sessionId','targetLang'], outputs:['text']},
-     health:{ok:false, lastCheck:nowIso(), detail:'Installed manifest is v1.0.0 — catalog has v1.1.0 available.'},
-     installedAt:new Date(t0-90*864e5).toISOString(), lastRun:new Date(t0-5*864e5).toISOString(), runCount:3,
-     audit:[{at:new Date(t0-90*864e5).toISOString(), action:'Installed', detail:'v1.0.0 from local catalog'},
-            {at:new Date(t0-5*864e5).toISOString(), action:'Run', detail:'Translated session s_runtime to fr'}]},
     {id:'skl_filesearch', name:'Repo File Search', version:'1.0.0', category:'Developer', status:'installed', enabled:true,
      description:'Searches repository files by name or content through the filesystem MCP server.',
      permissions:[{scope:'tool:list_directory', label:'Call list_directory via MCP', granted:true}, {scope:'tool:search_files', label:'Call search_files via MCP', granted:true}],
@@ -1004,14 +992,18 @@ async function seedIfEmpty(){
      logs:[{at:new Date(t0-2*3600e3).toISOString(), line:'Connected · protocolVersion 2024-11-05'},
            {at:new Date(t0-90*60e3).toISOString(), line:'tools/call git_status → approval requested'},
            {at:new Date(t0-90*60e3+4000).toISOString(), line:'tools/call git_status → approved, 4 files changed'}]},
-    {id:'mcp_browser', name:'Browser Automation', transport:'stdio', command:'mcp-server-browser',
-     status:'disconnected', approvalPolicy:'deny', lastConnectedAt:null,
+    {id:'mcp_browser', name:'Browser Automation', transport:'stdio', command:'node mcp-servers/browser-server.js',
+     status:'disconnected', approvalPolicy:'ask', lastConnectedAt:null,
      tools:[
-       {name:'navigate', description:'Navigate a headless browser to a URL.', inputSchema:{url:'string'}},
-       {name:'screenshot', description:'Capture the current page as an image.', inputSchema:{}},
+       {name:'browser_navigate', description:'Open a web page and return its title, address and text.', inputSchema:{url:'string'}},
+       {name:'browser_get_text', description:'Visible text of the page or a CSS selector.', inputSchema:{selector:'string'}},
+       {name:'browser_links', description:'Links on the current page.', inputSchema:{}},
+       {name:'browser_click', description:'Click by CSS selector or visible text.', inputSchema:{selector:'string', text:'string'}},
+       {name:'browser_type', description:'Type into a field, optionally press Enter.', inputSchema:{selector:'string', text:'string', submit:'boolean'}},
+       {name:'browser_screenshot', description:'PNG screenshot of the current page.', inputSchema:{fullPage:'boolean'}},
      ],
-     permissions:[{scope:'network', label:'Network access', granted:false}],
-     logs:[{at:new Date(t0-120*864e5).toISOString(), line:'Configured but never started — network access denied by policy'}]},
+     permissions:[{scope:'network', label:'Browse the web (needs Settings > Privacy > Allow network access)', granted:true}],
+     logs:[{at:nowIso(), line:'Headless Chromium via Playwright. Starts only while network access is on; each call asks for approval.'}]},
   ];
   mcpServers.forEach(s => idbPut('mcpServers', s));
 
@@ -2634,8 +2626,8 @@ function bindEvaluationsViewEvents(){
 /* ===================== marker: RENDER:SKILLS ===================== */
 const SKILL_STATUS_BADGE = {installed:'badge-green', available:'badge-blue', disabled:'badge-red', needs_update:'badge-amber'};
 function skillById(id){ return DB.skills.find(s=>s.id===id); }
-const REAL_SKILL_IDS = new Set(['skl_codelint','skl_filesearch','skl_webfetch','skl_summarize','skl_treatment','skl_shotlist','skl_callsheet']);
-const PREPRO_SKILL_IDS = new Set(['skl_treatment','skl_shotlist','skl_callsheet']); // mirrors server.js's REAL_SKILL_IDS, for labeling only — the server is what actually enforces it
+const REAL_SKILL_IDS = new Set(['skl_codelint','skl_filesearch','skl_webfetch','skl_summarize','skl_treatment','skl_shotlist','skl_callsheet','skl_translate','skl_pptx']);
+const PREPRO_SKILL_IDS = new Set(['skl_treatment','skl_shotlist','skl_callsheet','skl_pptx','skl_translate']); // mirrors server.js's REAL_SKILL_IDS, for labeling only — the server is what actually enforces it
 const NETWORK_SKILL_IDS = new Set(['skl_webfetch']); // mirrors server.js's NETWORK_SKILL_IDS — labeling only, the server's own gate is what actually blocks the run
 function skillCardHtml(s){
   const open = skillsExpandedId === s.id;
@@ -2657,6 +2649,8 @@ function skillCardHtml(s){
     </div>
     <div class="cap-card-desc">${escapeHtml(s.description)}</div>
     ${installed ? `<div style="font-size:11px;color:var(--muted-dim);margin:-2px 0 8px">${
+      s.id==='skl_translate' ? 'Runs for real on a local Ollama model. Paste text or leave the box empty to translate the open chat; formatting and names are kept. Up to about 12,000 characters per run.' :
+      s.id==='skl_pptx' ? 'Runs for real on a local Ollama model. The deck comes back as Marp Markdown: open it in Marp (VS Code extension or marp-cli) to export PowerPoint or PDF.' :
       PREPRO_SKILL_IDS.has(s.id) ? 'Runs for real on a local Ollama model. Paste a brief, notes or script pages, or leave the box empty to use the open chat. Unknown facts are left as TBC.' :
       s.id==='skl_summarize' ? 'Runs for real on a local Ollama model, in a sandboxed worker. It reads a session only while session:read is granted, and cites the messages it used.' :
       NETWORK_SKILL_IDS.has(s.id) ? 'Runs for real, in a sandboxed worker — a genuine HTTP request. The server refuses to start it while the workspace is LOCAL ONLY (Settings > Privacy).' :
@@ -2664,8 +2658,9 @@ function skillCardHtml(s){
       'Still on the simulated path — needs a real session-transcript API before this one can run for real.'
     }</div>` : ''}
     ${installed && s.id==='skl_filesearch' ? `<input type="text" class="skill-query-input mono" data-id="${s.id}" placeholder="Search query, e.g. cosineSimilarity" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
-    ${installed && PREPRO_SKILL_IDS.has(s.id) ? `<textarea class="skill-text-input" data-id="${s.id}" rows="4" placeholder="${s.id==='skl_callsheet'?'Paste the schedule, cast and crew notes for the day':'Paste a brief, notes or script pages'}, or leave empty to use the open chat" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
-    ${installed && s.lastOutput ? `<details style="margin-bottom:8px"><summary class="empty-hint" style="cursor:pointer">Last output · ${fmtRelDate(s.lastOutput.at)}</summary><pre aria-label="${escapeHtml(s.name)} output" style="white-space:pre-wrap;max-height:320px;overflow:auto;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px">${escapeHtml(s.lastOutput.markdown)}</pre><button class="btn btn-ghost btn-sm skill-copy-output" data-id="${s.id}">Copy Markdown</button></details>` : ''}
+    ${installed && PREPRO_SKILL_IDS.has(s.id) ? `<textarea class="skill-text-input" data-id="${s.id}" rows="4" placeholder="${s.id==='skl_callsheet'?'Paste the schedule, cast and crew notes for the day':s.id==='skl_translate'?'Paste the text to translate':s.id==='skl_pptx'?'Paste notes, a brief or an outline for the deck':'Paste a brief, notes or script pages'}, or leave empty to use the open chat" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
+    ${installed && s.id==='skl_translate' ? `<input class="skill-lang-input" data-id="${s.id}" aria-label="Translate into" placeholder="Translate into, e.g. Hindi" value="${escapeHtml((s.lastOutput&&s.lastOutput.targetLang)||'Hindi')}" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
+    ${installed && s.lastOutput ? `<details style="margin-bottom:8px"><summary class="empty-hint" style="cursor:pointer">Last output · ${fmtRelDate(s.lastOutput.at)}</summary><pre aria-label="${escapeHtml(s.name)} output" style="white-space:pre-wrap;max-height:320px;overflow:auto;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px">${escapeHtml(s.lastOutput.markdown)}</pre><button class="btn btn-ghost btn-sm skill-copy-output" data-id="${s.id}">Copy Markdown</button>${s.id==='skl_pptx'?`<button class="btn btn-ghost btn-sm skill-save-deck" data-id="${s.id}">Save deck.md</button>`:''}</details>` : ''}
     ${installed && s.id==='skl_summarize' ? `<textarea class="skill-text-input" data-id="${s.id}" rows="3" placeholder="Paste text to summarize, or leave empty to summarize the active session" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
     ${installed && s.id==='skl_webfetch' ? `<input type="text" class="skill-url-input mono" data-id="${s.id}" placeholder="https://example.com/page" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
     <div class="cap-card-actions">
@@ -2722,6 +2717,7 @@ function bindSkillsView(){
     s.health = {ok: missing.length===0, lastCheck:nowIso(), detail: missing.length ? 'Missing tool(s): '+missing.join(', ') : 'All required tools available.'};
     idbPut('skills', s); logEvent('SKILL', s.name+' health check: '+(s.health.ok?'ok':'attention')); renderSkillsView();
   });
+  $$('.skill-save-deck').forEach(b=>b.onclick=()=>{ const sk = DB.skills.find(x=>x.id===b.dataset.id); const url = URL.createObjectURL(new Blob([sk.lastOutput.markdown], {type:'text/markdown'})); const a = document.createElement('a'); a.href = url; a.download = 'deck.md'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 1000); });
   $$('.skill-copy-output').forEach(b=>b.onclick=async()=>{ const sk = DB.skills.find(x=>x.id===b.dataset.id); try{ await navigator.clipboard.writeText(sk.lastOutput.markdown); toast('Copied.'); }catch(_){ toast('Copy failed; select the text instead.'); } });
   $$('.skill-run').forEach(b=>b.onclick=async ()=>{
     const s = DB.skills.find(x=>x.id===b.dataset.id); if (!s || !s.enabled) return;
@@ -2752,6 +2748,12 @@ function bindSkillsView(){
       if (text) inputs = { text };
       else if (activeSessionId) inputs = { sessionId: activeSessionId };
       else { toast('Paste some text or open a session first.'); return; }
+      if (s.id === 'skl_translate') {
+        const l = document.querySelector('.skill-lang-input[data-id="'+s.id+'"]');
+        const targetLang = l ? l.value.trim() : '';
+        if (!targetLang) { toast('Enter the language to translate into.'); return; }
+        inputs.targetLang = targetLang;
+      }
     }
     if (s.id === 'skl_summarize') {
       const t = document.querySelector('.skill-text-input[data-id="'+s.id+'"]');
@@ -2815,11 +2817,14 @@ function attachMediaToSession(record){
 }
 function mediaRecipe(p){
   if (!p) return '';
+  if (p.engine==='join') return [`Joined · ${p.size} · ${p.fps} fps`, ...(p.clips||[]).map((c,i)=>`${i+1}. ${c.name}`)].join('\n');
+  if (p.generator==='last-frame') return `Last frame of ${p.videoName||p.videoId}`;
   if (p.engine==='camera-moves') return [`Camera moves · ${p.size} · ${p.fps} fps · ${p.seconds}s`, ...(p.shots||[]).map((sh,i)=>`${i+1}. ${sh.name} — ${sh.move}, ${sh.seconds}s`)].join('\n');
   if (p.engine && p.engine.startsWith('comfyui-wan')) return [`Source: ${p.sourceName||p.mediaId}`, `Motion: ${p.prompt}`, p.negative?`Negative: ${p.negative}`:'', `Wan 2.2 TI2V 5B · ${p.width}×${p.height} · ${p.frames} frames @ ${p.fps} fps`, `Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg} · shift ${p.shift}`].filter(Boolean).join('\n');
   return [p.prompt?`Prompt: ${p.prompt}`:'', p.negative?`Negative: ${p.negative}`:'', p.checkpoint?`Checkpoint: ${p.checkpoint}`:'', p.seed!=null?`Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg} · ${p.sampler} · ${p.width}×${p.height}`:''].filter(Boolean).join('\n');
 }
 let videoShots = [];
+let videoJoin = [];
 const MEDIA_FORM_IDS = ['genPrompt','genNegative','genCheckpoint','genSize','genSteps','genCfg','genSeed','genSampler','motionSize','motionFps','aiVideoPrompt','aiVideoSize','aiVideoSeconds','aiVideoSteps','aiVideoSeed'];
 const VIDEO_MOVES = [['push-in','Push in'],['pull-out','Pull out'],['pan-left','Pan left'],['pan-right','Pan right'],['tilt-up','Tilt up'],['tilt-down','Tilt down'],['hold','Hold']];
 async function renderMediaView(){
@@ -2832,6 +2837,7 @@ async function renderMediaView(){
     if (rs[0].ok) items = await rs[0].json(); if (rs[1].ok) jobs = await rs[1].json(); if (rs[2].ok) img = await rs[2].json(); if (rs[3].ok) stt = await rs[3].json(); if (rs[4].ok) vid = await rs[4].json();
   }catch(_){}
   videoShots = videoShots.filter(sh=>items.some(m=>m.id===sh.mediaId&&m.kind==='image'));
+  videoJoin = videoJoin.filter(id=>items.some(m=>m.id===id&&m.kind==='video'));
   const images = items.filter(m=>m.kind==='image');
   const collections = DB.knowledgeCollections || [];
   const field = 'background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px;color:var(--ink)';
@@ -2853,7 +2859,7 @@ async function renderMediaView(){
       ${m.kind==='audio'||m.kind==='video'?`<div style="margin-top:6px">${t?`<span class="badge ${t.status==='done'?'badge-green':t.status==='failed'?'badge-red':'badge-amber'}">${escapeHtml(t.status==='running'?'transcribing…':t.status)}</span>`:''}${t&&t.error?`<div class="empty-hint">${escapeHtml(t.error)}</div>`:''}
         ${m.transcript?`<details ${t&&t.status==='done'?'open':''}><summary class="empty-hint" style="cursor:pointer">Transcript · ${m.transcript.segments.length} segments · ${escapeHtml(m.transcript.model||'')}</summary><pre aria-label="Transcript" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:11px">${escapeHtml(m.transcript.text)}</pre></details>`:''}
         ${busy?'':`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><select class="media-collection" data-id="${m.id}" aria-label="Add transcript to collection" style="${field};padding:5px"><option value="">Don't add to Knowledge</option>${collections.map(c=>`<option value="${escapeHtml(c.id)}">Add to ${escapeHtml(c.name)}</option>`).join('')}</select><button class="btn btn-line btn-sm media-transcribe" data-id="${m.id}" ${stt.ready?'':'disabled'}>${m.transcript?'Transcribe again':'Transcribe'}</button></div>`}</div>`:''}
-      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${m.kind==='image'?`<button class="btn btn-line btn-sm media-attach" data-id="${m.id}">Attach to chat</button><button class="btn btn-line btn-sm media-animate" data-id="${m.id}">Animate</button>`:''}${m.kind==='video'?`<a class="btn btn-ghost btn-sm" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`:''}<button class="btn btn-ghost btn-sm media-delete" data-id="${m.id}">Delete</button></div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${m.kind==='image'?`<button class="btn btn-line btn-sm media-attach" data-id="${m.id}">Attach to chat</button><button class="btn btn-line btn-sm media-animate" data-id="${m.id}">Animate</button>`:''}${m.kind==='video'?`<button class="btn btn-line btn-sm media-lastframe" data-id="${m.id}" title="Save the final frame as a still and add it as the next shot">Continue from last frame</button><button class="btn btn-ghost btn-sm media-join" data-id="${m.id}" aria-pressed="${videoJoin.includes(m.id)}">${videoJoin.includes(m.id)?'Joining #'+(videoJoin.indexOf(m.id)+1):'Add to join'}</button><a class="btn btn-ghost btn-sm" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`:''}<button class="btn btn-ghost btn-sm media-delete" data-id="${m.id}">Delete</button></div>
     </article>`;
   };
   pad.innerHTML = `
@@ -2908,6 +2914,10 @@ async function renderMediaView(){
           <button class="btn btn-amber" id="aiVideoStart" ${vid.ai.ready&&videoShots.length?'':'disabled'}>Animate first shot</button></div>
         </div>
       </div>
+      <div class="cap-section-label">Continuity</div>
+      <p class="empty-hint">To carry a character or action across shots, press <strong>Continue from last frame</strong> on a clip: its final frame becomes the next shot, so AI motion starts exactly where the last clip ended. Then <strong>Add to join</strong> on the clips, in order, and join them into one video.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="empty-hint" style="padding:0" id="joinSummary">${videoJoin.length?videoJoin.map((id,i)=>`${i+1}. ${escapeHtml((items.find(m=>m.id===id)||{}).originalName||id)}`).join(' · '):'No clips chosen to join.'}</span>
+        <button class="btn btn-amber" id="joinStart" ${vid.cameraMoves.ready&&videoJoin.length>=2?'':'disabled'}>Join ${videoJoin.length||''} clips</button>${videoJoin.length?'<button class="btn btn-ghost btn-sm" id="joinClear">Clear</button>':''}</div>
     </div>
     <div class="cap-section-label">Library · ${items.length} item(s)</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${items.map(itemHtml).join('')||'<p class="empty-hint">Nothing here yet. Generate an image or upload a file.</p>'}</div>`;
@@ -2932,6 +2942,10 @@ async function renderMediaView(){
   $$('.shot-seconds').forEach(el=>el.onchange=()=>{ videoShots[Number(el.dataset.idx)].seconds = Number(el.value)||3; });
   $$('.shot-remove').forEach(el=>el.onclick=()=>{ videoShots.splice(Number(el.dataset.idx),1); renderMediaView(); });
   $$('.shot-up').forEach(el=>el.onclick=()=>{ const i=Number(el.dataset.idx); if (i>0){ [videoShots[i-1],videoShots[i]]=[videoShots[i],videoShots[i-1]]; renderMediaView(); } });
+  $$('.media-lastframe').forEach(b=>b.onclick=async()=>{ try { const still = await post('/api/media/'+encodeURIComponent(b.dataset.id)+'/last-frame'); videoShots.push({mediaId:still.id, move:'hold', seconds:3}); toast('Last frame saved and added as the next shot.'); await renderMediaView(); $('videoPanel')&&$('videoPanel').scrollIntoView({behavior:'smooth',block:'start'}); } catch(e){ toast(e.message); } });
+  $$('.media-join').forEach(b=>b.onclick=()=>{ const i=videoJoin.indexOf(b.dataset.id); if (i>=0) videoJoin.splice(i,1); else videoJoin.push(b.dataset.id); renderMediaView(); });
+  if ($('joinClear')) $('joinClear').onclick=()=>{ videoJoin=[]; renderMediaView(); };
+  if ($('joinStart')) $('joinStart').onclick = async () => { try { await post('/api/video/join', {mediaIds:videoJoin, size:$('motionSize').value, fps:Number($('motionFps').value)}); videoJoin=[]; toast('Joining clips…'); renderMediaView(); } catch(e){ toast(e.message); } };
   if ($('motionStart')) $('motionStart').onclick = async () => { try { await post('/api/video/camera-moves', {shots:videoShots, size:$('motionSize').value, fps:Number($('motionFps').value)}); toast('Rendering video on this computer…'); renderMediaView(); } catch(e){ toast(e.message); } };
   if ($('aiVideoStart')) $('aiVideoStart').onclick = async () => { const prompt=$('aiVideoPrompt').value.trim(); if (!prompt) return toast('Describe the motion first.'); try { await post('/api/video/animate', {mediaId:videoShots[0].mediaId, prompt, size:$('aiVideoSize').value, seconds:Number($('aiVideoSeconds').value), steps:Number($('aiVideoSteps').value), seed:$('aiVideoSeed').value===''?undefined:Number($('aiVideoSeed').value)}); toast('Animating on ComfyUI — this can take a while on a Mac.'); renderMediaView(); } catch(e){ toast(e.message); } };
   if (mediaPoll) { clearTimeout(mediaPoll); mediaPoll = null; }

@@ -295,6 +295,12 @@ const routes = [
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.camera-moves.started', jobId: job.id, shots: job.settings.shots.length });
       sendJson(res, 202, job);
     } },
+  { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/last-frame$/, handler: async (_req, res, [id]) => sendJson(res, 201, await videoGen.lastFrame(store, DATA_DIR, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/video\/join$/, handler: async (req, res) => {
+      const { job } = videoGen.startJoin(store, DATA_DIR, await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.join.started', jobId: job.id, clips: job.settings.clips.length });
+      sendJson(res, 202, job);
+    } },
   { method: 'POST', pattern: /^\/api\/video\/animate$/, handler: async (req, res) => {
       const { job } = await videoGen.startAi(store, DATA_DIR, await readJsonBody(req));
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.ai.started', jobId: job.id, mediaId: job.settings.mediaId });
@@ -634,7 +640,7 @@ const routes = [
         skill.lastRun = finishedAt;
         skill.runCount = (skill.runCount || 0) + 1;
         skill.health = { ok: true, lastCheck: finishedAt, detail: 'Ran successfully.' };
-        if (result && typeof result.markdown === 'string') skill.lastOutput = { at: finishedAt, markdown: result.markdown.slice(0, 50000) };
+        if (result && typeof result.markdown === 'string') skill.lastOutput = { at: finishedAt, markdown: result.markdown.slice(0, 50000), ...(result.targetLang ? { targetLang: result.targetLang } : {}), ...(result.kind === 'slides' ? { fileName: 'deck.md' } : {}) };
         else if (result && typeof result.summary === 'string') skill.lastOutput = { at: finishedAt, markdown: result.summary };
         skill.audit = skill.audit || [];
         skill.audit.push({ at: finishedAt, action: 'Run', detail: summarizeSkillResult(skillId, result) });
@@ -710,7 +716,7 @@ const routes = [
 // in Phase 5). Anything else still runs on the frontend's pre-existing
 // simulated path — labeled as such in the UI — rather than faking a real
 // run here.
-const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_webfetch', 'skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet']);
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_webfetch', 'skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet', 'skl_translate', 'skl_pptx']);
 
 // Skills that genuinely reach the network when they run — gated below by
 // the workspace's own privacy preference, not just a descriptive UI label.
@@ -792,6 +798,7 @@ server.listen(PORT, '127.0.0.1', () => {
   const interruptedRuns=workspaceRunner.recoverInterrupted(store);
   if(interruptedRuns)console.log(`  recovered:   ${interruptedRuns} interrupted workspace run(s)`);
   const addedSkills=ensureFirstPartySkills(store);
+  if(mcpManager.ensureBrowserServer(store))console.log('  mcp: Browser Automation now uses the real browser server (needs network access on)');
   if(addedSkills)console.log(`  skills:      added ${addedSkills} new first-party skill(s)`);
   const interruptedMedia=transcriber.recoverInterrupted(store)+imageGen.recoverInterrupted(store);
   if(interruptedMedia)console.log(`  recovered:   ${interruptedMedia} interrupted media job(s)`);

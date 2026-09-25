@@ -41,7 +41,7 @@ function makeSkill(spec) {
     if (truncated) source = source.slice(0, MAX_SOURCE_CHARS);
     const extras = (spec.fields || []).filter(f => asText(inputs[f])).map(f => `${f}: ${asText(inputs[f])}`).join('\n');
     const system = [
-      `You are a film and video pre-production assistant writing a ${spec.name}.`,
+      spec.role || `You are a film and video pre-production assistant writing a ${spec.name}.`,
       'Return exactly one JSON object and nothing else.',
       `The object must have this shape: ${spec.shape}`,
       'Use only facts from the source and the given details. When something is not stated, write "TBC" instead of inventing it.',
@@ -72,4 +72,4 @@ const need = (obj, key, type, problems, where) => {
   return ok ? v : null;
 };
 
-module.exports = { makeSkill, need, esc, asText, extractJson };
+module.exports = { makeSkill, need, esc, asText, extractJson, sourceText, MAX_SOURCE_CHARS };

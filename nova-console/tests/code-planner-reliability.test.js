@@ -24,7 +24,7 @@ for (const [name, output, expected] of [
   ['malformed JSON', { message: { content: '{bad' } }, /JSON/],
   ['wrong schema', response('invalid'), /remained invalid/],
   ['empty changes', response([]), /remained invalid/],
-  ['truncated output', { ...response([{ relativePath: 'a.js', find: '1', replacement: '2' }]), done_reason: 'length' }, /truncated/],
+  ['truncated output', { ...response([{ relativePath: 'a.js', find: '1', replacement: '2' }]), done_reason: 'length' }, /cut off at 2048 tokens/],
   ['missing match', response([{ relativePath: 'a.js', find: 'missing', replacement: '2' }]), /exactly once/],
   ['no effect', response([{ relativePath: 'a.js', find: '1', replacement: '1' }]), /no effect/],
   ['unpresented file', response([{ relativePath: 'hidden.js', find: '1', replacement: '2' }]), /outside the presented/],
@@ -152,4 +152,17 @@ test('failed repair preserves evidence and creates no proposal', async t => {
   assert.equal(attempt.originalResponse.content,'not json');
   assert.equal(attempt.repairResponse.content,'not json');
   assert.equal(db.all('workspaceChanges').length,0);
+});
+
+test('plan output cap: 2048 by default, NOVA_PLAN_MAX_TOKENS or an option can raise it, clamped to 256-8192', () => {
+  const planner = require('../lib/code-planner');
+  const saved = process.env.NOVA_PLAN_MAX_TOKENS;
+  try {
+    delete process.env.NOVA_PLAN_MAX_TOKENS;
+    assert.equal(planner.planOutputTokens(), 2048);
+    process.env.NOVA_PLAN_MAX_TOKENS = '4096'; assert.equal(planner.planOutputTokens(), 4096);
+    assert.equal(planner.planOutputTokens({ maxOutputTokens: 99999 }), 8192);
+    process.env.NOVA_PLAN_MAX_TOKENS = '10'; assert.equal(planner.planOutputTokens(), 256);
+    assert.ok(planner.repositoryCharacterBudget(8192, 100, 4096) < planner.repositoryCharacterBudget(8192, 100), 'a bigger output cap leaves less room for files');
+  } finally { if (saved === undefined) delete process.env.NOVA_PLAN_MAX_TOKENS; else process.env.NOVA_PLAN_MAX_TOKENS = saved; }
 });

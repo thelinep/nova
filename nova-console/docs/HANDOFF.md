@@ -20,15 +20,18 @@ Context for continuing NOVA work inside NOVA itself. Load this file into a knowl
 | Vision in chat, media store | `lib/media.js`, `server.js` | Images/audio/video detected from bytes; vision models only |
 | Transcription | `lib/transcribe.js` | whisper.cpp + ffmpeg, afconvert fallback; audio and video |
 | Image generation | `lib/image-gen.js` | Local ComfyUI on 8188 or 8000; recipe saved per image |
-| Image to video | `lib/video-gen.js` | Camera moves/animatics via ffmpeg; AI motion via ComfyUI Wan 2.2 TI2V 5B |
+| Image to video | `lib/video-gen.js` | Camera moves/animatics via ffmpeg; AI motion via ComfyUI Wan 2.2 TI2V 5B; last-frame continuation and clip joining |
+| Translate, Export to Slides | `skills/translate.js`, `skills/pptx.js` | Real on local Ollama; old simulated records upgraded in place |
+| Browser Automation MCP | `mcp-servers/browser-server.js` | Headless Chromium via Playwright; needs web access on; approval per call |
+| Real-model checks | `scripts/validate-real-models.js` | `npm run test:real-models [-- model]`: dev loop x2, summarize, translate, slides, shot list |
 
-Tests at handoff: `npm test` 127/127 (updated 2026-09-25) in `nova-console`; scraper Jest 133/133 and node tests 10/10.
+Tests at handoff: `npm test` 134 pass, 1 skipped where Chromium is absent (updated 2026-09-25) in `nova-console`; scraper Jest 133/133 and node tests 10/10.
 
 ## Known limits
 
-- Plans are capped at 1,024 output tokens; keep requests to one or two named files.
+- Plans default to 2,048 output tokens (`NOVA_PLAN_MAX_TOKENS`, 256-8192).
 - Only `llama3:latest` passed the four behavioral planning fixtures; `llama3.2` and `maataa` fail multi-file and large-repository plans. Unqualified models are not selected for those workflows.
-- The development loop and summarizer have only been tested with a scripted model, not a real one.
+- The development loop and text skills are verified against scripted models; `npm run test:real-models` checks them on a real one and has not been run on the Mac yet.
 - While a loop runs, the Local Workspace panel refreshes every 2 s and can clear text being typed elsewhere in that view.
 - `npm run test:ui` (Playwright) and the Rust tests have not been run since these changes.
 
@@ -36,10 +39,9 @@ Tests at handoff: `npm test` 127/127 (updated 2026-09-25) in `nova-console`; scr
 
 1. Run `npm run test:all` and fix anything in the new Local Workspace panels.
 2. Switch the seeded agents (`agt_research`, `agt_coder`, `agt_writer`) from demo models to `llama3:latest` so the two seeded workflows can run end to end.
-3. Try the development loop on a small real task and record how the local model performs.
-4. Raise the plan output cap and qualify a stronger coding model through `npm run test:ollama-planner`.
-5. Replace the placeholder skills (`skl_translate`, `skl_pptx`) and the placeholder Browser MCP server, or remove them.
-6. Release: bundle a Node sidecar, Developer ID signing, notarization, verified installer.
+3. Run `npm run test:real-models` with llama3:latest and with a stronger coding model; qualify the better one through `npm run test:ollama-planner`.
+4. Character reference for consistent keyframes (continuity beyond last-frame chaining).
+5. Release: bundle a Node sidecar, Developer ID signing, notarization, verified installer.
 
 ## Housekeeping pending
 

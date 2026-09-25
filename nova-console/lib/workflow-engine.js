@@ -24,8 +24,8 @@ const { runSkillSandboxed } = require('./skill-runner');
 const { buildSkillHost } = require('./skill-host');
 const mcpManager = require('./mcp-manager');
 
-const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet']);
-const TEXT_SKILL_IDS = new Set(['skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet']);
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet', 'skl_translate', 'skl_pptx']);
+const TEXT_SKILL_IDS = new Set(['skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet', 'skl_translate', 'skl_pptx']);
 
 // Workflow nodes carry a server reference but no explicit tool+args field
 // (a real gap in the node schema — flagged here rather than silently
@@ -76,6 +76,8 @@ async function runNode(store, ollama, node, context) {
     if (REAL_SKILL_IDS.has(node.ref)) {
       // Text skills summarize whatever the previous node produced.
       const inputs = TEXT_SKILL_IDS.has(node.ref) ? { text: context || node.label, focus: node.label } : {};
+      // A Translate step names its language on the node (targetLang) or in its label, e.g. "Translate to Hindi".
+      if (node.ref === 'skl_translate') inputs.targetLang = node.targetLang || ((String(node.label || '').match(/\bto\s+([\p{L} ]{2,40})$/u) || [])[1] || '').trim();
       const result = await runSkillSandboxed(skill, inputs, async (toolName, args) => {
         const server = mcpManager.findServerForTool(store, toolName);
         if (!server) throw Object.assign(new Error('No connected MCP server advertises tool "' + toolName + '"'), { statusCode: 502 });

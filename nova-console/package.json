@@ -1,7 +1,7 @@
 {
   "name": "nova-runtime",
   "version": "0.1.0",
-  "description": "NOVA Runtime — local backend for the NOVA Console prototype. Real SQLite persistence, real Ollama-backed streaming inference, real CPU/RAM/GPU telemetry. Zero npm dependencies by design — everything here runs on what Node 22+ ships built in (node:sqlite, global fetch, node:http), so there is nothing to install and nothing that can fail to compile on your machine.",
+  "description": "NOVA Runtime \u2014 local backend for the NOVA Console prototype. Real SQLite persistence, real Ollama-backed streaming inference, real CPU/RAM/GPU telemetry. Zero npm dependencies by design \u2014 everything here runs on what Node 22+ ships built in (node:sqlite, global fetch, node:http), so there is nothing to install and nothing that can fail to compile on your machine.",
   "private": true,
   "type": "commonjs",
   "main": "server.js",
@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "test:rust": "cargo test --manifest-path packaging/tauri/Cargo.toml",
     "test:ollama-planner": "node --no-warnings scripts/validate-real-code-planner.js",
-    "test:all": "npm test && npm run test:ui && npm run test:rust"
+    "test:all": "npm test && npm run test:ui && npm run test:rust",
+    "test:real-models": "node --no-warnings scripts/validate-real-models.js"
   },
   "engines": {
     "node": ">=22.5.0"

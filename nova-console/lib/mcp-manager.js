@@ -27,9 +27,12 @@ const APPROVAL_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes — nothing waits fore
 const SPAWN_SPECS = {
   mcp_fs: () => ({ command: process.execPath, args: [path.join(__dirname, '..', 'mcp-servers', 'fs-server.js'), PROJECT_ROOT] }),
   mcp_git: () => ({ command: process.execPath, args: [path.join(__dirname, '..', 'mcp-servers', 'git-server.js'), PROJECT_ROOT] }),
-  // mcp_browser intentionally has no spec: no real implementation is wired
-  // up, so connecting fails honestly (501) instead of faking success.
+  // Headless Chromium through the Playwright dev dependency; only while web access is on.
+  mcp_browser: () => ({ command: process.execPath, args: [path.join(__dirname, '..', 'mcp-servers', 'browser-server.js')], network: true }),
 };
+const NETWORK_SERVERS = new Set(['mcp_browser']);
+
+function webAccessOn(store) { const prefs = store.get('preferences', 'default'); return Boolean(prefs && prefs.webAccess); }
 
 const connections = new Map(); // serverId -> McpClient
 const pendingApprovals = new Map(); // approvalId -> record
@@ -37,6 +40,29 @@ const pendingApprovals = new Map(); // approvalId -> record
 function nowIso() { return new Date().toISOString(); }
 function uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function httpErr(statusCode, message) { const e = new Error(message); e.statusCode = statusCode; return e; }
+
+const BROWSER_TOOLS = [
+  { name: 'browser_navigate', description: 'Open a web page and return its title, address and text.', inputSchema: { url: 'string' } },
+  { name: 'browser_get_text', description: 'Visible text of the page or a CSS selector.', inputSchema: { selector: 'string' } },
+  { name: 'browser_links', description: 'Links on the current page.', inputSchema: {} },
+  { name: 'browser_click', description: 'Click by CSS selector or visible text.', inputSchema: { selector: 'string', text: 'string' } },
+  { name: 'browser_type', description: 'Type into a field, optionally press Enter.', inputSchema: { selector: 'string', text: 'string', submit: 'boolean' } },
+  { name: 'browser_screenshot', description: 'PNG screenshot of the current page.', inputSchema: { fullPage: 'boolean' } },
+];
+
+/** Replaces the old placeholder Browser Automation record with the real server's details. */
+function ensureBrowserServer(store) {
+  const server = store.get('mcpServers', 'mcp_browser');
+  if (!server || server.command === 'node mcp-servers/browser-server.js') return false;
+  server.command = 'node mcp-servers/browser-server.js';
+  server.status = 'disconnected';
+  if (server.approvalPolicy === 'deny') server.approvalPolicy = 'ask';
+  server.tools = BROWSER_TOOLS;
+  server.permissions = [{ scope: 'network', label: 'Browse the web (needs Settings > Privacy > Allow network access)', granted: true }];
+  server.logs = [...(server.logs || []), { at: nowIso(), line: 'Upgraded to the real browser server (headless Chromium via Playwright). Each call asks for approval.' }];
+  store.put('mcpServers', server);
+  return true;
+}
 
 function pushLog(store, server, line) {
   if (!server) return;
@@ -57,6 +83,10 @@ async function connectServer(store, id) {
     throw httpErr(501, 'No real MCP server implementation wired for "' + server.name + '" yet.');
   }
 
+  if (NETWORK_SERVERS.has(id) && !webAccessOn(store)) {
+    pushLog(store, server, 'Connect refused: network access is off (Settings > Privacy > "Allow network access").');
+    throw httpErr(403, '"' + server.name + '" browses the web. Turn on Settings > Privacy > "Allow network access" first.');
+  }
   const existing = connections.get(id);
   if (existing) { existing.close(); connections.delete(id); }
 
@@ -163,6 +193,10 @@ async function executeRealCall(store, serverId, toolName, args) {
 async function gatedCall(store, serverId, toolName, args, opts) {
   const server = store.get('mcpServers', serverId);
   if (!server) throw httpErr(404, 'Unknown MCP server: ' + serverId);
+  if (NETWORK_SERVERS.has(serverId) && !webAccessOn(store)) {
+    pushLog(store, server, 'tools/call ' + toolName + ' → refused, network access is off');
+    throw httpErr(403, 'Network access is off, so "' + server.name + '" cannot browse. Turn it on in Settings > Privacy.');
+  }
   const policy = server.approvalPolicy;
   if (policy === 'deny') {
     pushLog(store, server, 'tools/call ' + toolName + ' → denied by server policy');
@@ -226,4 +260,4 @@ function reconcileOnStartup(store) {
   return reset;
 }
 
-module.exports = { connectServer, disconnectServer, gatedCall, findServerForTool, listPendingApprovals, resolveApproval, shutdownAll, reconcileOnStartup, SPAWN_SPECS };
+module.exports = { connectServer, disconnectServer, gatedCall, findServerForTool, listPendingApprovals, resolveApproval, shutdownAll, reconcileOnStartup, SPAWN_SPECS, ensureBrowserServer, BROWSER_TOOLS };

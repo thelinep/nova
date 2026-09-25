@@ -128,3 +128,32 @@ test('AI motion uploads the still, sends the Wan 2.2 graph and saves the clip wi
     assert.equal(clip.provenance.mediaId, still.id); assert.equal(clip.provenance.frames, 73); assert.equal(clip.provenance.seconds, 3);
   } finally { process.env.COMFYUI_URL = saved; if (saved === undefined) delete process.env.COMFYUI_URL; server.close(); }
 });
+
+test('continuity: the last frame of a clip becomes a still, and clips join into one video', async t => {
+  const dir = tmp('nova-v-');
+  const ffmpeg = transcriber.status(dir).ffmpeg;
+  if (!ffmpeg) return t.skip('ffmpeg is not installed');
+  const { execFileSync } = require('node:child_process');
+  const make = (name, color, size) => { const f = path.join(dir, name); execFileSync(ffmpeg, ['-loglevel', 'error', '-f', 'lavfi', '-i', `color=c=${color}:size=${size}:duration=1:rate=24`, '-f', 'lavfi', '-i', `color=c=white:size=${size}:duration=0.25:rate=24`, '-filter_complex', '[0:v][1:v]concat=n=2:v=1[o]', '-map', '[o]', '-pix_fmt', 'yuv420p', f]); return fs.readFileSync(f); };
+  const db = store();
+  const a = media.saveMedia(db, dir, { buffer: make('a.mp4', 'red', '320x180'), originalName: 'shot-1.mp4' });
+  const b = media.saveMedia(db, dir, { buffer: make('b.mp4', 'blue', '180x320'), originalName: 'shot-2.mp4' });
+  assert.equal(a.kind, 'video');
+  const still = await videoGen.lastFrame(db, dir, a.id);
+  assert.equal(still.kind, 'image'); assert.equal(still.originalName, 'shot-1 (last frame).png');
+  assert.equal(still.provenance.videoId, a.id);
+  // The clip ends on white, so the saved last frame must be white, not the red start.
+  const rgb = execFileSync(ffmpeg, ['-loglevel', 'error', '-i', media.filePath(dir, still), '-vf', 'scale=1:1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']);
+  assert.ok(rgb[0] > 230 && rgb[1] > 230 && rgb[2] > 230, `last frame should be white, got ${[...rgb]}`);
+  await assert.rejects(() => videoGen.lastFrame(db, dir, still.id), /Choose a video/);
+  assert.throws(() => videoGen.startJoin(db, dir, { mediaIds: [a.id] }), /at least two/);
+  const { job, done } = videoGen.startJoin(db, dir, { mediaIds: [a.id, b.id], size: '1280x720' });
+  await done;
+  const finished = db.get('generationJobs', job.id);
+  assert.equal(finished.status, 'done', finished.error);
+  const joined = db.get('media', finished.mediaIds[0]);
+  const ffprobe = fs.existsSync(path.join(path.dirname(ffmpeg), 'ffprobe')) ? path.join(path.dirname(ffmpeg), 'ffprobe') : 'ffprobe';
+  const probe = execFileSync(ffprobe, ['-v', 'error', '-show_entries', 'stream=width,height,nb_frames', '-of', 'csv=p=0', media.filePath(dir, joined)], { encoding: 'utf8' }).trim();
+  assert.equal(probe, '1280,720,60', 'two 1.25 s clips at 24 fps, fitted to 1280x720');
+  assert.deepEqual(joined.provenance.clips.map(c => c.name), ['shot-1.mp4', 'shot-2.mp4']);
+});

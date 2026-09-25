@@ -24,7 +24,7 @@ const { spawn } = require('node:child_process');
 
 const PROTOCOL_VERSION = '2024-11-05';
 const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
-const CALL_TIMEOUT_MS = 30000;
+const CALL_TIMEOUT_MS = 60000; // a first browser launch plus page load can take a while
 
 class McpClient {
   constructor({ command, args, cwd, env, onLog }) {

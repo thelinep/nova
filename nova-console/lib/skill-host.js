@@ -19,6 +19,8 @@ const FIRST_PARTY_HOST = {
   skl_treatment: ['readSession', 'generate'],
   skl_shotlist: ['readSession', 'generate'],
   skl_callsheet: ['readSession', 'generate'],
+  skl_translate: ['readSession', 'generate'],
+  skl_pptx: ['readSession', 'generate'],
 };
 const MAX_OUTPUT_TOKENS = 3072;
 

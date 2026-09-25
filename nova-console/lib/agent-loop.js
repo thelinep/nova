@@ -28,7 +28,7 @@ const MAX_TOOL_ROUNDS = 6;
 // tool (an agent may legitimately have it configured), but calling it
 // returns an honestly-labeled simulated result instead of pretending to
 // run code that doesn't exist.
-const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet']);
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet', 'skl_translate', 'skl_pptx']);
 
 function jsonSchemaFromManifestInputs(inputNames) {
   const properties = {};

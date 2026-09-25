@@ -17,7 +17,7 @@ const SKILLS_DIR = path.join(__dirname, '..', 'skills');
 const WORKER_PATH = path.join(__dirname, 'skill-worker.js');
 const RUN_TIMEOUT_MS = 60000;
 // Model-backed skills make several local inference calls; give them longer.
-const SKILL_TIMEOUT_MS = { skl_summarize: 240000, skl_treatment: 300000, skl_shotlist: 300000, skl_callsheet: 300000 };
+const SKILL_TIMEOUT_MS = { skl_summarize: 240000, skl_treatment: 300000, skl_shotlist: 300000, skl_callsheet: 300000, skl_translate: 300000, skl_pptx: 300000 };
 const MAX_TIMEOUT_MS = 300000;
 
 function httpErr(statusCode, message) { const e = new Error(message); e.statusCode = statusCode; return e; }

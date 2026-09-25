@@ -13,6 +13,10 @@
  *    standard Wan 2.2 5B image-to-video graph, and saves the clip. Needs the
  *    three Wan 2.2 5B model files in ComfyUI; status() names what is missing.
  *
+ * Continuity helpers: take the last frame of any clip as a new still (so
+ * the next shot starts exactly where the last one ended) and join clips
+ * into one video.
+ *
  * Every clip lands in the media store with its full recipe (source images,
  * moves, prompt, models, seed, frames) so it can be reproduced.
  * ========================================================================= */
@@ -151,6 +155,72 @@ function startMotion(store, dataDir, input) {
   return { job, done };
 }
 
+/* ------------------------------ continuity -------------------------------- */
+
+function requireFfmpeg(dataDir) {
+  const tools = motionStatus(dataDir);
+  if (!tools.ready) throw error(tools.error, 412);
+  return tools.ffmpeg;
+}
+
+function runOnce(ffmpeg, args, timeoutMs = 120000) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(ffmpeg, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    child.stderr.on('data', d => { stderr = (stderr + d).slice(-4000); });
+    const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
+    child.on('error', e => { clearTimeout(timer); reject(e); });
+    child.on('close', code => { clearTimeout(timer); code === 0 ? resolve() : reject(error(`ffmpeg failed (${code}): ${stderr.trim().split('\n').slice(-3).join(' ')}`, 500)); });
+  });
+}
+
+/** Saves the final frame of a video as a PNG still, ready to animate as the next shot. */
+async function lastFrame(store, dataDir, videoId) {
+  const ffmpeg = requireFfmpeg(dataDir);
+  const video = media.getMedia(store, videoId);
+  if (video.kind !== 'video') throw error('Choose a video clip.');
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-frame-'));
+  try {
+    const out = path.join(work, 'last.png');
+    // Seek near the end, then keep overwriting one image: what remains is the last decoded frame.
+    await runOnce(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-sseof', '-1', '-i', media.filePath(dataDir, video), '-update', '1', '-an', out]);
+    if (!fs.existsSync(out)) await runOnce(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', media.filePath(dataDir, video), '-update', '1', '-an', out]);
+    const base = video.originalName.replace(/\.[a-z0-9]+$/i, '');
+    return media.saveMedia(store, dataDir, { buffer: fs.readFileSync(out), originalName: `${base} (last frame).png`, source: 'nova-frame', expectKind: 'image',
+      provenance: { generator: 'last-frame', videoId: video.id, videoName: video.originalName, character: video.provenance?.character || null } });
+  } finally { try { fs.rmSync(work, { recursive: true, force: true }); } catch (_) {} }
+}
+
+/** Joins clips in order into one MP4, fitting each into the first clip's frame. */
+function startJoin(store, dataDir, input) {
+  const ffmpeg = requireFfmpeg(dataDir);
+  const ids = Array.isArray(input.mediaIds) ? input.mediaIds.map(String) : [];
+  if (ids.length < 2) throw error('Choose at least two clips to join.');
+  if (ids.length > MAX_SHOTS) throw error(`Join up to ${MAX_SHOTS} clips at a time.`);
+  const clips = ids.map(id => { const r = media.getMedia(store, id); if (r.kind !== 'video') throw error(`${r.originalName} is not a video.`); return r; });
+  const size = MOTION_SIZES[input.size] ? input.size : '1280x720';
+  const fps = [24, 25, 30].includes(Number(input.fps)) ? Number(input.fps) : 24;
+  const settings = { engine: 'join', prompt: `Joined · ${clips.length} clips`, size, fps, clips: clips.map(c => ({ mediaId: c.id, name: c.originalName })) };
+  const job = newJob('video-join', settings);
+  store.put('generationJobs', job);
+  const [W, H] = MOTION_SIZES[size];
+  const done = (async () => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-join-'));
+    try {
+      const out = path.join(work, 'joined.mp4');
+      const args = ['-nostdin', '-y', '-loglevel', 'error'];
+      for (const c of clips) args.push('-i', media.filePath(dataDir, c));
+      const parts = clips.map((_, i) => `[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=${fps},format=yuv420p[v${i}]`);
+      args.push('-filter_complex', parts.join(';') + ';' + clips.map((_, i) => `[v${i}]`).join('') + `concat=n=${clips.length}:v=1:a=0[out]`, '-map', '[out]', ...encoderArgs(ffmpeg), '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out);
+      await runFfmpeg(store, job, ffmpeg, args);
+      const record = media.saveMedia(store, dataDir, { buffer: fs.readFileSync(out), originalName: settings.prompt + '.mp4', source: 'nova-motion', expectKind: 'video', provenance: { generator: 'ffmpeg-join', ...settings, jobId: job.id } });
+      job.mediaIds = [record.id]; job.status = 'done';
+    } catch (e) { job.status = e.statusCode === 499 ? 'cancelled' : 'failed'; job.error = e.message || String(e); }
+    finally { job.finishedAt = new Date().toISOString(); store.put('generationJobs', job); try { fs.rmSync(work, { recursive: true, force: true }); } catch (_) {} }
+  })();
+  return { job, done };
+}
+
 /* ------------------------------- AI motion -------------------------------- */
 
 async function nodeInfo(name) {
@@ -261,4 +331,4 @@ async function startAi(store, dataDir, input) {
 
 async function status(dataDir) { return { cameraMoves: motionStatus(dataDir), ai: await aiStatus() }; }
 
-module.exports = { status, motionStatus, aiStatus, startMotion, startAi, normaliseMotion, normaliseAi, motionArgs, moveExpr, aiGraph, MOVES, MOTION_SIZES, AI_SIZES, DEFAULT_NEGATIVE };
+module.exports = { status, motionStatus, aiStatus, startMotion, startAi, lastFrame, startJoin, normaliseMotion, normaliseAi, motionArgs, moveExpr, aiGraph, MOVES, MOTION_SIZES, AI_SIZES, DEFAULT_NEGATIVE };

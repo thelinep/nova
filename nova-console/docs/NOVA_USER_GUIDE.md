@@ -141,6 +141,8 @@ Before calling a tool:
 
 Approval requests are deliberate controls. Declining an approval prevents that tool call. Disconnect a server when it is no longer required; MCP child processes do not survive a NOVA restart and must reconnect.
 
+**Browser Automation** is a real headless Chromium (through the Playwright that NOVA's tests already use). It connects only while Settings > Privacy > **Allow network access** is on, asks for approval on each call by default, and opens only http and https addresses. Tools: open a page, read its text, list links, click, type into a field, and take a screenshot. If it reports that Chromium could not start, run `npx playwright install chromium` in `nova-console`.
+
 ### Agents and workflows
 
 An **Agent** combines a model, instructions, allowed skills, and available MCP tools. A **Workflow** connects agents and other nodes into a repeatable sequence.
@@ -163,12 +165,17 @@ Open **Media** in the sidebar. Everything here runs on your computer, and each i
 - **Image to video.** Press **Animate** on any image in the library to add it as a shot in **Animate stills**. Two engines:
   - **Camera moves** (needs ffmpeg). Pick a push in, pull out, pan or tilt and a length for each shot, reorder them, choose a size (16:9, 2.39:1 scope, 1:1, 9:16) and frame rate, then **Render**. One shot makes a clip; several make an animatic joined in order. Renders in seconds, no AI model.
   - **AI motion** (ComfyUI + Wan 2.2 5B). The first shot and your motion prompt go to your local ComfyUI, and the picture itself moves. ComfyUI needs three files: `wan2.2_ti2v_5B_fp16.safetensors` in `models/diffusion_models`, `umt5_xxl_fp16.safetensors` in `models/text_encoders` (the fp8 version does not run on Apple Silicon), and `wan2.2_vae.safetensors` in `models/vae`, from the Comfy-Org repackaged Wan 2.1/2.2 repositories on Hugging Face (about 21 GB together). NOVA lists whatever is missing. Clips are 1 to 5 seconds at 24 fps; on a Mac start at 480p and 2 seconds, because each second can take several minutes.
+  - **Continuity.** **Continue from last frame** on a clip saves its final frame as a still and adds it as the next shot, so the next AI motion clip starts exactly where the last one ended. **Add to join** on clips, in order, then **Join clips** to make one video. Keeping the same character across unrelated shots still depends on your keyframes showing the same character.
   Videos play in the library, can be downloaded, and keep a recipe (shots and moves, or prompt, seed, steps and models). MP4 and MOV uploads are accepted too.
 - **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM) or video (MP4, MOV; needs a working ffmpeg), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
 
 ### Pre-production skills
 
 **Treatment Writer**, **Shot List** and **Call Sheet** are in **Skills**. Paste a brief, notes, schedule or script pages, or leave the box empty to use the open chat. Each runs on a local Ollama model, returns a structured result shown as Markdown (tables for shot lists and call sheets), and writes "TBC" for facts that are not in the source, such as addresses or hospital details. They can also run as workflow steps, taking the previous step's output as input.
+
+**Translate** turns pasted text or the open chat into another language (type it in **Translate into**, for example Hindi). Formatting, names and screenplay layout are kept; long text is translated in pieces, up to about 12,000 characters per run. In a workflow, name the language on the step, for example "Translate to Hindi".
+
+**Export to Slides** turns notes, a brief or the open chat into a deck with speaker notes. The result is Marp Markdown: **Save deck.md**, then open it with the Marp extension for VS Code or `npx @marp-team/marp-cli deck.md --pptx` to get PowerPoint or PDF.
 
 ### Start a new project
 
@@ -217,7 +224,7 @@ Every path must stay inside the approved folder. NOVA refuses paths through symb
 
 Validation runs the whole batch in a copy under NOVA's data folder, so your folder is untouched until you approve. After approval, **Apply atomically** writes every operation or none of them: if one fails, the ones already applied are undone. **Roll back batch** restores every file and removes any folders the batch created. Rollback is refused if any affected file changed after the batch was applied.
 
-For chat requests, name the file you want created, for example "Create src/date.js that exports formatDate". Model output is limited to 1,024 tokens per plan, so ask for small files or split larger features into several requests.
+For chat requests, name the file you want created, for example "Create src/date.js that exports formatDate". Model output is limited to 2,048 tokens per plan by default; set `NOVA_PLAN_MAX_TOKENS` (up to 8192) before `npm start` to allow more, at the cost of fewer files fitting in the model's context. Small, named changes still work best.
 
 ### Provider Browser
 
