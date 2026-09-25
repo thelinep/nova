@@ -44,6 +44,7 @@ const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
 const videoGen = require('./lib/video-gen');
+const videoLtx = require('./lib/video-ltx');
 const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
@@ -302,8 +303,10 @@ const routes = [
       sendJson(res, 202, job);
     } },
   { method: 'POST', pattern: /^\/api\/video\/animate$/, handler: async (req, res) => {
-      const { job } = await videoGen.startAi(store, DATA_DIR, await readJsonBody(req));
-      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.ai.started', jobId: job.id, mediaId: job.settings.mediaId });
+      const body = await readJsonBody(req);
+      // LTX-2 (local MLX, with sound) is the default; engine: 'wan' uses ComfyUI + Wan 2.2.
+      const { job } = body.engine === 'wan' ? await videoGen.startAi(store, DATA_DIR, body) : videoLtx.start(store, DATA_DIR, body);
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.ai.started', engine: job.settings.engine, jobId: job.id, mediaId: job.settings.mediaId });
       sendJson(res, 202, job);
     } },
   { method: 'POST', pattern: /^\/api\/images\/jobs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, imageGen.cancel(store, decodeURIComponent(id))) },

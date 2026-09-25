@@ -8,6 +8,9 @@
  *    push-in, pull-out, pan or tilt on each shot and joins them in order —
  *    an animatic / moving storyboard. No AI model, seconds to render.
  *
+ *  • AI motion is LTX-2 by default (lib/video-ltx.js: MLX on this Mac,
+ *    with sound). Wan 2.2 through ComfyUI stays available as an option:
+ *
  *  • AI motion (ComfyUI + Wan 2.2 TI2V 5B). Sends the still and a prompt to
  *    the local ComfyUI that image generation already uses, with ComfyUI's
  *    standard Wan 2.2 5B image-to-video graph, and saves the clip. Needs the
@@ -29,6 +32,7 @@ const { spawn, execFileSync } = require('node:child_process');
 const media = require('./media');
 const transcriber = require('./transcribe');
 const comfy = require('./image-gen');
+const ltx = require('./video-ltx');
 
 const { error } = comfy;
 const MOVES = ['push-in', 'pull-out', 'pan-left', 'pan-right', 'tilt-up', 'tilt-down', 'hold'];
@@ -329,6 +333,6 @@ async function startAi(store, dataDir, input) {
   return { job, done };
 }
 
-async function status(dataDir) { return { cameraMoves: motionStatus(dataDir), ai: await aiStatus() }; }
+async function status(dataDir) { return { cameraMoves: motionStatus(dataDir), ltx: ltx.status(), ai: await aiStatus() }; }
 
 module.exports = { status, motionStatus, aiStatus, startMotion, startAi, lastFrame, startJoin, normaliseMotion, normaliseAi, motionArgs, moveExpr, aiGraph, MOVES, MOTION_SIZES, AI_SIZES, DEFAULT_NEGATIVE };

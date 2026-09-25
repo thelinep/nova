@@ -157,3 +157,41 @@ test('continuity: the last frame of a clip becomes a still, and clips join into 
   assert.equal(probe, '1280,720,60', 'two 1.25 s clips at 24 fps, fitted to 1280x720');
   assert.deepEqual(joined.provenance.clips.map(c => c.name), ['shot-1.mp4', 'shot-2.mp4']);
 });
+
+test('LTX-2: reports what is missing, then runs ltx-2-mlx and saves the clip with its recipe', async () => {
+  const ltx = require('../lib/video-ltx');
+  const dir = tmp('nova-ltx-'), bin = tmp('nova-ltx-bin-'), fakeHome = tmp('nova-ltx-home-');
+  const saved = { ...process.env };
+  try {
+    process.env.HOME = fakeHome; delete process.env.LTX_MLX_BIN; delete process.env.LTX_MLX_MODEL;
+    const missing = ltx.status();
+    assert.equal(missing.ready, false);
+    assert.match(missing.missing.join(' '), /Install LTX-2 video for NOVA/);
+    // A fake ltx-2-mlx: records its arguments, prints progress, writes an MP4 to -o.
+    fs.writeFileSync(path.join(dir, 'fixture.mp4'), MP4);
+    const fake = path.join(bin, 'ltx-2-mlx');
+    fs.writeFileSync(fake, `#!/bin/sh\necho "$@" > "${path.join(dir, 'args.txt')}"\necho "Denoising 4/8" >&2\nwhile [ $# -gt 0 ]; do [ "$1" = "-o" ] && out="$2"; shift; done\n/bin/cp "${path.join(dir, 'fixture.mp4')}" "$out"\n`, { mode: 0o755 });
+    process.env.LTX_MLX_BIN = fake; process.env.LTX_MLX_ANY_PLATFORM = '1';
+    const s = ltx.status();
+    assert.equal(s.ready, true, s.missing.join('; '));
+    assert.equal(s.model, 'dgrauet/ltx-2.3-mlx-q4');
+    assert.equal(s.weightsCached, false);
+    const db = store();
+    const still = media.saveMedia(db, dir, { buffer: PNG, originalName: 'juhu.png' });
+    const n = ltx.normalise(db, { mediaId: still.id, prompt: 'waves crash, gulls call', seconds: 4, seed: 9 });
+    assert.deepEqual([n.frames, n.width, n.height, n.mode, n.seconds], [97, 704, 480, 'distilled', 4]);
+    assert.equal((ltx.normalise(db, { mediaId: still.id, prompt: 'x', seconds: 3 }).frames - 1) % 8, 0, 'LTX needs 8k+1 frames');
+    assert.throws(() => ltx.normalise(db, { mediaId: still.id, prompt: '' }), /Describe the motion and sound/);
+    const a = ltx.args(n, '/in.png', '/out.mp4');
+    assert.deepEqual(a.slice(0, 5), ['generate', '--prompt', 'waves crash, gulls call', '--image', '/in.png']);
+    assert.ok(a.includes('--distilled') && a.includes('--low-ram') && a.includes('97'));
+    const { job, done } = ltx.start(db, dir, { mediaId: still.id, prompt: 'waves crash, gulls call', seconds: 4, seed: 9, mode: 'two-stage' });
+    await done;
+    const finished = db.get('generationJobs', job.id);
+    assert.equal(finished.status, 'done', finished.error);
+    assert.match(fs.readFileSync(path.join(dir, 'args.txt'), 'utf8'), /--two-stage --low-ram/);
+    const clip = db.get('media', finished.mediaIds[0]);
+    assert.equal(clip.kind, 'video'); assert.equal(clip.source, 'ltx');
+    assert.equal(clip.provenance.engine, 'ltx-2-mlx'); assert.equal(clip.provenance.seed, 9); assert.equal(clip.provenance.audio, true);
+  } finally { process.env = saved; }
+});
