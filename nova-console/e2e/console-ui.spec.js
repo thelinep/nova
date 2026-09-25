@@ -36,6 +36,22 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.getByRole('button', { name: 'Jump to latest message' })).toBeHidden();
   });
 
+  test('top bar shows the open session\'s model and the context budget uses its real window', async ({ page }) => {
+    await page.goto('/');
+    const base = new URL(page.url()).origin;
+    const headers = { Origin: base };
+    // ctxMax in raw tokens is how older syncs stored an Ollama model.
+    expect((await page.request.put(base + '/api/store/models', { headers, data: { id: 'llama3:latest', name: 'llama3:latest', runtime: 'ollama', runtimeKind: 'local', quant: 'Q4_0', ctx: null, ctxMax: 8192 } })).ok()).toBeTruthy();
+    expect((await page.request.put(base + '/api/store/sessions', { headers, data: { id: 'sess_e2e_model', title: 'E2E model pill', modelId: 'llama3:latest', pinned: false, archived: false, tags: [], preferences: { retrieval: false }, createdAt: new Date().toISOString(), updatedAt: new Date(Date.now() + 2e9).toISOString(), messages: [{ id: 'mm1', role: 'user', content: 'hello', createdAt: new Date().toISOString() }] } })).ok()).toBeTruthy();
+    await page.reload();
+    await page.locator('.sess-item', { hasText: 'E2E model pill' }).click();
+    await expect(page.locator('#modelStatusPill')).toContainText('llama3:latest');
+    await expect(page.locator('#railModelLine')).toContainText('llama3:latest');
+    const inspector = page.locator('#inspectorPane');
+    await expect(inspector).toContainText('/ 8,192');
+    await expect(inspector).not.toContainText('Infinity');
+  });
+
   test('creates a session and navigates between Console, Knowledge, Runtime, and Provider Browser', async ({ page }) => {
     await page.goto('/');
     await page.locator('#newSessionBtn').click();

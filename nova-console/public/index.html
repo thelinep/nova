@@ -1142,14 +1142,28 @@ const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Wo
 function modelById(id){ return DB.models.find(m => m.id === id); }
 function sessionById(id){ return DB.sessions.find(s => s.id === id); }
 function activeSession(){ return sessionById(activeSessionId); }
-function loadedModel(){ return DB.models.find(m => m.loaded) || DB.models[0]; }
+// Prefer a model Ollama reports as loaded, then any real Ollama model, and
+// only then the first registry row (which may be a demo record).
+function loadedModel(){ return DB.models.find(m => m.loaded && m.runtime === 'ollama') || DB.models.find(m => m.runtime === 'ollama') || DB.models.find(m => m.loaded) || DB.models[0]; }
+// The model the user is actually talking to: the open session's, else the default.
+function displayModel(){ const s = activeSession(); return (s && modelById(s.modelId)) || loadedModel(); }
+// Context window in tokens. Registry rows store K (32 = 32K); older synced
+// rows stored raw tokens in ctxMax, so large values are taken as tokens.
+function contextTokensFor(m){
+  if (!m) return null;
+  if (m.contextTokens) return m.contextTokens;
+  const v = m.ctx != null ? m.ctx : m.ctxMax;
+  if (v == null || !(Number(v) > 0)) return null;
+  return Number(v) > 1024 ? Number(v) : Number(v) * 1024;
+}
+function ctxLabel(v){ if (v == null) return '—'; const n = Number(v); return (n > 1024 ? Math.round(n / 1024) : n) + 'K'; }
 function visibleSessions(){ return DB.sessions.slice().sort((a,b)=> b.updatedAt.localeCompare(a.updatedAt)); }
 
 /* Privacy is a computed runtime state, not an unconditional claim -- see
    Settings > Privacy. It reflects the network-access preference AND whether
    the currently loaded model actually runs locally. */
 function computePrivacyState(){
-  const lm = loadedModel();
+  const lm = displayModel();
   if (lm && lm.runtimeKind === 'remote') return {level:'REMOTE MODEL', cls:'state-bad', icon:'cloud'};
   if (getPrefs().webAccess) return {level:'NETWORK ALLOWED', cls:'state-info', icon:'wifi'};
   return {level:'LOCAL ONLY', cls:'state-good', icon:'shield-check'};
@@ -1269,7 +1283,7 @@ function startTelemetryLoop(){ stepTelemetry(); setInterval(stepTelemetry, 1400)
 
 function renderModelStatusPill(){
   const el = $('modelStatusPill'); if (!el) return;
-  const lm = loadedModel();
+  const lm = displayModel();
   const stateCls = {IDLE:'state-idle', QUEUED:'state-info', PREPARING:'state-busy', RETRIEVING:'state-busy',
     PREFILL:'state-busy', GENERATING:'state-busy', TOOL_RUNTIME:'state-busy', COMPLETE:'state-good',
     CANCELLING:'state-bad', CANCELLED:'state-idle', ERROR:'state-bad'}[PIPELINE.state] || 'state-idle';
@@ -1435,7 +1449,7 @@ function autoSizeComposer(){
 function renderConvo(){
   const s = activeSession();
   const list = $('msgList'), empty = $('emptyConsole');
-  if (!s){ list.innerHTML=''; empty.style.display='block'; $('convoTitle').textContent='No session open'; $('convoSub').textContent=''; return; }
+  if (!s){ list.innerHTML=''; empty.style.display='block'; $('convoTitle').textContent='No session open'; $('convoSub').textContent=''; renderModelStatusPill(); return; }
   empty.style.display='none';
   $('convoTitle').textContent = s.title;
   const m = modelById(s.modelId);
@@ -1452,6 +1466,7 @@ function renderConvo(){
   else list.scrollTop = previousTop;
   convoForceScroll = false;
   updateJumpLatest();
+  renderModelStatusPill(); renderPrivacyPills();
   if (window.lucide) lucide.createIcons();
   bindMsgEvents();
 }
@@ -1504,7 +1519,7 @@ function computeContextBudget(s){
   const files = ((s._contextFiles||[]).length) * 463;
   const total = system + convo + retrieved + files + instructions;
   const model = modelById(s.modelId);
-  const max = model ? model.ctx*1000 : 32000;
+  const max = contextTokensFor(model);
   return {system, conversation:convo, retrieved, files, instructions, total, max};
 }
 function buildSimulatedReply(promptText, chunks, s){
@@ -1771,7 +1786,7 @@ function inspContextHtml(s){
   const rows = [['System', b.system, 'var(--muted-dim)'], ['Conversation', b.conversation, 'var(--blue)'], ['Retrieved context', b.retrieved, 'var(--green)'], ['Files', b.files, 'var(--violet)'], ['Instructions', b.instructions, 'var(--amber)']];
   const stack = rows.filter(r=>r[1]>0).map(([,val,color])=>`<span style="flex:${val};background:${color}"></span>`).join('');
   return `<div class="insp-section"><h3>Context budget</h3>
-    <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:7px" class="tnum"><span>${b.total.toLocaleString()} / ${b.max.toLocaleString()}</span><span style="color:var(--muted-dim)">${Math.round(b.total/b.max*100)}%</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:7px" class="tnum"><span>${b.total.toLocaleString()} / ${b.max ? b.max.toLocaleString() : 'unknown'}</span><span style="color:var(--muted-dim)">${b.max ? Math.round(b.total/b.max*100)+'%' : 'window not reported'}</span></div>
     <div class="budget-stack">${stack}</div>
     <div style="margin-top:10px">${rows.map(([label,val,color])=>`<div class="budget-row"><span><span class="swatch" style="background:${color}"></span>${label}</span><span class="mono">${val.toLocaleString()}</span></div>`).join('')}</div>
     </div>
@@ -1971,7 +1986,7 @@ function modelCardHtml(m){
       <span>Parameters</span><span>${m.params}</span>
       <span>Disk</span><span>${m.diskGb!=null?fmtBytes(m.diskGb):'—'}</span>
       <span>RAM estimate</span><span>${m.ramGb!=null?fmtBytes(m.ramGb):'—'}</span>
-      <span>Context</span><span>${m.ctx!=null?m.ctx+'K':'—'} / ${m.ctxMax!=null?m.ctxMax+'K':'—'}</span>
+      <span>Context</span><span>${ctxLabel(m.ctx)} / ${ctxLabel(m.ctxMax)}</span>
       <span>GPU layers</span><span>${m.gpuLayers}${typeof m.gpuLayers==='number'?' / '+m.gpuLayersMax:''}</span>
       <span>Prompt tok/s</span><span>${m.promptTps ?? '—'}</span>
       <span>Decode tok/s</span><span>${m.genTps ?? '—'}</span>

@@ -156,8 +156,12 @@ function mapOllamaTagToModel(tag, runningNames, existing, metadata) {
     params: (tag.details && tag.details.parameter_size) || '—',
     diskGb: typeof tag.size === 'number' ? tag.size / 1e9 : null,
     ramGb: prior.ramGb != null ? prior.ramGb : null,
-    ctx: prior.ctx != null ? prior.ctx : null,
-    ctxMax: contextLength || (prior.ctxMax != null ? prior.ctxMax : null),
+    // ctx/ctxMax are in K tokens (the unit the console renders, e.g. "8K");
+    // contextTokens keeps Ollama's exact figure. Older syncs stored raw
+    // tokens in ctxMax, so values above 1024 are normalised here.
+    contextTokens: contextLength || (prior.contextTokens != null ? prior.contextTokens : null),
+    ctxMax: contextLength ? Math.round(contextLength / 1024) : (prior.ctxMax != null ? (prior.ctxMax > 1024 ? Math.round(prior.ctxMax / 1024) : prior.ctxMax) : null),
+    ctx: prior.ctx != null ? (prior.ctx > 1024 ? Math.round(prior.ctx / 1024) : prior.ctx) : (contextLength ? Math.round(contextLength / 1024) : null),
     gpuLayers: prior.gpuLayers != null ? prior.gpuLayers : '—',
     gpuLayersMax: prior.gpuLayersMax != null ? prior.gpuLayersMax : '—',
     promptTps: prior.promptTps != null ? prior.promptTps : null,
