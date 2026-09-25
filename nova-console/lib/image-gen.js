@@ -2,8 +2,9 @@
 /* ===========================================================================
  * NOVA Runtime — local image generation through ComfyUI
  *
- * Talks to a ComfyUI server you run on this computer (COMFYUI_URL, default
- * http://127.0.0.1:8188). Only loopback addresses are accepted, so prompts
+ * Talks to a ComfyUI server you run on this computer. With COMFYUI_URL
+ * unset, NOVA looks at http://127.0.0.1:8188 (manual installs) and then
+ * http://127.0.0.1:8000 (the ComfyUI Desktop app's default). Only loopback addresses are accepted, so prompts
  * and images never leave the machine. NOVA sends a standard text-to-image
  * graph (checkpoint -> prompt/negative -> sampler -> decode -> save),
  * waits for the result, and saves each image into the media store with
@@ -14,19 +15,35 @@
 const crypto = require('node:crypto');
 const media = require('./media');
 
-const DEFAULT_URL = 'http://127.0.0.1:8188';
+const DEFAULT_URLS = ['http://127.0.0.1:8188', 'http://127.0.0.1:8000'];
+let discovered = null;
 const TIMEOUT_MS = 10 * 60 * 1000;
 const POLL_MS = 750;
 const SAMPLERS = ['euler', 'euler_ancestral', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_sde', 'ddim', 'uni_pc'];
 
 function error(message, statusCode = 400) { return Object.assign(new Error(message), { statusCode }); }
 
-function baseUrl() {
-  const raw = process.env.COMFYUI_URL || DEFAULT_URL;
+function checkLocal(raw) {
   let url;
   try { url = new URL(raw); } catch (_) { throw error('COMFYUI_URL is not a valid URL.', 500); }
   if (!['127.0.0.1', 'localhost', '[::1]', '::1'].includes(url.hostname) || url.protocol !== 'http:') throw error('ComfyUI must run on this computer (http://127.0.0.1). Remote image services are not used.', 403);
   return url.origin;
+}
+
+function baseUrl() { return checkLocal(process.env.COMFYUI_URL || discovered || DEFAULT_URLS[0]); }
+
+/** Finds a running ComfyUI: the configured URL, else the known local ports. */
+async function discover() {
+  if (process.env.COMFYUI_URL) return checkLocal(process.env.COMFYUI_URL);
+  for (const candidate of DEFAULT_URLS) {
+    try {
+      const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(candidate + '/system_stats', { signal: controller.signal }).finally(() => clearTimeout(timer));
+      if (res.ok && (await res.json().catch(() => null))?.system) { discovered = candidate; return candidate; }
+    } catch (_) {}
+  }
+  discovered = null;
+  return DEFAULT_URLS[0];
 }
 
 async function call(path, init = {}, timeoutMs = 10000) {
@@ -38,12 +55,13 @@ async function call(path, init = {}, timeoutMs = 10000) {
     return res;
   } catch (e) {
     if (e.statusCode) throw e;
-    throw error(`ComfyUI is not reachable at ${baseUrl()} (${e.name === 'AbortError' ? 'timed out' : e.message}). Start ComfyUI, then try again.`, 503);
+    throw error(`ComfyUI is not reachable${process.env.COMFYUI_URL ? ' at ' + baseUrl() : ' on port 8188 or 8000'} (${e.name === 'AbortError' ? 'timed out' : e.message}). Start ComfyUI, then try again.`, 503);
   } finally { clearTimeout(timer); }
 }
 
 async function status() {
   try {
+    await discover();
     const stats = await (await call('/system_stats')).json();
     const info = await (await call('/object_info/CheckpointLoaderSimple')).json();
     const checkpoints = info?.CheckpointLoaderSimple?.input?.required?.ckpt_name?.[0] || [];

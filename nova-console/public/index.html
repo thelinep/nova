@@ -2850,7 +2850,7 @@ async function renderMediaView(){
     <div class="card-grid cols-2">
       <div class="panel" style="padding:16px">
         <div style="display:flex;justify-content:space-between;gap:8px"><div><span class="eyebrow">Image generation · ComfyUI</span><h2 style="font-size:16px;margin:5px 0">Generate an image</h2></div><span class="badge ${img.reachable?'badge-green':'badge-red'}">${img.reachable?'ComfyUI connected':'ComfyUI offline'}</span></div>
-        ${img.reachable?`<p class="empty-hint">${escapeHtml(img.url)}${img.device?' · '+escapeHtml(img.device):''} · ${img.checkpoints.length} checkpoint(s)</p>`:`<p class="empty-hint">${escapeHtml(img.error||'Not reachable.')} NOVA looks for ComfyUI at ${escapeHtml(img.url||'http://127.0.0.1:8188')} (set COMFYUI_URL to change it).</p>`}
+        ${img.reachable?`<p class="empty-hint">${escapeHtml(img.url)}${img.device?' · '+escapeHtml(img.device):''} · ${img.checkpoints.length} checkpoint(s)</p>`:`<p class="empty-hint">${escapeHtml(img.error||'Not reachable.')} NOVA looks for ComfyUI on this computer at port 8188 (manual install) or 8000 (ComfyUI Desktop); set COMFYUI_URL for another port.</p>`}
         <textarea id="genPrompt" aria-label="Image prompt" placeholder="Rain-soaked Mumbai street at dusk, neon reflections, anamorphic, 35mm film still" style="width:100%;min-height:74px;${field}"></textarea>
         <input id="genNegative" aria-label="Negative prompt" placeholder="Negative prompt (optional): blurry, text, watermark" style="width:100%;margin-top:6px;${field}">
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">

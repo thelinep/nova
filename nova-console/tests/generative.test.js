@@ -169,3 +169,20 @@ test('a broken ffmpeg falls back to macOS afconvert, which refuses formats it ca
     assert.match(transcriber.status(dir).missing.join(' '), /installed one does not start/);
   } finally { process.env = saved; }
 });
+
+test('with no COMFYUI_URL, NOVA finds ComfyUI Desktop on port 8000', async () => {
+  const saved = process.env.COMFYUI_URL; delete process.env.COMFYUI_URL;
+  const fetchBefore = global.fetch;
+  global.fetch = async (url, init) => {
+    if (String(url).startsWith('http://127.0.0.1:8188')) throw new Error('ECONNREFUSED');
+    if (String(url) === 'http://127.0.0.1:8000/system_stats') return new Response(JSON.stringify({ system: { comfyui_version: 'desktop' }, devices: [] }));
+    if (String(url) === 'http://127.0.0.1:8000/object_info/CheckpointLoaderSimple') return new Response(JSON.stringify({ CheckpointLoaderSimple: { input: { required: { ckpt_name: [['a.safetensors']] } } } }));
+    throw new Error('unexpected ' + url);
+  };
+  try {
+    const s = await imageGen.status();
+    assert.equal(s.reachable, true, s.error);
+    assert.equal(s.url, 'http://127.0.0.1:8000');
+    assert.deepEqual(s.checkpoints, ['a.safetensors']);
+  } finally { global.fetch = fetchBefore; if (saved !== undefined) process.env.COMFYUI_URL = saved; }
+});
