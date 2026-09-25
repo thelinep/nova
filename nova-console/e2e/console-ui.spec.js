@@ -15,6 +15,27 @@ test.describe('NOVA Console interactions', () => {
     await expect(composer).toBeInViewport();
   });
 
+  test('long conversations scroll inside the message list and keep the composer on screen', async ({ page }) => {
+    await page.goto('/');
+    const base = new URL(page.url()).origin;
+    const messages = Array.from({ length: 40 }, (_, i) => ({ id: 'long' + i, role: i % 2 ? 'assistant' : 'user', content: `Message ${i} ` + 'lorem ipsum dolor sit amet '.repeat(i % 2 ? 12 : 2), createdAt: new Date().toISOString() }));
+    const put = await page.request.put(base + '/api/store/sessions', { headers: { Origin: base }, data: { id: 'sess_e2e_long', title: 'E2E long chat', modelId: 'llama3:latest', pinned: false, archived: false, tags: [], createdAt: new Date().toISOString(), updatedAt: new Date(Date.now() + 1e9).toISOString(), messages } });
+    expect(put.ok()).toBeTruthy();
+    await page.setViewportSize({ width: 1440, height: 800 });
+    await page.goto('/');
+    await page.locator('.sess-item', { hasText: 'E2E long chat' }).click();
+    const layout = await page.evaluate(() => {
+      const list = document.getElementById('msgList'), composer = document.querySelector('.composer').getBoundingClientRect();
+      return { scrollable: list.scrollHeight > list.clientHeight + 10, composerOnScreen: composer.bottom <= innerHeight && composer.top >= 0, atBottom: list.scrollHeight - list.scrollTop - list.clientHeight < 5 };
+    });
+    expect(layout).toEqual({ scrollable: true, composerOnScreen: true, atBottom: true });
+    const kept = await page.evaluate(() => { const list = document.getElementById('msgList'); list.scrollTop = 0; list.dispatchEvent(new Event('scroll')); renderConvo(); return list.scrollTop; });
+    expect(kept).toBe(0);
+    await expect(page.getByRole('button', { name: 'Jump to latest message' })).toBeVisible();
+    await page.getByRole('button', { name: 'Jump to latest message' }).click();
+    await expect(page.getByRole('button', { name: 'Jump to latest message' })).toBeHidden();
+  });
+
   test('creates a session and navigates between Console, Knowledge, Runtime, and Provider Browser', async ({ page }) => {
     await page.goto('/');
     await page.locator('#newSessionBtn').click();

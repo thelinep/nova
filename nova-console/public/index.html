@@ -74,7 +74,7 @@
   input,select,textarea{font:inherit;color:inherit;}
 
   /* ============ Shell ============ */
-  .shell{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:226px minmax(0,1fr);}
+  .shell{position:relative;z-index:1;height:100vh;height:100dvh;display:grid;grid-template-columns:226px minmax(0,1fr);grid-template-rows:minmax(0,1fr);}
   .shell.rail-collapsed{grid-template-columns:64px minmax(0,1fr);}
   .shell.rail-collapsed .rail-text{display:none;}
 
@@ -101,7 +101,9 @@
 
   .rail-foot{margin-top:auto;border:1px solid var(--line);border-radius:9px;padding:10px;font-size:11px;}
 
-  .app{min-width:0;display:grid;grid-template-rows:54px minmax(0,1fr) 27px;}
+  /* min-height:0 stops a long conversation from stretching the app past the
+     window (the grid item's automatic minimum is its content height). */
+  .app{min-width:0;min-height:0;display:grid;grid-template-rows:54px minmax(0,1fr) 27px;}
 
   .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 16px;border-bottom:1px solid var(--line);background:#0b0e13d9;backdrop-filter:blur(6px);z-index:5;}
   .icon-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#ffffff05;border-radius:7px;color:var(--muted);}
@@ -204,7 +206,8 @@
   .toast.show{transform:none;opacity:1;}
 
   /* ============ Console-specific ============ */
-  .console-grid{height:100%;display:grid;grid-template-columns:252px minmax(380px,1fr) 300px;}
+  .console-grid{height:100%;display:grid;grid-template-columns:252px minmax(380px,1fr) 300px;grid-template-rows:minmax(0,1fr);}
+  #consoleView{overflow:hidden;}
   .sess-pane{border-right:1px solid var(--line);min-height:0;overflow-y:auto;padding:14px;}
   .sess-group-label{font:10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted-dim);margin:14px 0 6px;padding:0 2px;}
   .sess-group-label:first-child{margin-top:0;}
@@ -217,14 +220,14 @@
   .sess-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
   .tag-chip{font:9px var(--font-mono);padding:2px 6px;border-radius:4px;background:#ffffff0a;color:var(--muted);border:1px solid var(--line);}
 
-  .convo-pane{min-width:0;min-height:0;display:flex;flex-direction:column;background:linear-gradient(170deg,#0c0f14,#0a0c10);}
-  .convo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);}
+  .convo-pane{position:relative;min-width:0;min-height:0;height:100%;overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(170deg,#0c0f14,#0a0c10);}
+  .convo-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);}
   .convo-title-wrap{min-width:0;}
   .convo-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .convo-sub{font:10.5px var(--font-mono);color:var(--muted-dim);margin-top:2px;}
   /* Allow the message region to shrink and scroll. Without min-height:0,
      its empty-state content can force the composer below the status bar. */
-  .msg-list{flex:1;min-height:0;overflow-y:auto;padding:22px clamp(14px,3vw,48px) 10px;}
+  .msg-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scroll-behavior:auto;padding:22px clamp(14px,3vw,48px) 10px;}
   .msg{max-width:760px;margin:0 auto 18px;}
   .msg-role{font:10px var(--font-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted-dim);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
   .bubble{border:1px solid var(--line);background:#12171f;border-radius:11px;padding:13px 15px;line-height:1.62;font-size:13.5px;white-space:pre-wrap;}
@@ -236,9 +239,12 @@
   .runtime-inline{max-width:760px;margin:0 auto 14px;font:10.5px var(--font-mono);color:var(--muted-dim);border-left:2px solid var(--amber-line);padding:2px 0 2px 12px;display:flex;gap:10px;align-items:center;}
   .runtime-inline .bar{width:70px;}
 
-  .composer-wrap{padding:10px clamp(14px,3vw,48px) 16px;background:linear-gradient(transparent,#0a0c10 40%);}
+  .composer-wrap{flex:none;position:relative;padding:10px clamp(14px,3vw,48px) 16px;background:linear-gradient(transparent,#0a0c10 40%);}
   .composer{max-width:760px;margin:0 auto;border:1px solid #343f4c;background:#10151c;border-radius:13px;padding:10px;box-shadow:0 14px 38px #0006;}
-  .composer textarea{width:100%;resize:none;border:none;outline:none;background:transparent;color:var(--ink);min-height:44px;max-height:140px;padding:6px;font:13.5px var(--font-ui);}
+  .composer textarea{display:block;box-sizing:border-box;width:100%;resize:none;border:none;outline:none;background:transparent;color:var(--ink);min-height:44px;max-height:200px;overflow-y:auto;line-height:1.5;padding:6px;font:13.5px var(--font-ui);}
+  .jump-latest{position:absolute;left:50%;top:-34px;transform:translateX(-50%);display:none;align-items:center;gap:6px;font:11px var(--font-mono);padding:6px 11px;border-radius:99px;border:1px solid #343f4c;background:#10151c;color:var(--ink);box-shadow:0 8px 20px #0007;cursor:pointer;z-index:3;}
+  .jump-latest.show{display:inline-flex;}
+  .jump-latest:hover{border-color:var(--amber-line);}
   .composer-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:4px;}
   .composer-left,.composer-right{display:flex;align-items:center;gap:6px;}
   .chip-toggle{display:inline-flex;align-items:center;gap:6px;font:11px var(--font-mono);padding:6px 9px;border-radius:7px;border:1px solid var(--line);color:var(--muted);}
@@ -498,6 +504,7 @@
               </div>
             </div>
             <div class="composer-wrap">
+              <button id="jumpLatest" class="jump-latest" type="button" aria-label="Jump to latest message"><span data-lucide="arrow-down" style="width:12px;height:12px"></span>Latest</button>
               <div class="composer">
                 <div id="contextChips" class="context-chips"></div>
                 <textarea id="composer" placeholder="Message NOVA locally…"></textarea>
@@ -1415,6 +1422,16 @@ function exportActiveSession(){
 }
 
 /* ---- conversation ---- */
+let convoForceScroll = false;
+function updateJumpLatest(){
+  const list = $('msgList'), btn = $('jumpLatest'); if (!list || !btn) return;
+  btn.classList.toggle('show', list.scrollHeight - list.scrollTop - list.clientHeight > 120);
+}
+function autoSizeComposer(){
+  const ta = $('composer'); if (!ta) return;
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
+}
 function renderConvo(){
   const s = activeSession();
   const list = $('msgList'), empty = $('emptyConsole');
@@ -1423,8 +1440,18 @@ function renderConvo(){
   $('convoTitle').textContent = s.title;
   const m = modelById(s.modelId);
   $('convoSub').textContent = (m?m.name:'No model') + ' · ' + s.messages.length + ' messages' + (s.forkedFrom?' · forked':'') + (s.snapshots&&s.snapshots.length?' · '+s.snapshots.length+' snapshot'+(s.snapshots.length>1?'s':''):'');
+  // Stay pinned to the newest message only when the reader is already at the
+  // bottom (or just switched sessions / sent a message). Streaming re-renders
+  // on every token, so unconditional scrolling made earlier messages unreadable.
+  const switched = list.dataset.sessionId !== s.id;
+  const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+  const previousTop = list.scrollTop;
   list.innerHTML = s.messages.map(msgHtml).join('');
-  list.scrollTop = list.scrollHeight;
+  list.dataset.sessionId = s.id;
+  if (switched || convoForceScroll || nearBottom) list.scrollTop = list.scrollHeight;
+  else list.scrollTop = previousTop;
+  convoForceScroll = false;
+  updateJumpLatest();
   if (window.lucide) lucide.createIcons();
   bindMsgEvents();
 }
@@ -1518,7 +1545,8 @@ async function sendMessage(){
   if (busy) return;
   const ta = $('composer'); const text = ta.value.trim();
   if (!text) return;
-  ta.value=''; $('tokenCounter').textContent = '0 tok';
+  ta.value=''; autoSizeComposer(); $('tokenCounter').textContent = '0 tok';
+  convoForceScroll = true;
   const msg = {id:uid('msg'), role:'user', content:text, createdAt:nowIso()};
   s.messages.push(msg);
   if (s.title === 'New local session') s.title = text.slice(0,42);
@@ -3905,7 +3933,9 @@ function bindGlobalUI(){
   $$('.modal-close').forEach(b=>b.onclick=closeModelPicker);
   $('modelPickerModal').addEventListener('click', e => { if (e.target.id==='modelPickerModal') closeModelPicker(); });
   $('composer').addEventListener('keydown', e => { if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
-  $('composer').addEventListener('input', () => { $('tokenCounter').textContent = Math.round($('composer').value.length/4)+' tok'; });
+  $('composer').addEventListener('input', () => { autoSizeComposer(); $('tokenCounter').textContent = Math.round($('composer').value.length/4)+' tok'; });
+  $('msgList').addEventListener('scroll', updateJumpLatest, { passive: true });
+  $('jumpLatest').addEventListener('click', () => { const list = $('msgList'); list.scrollTop = list.scrollHeight; updateJumpLatest(); });
   $$('.quick-card').forEach(b=>b.onclick=()=>{
     if (!activeSession()) createSession();
     $('composer').value = b.dataset.prompt;
