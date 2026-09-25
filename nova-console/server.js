@@ -127,7 +127,8 @@ function serveStatic(req, res, pathname) {
       fs.readFile(canonical, (err, data) => {
     if (err) { sendJson(res, 404, { error: 'Not found' }); return; }
     const ext = path.extname(canonical);
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': data.length });
+    // no-cache: the browser revalidates every load, so an updated console shows up on a normal refresh.
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': data.length, 'Cache-Control': 'no-cache' });
     res.end(data);
       });
     });
