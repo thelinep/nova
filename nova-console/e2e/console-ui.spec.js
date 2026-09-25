@@ -134,7 +134,8 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.getByRole('button', { name: 'git-status' })).toBeVisible();
     await page.getByRole('button', { name: 'git-status' }).click();
     await expect(page.getByText('passed').last()).toBeVisible();
-    await expect(page.getByLabel('Command output')).toContainText('nova-console');
+    // `git status --short --branch` always starts with the branch header; file lines depend on the tree.
+    await expect(page.getByLabel('Command output')).toContainText('## ');
     await expect(page.getByText('256.0 KB')).toBeVisible();
   });
 
@@ -184,7 +185,8 @@ test.describe('NOVA Console interactions', () => {
     await page.getByRole('button', { name: 'Validate entire batch' }).click();
     await page.getByRole('button', { name: 'Approve exact batch' }).click();
     await page.getByRole('button', { name: 'Apply atomically' }).click();
-    await expect(page.getByText('Applied 2 files.')).toBeVisible();
+    await expect(page.getByText('Applied 2 change(s).')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Roll back batch' })).toBeVisible();
     await expect(page.getByText('Rollback', {exact:true})).toBeVisible();
   });
 });
