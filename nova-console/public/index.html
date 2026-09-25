@@ -421,6 +421,7 @@
       <div class="nav-label rail-text">Intelligence</div>
       <button class="nav-item" data-view="models"><span data-lucide="cpu"></span><span class="rail-text">Models</span></button>
       <button class="nav-item" data-view="knowledge"><span data-lucide="database"></span><span class="rail-text">Knowledge</span></button>
+      <button class="nav-item" data-view="media"><span data-lucide="image"></span><span class="rail-text">Media</span></button>
       <button class="nav-item" data-view="retrieval"><span data-lucide="flask-conical"></span><span class="rail-text">Retrieval Lab</span></button>
     </div>
     <div class="nav-group">
@@ -510,7 +511,7 @@
                 <textarea id="composer" placeholder="Message NOVA locally…"></textarea>
                 <div class="composer-row">
                   <div class="composer-left">
-                    <button id="attachBtn" class="icon-btn" title="Attach local file" style="width:30px;height:30px"><span data-lucide="paperclip"></span></button>
+                    <button id="attachBtn" class="icon-btn" title="Attach an image" aria-label="Attach an image" style="width:30px;height:30px"><span data-lucide="paperclip"></span></button><input id="attachInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
                     <button id="retrievalToggleBtn" class="chip-toggle on" title="Toggle retrieval"><span data-lucide="search" style="width:11px;height:11px"></span>Retrieval</button>
                     <button id="profileBtn" class="chip-toggle mono" title="Inference profile">Balanced</button>
                   </div>
@@ -545,6 +546,7 @@
       <!-- ===================== KNOWLEDGE ===================== -->
       <section id="knowledgeView" class="view"><div class="view-pad"><!-- VIEW:knowledge --></div></section>
       <!-- ===================== RETRIEVAL LAB ===================== -->
+      <section id="mediaView" class="view"><div class="view-pad"><!-- VIEW:media --></div></section>
       <section id="retrievalView" class="view"><div class="view-pad"><!-- VIEW:retrieval --></div></section>
       <!-- ===================== AUTOMATIONS ===================== -->
       <section id="automationsView" class="view"><div class="view-pad"><!-- VIEW:automations --></div></section>
@@ -793,6 +795,12 @@ function updateExecution(id, patch){
 }
 
 /* ===================== marker: SEED DATA ===================== */
+// Mirrors lib/first-party-skills.js so fresh installs get these too.
+const FIRST_PARTY_EXTRA_SKILLS = [
+  {id:'skl_treatment', name:'Treatment Writer', version:'1.0.0', category:'Pre-production', description:'Turns a brief, notes or script pages into a treatment: logline, synopsis, characters, themes, tone, visual style and structure. Local model only.', manifest:{entrypoint:'treatment.run(context)', inputs:['text','sessionId','title','format','runtime','audience'], outputs:['data','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
+  {id:'skl_shotlist', name:'Shot List', version:'1.0.0', category:'Pre-production', description:'Breaks scenes or script pages into a numbered shot list with size, angle, movement, lens and estimated duration. Local model only.', manifest:{entrypoint:'shotlist.run(context)', inputs:['text','sessionId','title','style','cameraKit'], outputs:['data','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
+  {id:'skl_callsheet', name:'Call Sheet', version:'1.0.0', category:'Pre-production', description:"Drafts one shoot day's call sheet: general call, location, schedule, cast and crew calls, notes. Unknown facts are left as TBC. Local model only.", manifest:{entrypoint:'callsheet.run(context)', inputs:['text','sessionId','production','shootDay','date','generalCall','location','director','producer'], outputs:['data','markdown'], requiredTools:[], requiredHost:['readSession','generate']}},
+];
 async function seedIfEmpty(){
   if (getPrefs().seeded && DB.sessions.length) return;
 
@@ -966,6 +974,10 @@ async function seedIfEmpty(){
      audit:[{at:new Date(t0-8*864e5).toISOString(), action:'Installed', detail:'v1.0.0 from local catalog'},
             {at:new Date(t0-25*60e3).toISOString(), action:'Run', detail:'Query "renderRuntimeView" · 3 matches'}]},
   ];
+  for (const extra of FIRST_PARTY_EXTRA_SKILLS) skills.push({...extra, status:'installed', enabled:true,
+    permissions:[{scope:'session:read', label:'Read active session content', granted:true}, {scope:'network', label:'Network access', granted:false}],
+    health:{ok:true, lastCheck:nowIso(), detail:'Runs on a local Ollama model.'}, installedAt:nowIso(), lastRun:null, runCount:0,
+    audit:[{at:nowIso(), action:'Installed', detail:'v'+extra.version+' first-party skill'}]});
   skills.forEach(s => idbPut('skills', s));
 
   /* ---- MCP registry ---- */
@@ -1134,7 +1146,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', media:'Media',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings'};
@@ -1190,7 +1202,7 @@ function showView(name){
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, media:renderMediaView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView,
@@ -1481,6 +1493,7 @@ function msgHtml(m){
   const planAction = m.workspacePlanId ? `<div style="margin-top:8px"><button class="btn btn-line btn-sm msg-review-plan" data-plan-id="${escapeHtml(m.workspacePlanId)}"><span data-lucide="clipboard-list" style="width:13px;height:13px"></span>Review scan plan</button></div>` : '';
   return `<div class="msg ${m.role}">
     <div class="msg-role"><span>${m.role==='user'?'YOU':'NOVA / LOCAL'}</span>${tools}</div>
+    ${(m.mediaIds||[]).length ? `<div class="msg-images" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:6px">${m.mediaIds.map(id=>`<a href="${mediaUrl(id)}" target="_blank" rel="noopener"><img src="${mediaUrl(id)}" alt="Attached image" loading="lazy" style="max-width:220px;max-height:160px;border-radius:9px;border:1px solid var(--line)"></a>`).join('')}</div>` : ''}
     <div class="bubble">${escapeHtml(m.content)}</div>
     ${cites?`<div class="msg-cites">${cites}</div>`:''}
     ${planAction}
@@ -1509,8 +1522,11 @@ function renderComposerChrome(){
   $('composer').disabled = !s;
   $('sendBtn').disabled = !s;
   const files = (s && s._contextFiles) || [];
-  $('contextChips').innerHTML = files.map((f,i)=>`<span class="ctx-chip">${escapeHtml(f)}<button data-idx="${i}" class="chip-remove-file">×</button></span>`).join('');
+  const images = (s && s._pendingMedia) || [];
+  $('contextChips').innerHTML = images.map((m,i)=>`<span class="ctx-chip"><img src="${mediaUrl(m.id)}" alt="" style="width:18px;height:18px;object-fit:cover;border-radius:3px">${escapeHtml(m.name)}<button data-idx="${i}" class="chip-remove-media" aria-label="Remove ${escapeHtml(m.name)}">×</button></span>`).join('')
+    + files.map((f,i)=>`<span class="ctx-chip">${escapeHtml(f)}<button data-idx="${i}" class="chip-remove-file">×</button></span>`).join('');
   $$('.chip-remove-file').forEach(b=>b.onclick=()=>{ s._contextFiles.splice(+b.dataset.idx,1); renderComposerChrome(); });
+  $$('.chip-remove-media').forEach(b=>b.onclick=()=>{ s._pendingMedia.splice(+b.dataset.idx,1); renderComposerChrome(); });
 }
 function computeContextBudget(s){
   const convo = s.messages.reduce((sum,m)=> sum + Math.round((m.content||'').length/4), 0);
@@ -1558,11 +1574,13 @@ async function sendMessage(){
   const s = activeSession(); if (!s) return;
   const busy = !['IDLE','COMPLETE','CANCELLED','ERROR'].includes(PIPELINE.state);
   if (busy) return;
-  const ta = $('composer'); const text = ta.value.trim();
+  const ta = $('composer'); const pendingMedia = (s._pendingMedia || []).map(m => m.id);
+  const text = ta.value.trim() || (pendingMedia.length ? 'Describe this image.' : '');
   if (!text) return;
   ta.value=''; autoSizeComposer(); $('tokenCounter').textContent = '0 tok';
   convoForceScroll = true;
   const msg = {id:uid('msg'), role:'user', content:text, createdAt:nowIso()};
+  if (pendingMedia.length) { msg.mediaIds = pendingMedia; s._pendingMedia = []; renderComposerChrome(); }
   s.messages.push(msg);
   if (s.title === 'New local session') s.title = text.slice(0,42);
   s.updatedAt = nowIso(); idbPut('sessions', s);
@@ -1666,7 +1684,7 @@ async function runPipeline(s, promptText){
       let firstChunkAt = null;
       outcome = 'done';
       try {
-        const history = s.messages.slice(0, -1).map(m => ({role: m.role, content: m.content}));
+        const history = s.messages.slice(0, -1).map(m => (m.mediaIds && m.mediaIds.length ? {role: m.role, content: m.content, mediaIds: m.mediaIds} : {role: m.role, content: m.content}));
         const resp = await fetch(apiUrl('/api/chat/stream'), {
           method:'POST', headers:{'Content-Type':'application/json'}, signal: controller.signal,
           body: JSON.stringify({
@@ -2616,7 +2634,8 @@ function bindEvaluationsViewEvents(){
 /* ===================== marker: RENDER:SKILLS ===================== */
 const SKILL_STATUS_BADGE = {installed:'badge-green', available:'badge-blue', disabled:'badge-red', needs_update:'badge-amber'};
 function skillById(id){ return DB.skills.find(s=>s.id===id); }
-const REAL_SKILL_IDS = new Set(['skl_codelint','skl_filesearch','skl_webfetch','skl_summarize']); // mirrors server.js's REAL_SKILL_IDS, for labeling only — the server is what actually enforces it
+const REAL_SKILL_IDS = new Set(['skl_codelint','skl_filesearch','skl_webfetch','skl_summarize','skl_treatment','skl_shotlist','skl_callsheet']);
+const PREPRO_SKILL_IDS = new Set(['skl_treatment','skl_shotlist','skl_callsheet']); // mirrors server.js's REAL_SKILL_IDS, for labeling only — the server is what actually enforces it
 const NETWORK_SKILL_IDS = new Set(['skl_webfetch']); // mirrors server.js's NETWORK_SKILL_IDS — labeling only, the server's own gate is what actually blocks the run
 function skillCardHtml(s){
   const open = skillsExpandedId === s.id;
@@ -2638,12 +2657,15 @@ function skillCardHtml(s){
     </div>
     <div class="cap-card-desc">${escapeHtml(s.description)}</div>
     ${installed ? `<div style="font-size:11px;color:var(--muted-dim);margin:-2px 0 8px">${
+      PREPRO_SKILL_IDS.has(s.id) ? 'Runs for real on a local Ollama model. Paste a brief, notes or script pages, or leave the box empty to use the open chat. Unknown facts are left as TBC.' :
       s.id==='skl_summarize' ? 'Runs for real on a local Ollama model, in a sandboxed worker. It reads a session only while session:read is granted, and cites the messages it used.' :
       NETWORK_SKILL_IDS.has(s.id) ? 'Runs for real, in a sandboxed worker — a genuine HTTP request. The server refuses to start it while the workspace is LOCAL ONLY (Settings > Privacy).' :
       isReal ? 'Runs for real, in a sandboxed worker thread — its declared MCP tools are gated by their server’s approval policy.' :
       'Still on the simulated path — needs a real session-transcript API before this one can run for real.'
     }</div>` : ''}
     ${installed && s.id==='skl_filesearch' ? `<input type="text" class="skill-query-input mono" data-id="${s.id}" placeholder="Search query, e.g. cosineSimilarity" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
+    ${installed && PREPRO_SKILL_IDS.has(s.id) ? `<textarea class="skill-text-input" data-id="${s.id}" rows="4" placeholder="${s.id==='skl_callsheet'?'Paste the schedule, cast and crew notes for the day':'Paste a brief, notes or script pages'}, or leave empty to use the open chat" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
+    ${installed && s.lastOutput ? `<details style="margin-bottom:8px"><summary class="empty-hint" style="cursor:pointer">Last output · ${fmtRelDate(s.lastOutput.at)}</summary><pre aria-label="${escapeHtml(s.name)} output" style="white-space:pre-wrap;max-height:320px;overflow:auto;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px">${escapeHtml(s.lastOutput.markdown)}</pre><button class="btn btn-ghost btn-sm skill-copy-output" data-id="${s.id}">Copy Markdown</button></details>` : ''}
     ${installed && s.id==='skl_summarize' ? `<textarea class="skill-text-input" data-id="${s.id}" rows="3" placeholder="Paste text to summarize, or leave empty to summarize the active session" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
     ${installed && s.id==='skl_webfetch' ? `<input type="text" class="skill-url-input mono" data-id="${s.id}" placeholder="https://example.com/page" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
     <div class="cap-card-actions">
@@ -2700,6 +2722,7 @@ function bindSkillsView(){
     s.health = {ok: missing.length===0, lastCheck:nowIso(), detail: missing.length ? 'Missing tool(s): '+missing.join(', ') : 'All required tools available.'};
     idbPut('skills', s); logEvent('SKILL', s.name+' health check: '+(s.health.ok?'ok':'attention')); renderSkillsView();
   });
+  $$('.skill-copy-output').forEach(b=>b.onclick=async()=>{ const sk = DB.skills.find(x=>x.id===b.dataset.id); try{ await navigator.clipboard.writeText(sk.lastOutput.markdown); toast('Copied.'); }catch(_){ toast('Copy failed; select the text instead.'); } });
   $$('.skill-run').forEach(b=>b.onclick=async ()=>{
     const s = DB.skills.find(x=>x.id===b.dataset.id); if (!s || !s.enabled) return;
     if (!REAL_SKILL_IDS.has(s.id)) {
@@ -2722,6 +2745,13 @@ function bindSkillsView(){
       const query = q ? q.value.trim() : '';
       if (!query) { toast('Enter a search query first.'); return; }
       inputs = { query, scope: 'lib' };
+    }
+    if (PREPRO_SKILL_IDS.has(s.id)) {
+      const t = document.querySelector('.skill-text-input[data-id="'+s.id+'"]');
+      const text = t ? t.value.trim() : '';
+      if (text) inputs = { text };
+      else if (activeSessionId) inputs = { sessionId: activeSessionId };
+      else { toast('Paste some text or open a session first.'); return; }
     }
     if (s.id === 'skl_summarize') {
       const t = document.querySelector('.skill-text-input[data-id="'+s.id+'"]');
@@ -2760,6 +2790,105 @@ function bindSkillsView(){
       skillRunBusyIds.delete(s.id); if (currentView==='skills') renderSkillsView();
     }
   });
+}
+
+
+/* ===================== marker: RENDER:MEDIA ===================== */
+/* Local generative media: image generation through ComfyUI on this
+   computer, audio transcription with whisper.cpp, and the files you upload
+   or attach to chat. Every item keeps its recipe (prompt, model, seed ...). */
+let mediaPoll = null;
+const IMAGE_SIZES = [[1024,1024,'Square 1024'],[1344,768,'Wide 16:9'],[768,1344,'Tall 9:16'],[1216,832,'Landscape 3:2'],[832,1216,'Portrait 2:3'],[512,512,'Small 512']];
+async function uploadMediaFile(file){
+  const r = await fetch(apiUrl('/api/media'), {method:'POST', headers:{'Content-Type':'application/octet-stream','X-File-Name':encodeURIComponent(file.name)}, body:file});
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(data.error || ('Upload failed: HTTP '+r.status));
+  return data;
+}
+function mediaUrl(id){ return apiUrl('/api/media/'+encodeURIComponent(id)+'/file'); }
+function attachMediaToSession(record){
+  const s = activeSession(); if (!s) { toast('Open a chat session first.'); return false; }
+  s._pendingMedia = s._pendingMedia || [];
+  if (!s._pendingMedia.some(m=>m.id===record.id)) s._pendingMedia.push({id:record.id, name:record.originalName});
+  renderComposerChrome();
+  return true;
+}
+function mediaRecipe(p){
+  if (!p) return '';
+  return [p.prompt?`Prompt: ${p.prompt}`:'', p.negative?`Negative: ${p.negative}`:'', p.checkpoint?`Checkpoint: ${p.checkpoint}`:'', p.seed!=null?`Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg} · ${p.sampler} · ${p.width}×${p.height}`:''].filter(Boolean).join('\n');
+}
+async function renderMediaView(){
+  const pad = $('mediaView').querySelector('.view-pad');
+  let items=[], jobs=[], img={reachable:false,checkpoints:[],samplers:[]}, stt={ready:false,missing:[]};
+  try{
+    const rs = await Promise.all([fetch(apiUrl('/api/media')), fetch(apiUrl('/api/images/jobs')), fetch(apiUrl('/api/images/status')), fetch(apiUrl('/api/transcribe/status'))]);
+    if (rs[0].ok) items = await rs[0].json(); if (rs[1].ok) jobs = await rs[1].json(); if (rs[2].ok) img = await rs[2].json(); if (rs[3].ok) stt = await rs[3].json();
+  }catch(_){}
+  const collections = DB.knowledgeCollections || [];
+  const field = 'background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px;color:var(--ink)';
+  const running = jobs.filter(j=>j.status==='running');
+  const recentJobs = jobs.slice(0,5);
+  const itemHtml = m => {
+    const t = m.transcription, busy = t && t.status==='running';
+    const preview = m.kind==='image'
+      ? `<a href="${mediaUrl(m.id)}" target="_blank" rel="noopener"><img src="${mediaUrl(m.id)}" alt="${escapeHtml(m.originalName)}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0003"></a>`
+      : `<audio controls preload="none" src="${mediaUrl(m.id)}" style="width:100%"></audio>`;
+    const recipe = mediaRecipe(m.provenance);
+    return `<article class="panel" style="padding:10px">
+      ${preview}
+      <div style="display:flex;justify-content:space-between;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.originalName)}</strong><span class="badge ${m.source==='comfyui'?'badge-blue':''}">${m.source==='comfyui'?'generated':m.kind}</span></div>
+      <div class="empty-hint" style="padding:2px 0">${workspaceBytes ? workspaceBytes(m.bytes) : m.bytes+' B'} · ${fmtRelDate ? fmtRelDate(m.createdAt) : m.createdAt}</div>
+      ${recipe?`<details><summary class="empty-hint" style="cursor:pointer">Recipe</summary><pre style="white-space:pre-wrap;font-size:10.5px;margin:6px 0">${escapeHtml(recipe)}</pre><button class="btn btn-ghost btn-sm media-reuse" data-id="${m.id}">Reuse settings</button></details>`:''}
+      ${m.kind==='audio'?`<div style="margin-top:6px">${t?`<span class="badge ${t.status==='done'?'badge-green':t.status==='failed'?'badge-red':'badge-amber'}">${escapeHtml(t.status==='running'?'transcribing…':t.status)}</span>`:''}${t&&t.error?`<div class="empty-hint">${escapeHtml(t.error)}</div>`:''}
+        ${m.transcript?`<details ${t&&t.status==='done'?'open':''}><summary class="empty-hint" style="cursor:pointer">Transcript · ${m.transcript.segments.length} segments · ${escapeHtml(m.transcript.model||'')}</summary><pre aria-label="Transcript" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:11px">${escapeHtml(m.transcript.text)}</pre></details>`:''}
+        ${busy?'':`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><select class="media-collection" data-id="${m.id}" aria-label="Add transcript to collection" style="${field};padding:5px"><option value="">Don't add to Knowledge</option>${collections.map(c=>`<option value="${escapeHtml(c.id)}">Add to ${escapeHtml(c.name)}</option>`).join('')}</select><button class="btn btn-line btn-sm media-transcribe" data-id="${m.id}" ${stt.ready?'':'disabled'}>${m.transcript?'Transcribe again':'Transcribe'}</button></div>`}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${m.kind==='image'?`<button class="btn btn-line btn-sm media-attach" data-id="${m.id}">Attach to chat</button>`:''}<button class="btn btn-ghost btn-sm media-delete" data-id="${m.id}">Delete</button></div>
+    </article>`;
+  };
+  pad.innerHTML = `
+    <div class="view-head"><div><span class="eyebrow">Generative</span><h1 class="view-title">Media</h1><p class="view-desc">Generate images, transcribe audio, and keep the images and recordings you use with NOVA. Everything runs on this computer; each item keeps the settings that made it.</p></div></div>
+    <div class="card-grid cols-2">
+      <div class="panel" style="padding:16px">
+        <div style="display:flex;justify-content:space-between;gap:8px"><div><span class="eyebrow">Image generation · ComfyUI</span><h2 style="font-size:16px;margin:5px 0">Generate an image</h2></div><span class="badge ${img.reachable?'badge-green':'badge-red'}">${img.reachable?'ComfyUI connected':'ComfyUI offline'}</span></div>
+        ${img.reachable?`<p class="empty-hint">${escapeHtml(img.url)}${img.device?' · '+escapeHtml(img.device):''} · ${img.checkpoints.length} checkpoint(s)</p>`:`<p class="empty-hint">${escapeHtml(img.error||'Not reachable.')} NOVA looks for ComfyUI at ${escapeHtml(img.url||'http://127.0.0.1:8188')} (set COMFYUI_URL to change it).</p>`}
+        <textarea id="genPrompt" aria-label="Image prompt" placeholder="Rain-soaked Mumbai street at dusk, neon reflections, anamorphic, 35mm film still" style="width:100%;min-height:74px;${field}"></textarea>
+        <input id="genNegative" aria-label="Negative prompt" placeholder="Negative prompt (optional): blurry, text, watermark" style="width:100%;margin-top:6px;${field}">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          <select id="genCheckpoint" aria-label="Checkpoint" style="${field};max-width:220px">${img.checkpoints.map(c=>`<option>${escapeHtml(c)}</option>`).join('')||'<option value="">No checkpoints</option>'}</select>
+          <select id="genSize" aria-label="Size" style="${field}">${IMAGE_SIZES.map(([w,h,l])=>`<option value="${w}x${h}">${l} · ${w}×${h}</option>`).join('')}</select>
+          <label class="empty-hint" style="padding:0">Steps <input id="genSteps" type="number" min="1" max="100" value="25" style="width:62px;${field}"></label>
+          <label class="empty-hint" style="padding:0">CFG <input id="genCfg" type="number" min="1" max="20" step="0.5" value="7" style="width:62px;${field}"></label>
+          <label class="empty-hint" style="padding:0">Seed <input id="genSeed" type="number" min="0" placeholder="random" style="width:110px;${field}"></label>
+          <select id="genSampler" aria-label="Sampler" style="${field}">${(img.samplers||[]).map(s=>`<option>${escapeHtml(s)}</option>`).join('')}</select>
+        </div>
+        <button class="btn btn-amber" id="genStart" style="margin-top:10px" ${img.reachable&&img.checkpoints.length?'':'disabled'}>Generate</button>
+        ${recentJobs.length?`<div class="cap-section-label">Recent jobs</div>${recentJobs.map(j=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:12px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(j.settings.prompt)}</span><span><span class="badge ${j.status==='done'?'badge-green':j.status==='running'?'badge-amber':'badge-red'}">${escapeHtml(j.status)}</span>${j.status==='running'?` <button class="btn btn-ghost btn-sm gen-cancel" data-id="${j.id}">Cancel</button>`:''}</span></div>${j.error?`<div class="empty-hint">${escapeHtml(j.error)}</div>`:''}`).join('')}`:''}
+      </div>
+      <div class="panel" style="padding:16px">
+        <div style="display:flex;justify-content:space-between;gap:8px"><div><span class="eyebrow">Speech to text · whisper.cpp</span><h2 style="font-size:16px;margin:5px 0">Upload and transcribe</h2></div><span class="badge ${stt.ready?'badge-green':'badge-amber'}">${stt.ready?'Ready · '+escapeHtml(stt.modelName||''):'Setup needed'}</span></div>
+        <p class="empty-hint">Upload images to use in chat, or audio (interviews, dailies, voice notes) to transcribe. Transcripts can go straight into a Knowledge collection for search, citations and summaries.</p>
+        ${stt.ready?'':`<p class="empty-hint">Transcription needs: ${stt.missing.map(escapeHtml).join('; ')}.</p>`}
+        <input id="mediaUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,audio/*" multiple aria-label="Upload images or audio" style="margin-top:6px">
+      </div>
+    </div>
+    <div class="cap-section-label">Library · ${items.length} item(s)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${items.map(itemHtml).join('')||'<p class="empty-hint">Nothing here yet. Generate an image or upload a file.</p>'}</div>`;
+  if (window.lucide) lucide.createIcons();
+  const post = async (url, body) => { const r = await fetch(apiUrl(url), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{})}); const d = await r.json().catch(()=>({})); if (!r.ok) throw new Error(d.error || ('HTTP '+r.status)); return d; };
+  if ($('genStart')) $('genStart').onclick = async () => {
+    const prompt = $('genPrompt').value.trim(); if (!prompt) return toast('Describe the image first.');
+    const [width,height] = $('genSize').value.split('x').map(Number);
+    try { await post('/api/images/generate', {prompt, negative:$('genNegative').value.trim(), checkpoint:$('genCheckpoint').value, width, height, steps:Number($('genSteps').value), cfg:Number($('genCfg').value), seed:$('genSeed').value===''?undefined:Number($('genSeed').value), sampler:$('genSampler').value}); toast('Generating on ComfyUI…'); renderMediaView(); }
+    catch(e){ toast(e.message); }
+  };
+  $$('.gen-cancel').forEach(b=>b.onclick=async()=>{ try{ await post('/api/images/jobs/'+encodeURIComponent(b.dataset.id)+'/cancel'); renderMediaView(); }catch(e){ toast(e.message); } });
+  $('mediaUpload').onchange = async e => { for (const f of e.target.files){ try{ await uploadMediaFile(f); }catch(err){ toast(f.name+': '+err.message); } } renderMediaView(); };
+  $$('.media-attach').forEach(b=>b.onclick=()=>{ const m = items.find(x=>x.id===b.dataset.id); if (m && attachMediaToSession(m)) { toast('Attached to the open chat. Use a vision model to ask about it.'); showView('console'); } });
+  $$('.media-transcribe').forEach(b=>b.onclick=async()=>{ const sel = document.querySelector('.media-collection[data-id="'+b.dataset.id+'"]'); try{ await post('/api/media/'+encodeURIComponent(b.dataset.id)+'/transcribe', {collectionId: sel && sel.value || undefined}); toast('Transcribing on this computer…'); renderMediaView(); }catch(e){ toast(e.message); } });
+  $$('.media-delete').forEach(b=>b.onclick=async()=>{ try{ const r = await fetch(apiUrl('/api/media/'+encodeURIComponent(b.dataset.id)), {method:'DELETE'}); if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error||'Delete failed'); renderMediaView(); }catch(e){ toast(e.message); } });
+  $$('.media-reuse').forEach(b=>b.onclick=()=>{ const p = (items.find(x=>x.id===b.dataset.id)||{}).provenance||{}; $('genPrompt').value=p.prompt||''; $('genNegative').value=p.negative||''; if (p.checkpoint) $('genCheckpoint').value=p.checkpoint; const size=p.width+'x'+p.height; if ([...$('genSize').options].some(o=>o.value===size)) $('genSize').value=size; $('genSteps').value=p.steps||25; $('genCfg').value=p.cfg||7; $('genSeed').value=p.seed??''; if (p.sampler) $('genSampler').value=p.sampler; $('genPrompt').scrollIntoView({behavior:'smooth',block:'center'}); });
+  if (mediaPoll) { clearTimeout(mediaPoll); mediaPoll = null; }
+  if (running.length || items.some(m=>m.transcription&&m.transcription.status==='running')) mediaPoll = setTimeout(()=>{ mediaPoll=null; if (currentView==='media') renderMediaView(); }, 2000);
 }
 
 /* ===================== marker: RENDER:MCP ===================== */
@@ -3939,7 +4068,11 @@ function bindGlobalUI(){
   $('forkBtn').onclick = forkActiveSession;
   $('snapshotBtn').onclick = snapshotActiveSession;
   $('exportBtn').onclick = exportActiveSession;
-  $('attachBtn').onclick = simulateAttachFile;
+  $('attachBtn').onclick = () => { if (!activeSession()) return toast('Open a session first.'); $('attachInput').click(); };
+  $('attachInput').onchange = async e => {
+    for (const f of e.target.files){ try{ attachMediaToSession(await uploadMediaFile(f)); }catch(err){ toast(f.name+': '+err.message); } }
+    e.target.value = '';
+  };
   $('retrievalToggleBtn').onclick = toggleRetrievalForSession;
   $('profileBtn').onclick = cycleInferenceProfile;
   $('sendBtn').onclick = sendMessage;

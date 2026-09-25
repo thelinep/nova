@@ -40,6 +40,10 @@ const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
 const workspaceProjects = require('./lib/workspace-projects');
 const devLoop = require('./lib/dev-loop');
+const media = require('./lib/media');
+const transcriber = require('./lib/transcribe');
+const imageGen = require('./lib/image-gen');
+const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
@@ -96,6 +100,20 @@ function sendError(res, err) {
 // the same audit-trail helper from a background tick with no request/
 // response in play, so it moved out from under server.js rather than being
 // duplicated (see lib/exec-log.js's own header for why).
+
+/** Reads a raw upload body up to `limit` bytes. */
+function readRawBody(req, limit) {
+  return new Promise((resolve, reject) => {
+    const chunks = []; let size = 0;
+    req.on('data', c => {
+      size += c.length;
+      if (size > limit) { reject(Object.assign(new Error('File too large'), { statusCode: 413 })); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -228,6 +246,37 @@ async function syncModelsFromOllama() {
 /* --------------------------------- routes -------------------------------- */
 
 const routes = [
+  /* ---- media: uploads, generated images, transcripts ---- */
+  { method: 'GET', pattern: /^\/api\/media$/, handler: async (_req, res) => sendJson(res, 200, store.all('media').reverse()) },
+  { method: 'POST', pattern: /^\/api\/media$/, handler: async (req, res) => {
+      const name = decodeURIComponent(String(req.headers['x-file-name'] || 'upload'));
+      const buffer = await readRawBody(req, media.LIMITS.audio);
+      sendJson(res, 201, media.saveMedia(store, DATA_DIR, { buffer, originalName: name, source: 'upload' }));
+    } },
+  { method: 'GET', pattern: /^\/api\/media\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, media.getMedia(store, decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/media\/([^/]+)\/file$/, handler: async (_req, res, [id]) => {
+      const record = media.getMedia(store, decodeURIComponent(id));
+      const file = media.filePath(DATA_DIR, record);
+      res.writeHead(200, { 'Content-Type': record.mime, 'Content-Length': fs.statSync(file).size, 'Cache-Control': 'private, max-age=31536000, immutable', 'Content-Disposition': `inline; filename="${record.id}${path.extname(record.fileName)}"` });
+      fs.createReadStream(file).pipe(res);
+    } },
+  { method: 'DELETE', pattern: /^\/api\/media\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, media.deleteMedia(store, DATA_DIR, decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/transcribe\/status$/, handler: async (_req, res) => sendJson(res, 200, transcriber.status(DATA_DIR)) },
+  { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/transcribe$/, handler: async (req, res, [id]) => {
+      const body = await readJsonBody(req);
+      const { record } = transcriber.start(store, DATA_DIR, { ingestDocument, ollama }, decodeURIComponent(id), body);
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.transcription.started', mediaId: record.id, collectionId: body.collectionId || null });
+      sendJson(res, 202, record);
+    } },
+  { method: 'GET', pattern: /^\/api\/images\/status$/, handler: async (_req, res) => sendJson(res, 200, await imageGen.status()) },
+  { method: 'GET', pattern: /^\/api\/images\/jobs$/, handler: async (_req, res) => sendJson(res, 200, store.all('generationJobs').reverse()) },
+  { method: 'GET', pattern: /^\/api\/images\/jobs\/([^/]+)$/, handler: async (_req, res, [id]) => { const job = store.get('generationJobs', decodeURIComponent(id)); if (!job) { sendJson(res, 404, { error: 'Unknown generation job.' }); return; } sendJson(res, 200, job); } },
+  { method: 'POST', pattern: /^\/api\/images\/generate$/, handler: async (req, res) => {
+      const { job } = await imageGen.generate(store, DATA_DIR, await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.image.generation.started', jobId: job.id, checkpoint: job.settings.checkpoint });
+      sendJson(res, 202, job);
+    } },
+  { method: 'POST', pattern: /^\/api\/images\/jobs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, imageGen.cancel(store, decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/workspace\/roots$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRoots')) },
   { method: 'POST', pattern: /^\/api\/workspace\/roots$/, handler: async (req, res) => {const root=workspaceScanner.approveRoot(store,await readJsonBody(req));const permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:['filesystem:read'],source:'explicit-root-approval'});desktopSecurity.appendAudit(DATA_DIR,{action:'permission.granted',rootId:root.id,permissionId:permission.id,exactPath:root.path});sendJson(res,201,root);} },
   { method: 'DELETE', pattern: /^\/api\/workspace\/roots\/([^/]+)$/, handler: async (_req, res, [id]) => {const rootId=decodeURIComponent(id);store.delete('workspaceRoots',rootId);for(const permission of store.all('workspacePermissions').filter(x=>x.rootId===rootId)){permission.status='revoked';permission.revokedAt=new Date().toISOString();store.put('workspacePermissions',permission);}desktopSecurity.appendAudit(DATA_DIR,{action:'permission.revoked',rootId});sendJson(res, 200, { ok:true });} },
@@ -361,8 +410,22 @@ const routes = [
   {
     method: 'POST', pattern: /^\/api\/chat\/stream$/, handler: async (req, res) => {
       const body = await readJsonBody(req);
-      const { model, messages, options } = body;
-      if (!model || !Array.isArray(messages)) { sendJson(res, 400, { error: 'Expected {model, messages[]}' }); return; }
+      const { model, options } = body;
+      if (!model || !Array.isArray(body.messages)) { sendJson(res, 400, { error: 'Expected {model, messages[]}' }); return; }
+      // Messages may carry mediaIds for attached images; Ollama wants base64 in `images`.
+      const hasImages = body.messages.some(m => Array.isArray(m.mediaIds) && m.mediaIds.length);
+      if (hasImages) {
+        const record = store.get('models', model);
+        if (record && Array.isArray(record.capabilities) && record.capabilities.length && !record.capabilities.includes('vision')) {
+          sendJson(res, 400, { error: `${model} cannot read images. Choose a vision model such as llava or llama3.2-vision (ollama pull llama3.2-vision), then sync models.` });
+          return;
+        }
+      }
+      const messages = body.messages.map(m => {
+        const out = { role: m.role, content: m.content };
+        if (Array.isArray(m.mediaIds) && m.mediaIds.length) out.images = media.imagesForChat(store, DATA_DIR, m.mediaIds);
+        return out;
+      });
       const controller = new AbortController();
       req.on('close', () => controller.abort());
       let upstream;
@@ -547,6 +610,8 @@ const routes = [
         skill.lastRun = finishedAt;
         skill.runCount = (skill.runCount || 0) + 1;
         skill.health = { ok: true, lastCheck: finishedAt, detail: 'Ran successfully.' };
+        if (result && typeof result.markdown === 'string') skill.lastOutput = { at: finishedAt, markdown: result.markdown.slice(0, 50000) };
+        else if (result && typeof result.summary === 'string') skill.lastOutput = { at: finishedAt, markdown: result.summary };
         skill.audit = skill.audit || [];
         skill.audit.push({ at: finishedAt, action: 'Run', detail: summarizeSkillResult(skillId, result) });
         store.put('skills', skill);
@@ -621,7 +686,7 @@ const routes = [
 // in Phase 5). Anything else still runs on the frontend's pre-existing
 // simulated path — labeled as such in the UI — rather than faking a real
 // run here.
-const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_webfetch', 'skl_summarize']);
+const REAL_SKILL_IDS = new Set(['skl_codelint', 'skl_filesearch', 'skl_webfetch', 'skl_summarize', 'skl_treatment', 'skl_shotlist', 'skl_callsheet']);
 
 // Skills that genuinely reach the network when they run — gated below by
 // the workspace's own privacy preference, not just a descriptive UI label.
@@ -649,6 +714,9 @@ function summarizeSkillResult(skillId, result) {
   if (skillId === 'skl_summarize' && result && typeof result === 'object') {
     return 'Real summary — ' + result.wordCount + ' word(s), ' + ((result.citations || []).length) + ' citation(s) from ' +
       (result.source ? result.source.segments : 0) + ' passage(s) via ' + (result.model || 'local model') + ' (' + result.strategy + ').';
+  }
+  if (['skl_treatment', 'skl_shotlist', 'skl_callsheet'].includes(skillId) && result && typeof result === 'object') {
+    return 'Real ' + result.kind + ' via ' + (result.model || 'local model') + (result.repaired ? ' (repaired once)' : '') + (result.sourceTruncated ? ', source truncated' : '') + '.';
   }
   return 'Real sandboxed run completed.';
 }
@@ -699,6 +767,10 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
   const interruptedRuns=workspaceRunner.recoverInterrupted(store);
   if(interruptedRuns)console.log(`  recovered:   ${interruptedRuns} interrupted workspace run(s)`);
+  const addedSkills=ensureFirstPartySkills(store);
+  if(addedSkills)console.log(`  skills:      added ${addedSkills} new first-party skill(s)`);
+  const interruptedMedia=transcriber.recoverInterrupted(store)+imageGen.recoverInterrupted(store);
+  if(interruptedMedia)console.log(`  recovered:   ${interruptedMedia} interrupted media job(s)`);
   const interruptedLoops=devLoop.recoverInterrupted(store);
   if(interruptedLoops)console.log(`  recovered:   ${interruptedLoops} interrupted development loop(s)`);
   const interruptedCollectors=collectorWorkflows.recoverInterrupted(store);

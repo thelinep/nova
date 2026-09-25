@@ -154,6 +154,18 @@ Start with a small, low-risk task:
 
 Workflows are restart-resilient, but a restart cannot make an unavailable model, disconnected MCP server, rejected approval, or invalid input succeed. Treat any publishing, deletion, or external-effect node as a review point.
 
+### Media: images, audio and transcripts
+
+Open **Media** in the sidebar. Everything here runs on your computer, and each item keeps the settings that made it.
+
+- **Images in chat.** Use the paperclip in the composer, or **Attach to chat** in Media, to add PNG, JPEG, WebP or GIF images to your next message. Reading images needs a vision model, for example `ollama pull llama3.2-vision` or `ollama pull llava`, then sync models. A text-only model is refused with a message saying so.
+- **Image generation (ComfyUI).** Start ComfyUI on this computer (NOVA looks at `http://127.0.0.1:8188`; set `COMFYUI_URL` to change the port). Only local addresses are accepted. Choose a checkpoint, size, steps, CFG, seed and sampler, then **Generate**. Each image is saved with its prompt, negative prompt, checkpoint and seed; **Reuse settings** loads them back.
+- **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
+
+### Pre-production skills
+
+**Treatment Writer**, **Shot List** and **Call Sheet** are in **Skills**. Paste a brief, notes, schedule or script pages, or leave the box empty to use the open chat. Each runs on a local Ollama model, returns a structured result shown as Markdown (tables for shot lists and call sheets), and writes "TBC" for facts that are not in the source, such as addresses or hospital details. They can also run as workflow steps, taking the previous step's output as input.
+
 ### Start a new project
 
 In **Local Workspace**, use **New project** to start an app from a template. Choose an approved parent folder, a project name (lowercase letters, numbers, dashes or underscores), an optional title, and a template:

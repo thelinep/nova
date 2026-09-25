@@ -14,8 +14,13 @@
  *   generate    — local Ollama models only; API/remote models are refused
  * ========================================================================= */
 
-const FIRST_PARTY_HOST = { skl_summarize: ['readSession', 'generate'] };
-const MAX_OUTPUT_TOKENS = 1024;
+const FIRST_PARTY_HOST = {
+  skl_summarize: ['readSession', 'generate'],
+  skl_treatment: ['readSession', 'generate'],
+  skl_shotlist: ['readSession', 'generate'],
+  skl_callsheet: ['readSession', 'generate'],
+};
+const MAX_OUTPUT_TOKENS = 3072;
 
 function httpErr(statusCode, message) { return Object.assign(new Error(message), { statusCode }); }
 
@@ -69,7 +74,7 @@ function buildSkillHost(store, ollama, skill, options = {}) {
   }
 
   if (allowed.has('generate')) {
-    host.generate = async ({ system, prompt, modelId, maxTokens } = {}) => {
+    host.generate = async ({ system, prompt, modelId, maxTokens, format } = {}) => {
       if (!ollama) throw httpErr(503, 'Ollama is not configured.');
       if (!prompt || !String(prompt).trim()) throw httpErr(400, 'generate needs a prompt');
       const localSession = sessionModelId && store.get('models', sessionModelId);
@@ -79,7 +84,7 @@ function buildSkillHost(store, ollama, skill, options = {}) {
       if (system) messages.push({ role: 'system', content: String(system).slice(0, 4000) });
       messages.push({ role: 'user', content: String(prompt) });
       const numPredict = Math.max(32, Math.min(MAX_OUTPUT_TOKENS, Number(maxTokens) || 512));
-      const response = await ollama.chatFull(model, messages, { options: { temperature: 0.2, num_predict: numPredict } });
+      const response = await ollama.chatFull(model, messages, { options: { temperature: 0.2, num_predict: numPredict }, ...(format === 'json' ? { format: 'json' } : {}) });
       return { text: String((response && response.message && response.message.content) || ''), model, doneReason: (response && response.done_reason) || null };
     };
   }

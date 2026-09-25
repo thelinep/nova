@@ -17,6 +17,7 @@ test.describe('NOVA Console interactions', () => {
 
   test('long conversations scroll inside the message list and keep the composer on screen', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle'); // let first-run seeding finish before changing the store
     const base = new URL(page.url()).origin;
     const messages = Array.from({ length: 40 }, (_, i) => ({ id: 'long' + i, role: i % 2 ? 'assistant' : 'user', content: `Message ${i} ` + 'lorem ipsum dolor sit amet '.repeat(i % 2 ? 12 : 2), createdAt: new Date().toISOString() }));
     const put = await page.request.put(base + '/api/store/sessions', { headers: { Origin: base }, data: { id: 'sess_e2e_long', title: 'E2E long chat', modelId: 'llama3:latest', pinned: false, archived: false, tags: [], createdAt: new Date().toISOString(), updatedAt: new Date(Date.now() + 1e9).toISOString(), messages } });
@@ -38,6 +39,7 @@ test.describe('NOVA Console interactions', () => {
 
   test('top bar shows the open session\'s model and the context budget uses its real window', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle'); // let first-run seeding finish before changing the store
     const base = new URL(page.url()).origin;
     const headers = { Origin: base };
     // ctxMax in raw tokens is how older syncs stored an Ollama model.
@@ -50,6 +52,26 @@ test.describe('NOVA Console interactions', () => {
     const inspector = page.locator('#inspectorPane');
     await expect(inspector).toContainText('/ 8,192');
     await expect(inspector).not.toContainText('Infinity');
+  });
+
+  test('media view uploads an image, keeps it in the library, and attaches it to chat', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.sess-item').first().click();
+    await page.locator('[data-view="media"]').click();
+    await expect(page.getByRole('heading', { name: 'Generate an image' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Upload and transcribe' })).toBeVisible();
+    const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082', 'hex');
+    await page.getByLabel('Upload images or audio').setInputFiles({ name: 'location-scout.png', mimeType: 'image/png', buffer: png });
+    await expect(page.getByText('location-scout.png')).toBeVisible();
+    await page.getByRole('button', { name: 'Attach to chat' }).first().click();
+    await expect(page.locator('#contextChips')).toContainText('location-scout.png');
+  });
+
+  test('pre-production skills are installed and ask for a brief', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-view="skills"]').click();
+    for (const name of ['Treatment Writer', 'Shot List', 'Call Sheet']) await expect(page.getByText(name, { exact: true })).toBeVisible();
+    await expect(page.locator('.skill-text-input[data-id="skl_shotlist"]')).toBeVisible();
   });
 
   test('creates a session and navigates between Console, Knowledge, Runtime, and Provider Browser', async ({ page }) => {
