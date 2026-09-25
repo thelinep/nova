@@ -74,6 +74,20 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.locator('.skill-text-input[data-id="skl_shotlist"]')).toBeVisible();
   });
 
+  test('every sidebar view opens without a script error', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    const views = await page.locator('.nav-item[data-view]').evaluateAll(items => items.map(item => item.dataset.view));
+    expect(views.length).toBeGreaterThan(15);
+    for (const view of views) {
+      await page.locator(`.nav-item[data-view="${view}"]`).click();
+      await page.waitForTimeout(150);
+      expect(errors, `opening ${view}`).toEqual([]);
+    }
+  });
+
   test('creates a session and navigates between Console, Knowledge, Runtime, and Provider Browser', async ({ page }) => {
     await page.goto('/');
     await page.locator('#newSessionBtn').click();
