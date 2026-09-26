@@ -64,7 +64,8 @@ if [ $APP = 1 ]; then
   cat > "$COMFY_DIR/start-comfyui.command" <<START
 #!/bin/bash
 # Double-click to start ComfyUI for NOVA (http://127.0.0.1:8188). Close this window to stop it.
-cd "$COMFY_DIR" && exec ./.venv/bin/python main.py --listen 127.0.0.1 --port 8188
+# --cpu-vae: Apple's GPU backend cannot run the ACE-Step music decoder.
+cd "$COMFY_DIR" && exec ./.venv/bin/python main.py --listen 127.0.0.1 --port 8188 --cpu-vae
 START
   chmod +x "$COMFY_DIR/start-comfyui.command"
 fi

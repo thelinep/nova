@@ -111,7 +111,11 @@ async function waitForOutputs(store, job, promptId, timeoutMs, label = 'Generati
     if (job.cancelRequested) { await call('/interrupt', { method: 'POST' }).catch(() => {}); throw error('Cancelled.', 499); }
     const history = await (await call('/history/' + encodeURIComponent(promptId))).json();
     const entry = history[promptId];
-    if (entry?.status?.status_str === 'error') throw error('ComfyUI reported an error: ' + JSON.stringify(entry.status.messages || []).slice(0, 400), 502);
+    if (entry?.status?.status_str === 'error') {
+      const detail = JSON.stringify(entry.status.messages || []);
+      if (/Output channels > 65536 not supported at the MPS device/.test(detail)) throw error('ComfyUI could not decode this on the Apple GPU. Restart ComfyUI with "Start ComfyUI for NOVA.command" in the brahmini folder (it decodes on the CPU), then try again.', 502);
+      throw error('ComfyUI reported an error: ' + detail.slice(0, 400), 502);
+    }
     if (entry?.outputs && Object.keys(entry.outputs).length) return entry.outputs;
     await new Promise(r => setTimeout(r, POLL_MS));
     const latest = store.get('generationJobs', job.id); if (latest) job.cancelRequested = latest.cancelRequested;
