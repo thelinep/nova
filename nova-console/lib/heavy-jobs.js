@@ -16,7 +16,7 @@
 
 const os = require('node:os');
 
-const HEAVY_TYPES = new Set(['image-generation', 'video-ai', 'video-ltx']);
+const HEAVY_TYPES = new Set(['image-generation', 'video-ai', 'video-ltx', 'audio-sfx', 'audio-music']);
 const GB = 1024 ** 3;
 
 function error(message, statusCode) { return Object.assign(new Error(message), { statusCode }); }

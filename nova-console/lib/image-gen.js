@@ -154,6 +154,84 @@ async function generate(store, dataDir, input) {
   return { job, done };
 }
 
+/* ------------------------- shared ComfyUI job helpers ------------------------ */
+
+/** Uploads a media-store image to ComfyUI's input folder; returns the name LoadImage needs. */
+async function uploadImage(dataDir, record) {
+  const fs = require('node:fs'), path = require('node:path');
+  const form = new FormData();
+  form.append('image', new Blob([fs.readFileSync(media.filePath(dataDir, record))], { type: record.mime }), 'nova-' + record.id + path.extname(record.fileName));
+  form.append('overwrite', 'true');
+  const up = await (await call('/upload/image', { method: 'POST', body: form }, 60000)).json();
+  return up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
+}
+
+/** Queues a graph, waits, downloads outputs of one kind and saves them with a recipe. */
+async function runGraph(store, dataDir, job, { graph: g, kind, ext, name, provenance, timeoutMs = TIMEOUT_MS, label = 'Generation' }) {
+  const queued = await (await call('/prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: g, client_id: 'nova-' + crypto.randomBytes(6).toString('hex') }) })).json();
+  if (!queued.prompt_id) throw error('ComfyUI did not accept the job: ' + JSON.stringify(queued.node_errors || queued).slice(0, 300), 502);
+  job.promptId = queued.prompt_id; store.put('generationJobs', job);
+  const outputs = await waitForOutputs(store, job, queued.prompt_id, timeoutMs, label);
+  const files = Object.values(outputs).flatMap(o => [...(o.images || []), ...(o.audio || []), ...(o.videos || [])]).filter(f => ext.test(f.filename || ''));
+  if (!files.length) throw error(`ComfyUI finished without producing ${kind === 'audio' ? 'audio' : 'an image'}.`, 502);
+  const ids = [];
+  for (const f of files) {
+    const query = new URLSearchParams({ filename: f.filename, subfolder: f.subfolder || '', type: f.type || 'output' });
+    const buffer = Buffer.from(await (await call('/view?' + query, {}, 120000)).arrayBuffer());
+    ids.push(media.saveMedia(store, dataDir, { buffer, originalName: name + (f.filename.match(/\.[a-z0-9]+$/i) || [''])[0], source: 'comfyui', expectKind: kind,
+      provenance: { generator: 'comfyui', comfyuiUrl: baseUrl(), promptId: queued.prompt_id, ...provenance, jobId: job.id, comfyFile: f.filename } }).id);
+  }
+  return ids;
+}
+
+/** Records a job and runs it in the background. */
+function startJob(store, type, settings, run) {
+  const job = { id: 'gen_' + crypto.randomBytes(8).toString('hex'), type, status: 'running', settings, promptId: null, mediaIds: [], error: null, cancelRequested: false, createdAt: new Date().toISOString(), finishedAt: null };
+  store.put('generationJobs', job);
+  const done = (async () => {
+    try { job.mediaIds = await run(job); job.status = 'done'; }
+    catch (e) { job.status = e.statusCode === 499 ? 'cancelled' : 'failed'; job.error = e.message || String(e); }
+    finally { job.finishedAt = new Date().toISOString(); store.put('generationJobs', job); }
+  })();
+  return { job, done };
+}
+
+/* ------------------------------- image to image ------------------------------ */
+
+function normaliseImg2Img(store, input, checkpoints) {
+  const record = media.getMedia(store, input.mediaId);
+  if (record.kind !== 'image') throw error('Choose an image to start from.');
+  const base = normalise({ ...input, width: 1024, height: 1024, batch: 1 }, checkpoints);
+  const strength = Math.min(0.95, Math.max(0.1, Number(input.strength) || 0.55));
+  return { ...base, mode: 'img2img', sourceMediaId: record.id, sourceName: record.originalName, strength, megapixels: 1.0, width: undefined, height: undefined, batch: undefined };
+}
+
+/** Standard SDXL image-to-image: the source is scaled to about 1 megapixel, encoded and partly re-noised (denoise = strength). */
+function img2imgGraph(s, imageName) {
+  return {
+    '4': { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: s.checkpoint } },
+    '10': { class_type: 'LoadImage', inputs: { image: imageName } },
+    '11': { class_type: 'ImageScaleToTotalPixels', inputs: { image: ['10', 0], upscale_method: 'lanczos', megapixels: s.megapixels } },
+    '12': { class_type: 'VAEEncode', inputs: { pixels: ['11', 0], vae: ['4', 2] } },
+    '6': { class_type: 'CLIPTextEncode', inputs: { text: s.prompt, clip: ['4', 1] } },
+    '7': { class_type: 'CLIPTextEncode', inputs: { text: s.negative, clip: ['4', 1] } },
+    '3': { class_type: 'KSampler', inputs: { seed: s.seed, steps: s.steps, cfg: s.cfg, sampler_name: s.sampler, scheduler: s.scheduler, denoise: s.strength, model: ['4', 0], positive: ['6', 0], negative: ['7', 0], latent_image: ['12', 0] } },
+    '8': { class_type: 'VAEDecode', inputs: { samples: ['3', 0], vae: ['4', 2] } },
+    '9': { class_type: 'SaveImage', inputs: { filename_prefix: 'nova-img2img', images: ['8', 0] } },
+  };
+}
+
+async function generateFromImage(store, dataDir, input) {
+  const info = await status();
+  if (!info.reachable) throw error(info.error, 503);
+  const settings = normaliseImg2Img(store, input, info.checkpoints);
+  const source = media.getMedia(store, settings.sourceMediaId);
+  return startJob(store, 'image-generation', settings, async job => {
+    const name = await uploadImage(dataDir, source);
+    return runGraph(store, dataDir, job, { graph: img2imgGraph(settings, name), kind: 'image', ext: /\.(png|jpe?g|webp)$/i, name: settings.prompt.slice(0, 60), provenance: settings, label: 'Image to image' });
+  });
+}
+
 function cancel(store, id) {
   const job = store.get('generationJobs', id);
   if (!job) throw error('Unknown generation job.', 404);
@@ -168,4 +246,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { status, generate, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };
+module.exports = { status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };

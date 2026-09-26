@@ -62,7 +62,7 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.getByRole('heading', { name: 'Upload and transcribe' })).toBeVisible();
     const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082', 'hex');
     await page.getByLabel('Upload images, audio or video').setInputFiles({ name: 'location-scout.png', mimeType: 'image/png', buffer: png });
-    await expect(page.getByText('location-scout.png')).toBeVisible();
+    await expect(page.locator('article strong', { hasText: 'location-scout.png' })).toBeVisible();
     await page.getByRole('button', { name: 'Attach to chat' }).first().click();
     await expect(page.locator('#contextChips')).toContainText('location-scout.png');
   });
@@ -73,16 +73,22 @@ test.describe('NOVA Console interactions', () => {
     await page.locator('[data-view="media"]').click();
     await expect(page.getByRole('heading', { name: 'Animate stills' })).toBeVisible();
     await expect(page.locator('#libraryPanel')).toContainText('Set by NOVA_LIBRARY_DIR');
+    await expect(page.getByRole('heading', { name: 'Voice, sound effects, music' })).toBeVisible();
+    await page.getByLabel('Audio type').selectOption('music');
+    await expect(page.getByLabel('Lyrics')).toBeVisible();
+    await expect(page.getByLabel('Start from an image')).toBeVisible();
     await expect(page.locator('#libraryPanel code')).toHaveText(/nova-e2e-.*\/library$/);
     const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082', 'hex');
     await page.getByLabel('Upload images, audio or video').setInputFiles({ name: 'storyboard-01.png', mimeType: 'image/png', buffer: png });
-    await expect(page.getByText('storyboard-01.png').first()).toBeVisible();
+    await expect(page.locator('article strong', { hasText: 'storyboard-01.png' })).toBeVisible();
     await page.getByRole('button', { name: 'Animate', exact: true }).first().click();
     await expect(page.locator('.video-shot')).toHaveCount(1);
     await expect(page.getByLabel('Camera move for shot 1')).toHaveValue('push-in');
     await expect(page.getByRole('button', { name: 'Render clip' })).toBeVisible();
     await page.getByRole('button', { name: 'Remove shot 1' }).click();
     await expect(page.locator('.video-shot')).toHaveCount(0);
+    await page.getByLabel('Upload stills to animate').setInputFiles({ name: 'still-2.png', mimeType: 'image/png', buffer: png });
+    await expect(page.locator('.video-shot')).toHaveCount(1);
   });
 
   test('pre-production skills are installed and ask for a brief', async ({ page }) => {

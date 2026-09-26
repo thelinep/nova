@@ -6,14 +6,15 @@
 #   bash scripts/install-comfyui-mac.sh              # everything
 #   bash scripts/install-comfyui-mac.sh --no-wan     # skip the video models
 #   bash scripts/install-comfyui-mac.sh --models-only
+#   bash scripts/install-comfyui-mac.sh --models-only --no-sdxl --no-wan --audio   # sound effects + music models (~12.8 GB)
 #   COMFY_DIR=~/Documents/ComfyUI bash scripts/install-comfyui-mac.sh
 #
 # Safe to run again: finished steps are skipped and interrupted downloads resume.
 set -euo pipefail
 
 COMFY_DIR="${COMFY_DIR:-$HOME/ComfyUI}"
-WAN=1; SDXL=1; APP=1
-for arg in "$@"; do case "$arg" in --no-wan) WAN=0;; --no-sdxl) SDXL=0;; --models-only) APP=0;; *) echo "Unknown option: $arg"; exit 2;; esac; done
+WAN=1; SDXL=1; APP=1; AUDIO=0
+for arg in "$@"; do case "$arg" in --no-wan) WAN=0;; --no-sdxl) SDXL=0;; --models-only) APP=0;; --audio) AUDIO=1;; *) echo "Unknown option: $arg"; exit 2;; esac; done
 
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 die() { printf '\n\033[31mStopped: %s\033[0m\n' "$*"; exit 1; }
@@ -21,7 +22,7 @@ die() { printf '\n\033[31mStopped: %s\033[0m\n' "$*"; exit 1; }
 [ "$(uname -s)" = Darwin ] || die "This script is for macOS."
 [ "$(uname -m)" = arm64 ] || die "This script is for Apple Silicon (M1 or later)."
 
-need_gb=2; [ $APP = 1 ] && need_gb=$((need_gb + 6)); [ $SDXL = 1 ] && need_gb=$((need_gb + 7)); [ $WAN = 1 ] && need_gb=$((need_gb + 23))
+need_gb=2; [ $APP = 1 ] && need_gb=$((need_gb + 6)); [ $SDXL = 1 ] && need_gb=$((need_gb + 7)); [ $WAN = 1 ] && need_gb=$((need_gb + 23)); [ $AUDIO = 1 ] && need_gb=$((need_gb + 14))
 mkdir -p "$COMFY_DIR"
 free_gb=$(df -g "$COMFY_DIR" | awk 'NR==2 {print $4}')
 say "Installing into $COMFY_DIR (about ${need_gb} GB needed, ${free_gb} GB free)"
@@ -84,6 +85,12 @@ if [ $WAN = 1 ]; then
   fetch "$HF/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors" vae wan2.2_vae.safetensors 500000000
   fetch "$HF/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors" diffusion_models wan2.2_ti2v_5B_fp16.safetensors 9000000000
   fetch "$HF/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors" text_encoders umt5_xxl_fp16.safetensors 10000000000
+fi
+
+if [ $AUDIO = 1 ]; then
+  fetch "$HF/Comfy-Org/stable-audio-open-1.0_repackaged/resolve/main/stable-audio-open-1.0.safetensors" checkpoints stable-audio-open-1.0.safetensors 4000000000
+  fetch "$HF/ComfyUI-Wiki/t5-base/resolve/main/t5-base.safetensors" text_encoders t5-base.safetensors 100000000
+  fetch "$HF/Comfy-Org/ACE-Step_ComfyUI_repackaged/resolve/main/all_in_one/ace_step_v1_3.5b.safetensors" checkpoints ace_step_v1_3.5b.safetensors 7000000000
 fi
 
 say "Done"

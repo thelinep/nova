@@ -47,6 +47,7 @@ const videoGen = require('./lib/video-gen');
 const videoLtx = require('./lib/video-ltx');
 const heavyJobs = require('./lib/heavy-jobs');
 const library = require('./lib/library');
+const audioGen = require('./lib/audio-gen');
 const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
@@ -292,6 +293,20 @@ const routes = [
       await heavyJobs.freeMemory({ ollama });
       const { job } = await imageGen.generate(store, DATA_DIR, await readJsonBody(req));
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.image.generation.started', jobId: job.id, checkpoint: job.settings.checkpoint });
+      sendJson(res, 202, job);
+    } },
+  { method: 'POST', pattern: /^\/api\/images\/img2img$/, handler: async (req, res) => {
+      heavyJobs.check(store, 'image'); await heavyJobs.freeMemory({ ollama });
+      const { job } = await imageGen.generateFromImage(store, DATA_DIR, await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.image.img2img.started', jobId: job.id, source: job.settings.sourceMediaId });
+      sendJson(res, 202, job);
+    } },
+  { method: 'GET', pattern: /^\/api\/audio\/status$/, handler: async (_req, res) => sendJson(res, 200, await audioGen.status()) },
+  { method: 'POST', pattern: /^\/api\/audio\/voice$/, handler: async (req, res) => { const { job } = audioGen.speak(store, DATA_DIR, await readJsonBody(req)); sendJson(res, 202, job); } },
+  { method: 'POST', pattern: /^\/api\/audio\/(sfx|music)$/, handler: async (req, res, [kind]) => {
+      heavyJobs.check(store, kind); await heavyJobs.freeMemory({ ollama });
+      const { job } = await audioGen.generate(store, DATA_DIR, kind, await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.audio.' + kind + '.started', jobId: job.id });
       sendJson(res, 202, job);
     } },
   { method: 'GET', pattern: /^\/api\/library$/, handler: async (_req, res) => sendJson(res, 200, library.info()) },
