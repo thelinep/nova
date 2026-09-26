@@ -2851,7 +2851,7 @@ async function renderMediaView(){
   let lib={dir:null,enabled:false}, items=[], jobs=[], img={reachable:false,checkpoints:[],samplers:[]}, stt={ready:false,missing:[]}, vid={cameraMoves:{ready:false,sizes:[]},ltx:{ready:false,missing:[],notes:[]},ai:{reachable:false,ready:false,missing:[],notes:[],sizes:[]}};
   try{
     const rs = await Promise.all([fetch(apiUrl('/api/media')), fetch(apiUrl('/api/images/jobs')), fetch(apiUrl('/api/images/status')), fetch(apiUrl('/api/transcribe/status')), fetch(apiUrl('/api/video/status')), fetch(apiUrl('/api/library'))]);
-    if (rs[0].ok) items = await rs[0].json(); if (rs[1].ok) jobs = await rs[1].json(); if (rs[2].ok) img = await rs[2].json(); if (rs[3].ok) stt = await rs[3].json(); if (rs[4].ok) vid = await rs[4].json(); if (rs[5] && rs[5].ok) lib = await rs[5].json();
+    if (rs[0].ok) items = await rs[0].json(); if (rs[1].ok) jobs = await rs[1].json(); if (rs[2].ok) img = await rs[2].json(); if (rs[3].ok) stt = await rs[3].json(); if (rs[4].ok) vid = await rs[4].json(); if (rs[5] && rs[5].ok) lib = await rs[5].json(); else if (rs[5] && rs[5].status===404) lib = {dir:null, enabled:false, needsRestart:true};
   }catch(_){}
   videoShots = videoShots.filter(sh=>items.some(m=>m.id===sh.mediaId&&m.kind==='image'));
   videoJoin = videoJoin.filter(id=>items.some(m=>m.id===id&&m.kind==='video'));
@@ -2938,8 +2938,8 @@ async function renderMediaView(){
         <button class="btn btn-amber" id="joinStart" ${vid.cameraMoves.ready&&videoJoin.length>=2?'':'disabled'}>Join ${videoJoin.length||''} clips</button>${videoJoin.length?'<button class="btn btn-ghost btn-sm" id="joinClear">Clear</button>':''}</div>
     </div>
     <div class="panel" id="libraryPanel" style="padding:12px 16px;margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <div style="flex:1;min-width:240px"><span class="eyebrow">Library folder</span><div style="font-size:12.5px;margin-top:3px">${lib.enabled&&lib.dir?`Everything NOVA generates — images, videos, transcripts, skill outputs — is also saved as files with a recipe .json in <code>${escapeHtml(lib.dir)}</code>, one folder per day.`:'Saving to a library folder is off.'}</div></div>
-      ${lib.source==='env'?'<span class="empty-hint">Set by NOVA_LIBRARY_DIR</span>':`<input id="libraryDir" aria-label="Library folder" value="${escapeHtml(lib.dir||lib.defaultDir||'')}" style="${field};min-width:260px"><button class="btn btn-line btn-sm" id="librarySave">Save folder</button>`}
+      <div style="flex:1;min-width:240px"><span class="eyebrow">Library folder</span><div style="font-size:12.5px;margin-top:3px">${lib.needsRestart?'The NOVA server running now is older than this page. Stop it and run <code>npm start</code> again to turn on the library folder.':lib.enabled&&lib.dir?`Everything NOVA generates — images, videos, transcripts, skill outputs — is also saved as files with a recipe .json in <code>${escapeHtml(lib.dir)}</code>, one folder per day.`:'Saving to a library folder is off.'}</div></div>
+      ${lib.needsRestart?'':lib.source==='env'?'<span class="empty-hint">Set by NOVA_LIBRARY_DIR</span>':`<input id="libraryDir" aria-label="Library folder" value="${escapeHtml(lib.dir||lib.defaultDir||'~/Documents/NOVA Library')}" style="${field};min-width:260px"><button class="btn btn-line btn-sm" id="librarySave">Save folder</button>`}
       <button class="btn btn-ghost btn-sm" id="libraryBackfill" ${lib.enabled?'':'disabled'}>Copy earlier items</button>
     </div>
     <div class="cap-section-label">Library · ${items.length} item(s)</div>
