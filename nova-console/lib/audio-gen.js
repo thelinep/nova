@@ -140,7 +140,7 @@ function speak(store, dataDir, input) {
 /* ------------------------------ ComfyUI audio ------------------------------ */
 
 async function nodeList(node, field) {
-  try { const info = (await (await comfy.call('/object_info/' + node)).json())?.[node]; return info ? (info.input?.required?.[field]?.[0] || true) : null; }
+  try { const info = (await (await comfy.call('/object_info/' + node)).json())?.[node]; if (!info) return null; const spec = info.input?.required?.[field]; return Array.isArray(spec) && (Array.isArray(spec[0]) || spec[0] === 'COMBO') ? comfy.comboOptions(spec) : true; }
   catch (e) { if (e.statusCode === 503) throw e; return null; }
 }
 

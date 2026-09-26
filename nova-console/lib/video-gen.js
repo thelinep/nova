@@ -231,7 +231,7 @@ function startJoin(store, dataDir, input) {
 async function nodeInfo(name) {
   try { return (await (await comfy.call('/object_info/' + name)).json())?.[name] || null; } catch (e) { if (e.statusCode === 503) throw e; return null; }
 }
-const choices = (info, field) => info?.input?.required?.[field]?.[0] || [];
+const choices = (info, field) => require('./image-gen').comboOptions(info?.input?.required?.[field]);
 const pick = (list, re, avoid) => list.filter(f => re.test(f)).sort((a, b) => (avoid && avoid.test(a)) - (avoid && avoid.test(b)))[0] || null;
 
 async function aiStatus() {

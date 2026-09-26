@@ -172,6 +172,9 @@ test('LTX-2: reports what is missing, then runs ltx-2-mlx and saves the clip wit
     const fake = path.join(bin, 'ltx-2-mlx');
     fs.writeFileSync(fake, `#!/bin/sh\necho "$@" > "${path.join(dir, 'args.txt')}"\necho "Denoising 4/8" >&2\nwhile [ $# -gt 0 ]; do [ "$1" = "-o" ] && out="$2"; shift; done\n/bin/cp "${path.join(dir, 'fixture.mp4')}" "$out"\n`, { mode: 0o755 });
     process.env.LTX_MLX_BIN = fake; process.env.LTX_MLX_ANY_PLATFORM = '1';
+    process.env.NOVA_FREE_GB = '5';
+    assert.match(ltx.status().missing.join(' '), /about 70 GB free disk space/);
+    process.env.NOVA_FREE_GB = '500';
     const s = ltx.status();
     assert.equal(s.ready, true, s.missing.join('; '));
     assert.equal(s.model, 'dgrauet/ltx-2.3-mlx-q4');

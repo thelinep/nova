@@ -35,9 +35,19 @@ function binary() {
   return candidates.find(c => { try { fs.accessSync(c, fs.constants.X_OK); return true; } catch (_) { return false; } }) || null;
 }
 function model() { return process.env.LTX_MLX_MODEL || DEFAULT_MODEL; }
+/** True when the weights are fully downloaded (a transformer and the connector, and no unfinished downloads). */
 function weightsCached(name) {
   const dir = path.join(process.env.HF_HOME || path.join(home(), '.cache', 'huggingface'), 'hub', 'models--' + name.replace(/\//g, '--'));
-  return fs.existsSync(path.join(dir, 'snapshots'));
+  try {
+    if (fs.readdirSync(path.join(dir, 'blobs')).some(f => f.endsWith('.incomplete'))) return false;
+    return fs.readdirSync(path.join(dir, 'snapshots')).some(snap => { const files = fs.readdirSync(path.join(dir, 'snapshots', snap)); return files.some(f => /^transformer.*\.safetensors$/.test(f)) && files.includes('connector.safetensors'); });
+  } catch (_) { return false; }
+}
+
+const FIRST_DOWNLOAD_GB = 60;
+function freeGb(dir) {
+  if (process.env.NOVA_FREE_GB) return Number(process.env.NOVA_FREE_GB);
+  try { const st = fs.statfsSync(dir); return Math.floor((st.bavail * st.bsize) / 1024 ** 3); } catch (_) { return null; }
 }
 
 function status() {
@@ -47,8 +57,12 @@ function status() {
   if (!appleSilicon) missing.push('an Apple Silicon Mac (LTX-2 runs on MLX)');
   if (!bin) missing.push('ltx-2-mlx: double-click "Install LTX-2 video for NOVA.command" in the brahmini folder (about 30 GB with weights)');
   const cached = weightsCached(m);
+  // ltx-2-mlx downloads the whole weights repository on first use (about 60 GB for the q4 pack, all
+  // variants included), which can fill the disk. Refuse to start that download without room for it.
+  const free = freeGb(home());
+  if (bin && !cached && free != null && free < FIRST_DOWNLOAD_GB + 10) missing.push(`about ${FIRST_DOWNLOAD_GB + 10} GB free disk space: the first LTX-2 clip downloads about ${FIRST_DOWNLOAD_GB} GB of weights and only ${free} GB is free`);
   const notes = [];
-  if (bin && !cached) notes.push(`The ${m} weights (roughly 20 GB with the text encoder) are not downloaded yet; the first clip downloads them.`);
+  if (bin && !cached) notes.push(`The ${m} weights are not downloaded yet; the first clip downloads them (about ${FIRST_DOWNLOAD_GB} GB).`);
   notes.push('Rough previews with sound: a few seconds at small sizes. Expect several minutes per clip on a 16 GB Mac.');
   if (heavy.totalGb() <= 24) notes.push(`On this ${heavy.totalGb()} GB Mac NOVA keeps LTX-2 to 480p, 5 seconds and low-RAM mode, frees other models first, and runs one video job at a time.`);
   return { limits: heavy.ltxLimits(), engine: 'ltx-2-mlx', ready: missing.length === 0, binary: bin, model: m, weightsCached: cached, missing, notes, sizes: Object.keys(SIZES), modes: MODES };

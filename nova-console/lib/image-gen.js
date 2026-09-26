@@ -64,7 +64,7 @@ async function status() {
     await discover();
     const stats = await (await call('/system_stats')).json();
     const info = await (await call('/object_info/CheckpointLoaderSimple')).json();
-    const checkpoints = (info?.CheckpointLoaderSimple?.input?.required?.ckpt_name?.[0] || []).filter(c => !/stable[-_]audio|ace[-_]step/i.test(c));
+    const checkpoints = comboOptions(info?.CheckpointLoaderSimple?.input?.required?.ckpt_name).filter(c => !/stable[-_]audio|ace[-_]step/i.test(c));
     const [loras, upscalers] = await Promise.all([optionList('LoraLoader', 'lora_name'), optionList('UpscaleModelLoader', 'model_name')]);
     return { reachable: true, url: baseUrl(), version: stats?.system?.comfyui_version || null, device: stats?.devices?.[0]?.name || null, checkpoints, samplers: SAMPLERS, loras, upscalers };
   } catch (e) {
@@ -72,9 +72,20 @@ async function status() {
   }
 }
 
+/**
+ * The options of a ComfyUI list input. Older ComfyUI sends [[a, b, …], {…}]; newer sends
+ * ["COMBO", {options: [a, b, …]}]. Always returns an array of strings.
+ */
+function comboOptions(spec) {
+  if (!Array.isArray(spec)) return [];
+  if (Array.isArray(spec[0])) return spec[0].map(String);
+  if (spec[0] === 'COMBO' && Array.isArray(spec[1]?.options)) return spec[1].options.map(String);
+  return [];
+}
+
 /** The choices ComfyUI offers for one node input (e.g. the LoRA files in models/loras). */
 async function optionList(node, field) {
-  try { return (await (await call('/object_info/' + node)).json())?.[node]?.input?.required?.[field]?.[0] || []; } catch (_) { return []; }
+  try { return comboOptions((await (await call('/object_info/' + node)).json())?.[node]?.input?.required?.[field]); } catch (_) { return []; }
 }
 
 function clampInt(value, min, max, fallback) { const n = Math.round(Number(value)); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback; }
@@ -285,4 +296,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, uploadBuffer, withLora, normaliseLora, optionList, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };
+module.exports = { comboOptions, status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, uploadBuffer, withLora, normaliseLora, optionList, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };
