@@ -50,7 +50,7 @@ function status() {
   const notes = [];
   if (bin && !cached) notes.push(`The ${m} weights (roughly 20 GB with the text encoder) are not downloaded yet; the first clip downloads them.`);
   notes.push('Rough previews with sound: a few seconds at small sizes. Expect several minutes per clip on a 16 GB Mac.');
-  if (heavy.totalGb() <= 16) notes.push('On this 16 GB Mac NOVA keeps LTX-2 to 480p, 5 seconds and low-RAM mode, frees other models first, and runs one video job at a time.');
+  if (heavy.totalGb() <= 24) notes.push(`On this ${heavy.totalGb()} GB Mac NOVA keeps LTX-2 to 480p, 5 seconds and low-RAM mode, frees other models first, and runs one video job at a time.`);
   return { limits: heavy.ltxLimits(), engine: 'ltx-2-mlx', ready: missing.length === 0, binary: bin, model: m, weightsCached: cached, missing, notes, sizes: Object.keys(SIZES), modes: MODES };
 }
 

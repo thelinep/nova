@@ -11,7 +11,8 @@
  *     ComfyUI is asked to free its models;
  *   - Wan 2.2 (about 21 GB of weights) is refused on Macs with less than
  *     32 GB unless NOVA_ALLOW_WAN_LOW_RAM=1;
- *   - LTX-2 on 16 GB Macs is held to low-RAM mode, 480p and 5 seconds.
+ *   - LTX-2 on Macs with 24 GB or less (e.g. 16 or 18 GB) is held to
+ *     low-RAM mode, 480p and 5 seconds.
  * ========================================================================= */
 
 const os = require('node:os');
@@ -35,7 +36,7 @@ function check(store, engine) {
 
 /** Limits applied to LTX-2 settings on small Macs. */
 function ltxLimits() {
-  return totalGb() <= 16 ? { lowRam: true, maxSeconds: 5, sizes: ['704x480', '480x704', '512x512'] } : { lowRam: null, maxSeconds: 8, sizes: null };
+  return totalGb() <= 24 ? { lowRam: true, maxSeconds: 5, sizes: ['704x480', '480x704', '512x512'] } : { lowRam: null, maxSeconds: 8, sizes: null };
 }
 
 /** Frees memory held by other local models. Best effort; never throws. */
