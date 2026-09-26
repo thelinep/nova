@@ -37,12 +37,32 @@ function which(names) {
   return null;
 }
 
-function findModel(dataDir) {
-  if (process.env.WHISPER_MODEL) return fs.existsSync(process.env.WHISPER_MODEL) ? process.env.WHISPER_MODEL : null;
+/* Spoken languages offered for transcription. English-only models (ggml-*.en.bin) understand
+   English only; everything else needs a multilingual model such as ggml-large-v3-turbo-q5_0.bin. */
+const LANGUAGES = { auto: 'Detect automatically', en: 'English', hi: 'Hindi', ur: 'Urdu', pa: 'Punjabi', bn: 'Bengali', mr: 'Marathi', gu: 'Gujarati', ta: 'Tamil', te: 'Telugu', kn: 'Kannada', ml: 'Malayalam', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese', ja: 'Japanese', zh: 'Chinese', ar: 'Arabic' };
+const MODEL_RANK = ['large-v3-turbo', 'large-v3', 'large', 'medium', 'small', 'base', 'tiny'];
+const isMultilingual = file => !/\.en(?:[-_.]|\.bin$)/.test(path.basename(file));
+function rank(file) { const i = MODEL_RANK.findIndex(k => path.basename(file).includes('-' + k)); return i < 0 ? 99 : i; }
+
+/** Every whisper model file NOVA can use, best first. */
+function listModels(dataDir) {
+  if (process.env.WHISPER_MODEL) return fs.existsSync(process.env.WHISPER_MODEL) ? [process.env.WHISPER_MODEL] : [];
   const dir = path.join(dataDir, 'models', 'whisper');
-  try { const file = fs.readdirSync(dir).filter(f => /^ggml-.*\.bin$/.test(f)).sort()[0]; return file ? path.join(dir, file) : null; }
-  catch (_) { return null; }
+  try { return fs.readdirSync(dir).filter(f => /^ggml-.*\.bin$/.test(f)).map(f => path.join(dir, f)).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b)); }
+  catch (_) { return []; }
 }
+
+/**
+ * Picks the model for a spoken language: English uses the best English-only model when there is one
+ * (faster), anything else (or automatic detection) needs a multilingual model.
+ */
+function pickModel(dataDir, language) {
+  const models = listModels(dataDir), multi = models.filter(isMultilingual);
+  if (language === 'en') return models.find(m => !isMultilingual(m)) || multi[0] || null;
+  if (language === 'auto' && !multi.length) return models[0] || null; // English-only install: behave as before (English)
+  return multi[0] || null;
+}
+function findModel(dataDir) { return listModels(dataDir)[0] || null; }
 
 const AFCONVERT_MIMES = new Set(['audio/wav', 'audio/aiff', 'audio/mpeg', 'audio/mp4', 'audio/flac']);
 
@@ -65,7 +85,9 @@ function status(dataDir) {
   const notes = [];
   if (ffmpegPath && !ffmpeg) notes.push(afconvert ? 'The installed ffmpeg does not start, so macOS afconvert is used: WAV, AIFF, MP3, M4A and FLAC work; OGG and WebM need a working ffmpeg.' : 'The installed ffmpeg does not start.');
   else if (!ffmpeg && afconvert) notes.push('Using macOS afconvert: WAV, AIFF, MP3, M4A and FLAC work; OGG and WebM need ffmpeg.');
-  return { ready: missing.length === 0, binary, ffmpeg, afconvert, converter, model, modelName: model ? path.basename(model) : null, missing, notes };
+  const models = listModels(dataDir), multilingual = models.some(isMultilingual);
+  if (model && !multilingual) notes.push('Only an English speech model is installed, so speech in Hindi and other languages cannot be transcribed or translated. Double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB).');
+  return { ready: missing.length === 0, binary, ffmpeg, afconvert, converter, model, modelName: model ? path.basename(model) : null, models: models.map(m => ({ name: path.basename(m), multilingual: isMultilingual(m) })), multilingual, languages: LANGUAGES, missing, notes };
 }
 
 function run(file, args, timeoutMs) {
@@ -100,12 +122,16 @@ async function transcribeNow(store, dataDir, deps, record, options) {
     const input = media.filePath(dataDir, record);
     if (tools.converter === 'ffmpeg') await run(tools.ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', input, '-vn', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav], 20 * 60 * 1000);
     else await run(tools.afconvert, ['-f', 'WAVE', '-d', 'LEI16@16000', '-c', '1', input, wav], 20 * 60 * 1000);
-    const args = ['-m', tools.model, '-f', wav, '-oj', '-of', path.join(work, 'out'), '-np'];
-    if (options.language) args.push('-l', options.language);
+    const language = options.language || 'auto';
+    const model = pickModel(dataDir, language);
+    if (!model) throw error(`${language === 'auto' ? 'Detecting the spoken language' : LANGUAGES[language] + ' speech'} needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB).`, 412);
+    const args = ['-m', model, '-f', wav, '-oj', '-of', path.join(work, 'out'), '-np', '-l', isMultilingual(model) ? language : 'en'];
     await run(tools.binary, args, TIMEOUT_MS);
-    const result = parseWhisperJson(JSON.parse(fs.readFileSync(path.join(work, 'out.json'), 'utf8')));
+    const json = JSON.parse(fs.readFileSync(path.join(work, 'out.json'), 'utf8'));
+    const result = parseWhisperJson(json);
     if (!result.segments.length) throw error('No speech was recognized in this audio.', 422);
-    return { ...result, model: tools.modelName, language: options.language || 'auto' };
+    const detected = String(json?.result?.language || '').toLowerCase();
+    return { ...result, model: path.basename(model), language: language === 'auto' ? (/^[a-z]{2}$/.test(detected) ? detected : 'auto') : language };
   } finally {
     try { fs.rmSync(work, { recursive: true, force: true }); } catch (_) {}
   }
@@ -121,7 +147,8 @@ function start(store, dataDir, deps, id, options = {}) {
   if (tools.converter === 'afconvert' && record.kind === 'video') throw error('Transcribing video needs a working ffmpeg to pull out the sound (brew reinstall ffmpeg).', 415);
   if (tools.converter === 'afconvert' && !AFCONVERT_MIMES.has(record.mime)) throw error(`${record.originalName} is ${record.mime.replace('audio/', '').toUpperCase()}, which needs a working ffmpeg. Convert it to WAV, MP3 or M4A, or reinstall ffmpeg.`, 415);
   if (options.collectionId && !store.get('knowledgeCollections', options.collectionId)) throw error('Unknown knowledge collection.', 404);
-  const language = options.language && /^[a-z]{2}$/.test(options.language) ? options.language : null;
+  const language = options.language && LANGUAGES[options.language] ? options.language : null;
+  if (language && language !== 'en' && language !== 'auto' && !listModels(dataDir).some(isMultilingual)) throw error(`${language === 'auto' ? 'Detecting the spoken language' : LANGUAGES[language] + ' speech'} needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB).`, 412);
   record.transcription = { status: 'running', startedAt: new Date().toISOString(), collectionId: options.collectionId || null, language, error: null };
   store.put('media', record);
   const job = (async () => {
@@ -152,4 +179,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { status, start, transcribeNow, parseWhisperJson, recoverInterrupted, clock };
+module.exports = { status, start, transcribeNow, listModels, pickModel, isMultilingual, LANGUAGES, parseWhisperJson, recoverInterrupted, clock };

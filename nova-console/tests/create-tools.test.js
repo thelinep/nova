@@ -187,3 +187,51 @@ test('Kokoro voices speak English and Hindi when installed', async t => {
     assert.equal(out.kind, 'audio'); assert.equal(out.provenance.engine, 'kokoro-82m'); assert.equal(out.provenance.locale, 'hi');
   } finally { process.env = saved; }
 });
+
+test('speech models: English-only models handle English; Hindi and detection need a multilingual model', async t => {
+  const ffmpeg = ffmpegPath(); if (!ffmpeg) return t.skip('ffmpeg is not installed');
+  const dir = tmp('nova-ml-'), bin = tmp('nova-ml-bin-'), db = store();
+  const saved = { ...process.env };
+  try {
+    const whisper = path.join(bin, 'whisper-cli');
+    fs.writeFileSync(whisper, `#!/bin/sh\necho "$@" >> "${path.join(bin, 'args')}"\nlang=en\nwhile [ $# -gt 0 ]; do case "$1" in -of) of="$2"; shift;; -l) lang="$2"; shift;; esac; shift; done\n[ "$lang" = auto ] && lang=hi\n/bin/cat > "$of.json" <<J\n{"result":{"language":"$lang"},"transcription":[{"offsets":{"from":0,"to":1500},"text":" तूफ़ान आ रहा है।"}]}\nJ\n`, { mode: 0o755 });
+    process.env.WHISPER_BIN = whisper; delete process.env.WHISPER_MODEL;
+    const models = path.join(dir, 'models', 'whisper'); fs.mkdirSync(models, { recursive: true });
+    fs.writeFileSync(path.join(models, 'ggml-base.en.bin'), 'x');
+    let st = transcriber.status(dir);
+    assert.equal(st.multilingual, false); assert.match(st.notes.join(' '), /Add multilingual speech model/);
+    const aud = media.saveMedia(db, dir, { buffer: make(ffmpeg, dir, 'a.wav', ['-f', 'lavfi', '-i', 'sine=frequency=300:duration=2']), originalName: 'hindi-take.wav' });
+    assert.throws(() => transcriber.start(db, dir, {}, aud.id, { language: 'hi' }), /multilingual speech model/);
+    const ollama = { chatFull: async (_m, msgs) => { const lines = JSON.parse(msgs[1].content.split('\n')[0]).lines; return { message: { content: JSON.stringify({ lines: lines.map(() => 'The storm is coming.') }) } }; } };
+    db.put('models', { id: 'llama3:8b', name: 'llama3:8b', runtime: 'ollama', status: 'available' });
+    assert.throws(() => actions.translate(db, dir, { ollama }, aud.id, { from: 'hi', language: 'en', mode: 'dub', voice: 'x' }), /multilingual speech model/);
+    assert.throws(() => actions.translate(db, dir, { ollama }, aud.id, { from: 'hi', language: 'hi' }), /already in Hindi/);
+    // Detection with only the English model still works as before (English).
+    let r = transcriber.start(db, dir, {}, aud.id, {}); await r.done;
+    assert.match(fs.readFileSync(path.join(bin, 'args'), 'utf8').trim().split('\n').pop(), /ggml-base\.en\.bin.*-l en$/);
+    // With a multilingual model: Hindi uses it, English prefers the English model, detection reports the language.
+    fs.writeFileSync(path.join(models, 'ggml-large-v3-turbo-q5_0.bin'), 'x');
+    st = transcriber.status(dir);
+    assert.equal(st.multilingual, true); assert.equal(st.models[0].name, 'ggml-large-v3-turbo-q5_0.bin');
+    assert.match(transcriber.pickModel(dir, 'en'), /base\.en/); assert.match(transcriber.pickModel(dir, 'hi'), /large-v3-turbo/);
+    r = transcriber.start(db, dir, {}, aud.id, { language: 'auto' }); await r.done;
+    const rec = db.get('media', aud.id);
+    assert.equal(rec.transcription.status, 'done', rec.transcription.error);
+    assert.equal(rec.transcript.language, 'hi'); assert.equal(rec.transcript.model, 'ggml-large-v3-turbo-q5_0.bin');
+    assert.match(fs.readFileSync(path.join(bin, 'args'), 'utf8').trim().split('\n').pop(), /large-v3-turbo.*-l auto$/);
+    // Translate reuses the Hindi transcript and tells the model the source language.
+    const saidSystem = [];
+    const ollama2 = { chatFull: async (m, msgs) => { saidSystem.push(msgs[0].content); return ollama.chatFull(m, msgs); } };
+    process.env.NOVA_SAY_BIN = path.join(bin, 'say');
+    fs.writeFileSync(process.env.NOVA_SAY_BIN, `#!/bin/sh\nif [ "$2" = "?" ]; then echo "Samantha            en_US    # Hello"; exit 0; fi\nwhile [ $# -gt 0 ]; do [ "$1" = "-o" ] && out="$2"; shift; done\n"${ffmpeg}" -loglevel error -y -f lavfi -i sine=frequency=500:duration=1 -f aiff "$out"\n`, { mode: 0o755 });
+    process.env.KOKORO_DIR = path.join(bin, 'nokokoro'); audioGen._resetVoices();
+    const before = fs.readFileSync(path.join(bin, 'args'), 'utf8').split('\n').length;
+    const { job, done } = actions.translate(db, dir, { ollama: ollama2 }, aud.id, { from: 'hi', language: 'en', mode: 'dub' });
+    await done;
+    const fin = db.get('generationJobs', job.id);
+    assert.equal(fin.status, 'done', fin.error);
+    assert.equal(fs.readFileSync(path.join(bin, 'args'), 'utf8').split('\n').length, before, 'the Hindi transcript was reused');
+    assert.match(saidSystem[0], /translate Hindi film dialogue/);
+    assert.equal(db.get('media', fin.mediaIds[0]).provenance.spokenLanguage, 'hi');
+  } finally { process.env = saved; audioGen._resetVoices(); }
+});

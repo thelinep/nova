@@ -79,6 +79,8 @@ test.describe('Create tools', () => {
     await actions(page, 'location-sound.wav');
     await page.getByRole('menuitem', { name: 'Translate…' }).click();
     await expect(page.getByLabel('Translate into')).toHaveValue('hi');
+    await expect(page.locator('#actionModal').getByLabel('Spoken language')).toHaveValue('en');
+    await expect(page.getByText(/translate from English only/)).toBeVisible();
     await expect(page.getByLabel('Dub voice')).toBeVisible();
     await expect(page.getByLabel('Translation output').locator('option')).toHaveCount(1); // audio: dub only
   });
