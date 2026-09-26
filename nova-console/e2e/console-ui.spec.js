@@ -58,8 +58,12 @@ test.describe('NOVA Console interactions', () => {
     await page.goto('/');
     await page.locator('.sess-item').first().click();
     await page.locator('[data-view="media"]').click();
+    await page.getByRole('tab', { name: 'Image' }).click();
     await expect(page.getByRole('heading', { name: 'Generate an image' })).toBeVisible();
+    await expect(page.locator('.media-helpers')).toContainText('How it works');
+    await page.getByRole('tab', { name: 'Transcribe' }).click();
     await expect(page.getByRole('heading', { name: 'Upload and transcribe' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Generate an image' })).toBeHidden();
     const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082', 'hex');
     await page.getByLabel('Upload images, audio or video').setInputFiles({ name: 'location-scout.png', mimeType: 'image/png', buffer: png });
     await expect(page.locator('article strong', { hasText: 'location-scout.png' })).toBeVisible();
@@ -71,12 +75,17 @@ test.describe('NOVA Console interactions', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.locator('[data-view="media"]').click();
+    await page.getByRole('tab', { name: 'Video' }).click();
     await expect(page.getByRole('heading', { name: 'Animate stills' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Library' }).click();
     await expect(page.locator('#libraryPanel')).toContainText('Set by NOVA_LIBRARY_DIR');
+    await page.getByRole('tab', { name: 'Audio' }).click();
     await expect(page.getByRole('heading', { name: 'Voice, sound effects, music' })).toBeVisible();
     await page.getByLabel('Audio type').selectOption('music');
     await expect(page.getByLabel('Lyrics', { exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: 'Image' }).click();
     await expect(page.getByLabel('Start from an image')).toBeVisible();
+    await page.getByRole('tab', { name: 'Library' }).click();
     await expect(page.locator('#libraryPanel code')).toHaveText(/nova-e2e-.*\/library$/);
     const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082', 'hex');
     await page.getByLabel('Upload images, audio or video').setInputFiles({ name: 'storyboard-01.png', mimeType: 'image/png', buffer: png });
@@ -84,12 +93,15 @@ test.describe('NOVA Console interactions', () => {
     await page.getByRole('button', { name: 'Animate', exact: true }).first().click();
     await expect(page.locator('.video-shot')).toHaveCount(1);
     await expect(page.getByLabel('Camera move for shot 1')).toHaveValue('push-in');
+    await expect(page.getByRole('tab', { name: 'Video' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByRole('button', { name: 'Render clip' })).toBeVisible();
     await page.getByRole('button', { name: 'Remove shot 1' }).click();
     await expect(page.locator('.video-shot')).toHaveCount(0);
     await page.getByLabel('Upload stills to animate').setInputFiles({ name: 'still-2.png', mimeType: 'image/png', buffer: png });
     await expect(page.locator('.video-shot')).toHaveCount(1);
+    await page.getByRole('tab', { name: 'Library' }).click();
     await page.getByRole('button', { name: 'Filters', exact: true }).first().click();
+    await expect(page.getByRole('tab', { name: 'Edit' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByLabel('Look')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Apply' })).toBeVisible();
   });
@@ -105,14 +117,18 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.locator('.list-count').first()).toContainText('1 of');
     await page.getByRole('button', { name: 'What can I do here?' }).click();
     await expect(page.locator('.help-box')).toContainText('Sandboxed tools');
+    await expect(page.locator('#helpDrawer')).toBeVisible();
     await page.locator('[data-view="media"]').click();
+    await expect(page.locator('#helpDrawer')).toHaveCount(0);
+    await page.getByRole('tab', { name: 'Image' }).click();
     await page.locator('#genPrompt').fill('Marine Drive at dusk');
-    await page.locator('.preset-chip', { hasText: 'golden hour' }).click();
+    await page.locator('.helper-chip', { hasText: 'golden hour' }).click();
     await expect(page.locator('#genPrompt')).toHaveValue('Marine Drive at dusk, golden hour');
+    await page.getByRole('tab', { name: 'Audio' }).click();
     await page.getByLabel('Audio type').selectOption('music');
     await expect(page.getByLabel('Song idea')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Write lyrics' })).toBeVisible();
-    await expect(page.locator('.preset-chip', { hasText: 'tabla' })).toBeVisible();
+    await expect(page.locator('.helper-chip', { hasText: 'tabla' })).toBeVisible();
   });
 
   test('pre-production skills are installed and ask for a brief', async ({ page }) => {

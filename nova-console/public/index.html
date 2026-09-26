@@ -412,6 +412,32 @@
 .preset-group:first-child{margin-left:0}
 .preset-chip{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
 .preset-chip:hover,.preset-chip:focus-visible{border-color:var(--ink);outline:none}
+
+/* Media: tabs + helper rail; app-wide help drawer */
+.media-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:4px 0 14px;position:sticky;top:0;z-index:5;background:var(--bg,#0b0f14);padding-top:4px}
+.media-tab{background:transparent;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;margin-bottom:-1px}
+.media-tab:hover{color:var(--ink)}
+.media-tab.active{color:var(--ink);border-bottom-color:var(--amber,#f5a524);font-weight:600}
+.media-tab:focus-visible{outline:2px solid var(--amber,#f5a524);outline-offset:-2px}
+.media-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.media-main{min-width:0;display:flex;flex-direction:column;gap:14px}
+.media-main > .card-grid.cols-2{display:contents}
+.media-main > .panel{margin-top:0 !important}
+.media-helpers{position:sticky;top:52px;max-height:calc(100dvh - 140px);overflow:auto;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:14px;background:var(--panel,transparent)}
+.helper-title{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.helper-block p{margin:0 0 6px;font-size:12.5px;line-height:1.5}
+.helper-needs ul{margin:0;padding-left:16px;font-size:12px;line-height:1.5}
+.helper-group{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-dim,var(--muted));margin:6px 0 3px}
+.helper-chips{display:flex;flex-wrap:wrap;gap:4px}
+.helper-chip{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.helper-chip:hover,.helper-chip:focus-visible{border-color:var(--ink);outline:none}
+.helper-job{display:flex;justify-content:space-between;gap:6px;font-size:12px;padding:3px 0}
+.helper-job-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.media-main [hidden]{display:none!important}
+.help-drawer{position:fixed;top:54px;bottom:28px;right:0;width:min(360px,100vw);overflow:auto;z-index:60;border-left:1px solid var(--line);padding:14px 16px;background:var(--panel,#111822);box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.help-drawer-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+.help-drawer .help-box{margin:0}
+@media (max-width:1100px){.media-layout{grid-template-columns:1fr}.media-helpers{position:static;max-height:none}}
 </style>
 <div id="shell" class="shell">
   <aside id="rail" class="rail">
@@ -1202,6 +1228,7 @@ function setPipelineState(state, detail){
 
 function showView(name){
   currentView = name;
+  { const d = document.getElementById('helpDrawer'); if (d && d.dataset.view !== name) d.remove(); }
   $$('.view').forEach(v => v.classList.remove('active'));
   const target = $(name + 'View'); if (target) target.classList.add('active');
   $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === name));
@@ -2865,6 +2892,50 @@ let audioMode = 'voice';
 let filterSourceId = '';
 const MEDIA_FORM_IDS = ['genPrompt','genNegative','genCheckpoint','genSize','genSteps','genCfg','genSeed','genSampler','motionSize','motionFps','aiVideoPrompt','aiVideoSeed','aiVideoMode','genSource','genStrength','audioText','audioVoice','audioRate','audioSeconds','audioLyrics','audioSeed','audioTitle','songIdea','songLang','songLength','fltLook','fltAspect','fltHeight','fltGrain','fltSpeed','fltFadeIn','fltFadeOut','fltTrimStart','fltTrimEnd'];
 const VIDEO_MOVES = [['push-in','Push in'],['pull-out','Pull out'],['pan-left','Pan left'],['pan-right','Pan right'],['tilt-up','Tilt up'],['tilt-down','Tilt down'],['hold','Hold']];
+const MEDIA_TABS = {
+  image:{label:'Image', libraryLabel:'Images', kinds:['image'], jobs:['image-generation']},
+  video:{label:'Video', libraryLabel:'Videos', kinds:['video'], jobs:['video-camera-moves','video-ltx','video-ai','video-join']},
+  audio:{label:'Audio', libraryLabel:'Audio', kinds:['audio'], jobs:['audio-voice','audio-sfx','audio-music']},
+  transcribe:{label:'Transcribe', libraryLabel:'Audio and video', kinds:['audio','video'], jobs:[]},
+  edit:{label:'Edit', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:['media-filter']},
+  library:{label:'Library', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:null},
+};
+function setMediaTab(t){ if (!MEDIA_TABS[t]) return; mediaTab = t; try { localStorage.setItem('nova.mediaTab', t); } catch (_) {} }
+let mediaTab = (()=>{ try { const t = localStorage.getItem('nova.mediaTab'); return MEDIA_TABS[t] ? t : 'image'; } catch (_) { return 'image'; } })();
+const MEDIA_TAB_HELP = {
+  image:['Describe the picture, or set Start from to rework a library image (Change: 0.1 stays close, 0.9 reimagines).','Runs SDXL through ComfyUI on this Mac. Start it with "Start ComfyUI for NOVA.command".'],
+  video:['Add shots with Animate (on any image) or Upload stills.','Camera moves: pans and zooms across each still and joins them, in seconds.','AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound.','Continue from last frame chains clips; Add to join assembles them.'],
+  audio:['Voice reads text with macOS voices; add Hindi voices in System Settings > Accessibility > Spoken Content.','Sound effect: up to 47 s from a description.','Song: describe an idea and press Write lyrics, edit, then Generate; or paste your own lyrics. About 5 minutes per 30 s on this Mac.'],
+  transcribe:['Upload audio or video and press Transcribe on it. Transcripts get timestamps and can go straight into a Knowledge collection.'],
+  edit:['Pick an item, choose one or more filters and Apply. The original is kept; the result is a new item with its settings in the recipe.'],
+  library:['Everything NOVA made or you uploaded. Each item keeps its recipe. Generated items are also saved as files in the library folder, one folder per day.'],
+};
+const MEDIA_TAB_PRESETS = { image:[['genPrompt','Prompt'],['genNegative','Avoid']], video:[['aiVideoPrompt','Motion prompt']], audio:[['audioText','Description']] };
+function mediaHelpersHtml({tab, jobs, img, stt, vid, aud, lib}){
+  const needs = [];
+  if (tab==='image') { if (!img.reachable) needs.push('ComfyUI is not running.'); else if (!img.checkpoints.length) needs.push('No checkpoint installed in ComfyUI.'); }
+  if (tab==='video') { if (!vid.cameraMoves.ready) needs.push('ffmpeg for camera moves.'); (vid.ltx.missing||[]).forEach(m=>needs.push('LTX-2: '+m)); }
+  if (tab==='audio') { if (!aud.voice.ready) needs.push('Voice needs macOS speech.'); if (!aud.comfy.reachable) needs.push('ComfyUI is not running (sound effects, songs).'); else { (aud.comfy.sfx.missing||[]).forEach(m=>needs.push('Sound effects: '+m)); (aud.comfy.music.missing||[]).forEach(m=>needs.push('Songs: '+m)); } }
+  if (tab==='transcribe') (stt.missing||[]).forEach(m=>needs.push(m));
+  if (tab==='edit' && !vid.cameraMoves.ready) needs.push('ffmpeg (brew install ffmpeg).');
+  if (tab==='library' && !(lib.enabled&&lib.dir)) needs.push(lib.needsRestart?'Restart NOVA to turn on the library folder.':'The library folder is off.');
+  const presetKey = f => f==='audioText' ? 'audioText:'+audioMode : f;
+  const presets = (MEDIA_TAB_PRESETS[tab]||[]).filter(([f])=>PROMPT_PRESETS[presetKey(f)]).map(([f,label])=>`<div class="helper-block"><div class="helper-title">Presets · ${escapeHtml(label)}</div>${Object.entries(PROMPT_PRESETS[presetKey(f)]).map(([g,list])=>`<div class="helper-group">${escapeHtml(g)}</div><div class="helper-chips">${list.map(t=>`<button type="button" class="helper-chip" data-target="${f}" data-text="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>`).join('')}</div>`).join('');
+  const types = MEDIA_TABS[tab].jobs;
+  const list = (types ? jobs.filter(j=>types.includes(j.type)) : jobs).slice(0,6);
+  const jobsHtml = list.length ? list.map(j=>`<div class="helper-job"><span class="helper-job-name">${escapeHtml((j.settings&&j.settings.prompt)||j.type)}</span><span><span class="badge ${j.status==='done'?'badge-green':j.status==='running'?'badge-amber':'badge-red'}">${escapeHtml(j.status)}</span>${j.status==='running'?` <button class="btn btn-ghost btn-sm gen-cancel" data-id="${j.id}">Cancel</button>`:''}</span></div>${j.status==='running'&&j.progress?`<div class="empty-hint">${escapeHtml(j.progress)}</div>`:''}${j.error?`<div class="empty-hint">${escapeHtml(j.error)}</div>`:''}`).join('') : '<p class="empty-hint" style="padding:0">Nothing yet.</p>';
+  return `<div class="helper-block"><div class="helper-title">How it works</div>${MEDIA_TAB_HELP[tab].map(t=>`<p>${escapeHtml(t)}</p>`).join('')}</div>
+    ${needs.length?`<div class="helper-block helper-needs"><div class="helper-title">Needs</div><ul>${needs.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul></div>`:''}
+    ${presets}
+    <div class="helper-block"><div class="helper-title">Recent jobs</div>${jobsHtml}</div>`;
+}
+function applyMediaTab(pad){
+  const tab = mediaTab, kinds = MEDIA_TABS[tab].kinds;
+  pad.querySelectorAll('.media-main [data-tab]').forEach(el => { el.hidden = !el.dataset.tab.split(' ').includes(tab); });
+  const cards = [...pad.querySelectorAll('#mediaLibrary .media-item')];
+  let shown = 0; cards.forEach(c => { const ok = kinds.includes(c.dataset.kind); c.hidden = !ok; if (ok) shown++; });
+  const cnt = pad.querySelector('#mediaLibraryCount'); if (cnt) cnt.textContent = `${shown} item(s)`;
+}
 async function renderMediaView(){
   const pad = $('mediaView').querySelector('.view-pad');
   // Keep what the user typed when the view refreshes during a running job.
@@ -2889,7 +2960,7 @@ async function renderMediaView(){
       ? `<video controls preload="metadata" playsinline src="${mediaUrl(m.id)}" aria-label="${escapeHtml(m.originalName)}" style="width:100%;aspect-ratio:16/9;border-radius:8px;border:1px solid var(--line);background:#000"></video>`
       : `<audio controls preload="none" src="${mediaUrl(m.id)}" style="width:100%"></audio>`;
     const recipe = mediaRecipe(m.provenance);
-    return `<article class="panel" style="padding:10px">
+    return `<article class="panel media-item" data-kind="${m.kind}" style="padding:10px">
       ${preview}
       <div style="display:flex;justify-content:space-between;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.originalName)}</strong><span class="badge ${m.source==='upload'?'':'badge-blue'}">${m.source==='upload'?m.kind:m.kind==='video'?'generated video':'generated'}</span></div>
       <div class="empty-hint" style="padding:2px 0">${workspaceBytes ? workspaceBytes(m.bytes) : m.bytes+' B'} · ${fmtRelDate ? fmtRelDate(m.createdAt) : m.createdAt}</div>
@@ -2903,8 +2974,10 @@ async function renderMediaView(){
   };
   pad.innerHTML = `
     <div class="view-head"><div><span class="eyebrow">Generative</span><h1 class="view-title">Media</h1><p class="view-desc">Generate images, turn stills into video, transcribe audio and video, and keep the media you use with NOVA. Everything runs on this computer; each item keeps the settings that made it.</p></div></div>
+    <div class="media-tabs" role="tablist" aria-label="Media tools">${Object.entries(MEDIA_TABS).map(([k,t])=>`<button role="tab" class="media-tab ${k===mediaTab?'active':''}" data-tab="${k}" aria-selected="${k===mediaTab}">${t.label}</button>`).join('')}</div>
+    <div class="media-layout"><div class="media-main">
     <div class="card-grid cols-2">
-      <div class="panel" style="padding:16px">
+      <div class="panel" id="imagePanel" data-tab="image" style="padding:16px">
         <div style="display:flex;justify-content:space-between;gap:8px"><div><span class="eyebrow">Image generation · ComfyUI</span><h2 style="font-size:16px;margin:5px 0">Generate an image</h2></div><span class="badge ${img.reachable?'badge-green':'badge-red'}">${img.reachable?'ComfyUI connected':'ComfyUI offline'}</span></div>
         ${img.reachable?`<p class="empty-hint">${escapeHtml(img.url)}${img.device?' · '+escapeHtml(img.device):''} · ${img.checkpoints.length} checkpoint(s)</p>`:`<p class="empty-hint">${escapeHtml(img.error||'Not reachable.')} NOVA looks for ComfyUI on this computer at port 8188 (manual install) or 8000 (ComfyUI Desktop); set COMFYUI_URL for another port.</p>`}
         <textarea id="genPrompt" aria-label="Image prompt" placeholder="Rain-soaked Mumbai street at dusk, neon reflections, anamorphic, 35mm film still" style="width:100%;min-height:74px;${field}"></textarea>
@@ -2921,9 +2994,8 @@ async function renderMediaView(){
           <label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload image<input id="genSourceUpload" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload an image to start from" hidden></label>
           <label class="empty-hint" style="padding:0" title="How much to change the image: low keeps it close, high reimagines it">Change <input id="genStrength" type="number" min="0.1" max="0.95" step="0.05" value="0.55" style="width:64px;${field}"></label></div>
         <button class="btn btn-amber" id="genStart" style="margin-top:10px" ${img.reachable&&img.checkpoints.length?'':'disabled'}>Generate</button>
-        ${recentJobs.length?`<div class="cap-section-label">Recent jobs</div>${recentJobs.map(j=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:12px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.type&&j.type.startsWith('video')?'Video · ':''}${escapeHtml(j.settings.prompt)}</span><span><span class="badge ${j.status==='done'?'badge-green':j.status==='running'?'badge-amber':'badge-red'}">${escapeHtml(j.status)}</span>${j.status==='running'?` <button class="btn btn-ghost btn-sm gen-cancel" data-id="${j.id}">Cancel</button>`:''}</span></div>${j.error?`<div class="empty-hint">${escapeHtml(j.error)}</div>`:''}${j.status==='running'&&j.progress?`<div class="empty-hint">${escapeHtml(j.progress)}</div>`:''}`).join('')}`:''}
       </div>
-      <div class="panel" style="padding:16px">
+      <div class="panel" id="transcribePanel" data-tab="transcribe library" style="padding:16px">
         <div style="display:flex;justify-content:space-between;gap:8px"><div><span class="eyebrow">Speech to text · whisper.cpp</span><h2 style="font-size:16px;margin:5px 0">Upload and transcribe</h2></div><span class="badge ${stt.ready?'badge-green':'badge-amber'}">${stt.ready?'Ready · '+escapeHtml(stt.modelName||''):'Setup needed'}</span></div>
         <p class="empty-hint">Upload images to use in chat or animate, or audio and video (interviews, dailies, voice notes) to transcribe. Transcripts can go straight into a Knowledge collection for search, citations and summaries.</p>
         ${stt.ready?'':`<p class="empty-hint">Transcription needs: ${stt.missing.map(escapeHtml).join('; ')}.</p>`}
@@ -2931,7 +3003,7 @@ async function renderMediaView(){
         <input id="mediaUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,audio/*,video/mp4,video/quicktime" multiple aria-label="Upload images, audio or video" style="margin-top:6px">
       </div>
     </div>
-    <div class="panel" id="videoPanel" style="padding:16px;margin-top:14px">
+    <div class="panel" id="videoPanel" data-tab="video" style="padding:16px;margin-top:14px">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><span class="eyebrow">Image to video</span><h2 style="font-size:16px;margin:5px 0">Animate stills</h2></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${vid.cameraMoves.ready?'badge-green':'badge-amber'}">Camera moves ${vid.cameraMoves.ready?'ready':'need ffmpeg'}</span><span class="badge ${vid.ltx.ready?'badge-green':'badge-amber'}">LTX-2 ${vid.ltx.ready?'ready':'not installed'}</span><span class="badge ${vid.ai.ready?'badge-green':vid.ai.reachable?'badge-amber':'badge-red'}">Wan 2.2 ${vid.ai.ready?'ready':vid.ai.reachable?'needs models':'ComfyUI offline'}</span></div></div>
       <p class="empty-hint">Press <strong>Animate</strong> on images in the library to add them as shots. <strong>Camera moves</strong> pans and zooms across each still and joins the shots into one MP4 (an animatic) in seconds. <strong>AI motion</strong> animates the first shot from a prompt: LTX-2 runs on this Mac and adds sound; Wan 2.2 runs through ComfyUI. Both are rough previews, and slow.</p>
@@ -2962,7 +3034,7 @@ async function renderMediaView(){
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="empty-hint" style="padding:0" id="joinSummary">${videoJoin.length?videoJoin.map((id,i)=>`${i+1}. ${escapeHtml((items.find(m=>m.id===id)||{}).originalName||id)}`).join(' · '):'No clips chosen to join.'}</span>
         <button class="btn btn-amber" id="joinStart" ${vid.cameraMoves.ready&&videoJoin.length>=2?'':'disabled'}>Join ${videoJoin.length||''} clips</button>${videoJoin.length?'<button class="btn btn-ghost btn-sm" id="joinClear">Clear</button>':''}</div>
     </div>
-    <div class="panel" id="audioPanel" style="padding:16px;margin-top:14px">
+    <div class="panel" id="audioPanel" data-tab="audio" style="padding:16px;margin-top:14px">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><span class="eyebrow">Text to audio</span><h2 style="font-size:16px;margin:5px 0">Voice, sound effects, music</h2></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${aud.voice.ready?'badge-green':'badge-amber'}">Voice ${aud.voice.ready?'ready':'Mac only'}</span><span class="badge ${aud.comfy.sfx.ready?'badge-green':aud.comfy.reachable?'badge-amber':'badge-red'}">Sound effects ${aud.comfy.sfx.ready?'ready':aud.comfy.reachable?'need models':'ComfyUI offline'}</span><span class="badge ${aud.comfy.music.ready?'badge-green':aud.comfy.reachable?'badge-amber':'badge-red'}">Music ${aud.comfy.music.ready?'ready':aud.comfy.reachable?'needs model':'ComfyUI offline'}</span></div></div>
       <select id="audioMode" aria-label="Audio type" style="${field};margin:6px 0"><option value="voice" ${audioMode==='voice'?'selected':''}>Voice (macOS speech) · instant</option><option value="sfx" ${audioMode==='sfx'?'selected':''}>Sound effect (Stable Audio Open)</option><option value="music" ${audioMode==='music'?'selected':''}>Song / music (ACE-Step)</option></select>
@@ -2981,7 +3053,7 @@ async function renderMediaView(){
           :`<label class="empty-hint" style="padding:0">Seconds <input id="audioSeconds" type="number" min="1" max="${audioMode==='sfx'?47:240}" value="${audioMode==='sfx'?10:30}" style="width:64px;${field}"></label><label class="empty-hint" style="padding:0">Seed <input id="audioSeed" type="number" min="0" placeholder="random" style="width:100px;${field}"></label>`}
         <button class="btn btn-amber" id="audioStart" ${audioMode==='voice'?(aud.voice.ready?'':'disabled'):(aud.comfy[audioMode].ready?'':'disabled')}>${audioMode==='voice'?'Speak':'Generate'}</button></div>
     </div>
-    ${(()=>{ const src = items.find(m=>m.id===filterSourceId) || items[0]; if (!src) return ''; const k = src.kind; return `<div class="panel" id="filterPanel" style="padding:16px;margin-top:14px">
+    ${(()=>{ const src = items.find(m=>m.id===filterSourceId) || items[0]; if (!src) return ''; const k = src.kind; return `<div class="panel" id="filterPanel" data-tab="edit" style="padding:16px;margin-top:14px">
       <div><span class="eyebrow">Filters · ffmpeg</span><h2 style="font-size:16px;margin:5px 0">Looks, crop, speed, fades</h2></div>
       <p class="empty-hint">The original is kept; the result is a new item with its settings in the recipe.</p>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
@@ -3000,13 +3072,17 @@ async function renderMediaView(){
         ${k==='video'?`<label class="empty-hint" style="padding:0"><input id="fltMute" type="checkbox"> Remove sound</label>`:''}
         <button class="btn btn-amber" id="fltApply">Apply</button></div>
     </div>`; })()}
-    <div class="panel" id="libraryPanel" style="padding:12px 16px;margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="panel" id="libraryPanel" data-tab="library" style="padding:12px 16px;margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:240px"><span class="eyebrow">Library folder</span><div style="font-size:12.5px;margin-top:3px">${lib.needsRestart?'The NOVA server running now is older than this page. Stop it and run <code>npm start</code> again to turn on the library folder.':lib.enabled&&lib.dir?`Everything NOVA generates — images, videos, transcripts, skill outputs — is also saved as files with a recipe .json in <code>${escapeHtml(lib.dir)}</code>, one folder per day.`:'Saving to a library folder is off.'}</div></div>
       ${lib.needsRestart?'':lib.source==='env'?'<span class="empty-hint">Set by NOVA_LIBRARY_DIR</span>':`<input id="libraryDir" aria-label="Library folder" value="${escapeHtml(lib.dir||lib.defaultDir||'~/Documents/NOVA Library')}" style="${field};min-width:260px"><button class="btn btn-line btn-sm" id="librarySave">Save folder</button>`}
       <button class="btn btn-ghost btn-sm" id="libraryBackfill" ${lib.enabled?'':'disabled'}>Copy earlier items</button>
     </div>
-    <div class="cap-section-label">Library · ${items.length} item(s)</div>
-    <div id="mediaLibrary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${items.map(itemHtml).join('')||'<p class="empty-hint">Nothing here yet. Generate an image or upload a file.</p>'}</div>`;
+    <div class="cap-section-label" id="mediaLibraryLabel">${MEDIA_TABS[mediaTab].libraryLabel} · <span id="mediaLibraryCount"></span></div>
+    <div id="mediaLibrary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${items.map(itemHtml).join('')||'<p class="empty-hint">Nothing here yet. Generate an image or upload a file.</p>'}</div>
+    </div><aside class="media-helpers" aria-label="Helpers">${mediaHelpersHtml({tab:mediaTab, jobs, img, stt, vid, aud, lib, field})}</aside></div>`;
+  applyMediaTab(pad);
+  $$('.media-tab').forEach(b=>b.onclick=()=>{ setMediaTab(b.dataset.tab); renderMediaView(); });
+  $$('.helper-chip').forEach(c=>c.onclick=()=>{ const box = $(c.dataset.target); if (!box) return; const t = c.dataset.text, v = box.value.trim(); if (!v.toLowerCase().includes(t.toLowerCase())) box.value = v ? v.replace(/[,.\s]*$/, '') + ', ' + t : t; box.focus(); });
   for (const [id,v] of kept) if ($(id)) $(id).value = v;
   if (focusedId && $(focusedId)) $(focusedId).focus();
   if (window.lucide) lucide.createIcons();
@@ -3019,12 +3095,12 @@ async function renderMediaView(){
     catch(e){ toast(e.message); }
   };
   $$('.gen-cancel').forEach(b=>b.onclick=async()=>{ try{ await post('/api/images/jobs/'+encodeURIComponent(b.dataset.id)+'/cancel'); renderMediaView(); }catch(e){ toast(e.message); } });
-  $('mediaUpload').onchange = async e => { for (const f of e.target.files){ try{ await uploadMediaFile(f); }catch(err){ toast(f.name+': '+err.message); } } renderMediaView(); };
+  $('mediaUpload').onchange = async e => { let other = false; for (const f of e.target.files){ try{ await uploadMediaFile(f); if (!/^(audio|video)\//.test(f.type)) other = true; }catch(err){ toast(f.name+': '+err.message); } } if (other && mediaTab==='transcribe') { setMediaTab('library'); toast('Images are in the Library tab.'); } renderMediaView(); };
   $$('.media-attach').forEach(b=>b.onclick=()=>{ const m = items.find(x=>x.id===b.dataset.id); if (m && attachMediaToSession(m)) { toast('Attached to the open chat. Use a vision model to ask about it.'); showView('console'); } });
   $$('.media-transcribe').forEach(b=>b.onclick=async()=>{ const sel = document.querySelector('.media-collection[data-id="'+b.dataset.id+'"]'); try{ await post('/api/media/'+encodeURIComponent(b.dataset.id)+'/transcribe', {collectionId: sel && sel.value || undefined}); toast('Transcribing on this computer…'); renderMediaView(); }catch(e){ toast(e.message); } });
   $$('.media-delete').forEach(b=>b.onclick=async()=>{ try{ const r = await fetch(apiUrl('/api/media/'+encodeURIComponent(b.dataset.id)), {method:'DELETE'}); if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error||'Delete failed'); renderMediaView(); }catch(e){ toast(e.message); } });
   $$('.media-reuse').forEach(b=>b.onclick=()=>{ const p = (items.find(x=>x.id===b.dataset.id)||{}).provenance||{}; $('genPrompt').value=p.prompt||''; $('genNegative').value=p.negative||''; if (p.checkpoint) $('genCheckpoint').value=p.checkpoint; const size=p.width+'x'+p.height; if ([...$('genSize').options].some(o=>o.value===size)) $('genSize').value=size; $('genSteps').value=p.steps||25; $('genCfg').value=p.cfg||7; $('genSeed').value=p.seed??''; if (p.sampler) $('genSampler').value=p.sampler; $('genPrompt').scrollIntoView({behavior:'smooth',block:'center'}); });
-  $$('.media-animate').forEach(b=>b.onclick=()=>{ if (videoShots.length>=60) return toast('An animatic is limited to 60 shots.'); videoShots.push({mediaId:b.dataset.id, move:VIDEO_MOVES[videoShots.length%4][0], seconds:3}); renderMediaView().then(()=>$('videoPanel')&&$('videoPanel').scrollIntoView({behavior:'smooth',block:'start'})); });
+  $$('.media-animate').forEach(b=>b.onclick=()=>{ if (videoShots.length>=60) return toast('An animatic is limited to 60 shots.'); videoShots.push({mediaId:b.dataset.id, move:VIDEO_MOVES[videoShots.length%4][0], seconds:3}); setMediaTab('video'); renderMediaView().then(()=>$('videoPanel')&&$('videoPanel').scrollIntoView({behavior:'smooth',block:'start'})); });
   $$('.shot-move').forEach(el=>el.onchange=()=>{ videoShots[Number(el.dataset.idx)].move = el.value; });
   $$('.shot-seconds').forEach(el=>el.onchange=()=>{ videoShots[Number(el.dataset.idx)].seconds = Number(el.value)||3; });
   $$('.shot-remove').forEach(el=>el.onclick=()=>{ videoShots.splice(Number(el.dataset.idx),1); renderMediaView(); });
@@ -3040,7 +3116,7 @@ async function renderMediaView(){
   if ($('animateUpload')) $('animateUpload').onchange = async e => { let added = 0; for (const f of e.target.files){ try { const m = await uploadMediaFile(f); if (m && m.kind==='image') { videoShots.push({mediaId:m.id, move:VIDEO_MOVES[videoShots.length%4][0], seconds:3}); added++; } } catch(err){ toast(f.name+': '+err.message); } } if (added) toast(`Added ${added} shot${added>1?'s':''}.`); await renderMediaView(); $('videoPanel')&&$('videoPanel').scrollIntoView({behavior:'smooth',block:'start'}); };
   if ($('audioMode')) $('audioMode').onchange = () => { audioMode = $('audioMode').value; renderMediaView(); };
   if ($('audioStart')) $('audioStart').onclick = async () => { const text = $('audioText').value.trim(); if (!text) return toast(audioMode==='voice'?'Type the words to speak first.':'Describe the sound first.'); try { if (audioMode==='voice') { await post('/api/audio/voice', {text, voice:$('audioVoice').value||undefined, rate:Number($('audioRate').value)}); toast('Speaking…'); } else { await post('/api/audio/'+audioMode, {prompt:text, lyrics:$('audioLyrics')?$('audioLyrics').value.trim():undefined, title:$('audioTitle')?$('audioTitle').value.trim():undefined, seconds:Number($('audioSeconds').value), seed:$('audioSeed').value===''?undefined:Number($('audioSeed').value)}); toast(audioMode==='sfx'?'Generating the sound effect on ComfyUI…':'Composing on ComfyUI — this takes a while.'); } renderMediaView(); } catch(e){ toast(e.message); } };
-  $$('.media-filter').forEach(b=>b.onclick=async()=>{ filterSourceId = b.dataset.id; await renderMediaView(); $('filterPanel')&&$('filterPanel').scrollIntoView({behavior:'smooth',block:'start'}); });
+  $$('.media-filter').forEach(b=>b.onclick=async()=>{ filterSourceId = b.dataset.id; setMediaTab('edit'); await renderMediaView(); $('filterPanel')&&$('filterPanel').scrollIntoView({behavior:'smooth',block:'start'}); });
   if ($('fltSource')) $('fltSource').onchange = () => { filterSourceId = $('fltSource').value; renderMediaView(); };
   if ($('fltApply')) $('fltApply').onclick = async () => { const v = id => $(id) ? $(id).value : undefined, c = id => $(id) ? $(id).checked : undefined;
     const body = {look:v('fltLook'), aspect:v('fltAspect'), height:v('fltHeight')!==undefined?Number(v('fltHeight')):undefined, grain:v('fltGrain')!==undefined?Number(v('fltGrain')):undefined, vignette:c('fltVignette'), speed:v('fltSpeed')!==undefined?Number(v('fltSpeed')):undefined, fadeIn:v('fltFadeIn')!==undefined?Number(v('fltFadeIn')):undefined, fadeOut:v('fltFadeOut')!==undefined?Number(v('fltFadeOut')):undefined, trimStart:v('fltTrimStart')!==undefined?Number(v('fltTrimStart')):undefined, trimEnd:v('fltTrimEnd'), normalize:c('fltNormalize'), mute:c('fltMute')};
@@ -4291,10 +4367,10 @@ const VIEW_HELP = {
   settings:'Theme, language, privacy (network access), and NOVA-wide preferences.',
 };
 const PANEL_HELP = {
-  videoPanel:'Add shots with Animate or Upload stills. Camera moves render in seconds with ffmpeg. AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound. Continue from last frame chains clips; Join clips assembles them.',
-  audioPanel:'Voice reads text with macOS voices (add Hindi voices in System Settings > Accessibility > Spoken Content). Sound effects and songs need ComfyUI and the audio models. For a song, describe the idea and press Write lyrics, edit, then Generate; or paste your own lyrics.',
-  filterPanel:'Pick an item and one or more filters. The original is never changed: a new item appears with the settings in its recipe.',
-  libraryPanel:'Everything NOVA generates is also saved here as normal files, one folder per day, with a .json recipe beside each file.',
+  _videoPanel:'Add shots with Animate or Upload stills. Camera moves render in seconds with ffmpeg. AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound. Continue from last frame chains clips; Join clips assembles them.',
+  _audioPanel:'Voice reads text with macOS voices (add Hindi voices in System Settings > Accessibility > Spoken Content). Sound effects and songs need ComfyUI and the audio models. For a song, describe the idea and press Write lyrics, edit, then Generate; or paste your own lyrics.',
+  _filterPanel:'Pick an item and one or more filters. The original is never changed: a new item appears with the settings in its recipe.',
+  _libraryPanel:'Everything NOVA generates is also saved here as normal files, one folder per day, with a .json recipe beside each file.',
 };
 const PROMPT_PRESETS = {
   genPrompt:{ Shot:['wide establishing shot','medium shot','close-up','extreme close-up','over-the-shoulder shot','aerial drone shot','low angle','high angle'], Lens:['24mm wide lens','35mm lens','50mm lens','85mm portrait lens','anamorphic lens flare','shallow depth of field'], Light:['golden hour','blue hour','harsh noon sun','neon night','candlelight','soft overcast light','rim light','chiaroscuro'], Style:['cinematic film still','Bollywood song sequence','1970s Hindi film look','documentary realism','film noir','monsoon mood','festival colours','35mm film grain'] },
@@ -4355,13 +4431,23 @@ function enhanceLists(view){
     applyListState(list, key, bar);
   });
 }
+function toggleHelpDrawer(viewName){
+  let d = document.getElementById('helpDrawer');
+  if (d && d.dataset.view === viewName) { d.remove(); return; }
+  if (d) d.remove();
+  d = document.createElement('aside');
+  d.id = 'helpDrawer'; d.className = 'help-drawer'; d.dataset.view = viewName; d.setAttribute('aria-label', 'Help');
+  d.innerHTML = `<div class="help-drawer-head"><strong>${escapeHtml(VIEW_LABELS[viewName] || viewName)} · help</strong><button type="button" class="btn btn-ghost btn-sm" aria-label="Close help">Close</button></div><div class="help-box" role="note">${escapeHtml(VIEW_HELP[viewName])}</div>`;
+  d.querySelector('button').onclick = () => d.remove();
+  document.body.appendChild(d);
+}
 function enhanceHelp(view){
   const viewName = view.id.replace(/View$/, '');
   const head = view.querySelector('.view-head');
   if (head && VIEW_HELP[viewName] && !head.querySelector('.help-btn')) {
     const b = document.createElement('button');
     b.className = 'help-btn'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'What can I do here?'); b.title = 'What can I do here?';
-    b.onclick = () => { let box = head.nextElementSibling; if (box && box.classList.contains('help-box')) { box.remove(); return; } box = document.createElement('div'); box.className = 'help-box'; box.setAttribute('role', 'note'); box.textContent = VIEW_HELP[viewName]; head.after(box); };
+    b.onclick = () => toggleHelpDrawer(viewName);
     head.appendChild(b);
   }
   for (const [id, text] of Object.entries(PANEL_HELP)) {
@@ -4376,6 +4462,7 @@ function enhanceHelp(view){
   }
 }
 function enhancePresets(view){
+  if (view.id === 'mediaView') return; // Media shows presets in its helper panel
   view.querySelectorAll('textarea[id], input[id]').forEach(box => {
     const key = box.id === 'audioText' ? 'audioText:' + (typeof audioMode === 'string' ? audioMode : '') : box.id;
     const groups = PROMPT_PRESETS[key];

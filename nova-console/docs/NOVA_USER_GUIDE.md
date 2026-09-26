@@ -160,6 +160,8 @@ Workflows are restart-resilient, but a restart cannot make an unavailable model,
 
 Open **Media** in the sidebar. Everything here runs on your computer, and each item keeps the settings that made it.
 
+Tabs along the top separate the tools: **Image**, **Video**, **Audio**, **Transcribe**, **Edit** (filters) and **Library**. Each tab shows its own tool and only the matching library items (the Library tab shows everything and the library folder setting). NOVA remembers the last tab. **Animate** on an image jumps to Video; **Filters** on any item jumps to Edit. The panel on the right holds the helpers for the current tab: how it works, what still needs installing, prompt presets (click a chip to add it to the prompt) and that tab's recent jobs, with **Cancel** for running ones.
+
 - **Images in chat.** Use the paperclip in the composer, or **Attach to chat** in Media, to add PNG, JPEG, WebP or GIF images to your next message. Reading images needs a vision model, for example `ollama pull llama3.2-vision` or `ollama pull llava`, then sync models. A text-only model is refused with a message saying so.
 - **Image generation (ComfyUI).** To install it, double-click `Install ComfyUI for NOVA.command` in the brahmini folder (ComfyUI in `~/ComfyUI` plus the SDXL base checkpoint, about 13 GB); later, `Add Wan video models.command` adds the AI-motion files (about 22 GB). Start it with `Start ComfyUI for NOVA.command` in the brahmini folder. Start ComfyUI on this computer. NOVA finds it on port 8188 (manual install) or 8000 (ComfyUI Desktop); set `COMFYUI_URL` for any other local port. Only local addresses are accepted. Choose a checkpoint, size, steps, CFG, seed and sampler, then **Generate**. Each image is saved with its prompt, negative prompt, checkpoint and seed; **Reuse settings** loads them back.
 - **Image to image.** In **Generate an image**, set **Start from** to a library image (or **Upload image**), describe the change, and set **Change** (0.1 keeps it close, 0.9 reimagines it). It uses the same SDXL checkpoint through ComfyUI; the source is scaled to about one megapixel first.
@@ -181,8 +183,8 @@ Open **Media** in the sidebar. Everything here runs on your computer, and each i
 ### Helpers in every view
 
 - **Search, filter and sort.** Every list (skills, sessions, models, documents, media, history, agents, tool servers and more) has a search box, a filter built from its tags (installed, generated video, running, failed…) and a sort. Your choices are remembered per list in this browser.
-- **Help.** The **?** next to each view title explains what the view is for; panels in Media have their own **?**.
-- **Prompt presets.** Under image, video, sound-effect and song prompts, click a chip (shot size, lens, light, style, camera move, ambience, genre, instrument, mood, tempo…) to add it to the prompt. Negative-prompt chips add common things to avoid.
+- **Help.** The **?** next to each view title opens a help panel on the right; **Close** or changing view hides it. In Media, the right-hand helper panel is always open.
+- **Prompt presets.** In Media's helper panel (image, motion, sound-effect and song prompts) and under prompts elsewhere, click a chip (shot size, lens, light, style, camera move, ambience, genre, instrument, mood, tempo…) to add it to the prompt. Negative-prompt chips add common things to avoid.
 
 ### Filters for images, video and audio
 
