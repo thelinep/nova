@@ -2661,6 +2661,7 @@ function skillCardHtml(s){
     ${installed && PREPRO_SKILL_IDS.has(s.id) ? `<textarea class="skill-text-input" data-id="${s.id}" rows="4" placeholder="${s.id==='skl_callsheet'?'Paste the schedule, cast and crew notes for the day':s.id==='skl_translate'?'Paste the text to translate':s.id==='skl_pptx'?'Paste notes, a brief or an outline for the deck':'Paste a brief, notes or script pages'}, or leave empty to use the open chat" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
     ${installed && s.id==='skl_translate' ? `<input class="skill-lang-input" data-id="${s.id}" aria-label="Translate into" placeholder="Translate into, e.g. Hindi" value="${escapeHtml((s.lastOutput&&s.lastOutput.targetLang)||'Hindi')}" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
     ${installed && s.lastOutput ? `<details style="margin-bottom:8px"><summary class="empty-hint" style="cursor:pointer">Last output · ${fmtRelDate(s.lastOutput.at)}</summary><pre aria-label="${escapeHtml(s.name)} output" style="white-space:pre-wrap;max-height:320px;overflow:auto;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px">${escapeHtml(s.lastOutput.markdown)}</pre><button class="btn btn-ghost btn-sm skill-copy-output" data-id="${s.id}">Copy Markdown</button>${s.id==='skl_pptx'?`<button class="btn btn-ghost btn-sm skill-save-deck" data-id="${s.id}">Save deck.md</button>`:''}</details>` : ''}
+    ${installed ? skillHistoryHtml(s) : ''}
     ${installed && s.id==='skl_summarize' ? `<textarea class="skill-text-input" data-id="${s.id}" rows="3" placeholder="Paste text to summarize, or leave empty to summarize the active session" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink);resize:vertical"></textarea>` : ''}
     ${installed && s.id==='skl_webfetch' ? `<input type="text" class="skill-url-input mono" data-id="${s.id}" placeholder="https://example.com/page" style="width:100%;margin-bottom:8px;font-size:11.5px;background:transparent;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;color:var(--ink)">` : ''}
     <div class="cap-card-actions">
@@ -2682,7 +2683,20 @@ requiredTools: ${reqTools.join(', ')||'none'}</div>
     ` : ''}
   </div>`;
 }
+let SKILL_OUTPUTS = null; // skillId -> [outputs], newest first; null means reload
+function loadSkillOutputs(){
+  fetch(apiUrl('/api/skill-outputs')).then(r=>r.ok?r.json():[]).then(list=>{ SKILL_OUTPUTS = {}; for (const o of list) (SKILL_OUTPUTS[o.skillId] = SKILL_OUTPUTS[o.skillId] || []).push(o); if (currentView==='skills') renderSkillsView(); }).catch(()=>{ SKILL_OUTPUTS = {}; });
+}
+function skillHistoryHtml(s){
+  const list = (SKILL_OUTPUTS && SKILL_OUTPUTS[s.id]) || [];
+  if (!list.length) return '';
+  return `<details class="skill-history" style="margin-bottom:8px"><summary class="empty-hint" style="cursor:pointer">History · ${list.length} saved output${list.length>1?'s':''}</summary>
+    ${list.slice(0,30).map(o=>`<details style="margin:4px 0 0 8px"><summary style="cursor:pointer;font-size:11.5px">${escapeHtml(fmtRelDate(o.createdAt))} · ${escapeHtml(o.title||s.name)}</summary>
+      <pre style="white-space:pre-wrap;max-height:260px;overflow:auto;font-size:11px;margin:4px 0">${escapeHtml(o.markdown)}</pre>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn btn-ghost btn-sm skill-history-copy" data-skill="${s.id}" data-id="${o.id}">Copy</button>${o.libraryPath?`<span class="empty-hint" style="padding:0;font-size:10.5px" title="${escapeHtml(o.libraryPath)}">Saved in library: ${escapeHtml(o.libraryPath.split('/').slice(-2).join('/'))}</span>`:''}</div></details>`).join('')}</details>`;
+}
 function renderSkillsView(){
+  if (SKILL_OUTPUTS === null) { SKILL_OUTPUTS = {}; loadSkillOutputs(); }
   const pad = $('skillsView').querySelector('.view-pad');
   pad.innerHTML = `
     <div class="view-head">
@@ -2717,6 +2731,7 @@ function bindSkillsView(){
     s.health = {ok: missing.length===0, lastCheck:nowIso(), detail: missing.length ? 'Missing tool(s): '+missing.join(', ') : 'All required tools available.'};
     idbPut('skills', s); logEvent('SKILL', s.name+' health check: '+(s.health.ok?'ok':'attention')); renderSkillsView();
   });
+  $$('.skill-history-copy').forEach(b=>b.onclick=async()=>{ const o=((SKILL_OUTPUTS||{})[b.dataset.skill]||[]).find(x=>x.id===b.dataset.id); try{ await navigator.clipboard.writeText(o.markdown); toast('Copied.'); }catch(_){ toast('Copy failed; select the text instead.'); } });
   $$('.skill-save-deck').forEach(b=>b.onclick=()=>{ const sk = DB.skills.find(x=>x.id===b.dataset.id); const url = URL.createObjectURL(new Blob([sk.lastOutput.markdown], {type:'text/markdown'})); const a = document.createElement('a'); a.href = url; a.download = 'deck.md'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 1000); });
   $$('.skill-copy-output').forEach(b=>b.onclick=async()=>{ const sk = DB.skills.find(x=>x.id===b.dataset.id); try{ await navigator.clipboard.writeText(sk.lastOutput.markdown); toast('Copied.'); }catch(_){ toast('Copy failed; select the text instead.'); } });
   $$('.skill-run').forEach(b=>b.onclick=async ()=>{
@@ -2789,7 +2804,7 @@ function bindSkillsView(){
       logEvent('ERROR', s.name+' run failed: '+e.message);
       toast(s.name+' failed: '+e.message);
     } finally {
-      skillRunBusyIds.delete(s.id); if (currentView==='skills') renderSkillsView();
+      skillRunBusyIds.delete(s.id); SKILL_OUTPUTS = null; if (currentView==='skills') renderSkillsView();
     }
   });
 }
@@ -2833,10 +2848,10 @@ async function renderMediaView(){
   const pad = $('mediaView').querySelector('.view-pad');
   // Keep what the user typed when the view refreshes during a running job.
   const kept = MEDIA_FORM_IDS.map(id=>[id, $(id)&&$(id).value]).filter(([,v])=>v!=null), focusedId = document.activeElement&&MEDIA_FORM_IDS.includes(document.activeElement.id) ? document.activeElement.id : null;
-  let items=[], jobs=[], img={reachable:false,checkpoints:[],samplers:[]}, stt={ready:false,missing:[]}, vid={cameraMoves:{ready:false,sizes:[]},ltx:{ready:false,missing:[],notes:[]},ai:{reachable:false,ready:false,missing:[],notes:[],sizes:[]}};
+  let lib={dir:null,enabled:false}, items=[], jobs=[], img={reachable:false,checkpoints:[],samplers:[]}, stt={ready:false,missing:[]}, vid={cameraMoves:{ready:false,sizes:[]},ltx:{ready:false,missing:[],notes:[]},ai:{reachable:false,ready:false,missing:[],notes:[],sizes:[]}};
   try{
-    const rs = await Promise.all([fetch(apiUrl('/api/media')), fetch(apiUrl('/api/images/jobs')), fetch(apiUrl('/api/images/status')), fetch(apiUrl('/api/transcribe/status')), fetch(apiUrl('/api/video/status'))]);
-    if (rs[0].ok) items = await rs[0].json(); if (rs[1].ok) jobs = await rs[1].json(); if (rs[2].ok) img = await rs[2].json(); if (rs[3].ok) stt = await rs[3].json(); if (rs[4].ok) vid = await rs[4].json();
+    const rs = await Promise.all([fetch(apiUrl('/api/media')), fetch(apiUrl('/api/images/jobs')), fetch(apiUrl('/api/images/status')), fetch(apiUrl('/api/transcribe/status')), fetch(apiUrl('/api/video/status')), fetch(apiUrl('/api/library'))]);
+    if (rs[0].ok) items = await rs[0].json(); if (rs[1].ok) jobs = await rs[1].json(); if (rs[2].ok) img = await rs[2].json(); if (rs[3].ok) stt = await rs[3].json(); if (rs[4].ok) vid = await rs[4].json(); if (rs[5] && rs[5].ok) lib = await rs[5].json();
   }catch(_){}
   videoShots = videoShots.filter(sh=>items.some(m=>m.id===sh.mediaId&&m.kind==='image'));
   videoJoin = videoJoin.filter(id=>items.some(m=>m.id===id&&m.kind==='video'));
@@ -2857,6 +2872,7 @@ async function renderMediaView(){
       ${preview}
       <div style="display:flex;justify-content:space-between;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.originalName)}</strong><span class="badge ${m.source==='upload'?'':'badge-blue'}">${m.source==='upload'?m.kind:m.kind==='video'?'generated video':'generated'}</span></div>
       <div class="empty-hint" style="padding:2px 0">${workspaceBytes ? workspaceBytes(m.bytes) : m.bytes+' B'} · ${fmtRelDate ? fmtRelDate(m.createdAt) : m.createdAt}</div>
+      ${m.libraryPath?`<div class="empty-hint" style="padding:0 0 2px;font-size:10.5px" title="${escapeHtml(m.libraryPath)}">Saved in library: ${escapeHtml(m.libraryPath.split('/').slice(-2).join('/'))}</div>`:''}
       ${recipe?`<details><summary class="empty-hint" style="cursor:pointer">Recipe</summary><pre style="white-space:pre-wrap;font-size:10.5px;margin:6px 0">${escapeHtml(recipe)}</pre>${m.kind==='image'?`<button class="btn btn-ghost btn-sm media-reuse" data-id="${m.id}">Reuse settings</button>`:''}</details>`:''}
       ${m.kind==='audio'||m.kind==='video'?`<div style="margin-top:6px">${t?`<span class="badge ${t.status==='done'?'badge-green':t.status==='failed'?'badge-red':'badge-amber'}">${escapeHtml(t.status==='running'?'transcribing…':t.status)}</span>`:''}${t&&t.error?`<div class="empty-hint">${escapeHtml(t.error)}</div>`:''}
         ${m.transcript?`<details ${t&&t.status==='done'?'open':''}><summary class="empty-hint" style="cursor:pointer">Transcript · ${m.transcript.segments.length} segments · ${escapeHtml(m.transcript.model||'')}</summary><pre aria-label="Transcript" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:11px">${escapeHtml(m.transcript.text)}</pre></details>`:''}
@@ -2921,6 +2937,11 @@ async function renderMediaView(){
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="empty-hint" style="padding:0" id="joinSummary">${videoJoin.length?videoJoin.map((id,i)=>`${i+1}. ${escapeHtml((items.find(m=>m.id===id)||{}).originalName||id)}`).join(' · '):'No clips chosen to join.'}</span>
         <button class="btn btn-amber" id="joinStart" ${vid.cameraMoves.ready&&videoJoin.length>=2?'':'disabled'}>Join ${videoJoin.length||''} clips</button>${videoJoin.length?'<button class="btn btn-ghost btn-sm" id="joinClear">Clear</button>':''}</div>
     </div>
+    <div class="panel" id="libraryPanel" style="padding:12px 16px;margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px"><span class="eyebrow">Library folder</span><div style="font-size:12.5px;margin-top:3px">${lib.enabled&&lib.dir?`Everything NOVA generates — images, videos, transcripts, skill outputs — is also saved as files with a recipe .json in <code>${escapeHtml(lib.dir)}</code>, one folder per day.`:'Saving to a library folder is off.'}</div></div>
+      ${lib.source==='env'?'<span class="empty-hint">Set by NOVA_LIBRARY_DIR</span>':`<input id="libraryDir" aria-label="Library folder" value="${escapeHtml(lib.dir||lib.defaultDir||'')}" style="${field};min-width:260px"><button class="btn btn-line btn-sm" id="librarySave">Save folder</button>`}
+      <button class="btn btn-ghost btn-sm" id="libraryBackfill" ${lib.enabled?'':'disabled'}>Copy earlier items</button>
+    </div>
     <div class="cap-section-label">Library · ${items.length} item(s)</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${items.map(itemHtml).join('')||'<p class="empty-hint">Nothing here yet. Generate an image or upload a file.</p>'}</div>`;
   for (const [id,v] of kept) if ($(id)) $(id).value = v;
@@ -2951,6 +2972,8 @@ async function renderMediaView(){
   if ($('motionStart')) $('motionStart').onclick = async () => { try { await post('/api/video/camera-moves', {shots:videoShots, size:$('motionSize').value, fps:Number($('motionFps').value)}); toast('Rendering video on this computer…'); renderMediaView(); } catch(e){ toast(e.message); } };
   if ($('aiVideoEngine')) $('aiVideoEngine').onchange = () => { aiEngine = $('aiVideoEngine').value; renderMediaView(); };
   if ($('aiVideoStart')) $('aiVideoStart').onclick = async () => { const prompt=$('aiVideoPrompt').value.trim(); if (!prompt) return toast('Describe the motion first.'); const body = {engine:aiEngine, mediaId:videoShots[0].mediaId, prompt, size:$('aiVideoSize').value, seconds:Number($('aiVideoSeconds').value), seed:$('aiVideoSeed').value===''?undefined:Number($('aiVideoSeed').value)}; if (aiEngine==='ltx') body.mode=$('aiVideoMode').value; else body.steps=Number($('aiVideoSteps').value); try { await post('/api/video/animate', body); toast(aiEngine==='ltx'?'Animating with LTX-2 on this Mac — a few minutes per clip.':'Animating on ComfyUI — this can take a while on a Mac.'); renderMediaView(); } catch(e){ toast(e.message); } };
+  if ($('librarySave')) $('librarySave').onclick = async () => { try { await post('/api/library', {dir:$('libraryDir').value.trim()}); toast('Library folder saved.'); renderMediaView(); } catch(e){ toast(e.message); } };
+  if ($('libraryBackfill')) $('libraryBackfill').onclick = async () => { try { const r = await post('/api/library/backfill'); toast(`Copied ${r.media} media, ${r.transcripts} transcripts and ${r.skillOutputs} skill outputs to the library.`); renderMediaView(); } catch(e){ toast(e.message); } };
   if (mediaPoll) { clearTimeout(mediaPoll); mediaPoll = null; }
   if (running.length || items.some(m=>m.transcription&&m.transcription.status==='running')) mediaPoll = setTimeout(()=>{ mediaPoll=null; if (currentView==='media') renderMediaView(); }, 2000);
 }

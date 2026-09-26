@@ -135,6 +135,7 @@ function start(store, dataDir, deps, id, options = {}) {
         latest.transcription.knowledgeDocumentId = doc && (doc.document?.id || doc.id || null);
       }
       store.put('media', latest);
+      require('./library').mirrorTranscript(store, latest);
     } catch (e) {
       const latest = store.get('media', record.id) || record;
       latest.transcription = { ...latest.transcription, status: 'failed', finishedAt: new Date().toISOString(), error: e.message || String(e) };

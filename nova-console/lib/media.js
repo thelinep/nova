@@ -13,6 +13,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const library = require('./library');
 
 const LIMITS = { image: 25 * 1024 * 1024, audio: 500 * 1024 * 1024, video: 500 * 1024 * 1024 };
 const AUDIO_BRANDS = new Set(['M4A ', 'M4B ', 'M4P ', 'F4A ', 'F4B ']);
@@ -65,6 +66,7 @@ function saveMedia(store, dataDir, { buffer, originalName, source = 'upload', pr
   fs.writeFileSync(path.join(mediaDir(dataDir), fileName), buffer, { flag: 'wx' });
   const record = { id, type: 'media', kind: type.kind, mime: type.mime, bytes: buffer.length, sha256, fileName, originalName: cleanName(originalName), source, provenance, createdAt: new Date().toISOString(), transcript: null, transcription: null };
   store.put('media', record);
+  library.mirrorMedia(store, record, buffer); // generated items also go to the visible library folder
   return record;
 }
 

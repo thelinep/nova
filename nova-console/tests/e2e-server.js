@@ -19,6 +19,7 @@ execFileSync('git', ['config', 'user.email', 'nova-e2e@example.invalid'], { cwd:
 execFileSync('git', ['add', 'draft.json', 'feature.js', 'batch-config.json', 'batch-main.js'], { cwd: workspaceDir });
 execFileSync('git', ['commit', '-qm', 'Initial fixture'], { cwd: workspaceDir });
 process.env.DATA_DIR = dataDir;
+process.env.NOVA_LIBRARY_DIR = path.join(dataDir, 'library'); // never write test output into the real ~/Documents/NOVA Library
 const { server } = require('../server');
 
 function shutdown() {

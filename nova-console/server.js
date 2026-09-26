@@ -46,6 +46,7 @@ const imageGen = require('./lib/image-gen');
 const videoGen = require('./lib/video-gen');
 const videoLtx = require('./lib/video-ltx');
 const heavyJobs = require('./lib/heavy-jobs');
+const library = require('./lib/library');
 const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
@@ -293,6 +294,11 @@ const routes = [
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.image.generation.started', jobId: job.id, checkpoint: job.settings.checkpoint });
       sendJson(res, 202, job);
     } },
+  { method: 'GET', pattern: /^\/api\/library$/, handler: async (_req, res) => sendJson(res, 200, library.info()) },
+  { method: 'POST', pattern: /^\/api\/library$/, handler: async (req, res) => { const cfg = library.setDir(store, await readJsonBody(req)); desktopSecurity.appendAudit(DATA_DIR, { action: 'library.folder.changed', dir: cfg.dir }); sendJson(res, 200, library.info()); } },
+  { method: 'POST', pattern: /^\/api\/library\/backfill$/, handler: async (_req, res) => sendJson(res, 200, library.backfill(store, DATA_DIR)) },
+  { method: 'GET', pattern: /^\/api\/skills\/([^/]+)\/outputs$/, handler: async (_req, res, [id]) => sendJson(res, 200, library.listSkillOutputs(store, decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/skill-outputs$/, handler: async (_req, res) => sendJson(res, 200, library.listSkillOutputs(store, null, 200)) },
   { method: 'GET', pattern: /^\/api\/video\/status$/, handler: async (_req, res) => sendJson(res, 200, await videoGen.status(DATA_DIR)) },
   { method: 'POST', pattern: /^\/api\/video\/camera-moves$/, handler: async (req, res) => {
       const { job } = videoGen.startMotion(store, DATA_DIR, await readJsonBody(req));
@@ -653,8 +659,10 @@ const routes = [
         else if (result && typeof result.summary === 'string') skill.lastOutput = { at: finishedAt, markdown: result.summary };
         skill.audit = skill.audit || [];
         skill.audit.push({ at: finishedAt, action: 'Run', detail: summarizeSkillResult(skillId, result) });
+        const output = library.recordSkillOutput(store, skill, body.inputs, result, { startedAt, finishedAt });
+        if (output && skill.lastOutput) { skill.lastOutput.outputId = output.id; skill.lastOutput.libraryPath = output.libraryPath; }
         store.put('skills', skill);
-        sendJson(res, 200, { skill, result, startedAt, finishedAt });
+        sendJson(res, 200, { skill, result, output, startedAt, finishedAt });
       } catch (e) {
         const finishedAt = new Date().toISOString();
         skill.audit = skill.audit || [];
@@ -806,6 +814,7 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
   const interruptedRuns=workspaceRunner.recoverInterrupted(store);
   if(interruptedRuns)console.log(`  recovered:   ${interruptedRuns} interrupted workspace run(s)`);
+  const lib=library.configure(store);console.log('  library: '+(lib.enabled?lib.dir:'off'));
   const addedSkills=ensureFirstPartySkills(store);
   if(mcpManager.ensureBrowserServer(store))console.log('  mcp: Browser Automation now uses the real browser server (needs network access on)');
   if(addedSkills)console.log(`  skills:      added ${addedSkills} new first-party skill(s)`);

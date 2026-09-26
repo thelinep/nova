@@ -72,6 +72,8 @@ test.describe('NOVA Console interactions', () => {
     await page.waitForLoadState('networkidle');
     await page.locator('[data-view="media"]').click();
     await expect(page.getByRole('heading', { name: 'Animate stills' })).toBeVisible();
+    await expect(page.locator('#libraryPanel')).toContainText('Set by NOVA_LIBRARY_DIR');
+    await expect(page.locator('#libraryPanel code')).toHaveText(/nova-e2e-.*\/library$/);
     const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082', 'hex');
     await page.getByLabel('Upload images, audio or video').setInputFiles({ name: 'storyboard-01.png', mimeType: 'image/png', buffer: png });
     await expect(page.getByText('storyboard-01.png').first()).toBeVisible();
@@ -266,6 +268,7 @@ test.describe('NOVA Console interactions', () => {
     await page.getByLabel('Local folder path').fill('/private/tmp/nova-e2e-workspace');
     await page.getByLabel('Folder label').fill('Batch fixture');
     await page.getByRole('button', { name: 'Approve root' }).click();
+    await expect(page.getByRole('status')).toContainText('Local root approved.'); // the view re-renders after approval; fill the form after that
     await page.getByLabel('Multi-file batch changes').fill(JSON.stringify([
       {relativePath:'batch-main.js',find:'false',replacement:'true',dependsOn:['batch-config.json']},
       {relativePath:'batch-config.json',find:'false',replacement:'true'},

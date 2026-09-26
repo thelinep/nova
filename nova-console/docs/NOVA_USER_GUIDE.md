@@ -171,6 +171,14 @@ Open **Media** in the sidebar. Everything here runs on your computer, and each i
   Videos play in the library, can be downloaded, and keep a recipe (shots and moves, or prompt, seed, steps and models). MP4 and MOV uploads are accepted too.
 - **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM) or video (MP4, MOV; needs a working ffmpeg), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
 
+### Library folder: everything NOVA makes, as files
+
+Every image and video NOVA generates, every transcript and every skill output (Treatment, Shot List, Call Sheet, Translate, Slides, Summarizer) is also saved as an ordinary file in **~/Documents/NOVA Library**, one folder per day, e.g. `2026-09-26/1432 marine drive dusk (ltx).mp4`. Next to each file is a `.json` recipe (prompt, model, seed, source image, settings), so the item can be found in Finder, backed up with Time Machine or copied to a drive, and reproduced later. Your own uploads are not copied.
+
+Change the folder in **Media > Library folder** (or set `NOVA_LIBRARY_DIR` before `npm start`). **Copy earlier items** copies things made before the library existed. Saving to the library never stops a job; if a copy fails, the item says so.
+
+Skills keep a full **History** of their outputs (not just the last one) on their card in **Skills**, newest first, with Copy and the library file for each.
+
 ### Pre-production skills
 
 **Treatment Writer**, **Shot List** and **Call Sheet** are in **Skills**. Paste a brief, notes, schedule or script pages, or leave the box empty to use the open chat. Each runs on a local Ollama model, returns a structured result shown as Markdown (tables for shot lists and call sheets), and writes "TBC" for facts that are not in the source, such as addresses or hospital details. They can also run as workflow steps, taking the previous step's output as input.

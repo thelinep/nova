@@ -83,6 +83,7 @@ async function runNode(store, ollama, node, context) {
         if (!server) throw Object.assign(new Error('No connected MCP server advertises tool "' + toolName + '"'), { statusCode: 502 });
         return mcpManager.gatedCall(store, server.id, toolName, args, { wait: true, origin: 'workflow' });
       }, buildSkillHost(store, ollama, skill));
+      if (TEXT_SKILL_IDS.has(node.ref)) require('./library').recordSkillOutput(store, skill, inputs, result);
       if (node.ref === 'skl_summarize') return result.summary;
       if (TEXT_SKILL_IDS.has(node.ref)) return result.markdown;
       return JSON.stringify(result);

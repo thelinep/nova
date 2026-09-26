@@ -22,6 +22,8 @@ Context for continuing NOVA work inside NOVA itself. Load this file into a knowl
 | Image generation | `lib/image-gen.js` | Local ComfyUI on 8188 or 8000; recipe saved per image |
 | Image to video | `lib/video-gen.js` | Camera moves/animatics via ffmpeg; AI motion via ComfyUI Wan 2.2 TI2V 5B; last-frame continuation and clip joining |
 | Local AI motion with sound | `lib/video-ltx.js`, `scripts/install-ltx-mac.sh` | LTX-2.3 MLX q4 via ltx-2-mlx CLI; default engine; Wan 2.2 kept as option. Not yet run on the Mac (needs ~30 GB free) |
+| Library folder + skill-output history | `lib/library.js` | Generated media, transcripts and skill outputs mirrored to ~/Documents/NOVA Library/<day>/ with recipe .json; `skillOutputs` store; tests set NOVA_LIBRARY_DIR to a temp folder |
+| Memory guard rails | `lib/heavy-jobs.js` | One heavy job at a time; unload Ollama/ComfyUI models first; Wan blocked under 32 GB; LTX capped on 16 GB |
 | Translate, Export to Slides | `skills/translate.js`, `skills/pptx.js` | Real on local Ollama; old simulated records upgraded in place |
 | Browser Automation MCP | `mcp-servers/browser-server.js` | Headless Chromium via Playwright; needs web access on; approval per call |
 | Real-model checks | `scripts/validate-real-models.js` | `npm run test:real-models [-- model]`: dev loop x2, summarize, translate, slides, shot list |

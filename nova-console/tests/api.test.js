@@ -23,7 +23,7 @@ function request(base, pathname, { method = 'GET', headers = {}, body } = {}) {
 }
 async function start(dir, ollamaHost) {
   const child = spawn(process.execPath, ['--no-warnings', '-e', "const {server}=require('./server'); server.on('listening',()=>process.send(server.address()));"], {
-    cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: '0', DATA_DIR: dir, OLLAMA_HOST: ollamaHost }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: '0', DATA_DIR: dir, OLLAMA_HOST: ollamaHost, NOVA_LIBRARY_DIR: path.join(dir, 'library') }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
   const address = once(child, 'message').then(([value]) => value);
   let output = '';

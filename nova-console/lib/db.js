@@ -21,7 +21,7 @@ const STORE_NAMES = [
   'sessions', 'models', 'modelProfiles', 'modelQualifications', 'knowledgeCollections', 'knowledgeDocuments',
   'knowledgeChunks', 'automations', 'automationRuns', 'evaluations', 'preferences',
   'runtimeEvents', 'skills', 'mcpServers', 'agents', 'workflows', 'workflowRuns', 'executions', 'collectionRuns', 'collectorEvidence', 'venueObservations',
-  'workspaceRoots', 'workspaceReports', 'workspacePlans', 'workspacePlanningAttempts', 'workspaceChanges', 'workspaceChangeBatches', 'workspaceProjects', 'workspaceLoops', 'workspaceRuns', 'media', 'generationJobs', 'workspaceGitDrafts', 'workspaceGitActions', 'workspacePermissions', 'securityBackups',
+  'workspaceRoots', 'workspaceReports', 'workspacePlans', 'workspacePlanningAttempts', 'workspaceChanges', 'workspaceChangeBatches', 'workspaceProjects', 'workspaceLoops', 'workspaceRuns', 'media', 'generationJobs', 'skillOutputs', 'workspaceGitDrafts', 'workspaceGitActions', 'workspacePermissions', 'securityBackups',
 ];
 
 function openDb(dataDir) {
