@@ -104,7 +104,7 @@ test('image to image uploads the source and re-noises it by the chosen strength'
     await done;
     const g = seen.graphs[0];
     assert.equal(g['10'].inputs.image, 'nova-src.png');
-    assert.deepEqual([g['3'].inputs.denoise, g['3'].inputs.seed, g['11'].inputs.megapixels], [0.4, 5, 1]);
+    assert.deepEqual([g['3'].inputs.denoise, g['3'].inputs.seed, g['11'].class_type, g['11'].inputs.width, g['11'].inputs.height], [0.4, 5, 'ImageScale', 1024, 1024]);
     assert.deepEqual(g['12'].inputs.pixels, ['11', 0]);
     const fin = db.get('generationJobs', job.id);
     assert.equal(fin.status, 'done', fin.error);

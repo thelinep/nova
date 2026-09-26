@@ -234,12 +234,14 @@ function startJob(store, type, settings, run) {
 
 /* ------------------------------- image to image ------------------------------ */
 
-function normaliseImg2Img(store, input, checkpoints, loras = null) {
+function normaliseImg2Img(store, input, checkpoints, loras = null, dataDir = null) {
   const record = media.getMedia(store, input.mediaId);
   if (record.kind !== 'image') throw error('Choose an image to start from.');
   const base = normalise({ ...input, width: 1024, height: 1024, batch: 1 }, checkpoints, loras);
   const strength = Math.min(0.95, Math.max(0.1, Number(input.strength) || 0.55));
-  return { ...base, mode: 'img2img', sourceMediaId: record.id, sourceName: record.originalName, strength, megapixels: 1.0, width: undefined, height: undefined, batch: undefined };
+  let dims = { width: 1024, height: 1024 };
+  if (dataDir) { try { const ie = require('./image-edit'); const sz = ie.imageSize(require('node:fs').readFileSync(media.filePath(dataDir, record))); dims = ie.fitDims(sz.width, sz.height, 1.0); } catch (_) {} }
+  return { ...base, mode: 'img2img', sourceMediaId: record.id, sourceName: record.originalName, strength, megapixels: 1.0, scaleWidth: dims.width, scaleHeight: dims.height, width: undefined, height: undefined, batch: undefined };
 }
 
 /** Standard SDXL image-to-image: the source is scaled to about 1 megapixel, encoded and partly re-noised (denoise = strength). */
@@ -247,7 +249,8 @@ function img2imgGraph(s, imageName) {
   return withLora({
     '4': { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: s.checkpoint } },
     '10': { class_type: 'LoadImage', inputs: { image: imageName } },
-    '11': { class_type: 'ImageScaleToTotalPixels', inputs: { image: ['10', 0], upscale_method: 'lanczos', megapixels: s.megapixels } },
+    // ImageScale with explicit sizes: ImageScaleToTotalPixels gained a required input in newer ComfyUI.
+    '11': { class_type: 'ImageScale', inputs: { image: ['10', 0], upscale_method: 'lanczos', width: s.scaleWidth || 1024, height: s.scaleHeight || 1024, crop: 'disabled' } },
     '12': { class_type: 'VAEEncode', inputs: { pixels: ['11', 0], vae: ['4', 2] } },
     '6': { class_type: 'CLIPTextEncode', inputs: { text: s.prompt, clip: ['4', 1] } },
     '7': { class_type: 'CLIPTextEncode', inputs: { text: s.negative, clip: ['4', 1] } },
@@ -260,7 +263,7 @@ function img2imgGraph(s, imageName) {
 async function generateFromImage(store, dataDir, input) {
   const info = await status();
   if (!info.reachable) throw error(info.error, 503);
-  const settings = normaliseImg2Img(store, input, info.checkpoints, info.loras);
+  const settings = normaliseImg2Img(store, input, info.checkpoints, info.loras, dataDir);
   const source = media.getMedia(store, settings.sourceMediaId);
   return startJob(store, 'image-generation', settings, async job => {
     const name = await uploadImage(dataDir, source);

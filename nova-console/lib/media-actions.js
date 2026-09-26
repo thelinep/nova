@@ -201,7 +201,7 @@ function translate(store, dataDir, deps, id, input = {}) {
   if (s.mode === 'dub') {
     s.voice = audioGen.voiceFor(s.language, s.voice);
     if (!s.voice) throw error(`No ${s.languageName} voice is installed. Add one in System Settings > Accessibility > Spoken Content > System voice > Manage Voices, install Kokoro voices, or choose subtitles.`, 412);
-  } else if (!hasFilter(ffmpeg, 'subtitles')) throw error('Burning subtitles needs ffmpeg built with libass (brew reinstall ffmpeg). You can dub instead.', 412);
+  } else s.burn = hasFilter(ffmpeg, 'subtitles'); // without libass the subtitles go in as a track you can switch on
   const settings = { ...s, model, prompt: `${record.originalName} → ${s.languageName} (${s.mode === 'dub' ? 'dub' : 'subtitles'})` };
   const job = newJob(store, 'media-translate', settings);
   const done = runJob(store, job, async () => {
@@ -226,8 +226,13 @@ function translate(store, dataDir, deps, id, input = {}) {
       const out = path.join(work, 'out' + (record.kind === 'video' ? '.mp4' : '.m4a'));
       if (s.mode === 'subtitles') {
         fs.writeFileSync(path.join(work, 'subs.srt'), srt);
+        if (!s.burn) {
+          progress(store, job, 'Adding a subtitle track…');
+          await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', src, '-i', 'subs.srt', '-map', '0:v:0', ...(info.hasAudio ? ['-map', '0:a:0'] : []), '-map', '1:0', '-c:v', 'copy', ...(info.hasAudio ? ['-c:a', 'copy'] : []), '-c:s', 'mov_text', '-metadata:s:s:0', `language=${{ hi: 'hin', en: 'eng', bn: 'ben', mr: 'mar', ta: 'tam', te: 'tel', gu: 'guj', pa: 'pan', ur: 'urd', es: 'spa', fr: 'fra', de: 'deu', it: 'ita', pt: 'por', ja: 'jpn', zh: 'zho', ar: 'ara' }[s.language] || 'und'}`, '-disposition:s:0', 'default', '-movflags', '+faststart', out], { timeoutMs: 60 * 60 * 1000, cwd: work });
+        } else {
         progress(store, job, 'Burning in subtitles…');
         await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', src, '-vf', `subtitles=subs.srt:charenc=UTF-8:force_style='FontSize=22,Outline=2,MarginV=28'`, ...require('./video-gen').encoderArgs(ffmpeg), '-pix_fmt', 'yuv420p', ...(info.hasAudio ? ['-c:a', 'aac', '-b:a', '192k'] : ['-an']), '-movflags', '+faststart', out], { timeoutMs: 60 * 60 * 1000, cwd: work });
+        }
       } else {
         const clips = [];
         for (let i = 0; i < translated.length; i++) {
@@ -255,7 +260,7 @@ function translate(store, dataDir, deps, id, input = {}) {
         await run(ffmpeg, args, { timeoutMs: 60 * 60 * 1000 });
       }
       const ext = path.extname(out);
-      const saved = media.saveMedia(store, dataDir, { buffer: fs.readFileSync(out), originalName: `${baseName(record)} (${s.languageName}${s.mode === 'dub' ? ' dub' : ' subtitles'})${ext}`, source: 'nova-translate', expectKind: record.kind, provenance: { generator: 'nova-translate', ...settings, lines: translated.length, srt, jobId: job.id } });
+      const saved = media.saveMedia(store, dataDir, { buffer: fs.readFileSync(out), originalName: `${baseName(record)} (${s.languageName}${s.mode === 'dub' ? ' dub' : s.burn ? ' subtitles' : ' subtitle track'})${ext}`, source: 'nova-translate', expectKind: record.kind, provenance: { generator: 'nova-translate', ...settings, lines: translated.length, srt, jobId: job.id } });
       return [saved.id];
     } finally { fs.rmSync(work, { recursive: true, force: true }); }
   });
