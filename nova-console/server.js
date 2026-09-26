@@ -50,6 +50,10 @@ const library = require('./lib/library');
 const audioGen = require('./lib/audio-gen');
 const songWriter = require('./lib/song-writer');
 const mediaFilters = require('./lib/media-filters');
+const imageEdit = require('./lib/image-edit');
+const mediaActions = require('./lib/media-actions');
+const timeline = require('./lib/timeline');
+const boards = require('./lib/boards');
 const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
@@ -313,6 +317,44 @@ const routes = [
       sendJson(res, 202, job);
     } },
   { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/filter$/, handler: async (req, res, [id]) => { const { job } = mediaFilters.start(store, DATA_DIR, decodeURIComponent(id), await readJsonBody(req)); sendJson(res, 202, job); } },
+  { method: 'POST', pattern: /^\/api\/images\/(edit|expand)$/, handler: async (req, res, [kind]) => {
+      heavyJobs.check(store, 'image'); await heavyJobs.freeMemory({ ollama });
+      const body = await readJsonBody(req);
+      const { job } = kind === 'edit' ? await imageEdit.inpaint(store, DATA_DIR, body) : await imageEdit.outpaint(store, DATA_DIR, body);
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.image.' + kind + '.started', jobId: job.id, source: job.settings.sourceMediaId });
+      sendJson(res, 202, job);
+    } },
+  { method: 'POST', pattern: /^\/api\/images\/upscale$/, handler: async (req, res) => {
+      heavyJobs.check(store, 'image');
+      const { job } = await imageEdit.upscale(store, DATA_DIR, await readJsonBody(req), { ffmpeg: transcriber.status(DATA_DIR).ffmpeg });
+      sendJson(res, 202, job);
+    } },
+  { method: 'GET', pattern: /^\/api\/media\/([^/]+)\/info$/, handler: async (_req, res, [id]) => {
+      const record = media.getMedia(store, decodeURIComponent(id));
+      const ffmpeg = transcriber.status(DATA_DIR).ffmpeg;
+      if (record.kind !== 'image' && !ffmpeg) { sendJson(res, 200, { id: record.id, kind: record.kind, duration: null, hasAudio: null }); return; }
+      const info = await timeline.mediaInfo(store, DATA_DIR, ffmpeg, record);
+      sendJson(res, 200, { id: record.id, kind: record.kind, duration: info.duration, hasAudio: info.hasAudio });
+    } },
+  { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/enhance$/, handler: async (req, res, [id]) => { const { job } = await mediaActions.enhanceSpeech(store, DATA_DIR, decodeURIComponent(id), await readJsonBody(req)); sendJson(res, 202, job); } },
+  { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/translate$/, handler: async (req, res, [id]) => {
+      const { job } = mediaActions.translate(store, DATA_DIR, { ollama, ingestDocument }, decodeURIComponent(id), await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.translate.started', jobId: job.id, language: job.settings.language, mode: job.settings.mode });
+      sendJson(res, 202, job);
+    } },
+  { method: 'GET', pattern: /^\/api\/translate\/languages$/, handler: async (_req, res) => sendJson(res, 200, mediaActions.LANGUAGES) },
+  /* ---- boards and timelines ---- */
+  { method: 'GET', pattern: /^\/api\/boards$/, handler: async (_req, res) => sendJson(res, 200, store.all('boards').sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))) },
+  { method: 'POST', pattern: /^\/api\/boards$/, handler: async (req, res) => { const b = boards.normalise(store, await readJsonBody(req)); store.put('boards', b); sendJson(res, 201, b); } },
+  { method: 'GET', pattern: /^\/api\/boards\/([^/]+)$/, handler: async (_req, res, [id]) => { const b = store.get('boards', decodeURIComponent(id)); if (!b) { sendJson(res, 404, { error: 'Unknown board.' }); return; } sendJson(res, 200, b); } },
+  { method: 'PUT', pattern: /^\/api\/boards\/([^/]+)$/, handler: async (req, res, [id]) => { const old = store.get('boards', decodeURIComponent(id)); if (!old) { sendJson(res, 404, { error: 'Unknown board.' }); return; } const b = boards.normalise(store, await readJsonBody(req), old); store.put('boards', b); sendJson(res, 200, b); } },
+  { method: 'DELETE', pattern: /^\/api\/boards\/([^/]+)$/, handler: async (_req, res, [id]) => { store.delete('boards', decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'GET', pattern: /^\/api\/timelines$/, handler: async (_req, res) => sendJson(res, 200, store.all('timelines').sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))) },
+  { method: 'POST', pattern: /^\/api\/timelines$/, handler: async (req, res) => { const t = timeline.normalise(store, await readJsonBody(req)); store.put('timelines', t); sendJson(res, 201, t); } },
+  { method: 'GET', pattern: /^\/api\/timelines\/([^/]+)$/, handler: async (_req, res, [id]) => { const t = store.get('timelines', decodeURIComponent(id)); if (!t) { sendJson(res, 404, { error: 'Unknown timeline.' }); return; } sendJson(res, 200, t); } },
+  { method: 'PUT', pattern: /^\/api\/timelines\/([^/]+)$/, handler: async (req, res, [id]) => { const old = store.get('timelines', decodeURIComponent(id)); if (!old) { sendJson(res, 404, { error: 'Unknown timeline.' }); return; } const t = timeline.normalise(store, await readJsonBody(req), old); store.put('timelines', t); sendJson(res, 200, t); } },
+  { method: 'DELETE', pattern: /^\/api\/timelines\/([^/]+)$/, handler: async (_req, res, [id]) => { store.delete('timelines', decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'POST', pattern: /^\/api\/timelines\/([^/]+)\/export$/, handler: async (_req, res, [id]) => { const { job } = timeline.exportTimeline(store, DATA_DIR, decodeURIComponent(id)); desktopSecurity.appendAudit(DATA_DIR, { action: 'media.timeline.export.started', jobId: job.id, timelineId: job.settings.timelineId }); sendJson(res, 202, job); } },
   { method: 'GET', pattern: /^\/api\/library$/, handler: async (_req, res) => sendJson(res, 200, library.info()) },
   { method: 'POST', pattern: /^\/api\/library$/, handler: async (req, res) => { const cfg = library.setDir(store, await readJsonBody(req)); desktopSecurity.appendAudit(DATA_DIR, { action: 'library.folder.changed', dir: cfg.dir }); sendJson(res, 200, library.info()); } },
   { method: 'POST', pattern: /^\/api\/library\/backfill$/, handler: async (_req, res) => sendJson(res, 200, library.backfill(store, DATA_DIR)) },

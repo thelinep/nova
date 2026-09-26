@@ -50,3 +50,17 @@ Tests at handoff: `npm test` 134 pass, 1 skipped where Chromium is absent (updat
 
 - Git cleanup in `~/Documents/Repos/brahmini`: delete tags `backup/pre-strip-*` and `backup/pre-split-*` and `refs/original/*`, then `git gc --prune=now` (about 669 MB down to a few MB). Everything is safely on GitHub.
 - Run `git reset` in the Codex worktree at `~/.codex/worktrees/3c24` to clear a stale change.
+
+## Create tools (September 2026)
+
+- Sidebar **Create** group (Image, Video, Audio → Media tabs; Boards; Timeline; Library). `syncRailActive()` highlights the Media tab items.
+- `lib/image-edit.js`: Edit area / Remove object (SDXL inpaint: `VAEEncodeForInpaint` or `SetLatentNoiseMask`, then `ImageCompositeMasked` onto the original), Expand background (`ImagePadForOutpaint`), Upscale (ComfyUI `UpscaleModelLoader` or ffmpeg Lanczos). Routes `/api/images/edit|expand|upscale`. Masks arrive as PNG data URLs (white = paint).
+- LoRA: `image-gen.status()` lists `loras` and `upscalers`; `withLora()` inserts a `LoraLoader` (node 30) and rewires model/clip inputs. Used by all SDXL graphs.
+- `lib/media-actions.js`: Enhance speech (ffmpeg chain, picture stream copied) and Translate (whisper transcript → Ollama per-line JSON translation in batches of 20 → Kokoro/macOS voice per line laid on a PCM track at segment start → amix with ducked original; or burned subtitles). Routes `/api/media/:id/enhance|translate`, `/api/media/:id/info` (duration, cached on the record).
+- `lib/audio-gen.js`: Kokoro-82M via kokoro-onnx (`scripts/kokoro-say.py`, venv in `~/kokoro`; `KOKORO_DIR`, `NOVA_KOKORO_PYTHON`). `synthesize()` and `voiceFor()` are shared with Translate. Voices are named `kokoro:<id>`.
+- LTX-2 text to video: `video-ltx` omits `--image` when no `mediaId`.
+- Boards (`lib/boards.js`, store `boards`) and Timeline (`lib/timeline.js`, store `timelines`, ffmpeg export with a filter graph: scale+pad per shot, concat, per-sound atrim/volume/afade/adelay, amix, alimiter). Routes `/api/boards[/:id]`, `/api/timelines[/:id][/export]`.
+- Chat: `createIntent()` (slash commands and "make/create/generate … image/video/song/…") turns a message into a `create` card; `runCreate()` calls the existing routes and polls `/api/images/jobs/:id`.
+- Installers: `Install Kokoro voices for NOVA.command` (scripts/install-kokoro-mac.sh), `Add upscale model.command` (scripts/add-upscale-model-mac.sh).
+- Tests: `tests/create-tools.test.js` (real ffmpeg; Kokoro test runs when `/tmp/kk` or `NOVA_TEST_KOKORO_DIR` has the model), `e2e/create-tools.spec.js`.
+- Heavy-job guard covers `image-edit` and `image-upscale` too.

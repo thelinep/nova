@@ -33,6 +33,24 @@ const MODEL_HINTS = {
 function which(name) { try { return execFileSync('/usr/bin/which', [name], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null; } catch (_) { return null; } }
 function sayBin() { return process.env.NOVA_SAY_BIN || (process.platform === 'darwin' ? which('say') : null); }
 
+/* Kokoro-82M (kokoro-onnx): natural offline voices, including Hindi. Installed by
+   "Install Kokoro voices for NOVA.command" into ~/kokoro (a Python venv plus two model files). */
+const KOKORO_LANGS = { a: ['en-us', 'English (US)'], b: ['en-gb', 'English (UK)'], h: ['hi', 'Hindi'], e: ['es', 'Spanish'], f: ['fr-fr', 'French'], i: ['it', 'Italian'], j: ['ja', 'Japanese'], p: ['pt-br', 'Portuguese (BR)'], z: ['cmn', 'Chinese'] };
+const KOKORO_VOICES = ['af_heart', 'af_bella', 'af_nicole', 'af_sarah', 'af_sky', 'am_adam', 'am_michael', 'am_fenrir', 'am_puck', 'bf_emma', 'bf_isabella', 'bf_alice', 'bm_george', 'bm_fable', 'bm_lewis', 'hf_alpha', 'hf_beta', 'hm_omega', 'hm_psi', 'ef_dora', 'em_alex', 'ff_siwis', 'if_sara', 'im_nicola', 'jf_alpha', 'jm_kumo', 'pf_dora', 'pm_alex', 'zf_xiaoxiao', 'zm_yunxi'];
+function kokoroDir() { return process.env.KOKORO_DIR || path.join(os.homedir(), 'kokoro'); }
+function kokoroPython() {
+  const p = process.env.NOVA_KOKORO_PYTHON || path.join(kokoroDir(), '.venv', 'bin', 'python');
+  try { fs.accessSync(p, fs.constants.X_OK); return p; } catch (_) { return null; }
+}
+function kokoroStatus() {
+  const python = kokoroPython(), dir = kokoroDir();
+  const files = ['kokoro-v1.0.onnx', 'voices-v1.0.bin'].every(f => fs.existsSync(path.join(dir, f)));
+  const ready = Boolean(python && files);
+  return { ready, dir, missing: ready ? [] : ['Kokoro voices: double-click "Install Kokoro voices for NOVA.command" in the brahmini folder (about 400 MB)'],
+    voices: KOKORO_VOICES.map(v => ({ name: 'kokoro:' + v, label: `${v.slice(3).replace(/^./, c => c.toUpperCase())} · ${KOKORO_LANGS[v[0]][1]} · ${v[1] === 'f' ? 'female' : 'male'}`, locale: KOKORO_LANGS[v[0]][0] })) };
+}
+function kokoroLang(voice) { return (KOKORO_LANGS[String(voice)[0]] || KOKORO_LANGS.a)[0]; }
+
 let voiceCache = null;
 /** Parses `say -v ?` lines like "Lekha               hi_IN    # नमस्ते, मेरा नाम लेखा है।" */
 function parseVoices(text) {
@@ -64,27 +82,56 @@ function finish(store, job, promise) {
 
 /* ---------------------------------- voice ---------------------------------- */
 
-function speak(store, dataDir, input) {
+/**
+ * Renders text to an audio file in `work` and returns its path. Engine is
+ * picked from the voice: "kokoro:<voice>" uses Kokoro, anything else macOS say.
+ */
+async function synthesize(work, text, { voice = null, rate = 175, name = 'voice' } = {}) {
+  fs.writeFileSync(path.join(work, name + '.txt'), text);
+  if (String(voice || '').startsWith('kokoro:')) {
+    const k = kokoroStatus();
+    if (!k.ready) throw error('Kokoro voices are not installed. ' + k.missing[0] + '.', 412);
+    const v = voice.slice(7), out = path.join(work, name + '.wav');
+    const script = process.env.NOVA_KOKORO_SCRIPT || path.join(__dirname, '..', 'scripts', 'kokoro-say.py');
+    await run(kokoroPython(), [script, '--text-file', path.join(work, name + '.txt'), '--voice', v, '--lang', kokoroLang(v), '--speed', String(Math.round((rate / 175) * 100) / 100), '--out', out], 10 * 60 * 1000);
+    return out;
+  }
   const bin = sayBin();
-  if (!bin) throw error('Voice uses the speech built into macOS, which is not available here.', 412);
+  if (!bin) throw error('Voice uses the speech built into macOS, which is not available here. Install Kokoro voices to speak on any Mac setup.', 412);
+  const aiff = path.join(work, name + '.aiff');
+  await run(bin, [...(voice ? ['-v', voice] : []), '-r', String(rate), '-f', path.join(work, name + '.txt'), '-o', aiff], 10 * 60 * 1000);
+  return aiff;
+}
+
+/** Picks a voice for a language: Kokoro when installed, else a matching macOS voice. */
+function voiceFor(locale, preferred = null) {
+  if (preferred) return preferred;
+  const lang = String(locale || 'en').toLowerCase().slice(0, 2);
+  const k = kokoroStatus();
+  if (k.ready) { const kv = k.voices.find(v => v.locale.startsWith(lang)); if (kv) return kv.name; }
+  const mac = voices().find(v => v.locale.toLowerCase().startsWith(lang));
+  return mac ? mac.name : null;
+}
+
+function speak(store, dataDir, input) {
   const text = String(input.text || '').trim();
   if (!text) throw error('Type the words to speak.');
   if (text.length > 20000) throw error('Voice is limited to 20,000 characters at a time.');
+  const kokoro = String(input.voice || '').startsWith('kokoro:');
   const list = voices();
-  const voice = input.voice && list.some(v => v.name === input.voice) ? input.voice : (list.find(v => /^en[_-]/.test(v.locale)) || list[0] || {}).name || null;
+  if (kokoro) { const k = kokoroStatus(); if (!k.ready) throw error(k.missing[0] + '.', 412); if (!KOKORO_VOICES.includes(input.voice.slice(7))) throw error('Unknown Kokoro voice.'); }
+  else if (!sayBin()) throw error('Voice uses the speech built into macOS, which is not available here. Install Kokoro voices, or use a Mac.', 412);
+  const voice = kokoro ? input.voice : input.voice && list.some(v => v.name === input.voice) ? input.voice : (list.find(v => /^en[_-]/.test(v.locale)) || list[0] || {}).name || null;
   const rate = Math.round(Math.min(360, Math.max(90, Number(input.rate) || 175)));
-  const settings = { engine: 'macos-say', prompt: text.slice(0, 120), text, voice, locale: (list.find(v => v.name === voice) || {}).locale || null, rate };
+  const settings = { engine: kokoro ? 'kokoro-82m' : 'macos-say', prompt: text.slice(0, 120), text, voice, locale: kokoro ? kokoroLang(voice.slice(7)) : (list.find(v => v.name === voice) || {}).locale || null, rate };
   const job = newJob(store, 'audio-voice', settings);
   const done = finish(store, job, async () => {
     const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-say-'));
     try {
-      fs.writeFileSync(path.join(work, 'text.txt'), text);
-      const aiff = path.join(work, 'voice.aiff');
-      await run(bin, [...(voice ? ['-v', voice] : []), '-r', String(rate), '-f', path.join(work, 'text.txt'), '-o', aiff], 10 * 60 * 1000);
-      let out = aiff;
+      let out = await synthesize(work, text, { voice, rate });
       const afconvert = process.env.NOVA_AFCONVERT_BIN === 'none' ? null : process.platform === 'darwin' ? which('afconvert') : null;
-      if (afconvert) { out = path.join(work, 'voice.m4a'); await run(afconvert, ['-f', 'm4af', '-d', 'aac', aiff, out]); }
-      return [media.saveMedia(store, dataDir, { buffer: fs.readFileSync(out), originalName: `${text.slice(0, 50)} (${voice || 'voice'})${path.extname(out)}`, source: 'nova-voice', expectKind: 'audio', provenance: { generator: 'macos-say', ...settings, jobId: job.id } }).id];
+      if (afconvert) { const m4a = path.join(work, 'voice.m4a'); await run(afconvert, ['-f', 'm4af', '-d', 'aac', out, m4a]); out = m4a; }
+      return [media.saveMedia(store, dataDir, { buffer: fs.readFileSync(out), originalName: `${text.slice(0, 50)} (${(voice || 'voice').replace(/^kokoro:/, '')})${path.extname(out)}`, source: 'nova-voice', expectKind: 'audio', provenance: { generator: settings.engine, ...settings, jobId: job.id } }).id];
     } finally { try { fs.rmSync(work, { recursive: true, force: true }); } catch (_) {} }
   });
   return { job, done };
@@ -177,7 +224,8 @@ function musicBlockedByOs() {
 
 async function status() {
   const v = voices();
-  return { voice: { ready: Boolean(sayBin()), voices: v, error: sayBin() ? null : 'Voice uses the speech built into macOS.' }, comfy: await comfyStatus() };
+  const kokoro = kokoroStatus();
+  return { voice: { ready: Boolean(sayBin()) || kokoro.ready, voices: v, kokoro, error: sayBin() || kokoro.ready ? null : 'Voice uses the speech built into macOS, or Kokoro voices.' }, comfy: await comfyStatus() };
 }
 
-module.exports = { status, speak, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };
+module.exports = { status, speak, synthesize, voiceFor, voices, kokoroStatus, kokoroLang, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };

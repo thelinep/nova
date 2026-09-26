@@ -162,7 +162,7 @@ Open **Media** in the sidebar. Everything here runs on your computer, and each i
 
 Tabs along the top separate the tools: **Image**, **Video**, **Audio**, **Transcribe**, **Edit** (filters) and **Library**. Each tab shows its own tool and only the matching library items (the Library tab shows everything and the library folder setting). NOVA remembers the last tab. **Animate** on an image jumps to Video; **Filters** on any item jumps to Edit. The panel on the right holds the helpers for the current tab: how it works, what still needs installing, prompt presets (click a chip to add it to the prompt) and that tab's recent jobs, with **Cancel** for running ones.
 
-- **Images in chat.** Use the paperclip in the composer, or **Attach to chat** in Media, to add PNG, JPEG, WebP or GIF images to your next message. Reading images needs a vision model, for example `ollama pull llama3.2-vision` or `ollama pull llava`, then sync models. A text-only model is refused with a message saying so.
+- **Images in chat.** Use the paperclip in the composer, or **Actions ▾ > Attach to chat** on a library image, to add PNG, JPEG, WebP or GIF images to your next message. Reading images needs a vision model, for example `ollama pull llama3.2-vision` or `ollama pull llava`, then sync models. A text-only model is refused with a message saying so.
 - **Image generation (ComfyUI).** To install it, double-click `Install ComfyUI for NOVA.command` in the brahmini folder (ComfyUI in `~/ComfyUI` plus the SDXL base checkpoint, about 13 GB); later, `Add Wan video models.command` adds the AI-motion files (about 22 GB). Start it with `Start ComfyUI for NOVA.command` in the brahmini folder. Start ComfyUI on this computer. NOVA finds it on port 8188 (manual install) or 8000 (ComfyUI Desktop); set `COMFYUI_URL` for any other local port. Only local addresses are accepted. Choose a checkpoint, size, steps, CFG, seed and sampler, then **Generate**. Each image is saved with its prompt, negative prompt, checkpoint and seed; **Reuse settings** loads them back.
 - **Image to image.** In **Generate an image**, set **Start from** to a library image (or **Upload image**), describe the change, and set **Change** (0.1 keeps it close, 0.9 reimagines it). It uses the same SDXL checkpoint through ComfyUI; the source is scaled to about one megapixel first.
 - **Text to audio.** In **Voice, sound effects, music**:
@@ -179,6 +179,47 @@ Tabs along the top separate the tools: **Image**, **Video**, **Audio**, **Transc
   - **Continuity.** **Continue from last frame** on a clip saves its final frame as a still and adds it as the next shot, so the next AI motion clip starts exactly where the last one ended. **Add to join** on clips, in order, then **Join clips** to make one video. Keeping the same character across unrelated shots still depends on your keyframes showing the same character.
   Videos play in the library, can be downloaded, and keep a recipe (shots and moves, or prompt, seed, steps and models). MP4 and MOV uploads are accepted too.
 - **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM) or video (MP4, MOV; needs a working ffmpeg), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
+
+### Create: the sidebar group for making things
+
+The **Create** group at the top of the sidebar opens **Image**, **Video** and **Audio** (the matching Media tabs), **Boards**, **Timeline** and **Library**.
+
+#### Actions on library items
+
+Every library card has an **Actions ▾** menu. The original is never changed; each action makes a new item with its recipe.
+
+- **Images:** **Edit area…** and **Remove object…** open a brush: paint over the area, then either describe what should be there (Replace with a prompt; **Change** 0.3 keeps it close, 1 repaints it fully) or let NOVA fill it with matching background (Remove). Only the painted pixels change. **Expand background…** puts the picture on a bigger frame (16:9, 2.39:1 scope, 9:16, more room on every side…) and paints the new area to match. These use SDXL in ComfyUI with the checkpoint and LoRA chosen in the Image tab. **Upscale…** makes a 2x or 4x copy: with an upscale model in ComfyUI (double-click `Add upscale model.command` in the brahmini folder for Real-ESRGAN, about 64 MB) it adds real detail; otherwise it is a high-quality resize with ffmpeg. Upscales are limited to 8192 pixels on the long side. Also: **Image to image**, **Attach to chat**.
+- **Video:** **Continue from last frame**, **Add to join**, **Translate…**, **Enhance speech…**, **Transcribe**.
+- **Audio:** **Enhance speech…**, **Translate…**, **Transcribe**.
+- **Everything:** **Add to board…**, **Add to timeline…**, **Filters**, **Download**.
+
+**Enhance speech** cleans dialogue with ffmpeg: rumble and hiss filters, noise reduction, gentle compression and loudness levelling to -16 LUFS. **Light** keeps the room sound; **Strong** is for noisy location sound. On video only the sound is redone.
+
+**Translate** transcribes the speech (whisper.cpp; an existing transcript is reused), translates each line with your local Ollama model, then either **dubs** it — every line spoken in the new language at the time the original line starts, over the original sound turned down (or off) — or, for video, **burns in subtitles** (needs ffmpeg with libass). The translated subtitles (.srt) are always kept in the recipe. Languages include Hindi, English, Bengali, Marathi, Tamil, Telugu, Gujarati, Punjabi, Urdu and major world languages; a dub needs a voice for that language (Kokoro has English, Hindi, Spanish, French, Italian, Portuguese, Japanese and Chinese; add macOS voices in System Settings > Accessibility > Spoken Content > System voice > Manage Voices). There is no lip sync, and long lines are sped up (at most 1.6x) to fit.
+
+#### Style and character LoRAs
+
+In the Image tab, **Style / character** picks a LoRA file from `ComfyUI/models/loras` (restart ComfyUI after adding one) and **Strength** sets how strongly it applies (0.6–0.9 is typical). It is used by text to image, image to image, Edit area, Remove object and Expand, and recorded in each recipe. A LoRA trained on one character is the most reliable way to keep that character consistent across shots; training your own is not built in yet.
+
+#### Better voices: Kokoro
+
+Double-click `Install Kokoro voices for NOVA.command` in the brahmini folder (about 400 MB in `~/kokoro`). Kokoro-82M runs offline and sounds far more natural than the built-in macOS voices; it has English (US and UK), Hindi and several other languages. Kokoro voices appear first in the Voice list and are used automatically for dubs in those languages.
+
+#### Text to video
+
+In the Video tab, with no shots added, **AI motion** becomes **Make video from prompt**: LTX-2 makes the whole clip, with sound, from the prompt alone. Add a shot to animate a still instead.
+
+#### Boards
+
+Mood boards, look books and character sheets. **New board**, then add **From library** (images and clips), **Upload**, **Note** or **Colour**. Drag items to arrange them, drag the bottom-right corner to resize, double-click a note to edit it (Escape or clicking away finishes), and use × to remove an item from the board. Boards save automatically and point at library items (nothing is copied). **Save as image** renders the board as a PNG into the library.
+
+#### Timeline
+
+Cut a scene. The **Picture** track plays clips and stills in order; **Voice**, **Music** and **Effects** tracks hold sound that starts at a time you choose. **Add clips** and **Add sound** pick from the library, or use **Add to timeline…** on a library item. Click a block to trim it (**In**/**Out**), set a still's **Seconds**, a clip's own **Clip sound** level, or a sound's **Starts at**, **Level** and fades. Drag picture blocks to reorder them and sound blocks to move them in time. Choose the frame size and frame rate, then **Export MP4**: every shot is fitted to the frame (letterboxed, never stretched) and the sound is mixed; the result lands in the library with a recipe listing every shot and sound.
+
+#### Chat that can make things
+
+In the Console, ask for media in plain words — "make an image of…", "create a video of…", "write a song about…", "compose background music…", "generate a sound effect of…" — or start with a command: `/image`, `/video`, `/song`, `/music`, `/sfx`, `/voice`. NOVA answers with a card instead of a chat reply: **Generate** runs the job on this Mac and shows the result in the chat; **Open in Media** fills the prompt in the right tab so you can adjust settings first. An image attached to the message is used as the starting picture (image to image, or image to video). Songs are written by your local model first, then sung by ACE-Step.
 
 ### Helpers in every view
 

@@ -64,17 +64,23 @@ async function status() {
     await discover();
     const stats = await (await call('/system_stats')).json();
     const info = await (await call('/object_info/CheckpointLoaderSimple')).json();
-    const checkpoints = info?.CheckpointLoaderSimple?.input?.required?.ckpt_name?.[0] || [];
-    return { reachable: true, url: baseUrl(), version: stats?.system?.comfyui_version || null, device: stats?.devices?.[0]?.name || null, checkpoints, samplers: SAMPLERS };
+    const checkpoints = (info?.CheckpointLoaderSimple?.input?.required?.ckpt_name?.[0] || []).filter(c => !/stable[-_]audio|ace[-_]step/i.test(c));
+    const [loras, upscalers] = await Promise.all([optionList('LoraLoader', 'lora_name'), optionList('UpscaleModelLoader', 'model_name')]);
+    return { reachable: true, url: baseUrl(), version: stats?.system?.comfyui_version || null, device: stats?.devices?.[0]?.name || null, checkpoints, samplers: SAMPLERS, loras, upscalers };
   } catch (e) {
-    return { reachable: false, url: (() => { try { return baseUrl(); } catch (_) { return null; } })(), error: e.message, checkpoints: [], samplers: SAMPLERS };
+    return { reachable: false, url: (() => { try { return baseUrl(); } catch (_) { return null; } })(), error: e.message, checkpoints: [], samplers: SAMPLERS, loras: [], upscalers: [] };
   }
+}
+
+/** The choices ComfyUI offers for one node input (e.g. the LoRA files in models/loras). */
+async function optionList(node, field) {
+  try { return (await (await call('/object_info/' + node)).json())?.[node]?.input?.required?.[field]?.[0] || []; } catch (_) { return []; }
 }
 
 function clampInt(value, min, max, fallback) { const n = Math.round(Number(value)); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback; }
 
 /** Validates a request and returns normalised settings. */
-function normalise(input, checkpoints) {
+function normalise(input, checkpoints, loras = null) {
   const prompt = String(input.prompt || '').trim();
   if (!prompt) throw error('Describe the image you want.');
   if (prompt.length > 4000) throw error('The prompt is limited to 4,000 characters.');
@@ -89,11 +95,31 @@ function normalise(input, checkpoints) {
     steps: clampInt(input.steps, 1, 100, 25), cfg: Math.min(20, Math.max(1, Number(input.cfg) || 7)),
     seed: Number.isSafeInteger(Number(input.seed)) && Number(input.seed) >= 0 ? Number(input.seed) : crypto.randomInt(0, 2 ** 31 - 1),
     sampler, scheduler: 'normal', batch: clampInt(input.batch, 1, 4, 1),
+    ...normaliseLora(input, loras),
   };
 }
 
+/** A style or character LoRA from ComfyUI/models/loras, with its strength. */
+function normaliseLora(input, loras) {
+  const lora = String(input.lora || '').trim();
+  if (!lora) return {};
+  if (Array.isArray(loras) && !loras.includes(lora)) throw error('Unknown LoRA: ' + lora + '. Put LoRA files in ComfyUI/models/loras and restart ComfyUI.');
+  const n = Number(input.loraStrength);
+  return { lora, loraStrength: Number.isFinite(n) ? Math.min(2, Math.max(-2, Math.round(n * 100) / 100)) : 0.8 };
+}
+
+/** Inserts a LoraLoader after the checkpoint and points every model/clip input at it. */
+function withLora(g, s) {
+  if (!s.lora) return g;
+  for (const node of Object.values(g)) for (const [k, v] of Object.entries(node.inputs)) {
+    if (Array.isArray(v) && v[0] === '4' && (v[1] === 0 || v[1] === 1)) node.inputs[k] = ['30', v[1]];
+  }
+  g['30'] = { class_type: 'LoraLoader', inputs: { model: ['4', 0], clip: ['4', 1], lora_name: s.lora, strength_model: s.loraStrength, strength_clip: s.loraStrength } };
+  return g;
+}
+
 function graph(s) {
-  return {
+  return withLora({
     '4': { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: s.checkpoint } },
     '6': { class_type: 'CLIPTextEncode', inputs: { text: s.prompt, clip: ['4', 1] } },
     '7': { class_type: 'CLIPTextEncode', inputs: { text: s.negative, clip: ['4', 1] } },
@@ -101,7 +127,7 @@ function graph(s) {
     '3': { class_type: 'KSampler', inputs: { seed: s.seed, steps: s.steps, cfg: s.cfg, sampler_name: s.sampler, scheduler: s.scheduler, denoise: 1, model: ['4', 0], positive: ['6', 0], negative: ['7', 0], latent_image: ['5', 0] } },
     '8': { class_type: 'VAEDecode', inputs: { samples: ['3', 0], vae: ['4', 2] } },
     '9': { class_type: 'SaveImage', inputs: { filename_prefix: 'nova', images: ['8', 0] } },
-  };
+  }, s);
 }
 
 /** Polls ComfyUI's history until the prompt finishes, fails, times out or is cancelled. */
@@ -147,7 +173,7 @@ async function runGeneration(store, dataDir, job, settings) {
 async function generate(store, dataDir, input) {
   const info = await status();
   if (!info.reachable) throw error(info.error, 503);
-  const settings = normalise(input, info.checkpoints);
+  const settings = normalise(input, info.checkpoints, info.loras);
   const job = { id: 'gen_' + crypto.randomBytes(8).toString('hex'), type: 'image-generation', status: 'running', settings, promptId: null, mediaIds: [], error: null, cancelRequested: false, createdAt: new Date().toISOString(), finishedAt: null };
   store.put('generationJobs', job);
   const done = (async () => {
@@ -163,15 +189,20 @@ async function generate(store, dataDir, input) {
 /** Uploads a media-store image to ComfyUI's input folder; returns the name LoadImage needs. */
 async function uploadImage(dataDir, record) {
   const fs = require('node:fs'), path = require('node:path');
+  return uploadBuffer(fs.readFileSync(media.filePath(dataDir, record)), 'nova-' + record.id + path.extname(record.fileName), record.mime);
+}
+
+/** Uploads raw image bytes (e.g. a painted mask) to ComfyUI's input folder. */
+async function uploadBuffer(buffer, name, mime = 'image/png') {
   const form = new FormData();
-  form.append('image', new Blob([fs.readFileSync(media.filePath(dataDir, record))], { type: record.mime }), 'nova-' + record.id + path.extname(record.fileName));
+  form.append('image', new Blob([buffer], { type: mime }), name);
   form.append('overwrite', 'true');
   const up = await (await call('/upload/image', { method: 'POST', body: form }, 60000)).json();
   return up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
 }
 
 /** Queues a graph, waits, downloads outputs of one kind and saves them with a recipe. */
-async function runGraph(store, dataDir, job, { graph: g, kind, ext, name, provenance, timeoutMs = TIMEOUT_MS, label = 'Generation' }) {
+async function runGraph(store, dataDir, job, { graph: g, kind, ext, name, provenance, timeoutMs = TIMEOUT_MS, label = 'Generation', source = 'comfyui', transform = null }) {
   const queued = await (await call('/prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: g, client_id: 'nova-' + crypto.randomBytes(6).toString('hex') }) })).json();
   if (!queued.prompt_id) throw error('ComfyUI did not accept the job: ' + JSON.stringify(queued.node_errors || queued).slice(0, 300), 502);
   job.promptId = queued.prompt_id; store.put('generationJobs', job);
@@ -181,8 +212,9 @@ async function runGraph(store, dataDir, job, { graph: g, kind, ext, name, proven
   const ids = [];
   for (const f of files) {
     const query = new URLSearchParams({ filename: f.filename, subfolder: f.subfolder || '', type: f.type || 'output' });
-    const buffer = Buffer.from(await (await call('/view?' + query, {}, 120000)).arrayBuffer());
-    ids.push(media.saveMedia(store, dataDir, { buffer, originalName: name + (f.filename.match(/\.[a-z0-9]+$/i) || [''])[0], source: 'comfyui', expectKind: kind,
+    let buffer = Buffer.from(await (await call('/view?' + query, {}, 120000)).arrayBuffer()), fileExt = (f.filename.match(/\.[a-z0-9]+$/i) || [''])[0];
+    if (transform) ({ buffer, ext: fileExt } = await transform(buffer, fileExt));
+    ids.push(media.saveMedia(store, dataDir, { buffer, originalName: name + fileExt, source, expectKind: kind,
       provenance: { generator: 'comfyui', comfyuiUrl: baseUrl(), promptId: queued.prompt_id, ...provenance, jobId: job.id, comfyFile: f.filename } }).id);
   }
   return ids;
@@ -202,17 +234,17 @@ function startJob(store, type, settings, run) {
 
 /* ------------------------------- image to image ------------------------------ */
 
-function normaliseImg2Img(store, input, checkpoints) {
+function normaliseImg2Img(store, input, checkpoints, loras = null) {
   const record = media.getMedia(store, input.mediaId);
   if (record.kind !== 'image') throw error('Choose an image to start from.');
-  const base = normalise({ ...input, width: 1024, height: 1024, batch: 1 }, checkpoints);
+  const base = normalise({ ...input, width: 1024, height: 1024, batch: 1 }, checkpoints, loras);
   const strength = Math.min(0.95, Math.max(0.1, Number(input.strength) || 0.55));
   return { ...base, mode: 'img2img', sourceMediaId: record.id, sourceName: record.originalName, strength, megapixels: 1.0, width: undefined, height: undefined, batch: undefined };
 }
 
 /** Standard SDXL image-to-image: the source is scaled to about 1 megapixel, encoded and partly re-noised (denoise = strength). */
 function img2imgGraph(s, imageName) {
-  return {
+  return withLora({
     '4': { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: s.checkpoint } },
     '10': { class_type: 'LoadImage', inputs: { image: imageName } },
     '11': { class_type: 'ImageScaleToTotalPixels', inputs: { image: ['10', 0], upscale_method: 'lanczos', megapixels: s.megapixels } },
@@ -222,13 +254,13 @@ function img2imgGraph(s, imageName) {
     '3': { class_type: 'KSampler', inputs: { seed: s.seed, steps: s.steps, cfg: s.cfg, sampler_name: s.sampler, scheduler: s.scheduler, denoise: s.strength, model: ['4', 0], positive: ['6', 0], negative: ['7', 0], latent_image: ['12', 0] } },
     '8': { class_type: 'VAEDecode', inputs: { samples: ['3', 0], vae: ['4', 2] } },
     '9': { class_type: 'SaveImage', inputs: { filename_prefix: 'nova-img2img', images: ['8', 0] } },
-  };
+  }, s);
 }
 
 async function generateFromImage(store, dataDir, input) {
   const info = await status();
   if (!info.reachable) throw error(info.error, 503);
-  const settings = normaliseImg2Img(store, input, info.checkpoints);
+  const settings = normaliseImg2Img(store, input, info.checkpoints, info.loras);
   const source = media.getMedia(store, settings.sourceMediaId);
   return startJob(store, 'image-generation', settings, async job => {
     const name = await uploadImage(dataDir, source);
@@ -250,4 +282,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };
+module.exports = { status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, uploadBuffer, withLora, normaliseLora, optionList, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };

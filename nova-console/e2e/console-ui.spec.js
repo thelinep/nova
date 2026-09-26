@@ -57,7 +57,7 @@ test.describe('NOVA Console interactions', () => {
   test('media view uploads an image, keeps it in the library, and attaches it to chat', async ({ page }) => {
     await page.goto('/');
     await page.locator('.sess-item').first().click();
-    await page.locator('[data-view="media"]').click();
+    await page.locator('.nav-item[data-media-tab="image"]').click();
     await page.getByRole('tab', { name: 'Image' }).click();
     await expect(page.getByRole('heading', { name: 'Generate an image' })).toBeVisible();
     await expect(page.locator('.media-helpers')).toContainText('How it works');
@@ -67,14 +67,15 @@ test.describe('NOVA Console interactions', () => {
     const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082', 'hex');
     await page.getByLabel('Upload images, audio or video').setInputFiles({ name: 'location-scout.png', mimeType: 'image/png', buffer: png });
     await expect(page.locator('article strong', { hasText: 'location-scout.png' })).toBeVisible();
-    await page.getByRole('button', { name: 'Attach to chat' }).first().click();
+    await page.locator('.media-item', { hasText: 'location-scout.png' }).locator('summary', { hasText: 'Actions' }).click();
+    await page.getByRole('menuitem', { name: 'Attach to chat' }).first().click();
     await expect(page.locator('#contextChips')).toContainText('location-scout.png');
   });
 
   test('media view turns a library image into a shot for image to video', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    await page.locator('[data-view="media"]').click();
+    await page.locator('.nav-item[data-media-tab="image"]').click();
     await page.getByRole('tab', { name: 'Video' }).click();
     await expect(page.getByRole('heading', { name: 'Animate stills' })).toBeVisible();
     await page.getByRole('tab', { name: 'Library' }).click();
@@ -100,7 +101,8 @@ test.describe('NOVA Console interactions', () => {
     await page.getByLabel('Upload stills to animate').setInputFiles({ name: 'still-2.png', mimeType: 'image/png', buffer: png });
     await expect(page.locator('.video-shot')).toHaveCount(1);
     await page.getByRole('tab', { name: 'Library' }).click();
-    await page.getByRole('button', { name: 'Filters', exact: true }).first().click();
+    await page.locator('.media-item', { hasText: 'storyboard-01.png' }).locator('summary', { hasText: 'Actions' }).click();
+    await page.getByRole('menuitem', { name: 'Filters', exact: true }).first().click();
     await expect(page.getByRole('tab', { name: 'Edit' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByLabel('Look')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Apply' })).toBeVisible();
@@ -118,7 +120,7 @@ test.describe('NOVA Console interactions', () => {
     await page.getByRole('button', { name: 'What can I do here?' }).click();
     await expect(page.locator('.help-box')).toContainText('Sandboxed tools');
     await expect(page.locator('#helpDrawer')).toBeVisible();
-    await page.locator('[data-view="media"]').click();
+    await page.locator('.nav-item[data-media-tab="image"]').click();
     await expect(page.locator('#helpDrawer')).toHaveCount(0);
     await page.getByRole('tab', { name: 'Image' }).click();
     await page.locator('#genPrompt').fill('Marine Drive at dusk');
@@ -146,12 +148,12 @@ test.describe('NOVA Console interactions', () => {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    const views = await page.locator('.nav-item[data-view]').evaluateAll(items => items.map(item => item.dataset.view));
+    const views = await page.locator('.nav-item[data-view]').evaluateAll(items => items.map(item => item.dataset.view + (item.dataset.mediaTab ? ':' + item.dataset.mediaTab : '')));
     expect(views.length).toBeGreaterThan(15);
-    for (const view of views) {
-      await page.locator(`.nav-item[data-view="${view}"]`).click();
+    for (let i = 0; i < views.length; i++) {
+      await page.locator('.nav-item[data-view]').nth(i).click();
       await page.waitForTimeout(150);
-      expect(errors, `opening ${view}`).toEqual([]);
+      expect(errors, `opening ${views[i]}`).toEqual([]);
     }
   });
 

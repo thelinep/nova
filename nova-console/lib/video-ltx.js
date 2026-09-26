@@ -58,8 +58,9 @@ function status() {
 function framesFor(seconds) { return Math.max(1, Math.round((seconds * FPS) / 8)) * 8 + 1; }
 
 function normalise(store, input) {
-  const record = media.getMedia(store, input.mediaId);
-  if (record.kind !== 'image') throw error('Choose an image to animate.');
+  // With no image this is text to video: LTX-2 makes the whole shot from the prompt.
+  const record = input.mediaId ? media.getMedia(store, input.mediaId) : null;
+  if (record && record.kind !== 'image') throw error('Choose an image to animate.');
   const prompt = String(input.prompt || '').trim();
   if (!prompt) throw error('Describe the motion and sound you want, e.g. "slow push-in, waves crash, gulls call".');
   if (prompt.length > 2000) throw error('The prompt is limited to 2,000 characters.');
@@ -70,11 +71,11 @@ function normalise(store, input) {
   const frames = framesFor(seconds);
   const mode = MODES.includes(input.mode) ? input.mode : 'distilled';
   const seed = Number.isSafeInteger(Number(input.seed)) && Number(input.seed) >= 0 && input.seed !== '' && input.seed != null ? Number(input.seed) : crypto.randomInt(0, 2 ** 31 - 1);
-  return { engine: 'ltx-2-mlx', mediaId: record.id, sourceName: record.originalName, prompt, size, width: SIZES[size][0], height: SIZES[size][1], frames, fps: FPS, seconds: Math.round(((frames - 1) / FPS) * 10) / 10, mode, seed, model: model(), lowRam: limits.lowRam || input.lowRam !== false, audio: true };
+  return { engine: 'ltx-2-mlx', input: record ? 'image-to-video' : 'text-to-video', mediaId: record ? record.id : null, sourceName: record ? record.originalName : null, prompt, size, width: SIZES[size][0], height: SIZES[size][1], frames, fps: FPS, seconds: Math.round(((frames - 1) / FPS) * 10) / 10, mode, seed, model: model(), lowRam: limits.lowRam || input.lowRam !== false, audio: true };
 }
 
 function args(s, imagePath, output) {
-  const a = ['generate', '--prompt', s.prompt, '--image', imagePath, '-H', String(s.height), '-W', String(s.width), '-f', String(s.frames), '--frame-rate', String(s.fps), '--seed', String(s.seed), '--model', s.model, '-o', output];
+  const a = ['generate', '--prompt', s.prompt, ...(imagePath ? ['--image', imagePath] : []), '-H', String(s.height), '-W', String(s.width), '-f', String(s.frames), '--frame-rate', String(s.fps), '--seed', String(s.seed), '--model', s.model, '-o', output];
   a.push(s.mode === 'two-stage' ? '--two-stage' : '--distilled');
   if (s.lowRam) a.push('--low-ram');
   return a;
@@ -84,7 +85,7 @@ function start(store, dataDir, input) {
   const info = status();
   if (!info.ready) throw error('LTX-2 needs: ' + info.missing.join('; ') + '.', 412);
   const settings = normalise(store, input);
-  const source = media.getMedia(store, settings.mediaId);
+  const source = settings.mediaId ? media.getMedia(store, settings.mediaId) : null;
   const job = { id: 'gen_' + crypto.randomBytes(8).toString('hex'), type: 'video-ltx', status: 'running', settings, promptId: null, mediaIds: [], error: null, progress: null, cancelRequested: false, createdAt: new Date().toISOString(), finishedAt: null };
   store.put('generationJobs', job);
   const done = (async () => {
@@ -92,7 +93,7 @@ function start(store, dataDir, input) {
     try {
       const out = path.join(work, 'clip.mp4');
       await new Promise((resolve, reject) => {
-        const child = spawn(info.binary, args(settings, media.filePath(dataDir, source), out), { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, PYTHONUNBUFFERED: '1' } });
+        const child = spawn(info.binary, args(settings, source ? media.filePath(dataDir, source) : null, out), { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, PYTHONUNBUFFERED: '1' } });
         let tail = '', lastSave = 0;
         const onData = d => {
           tail = (tail + d).slice(-4000);

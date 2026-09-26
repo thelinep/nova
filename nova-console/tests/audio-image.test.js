@@ -36,7 +36,7 @@ test('voice: lists macOS voices and speaks text into an audio item with its reci
     const item = db.get('media', fin.mediaIds[0]);
     assert.equal(item.kind, 'audio'); assert.equal(item.source, 'nova-voice');
     assert.deepEqual([item.provenance.voice, item.provenance.locale, item.provenance.rate], ['Lekha', 'hi_IN', 160]);
-    assert.match(fs.readFileSync(path.join(bin, 'args'), 'utf8'), /-v Lekha -r 160 -f .*text\.txt -o .*voice\.aiff/);
+    assert.match(fs.readFileSync(path.join(bin, 'args'), 'utf8'), /-v Lekha -r 160 -f .*\.txt -o .*voice\.aiff/);
   } finally { process.env = saved; audio._resetVoices(); }
 });
 

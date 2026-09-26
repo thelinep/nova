@@ -438,6 +438,59 @@
 .help-drawer-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
 .help-drawer .help-box{margin:0}
 @media (max-width:1100px){.media-layout{grid-template-columns:1fr}.media-helpers{position:static;max-height:none}}
+/* ---- Create: actions menu, modals, boards, timeline, chat cards ---- */
+.media-item{position:relative}
+.media-menu{position:relative}
+.media-menu > summary{list-style:none;cursor:pointer}
+.media-menu > summary::-webkit-details-marker{display:none}
+.media-menu-list{position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:200px;background:var(--panel2);border:1px solid #384251;border-radius:9px;padding:4px;box-shadow:0 14px 34px #0008;display:flex;flex-direction:column}
+.media-menu-list hr{border:none;border-top:1px solid var(--line);margin:4px 2px}
+.menu-item{display:block;text-align:left;background:transparent;border:none;color:var(--ink);font-size:12.5px;padding:6px 9px;border-radius:6px;cursor:pointer;text-decoration:none}
+.menu-item:hover,.menu-item:focus-visible{background:#ffffff10;outline:none}
+.mask-wrap{position:relative;display:inline-block;max-width:100%;line-height:0}
+.mask-wrap img{max-width:100%;max-height:56vh;display:block;border-radius:8px;user-select:none}
+.mask-wrap canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;border-radius:8px}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:56vh;overflow:auto}
+.pick-item{display:flex;flex-direction:column;gap:4px;background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:4px;cursor:pointer;color:var(--ink);text-align:left}
+.pick-item[aria-pressed="true"]{border-color:var(--amber)}
+.pick-item img,.pick-item video{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:5px;background:#000}
+.pick-audio{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;background:#0003;border-radius:5px}
+.pick-name{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.boards-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:14px;align-items:start}
+.boards-list{display:flex;flex-direction:column;gap:4px;position:sticky;top:0}
+.board-link{display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 9px;color:var(--ink);cursor:pointer;text-align:left;font-size:12.5px}
+.board-link:hover{background:#ffffff08}
+.board-link.active{border-color:var(--line);background:#ffffff0c}
+.board-toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.board-canvas{height:calc(100vh - 290px);min-height:380px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.board-stage{position:relative}
+.board-item{position:absolute;border-radius:6px;box-shadow:0 6px 18px #0006;cursor:grab;user-select:none;touch-action:none}
+.board-item:active{cursor:grabbing}
+.board-media{width:100%;height:100%;overflow:hidden;border-radius:6px;background:#000}
+.board-media img,.board-media video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.board-note textarea{width:100%;height:100%;border:none;border-radius:6px;padding:10px;color:#222;font-size:13.5px;resize:none;cursor:inherit}
+.board-note textarea:not([readonly]){cursor:text;outline:2px solid var(--amber)}
+.board-swatch{width:100%;height:calc(100% - 20px);border-radius:6px 6px 0 0}
+.board-caption{position:absolute;left:0;right:0;bottom:0;font:11px ui-monospace,monospace;color:#eee;background:#000a;padding:2px 6px;border-radius:0 0 6px 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.board-color .board-caption{position:static;border-radius:0 0 6px 6px}
+.board-del{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;border:1px solid #384251;background:var(--panel2);color:var(--ink);font-size:13px;line-height:16px;padding:0;display:none;cursor:pointer}
+.board-item:hover .board-del,.board-item:focus-within .board-del{display:block}
+.board-resize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 50%,#fff8 50%);border-radius:0 0 6px 0}
+.tl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;padding:6px 0 8px;background:var(--panel)}
+.tl-ruler{position:relative;height:18px;margin-left:84px;border-bottom:1px solid var(--line)}
+.tl-tick{position:absolute;top:2px;font:10px ui-monospace,monospace;color:var(--muted);padding-left:3px;border-left:1px solid var(--line)}
+.tl-row{display:flex;align-items:stretch;min-height:46px;border-bottom:1px solid #ffffff08}
+.tl-label{width:84px;flex:none;font-size:11.5px;color:var(--muted);padding:14px 8px;position:sticky;left:0;background:var(--panel);z-index:2}
+.tl-lane{position:relative;flex:none}
+.tl-empty{position:absolute;left:8px;top:12px;padding:0}
+.tl-block{position:absolute;top:5px;height:36px;border-radius:6px;display:flex;align-items:center;gap:5px;overflow:hidden;font-size:11px;padding:0 6px;cursor:grab;user-select:none;touch-action:none;white-space:nowrap;border:1px solid #0006;color:#fff}
+.tl-block span{overflow:hidden;text-overflow:ellipsis}
+.tl-block img{height:28px;width:40px;object-fit:cover;border-radius:3px;flex:none;pointer-events:none}
+.tl-video{background:#35517a}.tl-voice{background:#2f6b57}.tl-music{background:#6b4a8a}.tl-sfx{background:#8a5a2f}
+.tl-block.selected{outline:2px solid var(--amber);outline-offset:1px}
+.tl-total{padding:6px 10px 0}
+.create-card{margin-top:8px}
+@media (max-width:900px){.boards-layout{grid-template-columns:1fr}.boards-list{position:static;flex-direction:row;flex-wrap:wrap}}
 </style>
 <div id="shell" class="shell">
   <aside id="rail" class="rail">
@@ -452,6 +505,15 @@
     <label class="rail-search"><span data-lucide="search" style="width:14px;height:14px"></span><input id="railSearch" type="search" placeholder="Search workspace…"></label>
 
     <div class="nav-group">
+      <div class="nav-label rail-text">Create</div>
+      <button class="nav-item" data-view="media" data-media-tab="image"><span data-lucide="image"></span><span class="rail-text">Image</span></button>
+      <button class="nav-item" data-view="media" data-media-tab="video"><span data-lucide="clapperboard"></span><span class="rail-text">Video</span></button>
+      <button class="nav-item" data-view="media" data-media-tab="audio"><span data-lucide="audio-lines"></span><span class="rail-text">Audio</span></button>
+      <button class="nav-item" data-view="boards"><span data-lucide="layout-dashboard"></span><span class="rail-text">Boards</span></button>
+      <button class="nav-item" data-view="timeline"><span data-lucide="film"></span><span class="rail-text">Timeline</span></button>
+      <button class="nav-item" data-view="media" data-media-tab="library"><span data-lucide="folder-open"></span><span class="rail-text">Library</span></button>
+    </div>
+    <div class="nav-group">
       <div class="nav-label rail-text">Workspace</div>
       <button class="nav-item active" data-view="console"><span data-lucide="messages-square"></span><span class="rail-text">Console</span></button>
       <button class="nav-item" data-view="sessions"><span data-lucide="history"></span><span class="rail-text">Sessions</span></button>
@@ -461,7 +523,6 @@
       <div class="nav-label rail-text">Intelligence</div>
       <button class="nav-item" data-view="models"><span data-lucide="cpu"></span><span class="rail-text">Models</span></button>
       <button class="nav-item" data-view="knowledge"><span data-lucide="database"></span><span class="rail-text">Knowledge</span></button>
-      <button class="nav-item" data-view="media"><span data-lucide="image"></span><span class="rail-text">Media</span></button>
       <button class="nav-item" data-view="retrieval"><span data-lucide="flask-conical"></span><span class="rail-text">Retrieval Lab</span></button>
     </div>
     <div class="nav-group">
@@ -587,6 +648,8 @@
       <section id="knowledgeView" class="view"><div class="view-pad"><!-- VIEW:knowledge --></div></section>
       <!-- ===================== RETRIEVAL LAB ===================== -->
       <section id="mediaView" class="view"><div class="view-pad"><!-- VIEW:media --></div></section>
+      <section id="boardsView" class="view"><div class="view-pad"><!-- VIEW:boards --></div></section>
+      <section id="timelineView" class="view"><div class="view-pad"><!-- VIEW:timeline --></div></section>
       <section id="retrievalView" class="view"><div class="view-pad"><!-- VIEW:retrieval --></div></section>
       <!-- ===================== AUTOMATIONS ===================== -->
       <section id="automationsView" class="view"><div class="view-pad"><!-- VIEW:automations --></div></section>
@@ -638,6 +701,15 @@
       <button class="icon-btn modal-close" aria-label="Close"><span data-lucide="x"></span></button>
     </div>
     <div id="modelPickerList" style="padding:6px"></div>
+  </div>
+</div>
+<div id="actionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+  <div class="modal-card wide">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div id="actionModalTitle" style="font-weight:700;font-size:14px"></div>
+      <button class="icon-btn" id="actionModalClose" aria-label="Close"><span data-lucide="x"></span></button>
+    </div>
+    <div id="actionModalBody" style="padding:14px 16px"></div>
   </div>
 </div>
 <div id="toast" class="toast" role="status"></div>
@@ -774,13 +846,14 @@ const LANGUAGE_LABELS = {
   en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings'},
   hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स'},
 };
+const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
   const p = getPrefs();
   document.documentElement.dataset.theme = p.theme || 'dark';
   document.documentElement.lang = p.language || 'en';
   const labels = LANGUAGE_LABELS[p.language] || LANGUAGE_LABELS.en;
   $$('.nav-item[data-view]').forEach(button => {
-    const label = labels[button.dataset.view];
+    const label = button.dataset.mediaTab ? (CREATE_LABELS[p.language] || CREATE_LABELS.en)[button.dataset.mediaTab] : labels[button.dataset.view];
     const text = button.querySelector('.rail-text');
     if (label && text) text.textContent = label;
   });
@@ -1178,7 +1251,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', media:'Media',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings'};
@@ -1226,16 +1299,19 @@ function setPipelineState(state, detail){
   renderModelStatusPill();
 }
 
+function syncRailActive(name = currentView){
+  $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === name && (!b.dataset.mediaTab || (typeof mediaTab !== 'undefined' && b.dataset.mediaTab === mediaTab))));
+}
 function showView(name){
   currentView = name;
   { const d = document.getElementById('helpDrawer'); if (d && d.dataset.view !== name) d.remove(); }
   $$('.view').forEach(v => v.classList.remove('active'));
   const target = $(name + 'View'); if (target) target.classList.add('active');
-  $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  syncRailActive(name);
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, media:renderMediaView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView,
@@ -1530,6 +1606,7 @@ function msgHtml(m){
     <div class="bubble">${escapeHtml(m.content)}</div>
     ${cites?`<div class="msg-cites">${cites}</div>`:''}
     ${planAction}
+    ${createCardHtml(m)}
     ${stats}
   </div>`;
 }
@@ -1538,6 +1615,7 @@ function bindMsgEvents(){
   $$('.msg-regen').forEach(b=>b.onclick=()=>regenerateMessage(b.dataset.id));
   $$('.msg-save').forEach(b=>b.onclick=()=>{ const s=activeSession(); const m=s.messages.find(x=>x.id===b.dataset.id); toast('Saved excerpt to Knowledge (simulated).'); logEvent('FILE','saved assistant excerpt to knowledge'); });
   $$('.msg-review-plan').forEach(b=>b.onclick=()=>{workspaceSelectedPlanId=b.dataset.planId;showView('workspace');});
+  bindCreateCards();
 }
 function regenerateMessage(msgId){
   const s = activeSession(); if (!s) return;
@@ -1619,6 +1697,7 @@ async function sendMessage(){
   s.updatedAt = nowIso(); idbPut('sessions', s);
   renderConvo(); renderSessList();
   logEvent('SESSION', 'prompt submitted · session '+s.id);
+  if(await createFromConversation(s,text,msg.mediaIds))return;
   if(await draftCodePlanFromConversation(s,text))return;
   if(await draftWorkspacePlanFromConversation(s,text))return;
   await runPipeline(s, text);
@@ -2874,6 +2953,13 @@ function attachMediaToSession(record){
 function mediaRecipe(p){
   if (!p) return '';
   if (p.mode==='img2img') return [`From: ${p.sourceName||p.sourceMediaId} · strength ${p.strength}`, `Prompt: ${p.prompt}`, p.negative?`Negative: ${p.negative}`:'', `Checkpoint: ${p.checkpoint}`, `Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg} · ${p.sampler}`].filter(Boolean).join('\n');
+  if (p.engine==='kokoro-82m') return [`Voice: Kokoro ${String(p.voice||'').replace(/^kokoro:/,'')} (${p.locale}) · speed ${p.rate}`, `Text: ${p.text}`].join('\n');
+  if (p.engine==='sdxl-inpaint') return [`${p.mode==='remove'?'Object removed':'Area edited'} in ${p.sourceName||p.sourceMediaId}`, p.mode==='remove'?'':`Prompt: ${p.prompt}`, `Checkpoint: ${p.checkpoint}${p.lora?' · LoRA '+p.lora+' '+p.loraStrength:''}`, `Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg}${p.mode==='edit'?' · change '+p.strength:''}`].filter(Boolean).join('\n');
+  if (p.engine==='sdxl-outpaint') return [`Expanded ${p.sourceName||p.sourceMediaId} to ${p.target} · ${p.width}×${p.height}`, `Prompt: ${p.prompt}`, `Seed ${p.seed} · ${p.steps} steps`].join('\n');
+  if (p.engine==='upscale-model'||p.engine==='ffmpeg-lanczos') return `Upscaled ${p.factor}x from ${p.sourceName||p.sourceMediaId} · ${p.width}×${p.height} · ${p.engine==='upscale-model'?p.model:'Lanczos resize'}`;
+  if (p.engine==='ffmpeg-speech') return `Speech enhanced (${p.strength}) from ${p.sourceName||p.sourceMediaId}`;
+  if (p.engine==='translate') return [`${p.languageName} ${p.mode==='dub'?'dub':'subtitles'} of ${p.sourceName||p.sourceMediaId} · ${p.lines} lines · ${p.model}${p.voice?' · voice '+String(p.voice).replace(/^kokoro:/,''):''}`, p.srt?'Subtitles:\n'+p.srt.slice(0,1500):''].filter(Boolean).join('\n');
+  if (p.engine==='timeline') return [`Timeline "${p.name}" · ${p.size} · ${p.fps} fps · ${p.seconds}s`, ...(p.shots||[]).map((sh,i)=>`${i+1}. ${sh.name} @ ${sh.at}s · ${sh.seconds}s`), ...(p.sound||[]).map(x=>`${x.track}: ${x.name} @ ${x.start}s`)].join('\n');
   if (p.engine==='macos-say') return [`Voice: ${p.voice||'default'}${p.locale?' ('+p.locale+')':''} · rate ${p.rate}`, `Text: ${p.text}`].join('\n');
   if (p.engine==='stable-audio-open-1.0') return [`Sound effect · Stable Audio Open · ${p.seconds}s`, `Prompt: ${p.prompt}`, `Seed ${p.seed} · ${p.steps} steps`].join('\n');
   if (p.generator==='ffmpeg-filter') return [`Filtered from ${p.sourceName||p.sourceMediaId}`, Object.entries(p).filter(([k,v])=>!['generator','kind','sourceMediaId','sourceName','jobId','prompt'].includes(k)&&v&&v!=='none'&&!(k==='speed'&&v===1)).map(([k,v])=>`${k}: ${v}`).join(' · ')].join('\n');
@@ -2881,7 +2967,7 @@ function mediaRecipe(p){
   if (p.engine==='join') return [`Joined · ${p.size} · ${p.fps} fps`, ...(p.clips||[]).map((c,i)=>`${i+1}. ${c.name}`)].join('\n');
   if (p.generator==='last-frame') return `Last frame of ${p.videoName||p.videoId}`;
   if (p.engine==='camera-moves') return [`Camera moves · ${p.size} · ${p.fps} fps · ${p.seconds}s`, ...(p.shots||[]).map((sh,i)=>`${i+1}. ${sh.name} — ${sh.move}, ${sh.seconds}s`)].join('\n');
-  if (p.engine==='ltx-2-mlx') return [`Source: ${p.sourceName||p.mediaId}`, `Prompt: ${p.prompt}`, `LTX-2 (${p.model}) · ${p.width}×${p.height} · ${p.frames} frames ≈ ${p.seconds}s · ${p.mode==='two-stage'?'better':'fast'} · with sound`, `Seed ${p.seed}`].join('\n');
+  if (p.engine==='ltx-2-mlx') return [p.mediaId?`Source: ${p.sourceName||p.mediaId}`:'Text to video (no source image)', `Prompt: ${p.prompt}`, `LTX-2 (${p.model}) · ${p.width}×${p.height} · ${p.frames} frames ≈ ${p.seconds}s · ${p.mode==='two-stage'?'better':'fast'} · with sound`, `Seed ${p.seed}`].join('\n');
   if (p.engine && p.engine.startsWith('comfyui-wan')) return [`Source: ${p.sourceName||p.mediaId}`, `Motion: ${p.prompt}`, p.negative?`Negative: ${p.negative}`:'', `Wan 2.2 TI2V 5B · ${p.width}×${p.height} · ${p.frames} frames @ ${p.fps} fps`, `Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg} · shift ${p.shift}`].filter(Boolean).join('\n');
   return [p.prompt?`Prompt: ${p.prompt}`:'', p.negative?`Negative: ${p.negative}`:'', p.checkpoint?`Checkpoint: ${p.checkpoint}`:'', p.seed!=null?`Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg} · ${p.sampler} · ${p.width}×${p.height}`:''].filter(Boolean).join('\n');
 }
@@ -2890,22 +2976,23 @@ let videoJoin = [];
 let aiEngine = 'ltx';
 let audioMode = 'voice';
 let filterSourceId = '';
-const MEDIA_FORM_IDS = ['genPrompt','genNegative','genCheckpoint','genSize','genSteps','genCfg','genSeed','genSampler','motionSize','motionFps','aiVideoPrompt','aiVideoSeed','aiVideoMode','genSource','genStrength','audioText','audioVoice','audioRate','audioSeconds','audioLyrics','audioSeed','audioTitle','songIdea','songLang','songLength','fltLook','fltAspect','fltHeight','fltGrain','fltSpeed','fltFadeIn','fltFadeOut','fltTrimStart','fltTrimEnd'];
+let pendingMediaFill = null; // values to put in Media fields on the next render (from chat "Open in Media")
+const MEDIA_FORM_IDS = ['genLora','genLoraStrength','genPrompt','genNegative','genCheckpoint','genSize','genSteps','genCfg','genSeed','genSampler','motionSize','motionFps','aiVideoPrompt','aiVideoSeed','aiVideoMode','genSource','genStrength','audioText','audioVoice','audioRate','audioSeconds','audioLyrics','audioSeed','audioTitle','songIdea','songLang','songLength','fltLook','fltAspect','fltHeight','fltGrain','fltSpeed','fltFadeIn','fltFadeOut','fltTrimStart','fltTrimEnd'];
 const VIDEO_MOVES = [['push-in','Push in'],['pull-out','Pull out'],['pan-left','Pan left'],['pan-right','Pan right'],['tilt-up','Tilt up'],['tilt-down','Tilt down'],['hold','Hold']];
 const MEDIA_TABS = {
-  image:{label:'Image', libraryLabel:'Images', kinds:['image'], jobs:['image-generation']},
-  video:{label:'Video', libraryLabel:'Videos', kinds:['video'], jobs:['video-camera-moves','video-ltx','video-ai','video-join']},
-  audio:{label:'Audio', libraryLabel:'Audio', kinds:['audio'], jobs:['audio-voice','audio-sfx','audio-music']},
-  transcribe:{label:'Transcribe', libraryLabel:'Audio and video', kinds:['audio','video'], jobs:[]},
-  edit:{label:'Edit', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:['media-filter']},
+  image:{label:'Image', libraryLabel:'Images', kinds:['image'], jobs:['image-generation','image-edit','image-upscale']},
+  video:{label:'Video', libraryLabel:'Videos', kinds:['video'], jobs:['video-camera-moves','video-ltx','video-ai','video-join','media-translate','media-enhance','timeline-export']},
+  audio:{label:'Audio', libraryLabel:'Audio', kinds:['audio'], jobs:['audio-voice','audio-sfx','audio-music','media-translate','media-enhance']},
+  transcribe:{label:'Transcribe', libraryLabel:'Audio and video', kinds:['audio','video'], jobs:['media-translate']},
+  edit:{label:'Edit', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:['media-filter','image-edit','image-upscale','media-enhance','media-translate']},
   library:{label:'Library', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:null},
 };
-function setMediaTab(t){ if (!MEDIA_TABS[t]) return; mediaTab = t; try { localStorage.setItem('nova.mediaTab', t); } catch (_) {} }
+function setMediaTab(t){ if (!MEDIA_TABS[t]) return; mediaTab = t; try { localStorage.setItem('nova.mediaTab', t); } catch (_) {} if (currentView==='media') syncRailActive('media'); }
 let mediaTab = (()=>{ try { const t = localStorage.getItem('nova.mediaTab'); return MEDIA_TABS[t] ? t : 'image'; } catch (_) { return 'image'; } })();
 const MEDIA_TAB_HELP = {
-  image:['Describe the picture, or set Start from to rework a library image (Change: 0.1 stays close, 0.9 reimagines).','Runs SDXL through ComfyUI on this Mac. Start it with "Start ComfyUI for NOVA.command".'],
-  video:['Add shots with Animate (on any image) or Upload stills.','Camera moves: pans and zooms across each still and joins them, in seconds.','AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound.','Continue from last frame chains clips; Add to join assembles them.'],
-  audio:['Voice reads text with macOS voices; add Hindi voices in System Settings > Accessibility > Spoken Content.','Sound effect: up to 47 s from a description.','Song: describe an idea and press Write lyrics, edit, then Generate; or paste your own lyrics. About 5 minutes per 30 s on this Mac.'],
+  image:['Describe the picture, or set Start from to rework a library image (Change: 0.1 stays close, 0.9 reimagines).','Style / character LoRA: pick a LoRA file from ComfyUI/models/loras to keep a look or a character across images; Strength 0.6–0.9 is typical.','Actions ▾ on any image: Edit area and Remove object (paint over it), Expand background, Upscale 2x/4x.','Runs SDXL through ComfyUI on this Mac. Start it with "Start ComfyUI for NOVA.command".'],
+  video:['No shots? AI motion makes a clip from the prompt alone (text to video, LTX-2).','Add shots with Animate (on any image) or Upload stills.','Camera moves: pans and zooms across each still and joins them, in seconds.','AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound.','Continue from last frame chains clips; Add to join assembles them. For a full scene with music and voice, use Timeline.','Actions ▾ on a clip: Translate (dub or subtitles), Enhance speech.'],
+  audio:['Voice reads text with Kokoro (natural, offline; English, Hindi and more) or macOS voices.','Actions ▾ on a recording: Enhance speech (noise and level clean-up), Translate (dub into another language).','Sound effect: up to 47 s from a description.','Song: describe an idea and press Write lyrics, edit, then Generate; or paste your own lyrics. About 5 minutes per 30 s on this Mac.'],
   transcribe:['Upload audio or video and press Transcribe on it. Transcripts get timestamps and can go straight into a Knowledge collection.'],
   edit:['Pick an item, choose one or more filters and Apply. The original is kept; the result is a new item with its settings in the recipe.'],
   library:['Everything NOVA made or you uploaded. Each item keeps its recipe. Generated items are also saved as files in the library folder, one folder per day.'],
@@ -2913,9 +3000,9 @@ const MEDIA_TAB_HELP = {
 const MEDIA_TAB_PRESETS = { image:[['genPrompt','Prompt'],['genNegative','Avoid']], video:[['aiVideoPrompt','Motion prompt']], audio:[['audioText','Description']] };
 function mediaHelpersHtml({tab, jobs, img, stt, vid, aud, lib}){
   const needs = [];
-  if (tab==='image') { if (!img.reachable) needs.push('ComfyUI is not running.'); else if (!img.checkpoints.length) needs.push('No checkpoint installed in ComfyUI.'); }
+  if (tab==='image') { if (!img.reachable) needs.push('ComfyUI is not running.'); else { if (!img.checkpoints.length) needs.push('No checkpoint installed in ComfyUI.'); if (!(img.upscalers||[]).length) needs.push('Optional: an upscale model for sharper upscales (double-click "Add upscale model.command"); without it Upscale uses a plain resize.'); if (!(img.loras||[]).length) needs.push('Optional: LoRA files in ComfyUI/models/loras for a consistent style or character.'); } }
   if (tab==='video') { if (!vid.cameraMoves.ready) needs.push('ffmpeg for camera moves.'); (vid.ltx.missing||[]).forEach(m=>needs.push('LTX-2: '+m)); }
-  if (tab==='audio') { if (!aud.voice.ready) needs.push('Voice needs macOS speech.'); if (!aud.comfy.reachable) needs.push('ComfyUI is not running (sound effects, songs).'); else { (aud.comfy.sfx.missing||[]).forEach(m=>needs.push('Sound effects: '+m)); (aud.comfy.music.missing||[]).forEach(m=>needs.push('Songs: '+m)); } }
+  if (tab==='audio') { if (!aud.voice.ready) needs.push('Voice needs macOS speech or Kokoro.'); if (aud.voice.kokoro && !aud.voice.kokoro.ready) needs.push('Optional: natural voices (English, Hindi…) — double-click "Install Kokoro voices for NOVA.command" (about 400 MB).'); if (!aud.comfy.reachable) needs.push('ComfyUI is not running (sound effects, songs).'); else { (aud.comfy.sfx.missing||[]).forEach(m=>needs.push('Sound effects: '+m)); (aud.comfy.music.missing||[]).forEach(m=>needs.push('Songs: '+m)); } }
   if (tab==='transcribe') (stt.missing||[]).forEach(m=>needs.push(m));
   if (tab==='edit' && !vid.cameraMoves.ready) needs.push('ffmpeg (brew install ffmpeg).');
   if (tab==='library' && !(lib.enabled&&lib.dir)) needs.push(lib.needsRestart?'Restart NOVA to turn on the library folder.':'The library folder is off.');
@@ -2969,7 +3056,7 @@ async function renderMediaView(){
       ${m.kind==='audio'||m.kind==='video'?`<div style="margin-top:6px">${t?`<span class="badge ${t.status==='done'?'badge-green':t.status==='failed'?'badge-red':'badge-amber'}">${escapeHtml(t.status==='running'?'transcribing…':t.status)}</span>`:''}${t&&t.error?`<div class="empty-hint">${escapeHtml(t.error)}</div>`:''}
         ${m.transcript?`<details ${t&&t.status==='done'?'open':''}><summary class="empty-hint" style="cursor:pointer">Transcript · ${m.transcript.segments.length} segments · ${escapeHtml(m.transcript.model||'')}</summary><pre aria-label="Transcript" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:11px">${escapeHtml(m.transcript.text)}</pre></details>`:''}
         ${busy?'':`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><select class="media-collection" data-id="${m.id}" aria-label="Add transcript to collection" style="${field};padding:5px"><option value="">Don't add to Knowledge</option>${collections.map(c=>`<option value="${escapeHtml(c.id)}">Add to ${escapeHtml(c.name)}</option>`).join('')}</select><button class="btn btn-line btn-sm media-transcribe" data-id="${m.id}" ${stt.ready?'':'disabled'}>${m.transcript?'Transcribe again':'Transcribe'}</button></div>`}</div>`:''}
-      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${m.kind==='image'?`<button class="btn btn-line btn-sm media-attach" data-id="${m.id}">Attach to chat</button><button class="btn btn-line btn-sm media-animate" data-id="${m.id}">Animate</button>`:''}${m.kind==='video'?`<button class="btn btn-line btn-sm media-lastframe" data-id="${m.id}" title="Save the final frame as a still and add it as the next shot">Continue from last frame</button><button class="btn btn-ghost btn-sm media-join" data-id="${m.id}" aria-pressed="${videoJoin.includes(m.id)}">${videoJoin.includes(m.id)?'Joining #'+(videoJoin.indexOf(m.id)+1):'Add to join'}</button><a class="btn btn-ghost btn-sm" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`:''}<button class="btn btn-ghost btn-sm media-filter" data-id="${m.id}">Filters</button><button class="btn btn-ghost btn-sm media-delete" data-id="${m.id}">Delete</button></div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:flex-start">${m.kind==='image'?`<button class="btn btn-line btn-sm media-animate" data-id="${m.id}">Animate</button>`:''}${m.kind==='video'&&videoJoin.includes(m.id)?`<button class="btn btn-ghost btn-sm media-join" data-id="${m.id}" aria-pressed="true">Joining #${videoJoin.indexOf(m.id)+1}</button>`:''}${mediaActionsMenu(m)}<button class="btn btn-ghost btn-sm media-delete" data-id="${m.id}">Delete</button></div>
     </article>`;
   };
   pad.innerHTML = `
@@ -2993,6 +3080,8 @@ async function renderMediaView(){
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px"><label class="empty-hint" style="padding:0">Start from</label><select id="genSource" aria-label="Start from an image" style="${field};max-width:240px"><option value="">Text only</option>${images.map(m=>`<option value="${m.id}">${escapeHtml(m.originalName)}</option>`).join('')}</select>
           <label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload image<input id="genSourceUpload" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload an image to start from" hidden></label>
           <label class="empty-hint" style="padding:0" title="How much to change the image: low keeps it close, high reimagines it">Change <input id="genStrength" type="number" min="0.1" max="0.95" step="0.05" value="0.55" style="width:64px;${field}"></label></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px"><label class="empty-hint" style="padding:0">Style / character</label><select id="genLora" aria-label="Style or character LoRA" style="${field};max-width:240px"><option value="">No LoRA</option>${(img.loras||[]).map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('')}</select>
+          <label class="empty-hint" style="padding:0">Strength <input id="genLoraStrength" type="number" min="-2" max="2" step="0.05" value="0.8" style="width:64px;${field}"></label>${(img.loras||[]).length?'':'<span class="empty-hint" style="padding:0">Put LoRA files in ComfyUI/models/loras.</span>'}</div>
         <button class="btn btn-amber" id="genStart" style="margin-top:10px" ${img.reachable&&img.checkpoints.length?'':'disabled'}>Generate</button>
       </div>
       <div class="panel" id="transcribePanel" data-tab="transcribe library" style="padding:16px">
@@ -3026,7 +3115,8 @@ async function renderMediaView(){
           <label class="empty-hint" style="padding:0">Seconds <input id="aiVideoSeconds" type="number" min="1" max="${aiEngine==='ltx'?((vid.ltx.limits&&vid.ltx.limits.maxSeconds)||8):5}" step="1" value="${aiEngine==='ltx'?4:2}" style="width:52px;${field}"></label>
           ${aiEngine==='ltx'?`<select id="aiVideoMode" aria-label="Quality" style="${field}"><option value="distilled">Fast</option><option value="two-stage">Better (slower)</option></select>`:`<label class="empty-hint" style="padding:0">Steps <input id="aiVideoSteps" type="number" min="4" max="50" value="20" style="width:56px;${field}"></label>`}
           <label class="empty-hint" style="padding:0">Seed <input id="aiVideoSeed" type="number" min="0" placeholder="random" style="width:100px;${field}"></label>
-          <button class="btn btn-amber" id="aiVideoStart" ${(aiEngine==='ltx'?vid.ltx.ready:vid.ai.ready)&&videoShots.length?'':'disabled'}>Animate first shot</button></div>
+          <button class="btn btn-amber" id="aiVideoStart" ${(aiEngine==='ltx'?vid.ltx.ready:vid.ai.ready&&videoShots.length)?'':'disabled'}>${videoShots.length||aiEngine!=='ltx'?'Animate first shot':'Make video from prompt'}</button></div>
+          ${aiEngine==='ltx'&&!videoShots.length?'<p class="empty-hint" style="padding:4px 0 0">No shots: LTX-2 makes the whole clip from your prompt (text to video). Add a shot to animate a still instead.</p>':''}
         </div>
       </div>
       <div class="cap-section-label">Continuity</div>
@@ -3037,7 +3127,7 @@ async function renderMediaView(){
     <div class="panel" id="audioPanel" data-tab="audio" style="padding:16px;margin-top:14px">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><span class="eyebrow">Text to audio</span><h2 style="font-size:16px;margin:5px 0">Voice, sound effects, music</h2></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${aud.voice.ready?'badge-green':'badge-amber'}">Voice ${aud.voice.ready?'ready':'Mac only'}</span><span class="badge ${aud.comfy.sfx.ready?'badge-green':aud.comfy.reachable?'badge-amber':'badge-red'}">Sound effects ${aud.comfy.sfx.ready?'ready':aud.comfy.reachable?'need models':'ComfyUI offline'}</span><span class="badge ${aud.comfy.music.ready?'badge-green':aud.comfy.reachable?'badge-amber':'badge-red'}">Music ${aud.comfy.music.ready?'ready':aud.comfy.reachable?'needs model':'ComfyUI offline'}</span></div></div>
-      <select id="audioMode" aria-label="Audio type" style="${field};margin:6px 0"><option value="voice" ${audioMode==='voice'?'selected':''}>Voice (macOS speech) · instant</option><option value="sfx" ${audioMode==='sfx'?'selected':''}>Sound effect (Stable Audio Open)</option><option value="music" ${audioMode==='music'?'selected':''}>Song / music (ACE-Step)</option></select>
+      <select id="audioMode" aria-label="Audio type" style="${field};margin:6px 0"><option value="voice" ${audioMode==='voice'?'selected':''}>Voice (Kokoro or macOS) · fast</option><option value="sfx" ${audioMode==='sfx'?'selected':''}>Sound effect (Stable Audio Open)</option><option value="music" ${audioMode==='music'?'selected':''}>Song / music (ACE-Step)</option></select>
       ${audioMode==='voice'?'':`${aud.comfy.reachable?'':`<p class="empty-hint">${escapeHtml(aud.comfy.error||'ComfyUI is not running.')}</p>`}${(aud.comfy[audioMode].missing||[]).length?`<p class="empty-hint">Needs: ${aud.comfy[audioMode].missing.map(escapeHtml).join('; ')}.</p>`:''}`}
       ${audioMode==='music'?`<details id="songWriter" open style="margin:6px 0"><summary class="empty-hint" style="cursor:pointer;padding:0">Text to song: write lyrics from an idea (local model), then edit them below</summary>
         <textarea id="songIdea" aria-label="Song idea" placeholder="Two strangers share an umbrella on Marine Drive in the first monsoon rain" style="width:100%;min-height:50px;margin-top:6px;${field}"></textarea>
@@ -3049,7 +3139,7 @@ async function renderMediaView(){
       
       ${audioMode==='music'?`<textarea id="audioLyrics" aria-label="Lyrics" placeholder="Lyrics: paste your own or write them from an idea above. Leave empty for instrumental. Use [verse], [chorus] and [bridge] lines." style="width:100%;min-height:50px;margin-top:6px;${field}"></textarea>`:''}
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center">
-        ${audioMode==='voice'?`<select id="audioVoice" aria-label="Voice" style="${field};max-width:260px">${(aud.voice.voices||[]).map(v=>`<option value="${escapeHtml(v.name)}">${escapeHtml(v.name)} · ${escapeHtml(v.locale)}</option>`).join('')||'<option value="">Default voice</option>'}</select><label class="empty-hint" style="padding:0">Speed <input id="audioRate" type="number" min="90" max="360" step="5" value="175" style="width:64px;${field}"></label>`
+        ${audioMode==='voice'?`<select id="audioVoice" aria-label="Voice" style="${field};max-width:280px">${aud.voice.kokoro&&aud.voice.kokoro.ready?`<optgroup label="Kokoro · natural">${aud.voice.kokoro.voices.map(v=>`<option value="${escapeHtml(v.name)}">${escapeHtml(v.label)}</option>`).join('')}</optgroup>`:''}${(aud.voice.voices||[]).length?`<optgroup label="macOS voices">${aud.voice.voices.map(v=>`<option value="${escapeHtml(v.name)}">${escapeHtml(v.name)} · ${escapeHtml(v.locale)}</option>`).join('')}</optgroup>`:''}${!(aud.voice.voices||[]).length&&!(aud.voice.kokoro&&aud.voice.kokoro.ready)?'<option value="">Default voice</option>':''}</select><label class="empty-hint" style="padding:0">Speed <input id="audioRate" type="number" min="90" max="360" step="5" value="175" style="width:64px;${field}"></label>`
           :`<label class="empty-hint" style="padding:0">Seconds <input id="audioSeconds" type="number" min="1" max="${audioMode==='sfx'?47:240}" value="${audioMode==='sfx'?10:30}" style="width:64px;${field}"></label><label class="empty-hint" style="padding:0">Seed <input id="audioSeed" type="number" min="0" placeholder="random" style="width:100px;${field}"></label>`}
         <button class="btn btn-amber" id="audioStart" ${audioMode==='voice'?(aud.voice.ready?'':'disabled'):(aud.comfy[audioMode].ready?'':'disabled')}>${audioMode==='voice'?'Speak':'Generate'}</button></div>
     </div>
@@ -3084,18 +3174,21 @@ async function renderMediaView(){
   $$('.media-tab').forEach(b=>b.onclick=()=>{ setMediaTab(b.dataset.tab); renderMediaView(); });
   $$('.helper-chip').forEach(c=>c.onclick=()=>{ const box = $(c.dataset.target); if (!box) return; const t = c.dataset.text, v = box.value.trim(); if (!v.toLowerCase().includes(t.toLowerCase())) box.value = v ? v.replace(/[,.\s]*$/, '') + ', ' + t : t; box.focus(); });
   for (const [id,v] of kept) if ($(id)) $(id).value = v;
+  if (pendingMediaFill) { for (const [id,v] of Object.entries(pendingMediaFill)) if ($(id)) $(id).value = v; pendingMediaFill = null; }
   if (focusedId && $(focusedId)) $(focusedId).focus();
   if (window.lucide) lucide.createIcons();
   const post = async (url, body) => { const r = await fetch(apiUrl(url), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{})}); const d = await r.json().catch(()=>({})); if (!r.ok) throw new Error(d.error || ('HTTP '+r.status)); return d; };
   if ($('genStart')) $('genStart').onclick = async () => {
     const prompt = $('genPrompt').value.trim(); if (!prompt) return toast('Describe the image first.');
     const [width,height] = $('genSize').value.split('x').map(Number);
-    if ($('genSource').value) { try { await post('/api/images/img2img', {mediaId:$('genSource').value, strength:Number($('genStrength').value), prompt, negative:$('genNegative').value.trim(), checkpoint:$('genCheckpoint').value, steps:Number($('genSteps').value), cfg:Number($('genCfg').value), seed:$('genSeed').value===''?undefined:Number($('genSeed').value), sampler:$('genSampler').value}); toast('Reworking the image on ComfyUI…'); renderMediaView(); } catch(e){ toast(e.message); } return; }
-    try { await post('/api/images/generate', {prompt, negative:$('genNegative').value.trim(), checkpoint:$('genCheckpoint').value, width, height, steps:Number($('genSteps').value), cfg:Number($('genCfg').value), seed:$('genSeed').value===''?undefined:Number($('genSeed').value), sampler:$('genSampler').value}); toast('Generating on ComfyUI…'); renderMediaView(); }
+    const lora = {lora:$('genLora')?$('genLora').value||undefined:undefined, loraStrength:$('genLoraStrength')?Number($('genLoraStrength').value):undefined};
+    if ($('genSource').value) { try { await post('/api/images/img2img', {...lora, mediaId:$('genSource').value, strength:Number($('genStrength').value), prompt, negative:$('genNegative').value.trim(), checkpoint:$('genCheckpoint').value, steps:Number($('genSteps').value), cfg:Number($('genCfg').value), seed:$('genSeed').value===''?undefined:Number($('genSeed').value), sampler:$('genSampler').value}); toast('Reworking the image on ComfyUI…'); renderMediaView(); } catch(e){ toast(e.message); } return; }
+    try { await post('/api/images/generate', {...lora, prompt, negative:$('genNegative').value.trim(), checkpoint:$('genCheckpoint').value, width, height, steps:Number($('genSteps').value), cfg:Number($('genCfg').value), seed:$('genSeed').value===''?undefined:Number($('genSeed').value), sampler:$('genSampler').value}); toast('Generating on ComfyUI…'); renderMediaView(); }
     catch(e){ toast(e.message); }
   };
   $$('.gen-cancel').forEach(b=>b.onclick=async()=>{ try{ await post('/api/images/jobs/'+encodeURIComponent(b.dataset.id)+'/cancel'); renderMediaView(); }catch(e){ toast(e.message); } });
   $('mediaUpload').onchange = async e => { let other = false; for (const f of e.target.files){ try{ await uploadMediaFile(f); if (!/^(audio|video)\//.test(f.type)) other = true; }catch(err){ toast(f.name+': '+err.message); } } if (other && mediaTab==='transcribe') { setMediaTab('library'); toast('Images are in the Library tab.'); } renderMediaView(); };
+  bindMediaActions(items);
   $$('.media-attach').forEach(b=>b.onclick=()=>{ const m = items.find(x=>x.id===b.dataset.id); if (m && attachMediaToSession(m)) { toast('Attached to the open chat. Use a vision model to ask about it.'); showView('console'); } });
   $$('.media-transcribe').forEach(b=>b.onclick=async()=>{ const sel = document.querySelector('.media-collection[data-id="'+b.dataset.id+'"]'); try{ await post('/api/media/'+encodeURIComponent(b.dataset.id)+'/transcribe', {collectionId: sel && sel.value || undefined}); toast('Transcribing on this computer…'); renderMediaView(); }catch(e){ toast(e.message); } });
   $$('.media-delete').forEach(b=>b.onclick=async()=>{ try{ const r = await fetch(apiUrl('/api/media/'+encodeURIComponent(b.dataset.id)), {method:'DELETE'}); if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error||'Delete failed'); renderMediaView(); }catch(e){ toast(e.message); } });
@@ -3111,7 +3204,7 @@ async function renderMediaView(){
   if ($('joinStart')) $('joinStart').onclick = async () => { try { await post('/api/video/join', {mediaIds:videoJoin, size:$('motionSize').value, fps:Number($('motionFps').value)}); videoJoin=[]; toast('Joining clips…'); renderMediaView(); } catch(e){ toast(e.message); } };
   if ($('motionStart')) $('motionStart').onclick = async () => { try { await post('/api/video/camera-moves', {shots:videoShots, size:$('motionSize').value, fps:Number($('motionFps').value)}); toast('Rendering video on this computer…'); renderMediaView(); } catch(e){ toast(e.message); } };
   if ($('aiVideoEngine')) $('aiVideoEngine').onchange = () => { aiEngine = $('aiVideoEngine').value; renderMediaView(); };
-  if ($('aiVideoStart')) $('aiVideoStart').onclick = async () => { const prompt=$('aiVideoPrompt').value.trim(); if (!prompt) return toast('Describe the motion first.'); const body = {engine:aiEngine, mediaId:videoShots[0].mediaId, prompt, size:$('aiVideoSize').value, seconds:Number($('aiVideoSeconds').value), seed:$('aiVideoSeed').value===''?undefined:Number($('aiVideoSeed').value)}; if (aiEngine==='ltx') body.mode=$('aiVideoMode').value; else body.steps=Number($('aiVideoSteps').value); try { await post('/api/video/animate', body); toast(aiEngine==='ltx'?'Animating with LTX-2 on this Mac — a few minutes per clip.':'Animating on ComfyUI — this can take a while on a Mac.'); renderMediaView(); } catch(e){ toast(e.message); } };
+  if ($('aiVideoStart')) $('aiVideoStart').onclick = async () => { const prompt=$('aiVideoPrompt').value.trim(); if (!prompt) return toast('Describe the motion first.'); const body = {engine:aiEngine, mediaId:videoShots[0]?videoShots[0].mediaId:undefined, prompt, size:$('aiVideoSize').value, seconds:Number($('aiVideoSeconds').value), seed:$('aiVideoSeed').value===''?undefined:Number($('aiVideoSeed').value)}; if (aiEngine==='ltx') body.mode=$('aiVideoMode').value; else body.steps=Number($('aiVideoSteps').value); try { await post('/api/video/animate', body); toast(aiEngine==='ltx'?'Animating with LTX-2 on this Mac — a few minutes per clip.':'Animating on ComfyUI — this can take a while on a Mac.'); renderMediaView(); } catch(e){ toast(e.message); } };
   if ($('genSourceUpload')) $('genSourceUpload').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const m = await uploadMediaFile(f); await renderMediaView(); if ($('genSource')) $('genSource').value = m.id; toast('Image added. Describe the change, then Generate.'); } catch(err){ toast(err.message); } };
   if ($('animateUpload')) $('animateUpload').onchange = async e => { let added = 0; for (const f of e.target.files){ try { const m = await uploadMediaFile(f); if (m && m.kind==='image') { videoShots.push({mediaId:m.id, move:VIDEO_MOVES[videoShots.length%4][0], seconds:3}); added++; } } catch(err){ toast(f.name+': '+err.message); } } if (added) toast(`Added ${added} shot${added>1?'s':''}.`); await renderMediaView(); $('videoPanel')&&$('videoPanel').scrollIntoView({behavior:'smooth',block:'start'}); };
   if ($('audioMode')) $('audioMode').onchange = () => { audioMode = $('audioMode').value; renderMediaView(); };
@@ -3128,6 +3221,563 @@ async function renderMediaView(){
   if ($('libraryBackfill')) $('libraryBackfill').onclick = async () => { try { const r = await post('/api/library/backfill'); toast(`Copied ${r.media} media, ${r.transcripts} transcripts and ${r.skillOutputs} skill outputs to the library.`); renderMediaView(); } catch(e){ toast(e.message); } };
   if (mediaPoll) { clearTimeout(mediaPoll); mediaPoll = null; }
   if (running.length || items.some(m=>m.transcription&&m.transcription.status==='running')) mediaPoll = setTimeout(()=>{ mediaPoll=null; if (currentView==='media') renderMediaView(); }, 2000);
+}
+
+/* ===================== marker: CREATE TOOLS ===================== */
+/* Actions on library items (edit area, remove object, expand, upscale,
+   enhance speech, translate, add to a board or timeline), the Boards and
+   Timeline views, and chat that can start image, video and song jobs. */
+const TRANSLATE_LANGS = [['hi','Hindi'],['en','English'],['bn','Bengali'],['mr','Marathi'],['ta','Tamil'],['te','Telugu'],['gu','Gujarati'],['pa','Punjabi'],['ur','Urdu'],['es','Spanish'],['fr','French'],['de','German'],['it','Italian'],['pt','Portuguese'],['ja','Japanese'],['zh','Chinese'],['ar','Arabic']];
+const FIELD_STYLE = 'background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px;color:var(--ink)';
+async function apiPost(url, body, method='POST'){ const r = await fetch(apiUrl(url), {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{})}); const d = await r.json().catch(()=>({})); if (!r.ok) throw new Error(d.error || ('HTTP '+r.status)); return d; }
+async function apiGet(url){ const r = await fetch(apiUrl(url)); const d = await r.json().catch(()=>({})); if (!r.ok) throw new Error(d.error || ('HTTP '+r.status)); return d; }
+
+function openActionModal(title, html, bind){
+  $('actionModalTitle').textContent = title;
+  $('actionModalBody').innerHTML = html;
+  $('actionModal').classList.add('open');
+  $('actionModalClose').onclick = closeActionModal;
+  $('actionModal').onclick = e => { if (e.target === $('actionModal')) closeActionModal(); };
+  if (window.lucide) lucide.createIcons();
+  if (bind) bind($('actionModalBody'));
+}
+function closeActionModal(){ $('actionModal').classList.remove('open'); $('actionModalBody').innerHTML = ''; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('actionModal') && $('actionModal').classList.contains('open')) closeActionModal(); });
+
+/** The Actions ▾ menu on a library card. Items reuse the existing media-* handlers where they exist. */
+function mediaActionsMenu(m){
+  const b = (cls, label, extra='') => `<button type="button" role="menuitem" class="menu-item ${cls}" data-id="${m.id}" ${extra}>${label}</button>`;
+  const a = (act, label) => b('media-act', label, `data-act="${act}"`);
+  const items = [];
+  if (m.kind==='image') items.push(a('edit','Edit area…'), a('remove','Remove object…'), a('expand','Expand background…'), a('upscale','Upscale…'), a('img2img','Image to image'), b('media-attach','Attach to chat'));
+  if (m.kind==='video') items.push(b('media-lastframe','Continue from last frame','title="Save the final frame as a still and add it as the next shot"'), b('media-join', videoJoin.includes(m.id)?'Remove from join':'Add to join'), a('translate','Translate…'), a('enhance','Enhance speech…'), a('transcribe','Transcribe'));
+  if (m.kind==='audio') items.push(a('enhance','Enhance speech…'), a('translate','Translate…'), a('transcribe','Transcribe'));
+  items.push('<hr>', a('board','Add to board…'), a('timeline','Add to timeline…'), b('media-filter','Filters'), `<a role="menuitem" class="menu-item" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`);
+  return `<details class="media-menu"><summary class="btn btn-line btn-sm" aria-haspopup="menu">Actions ▾</summary><div class="media-menu-list" role="menu">${items.join('')}</div></details>`;
+}
+
+function bindMediaActions(items){
+  $$('.media-menu').forEach(d => d.addEventListener('toggle', () => { if (d.open) $$('.media-menu').forEach(o => { if (o !== d) o.open = false; }); }));
+  $$('.media-menu .menu-item').forEach(el => el.addEventListener('click', () => { const d = el.closest('details'); if (d) d.open = false; }));
+  $$('.media-act').forEach(el => el.onclick = () => {
+    const m = items.find(x => x.id === el.dataset.id); if (!m) return;
+    const act = el.dataset.act;
+    if (act==='edit' || act==='remove') return openMaskEditor(m, act);
+    if (act==='expand') return openExpand(m);
+    if (act==='upscale') return openUpscale(m);
+    if (act==='translate') return openTranslate(m);
+    if (act==='enhance') return openEnhance(m);
+    if (act==='board') return pickBoardFor([m.id]);
+    if (act==='timeline') return pickTimelineFor(m);
+    if (act==='transcribe') { setMediaTab('transcribe'); renderMediaView(); return; }
+    if (act==='img2img') { setMediaTab('image'); renderMediaView().then(()=>{ if ($('genSource')) { $('genSource').value = m.id; $('genPrompt').focus(); toast('Describe the change, set Change, then Generate.'); } }); }
+  });
+}
+
+/** SDXL settings from the Image tab, so edits use the same checkpoint and LoRA. */
+function imageSettingsFromTab(){
+  const v = id => $(id) ? $(id).value : undefined;
+  return { checkpoint: v('genCheckpoint') || undefined, lora: v('genLora') || undefined, loraStrength: $('genLoraStrength') ? Number($('genLoraStrength').value) : undefined, negative: v('genNegative') || undefined };
+}
+function jobStarted(msg){ closeActionModal(); toast(msg); if (currentView==='media') renderMediaView(); }
+
+/* ---- mask brush: Edit area / Remove object ---- */
+function openMaskEditor(m, mode){
+  openActionModal(mode==='remove' ? 'Remove object' : 'Edit area', `
+    <p class="empty-hint" style="padding:0 0 8px">${mode==='remove'?'Paint over what should disappear. NOVA fills it with matching background.':'Paint over the area to change, then describe what should be there.'} Only the painted area changes.</p>
+    <div class="mask-wrap" id="maskWrap"><img id="maskImg" alt="${escapeHtml(m.originalName)}" src="${mediaUrl(m.id)}"><canvas id="maskCanvas" aria-label="Paint mask"></canvas></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+      <label class="empty-hint" style="padding:0">Brush <input id="maskBrush" type="range" min="6" max="120" value="36" aria-label="Brush size"></label>
+      <button class="btn btn-ghost btn-sm" id="maskErase" aria-pressed="false">Eraser</button>
+      <button class="btn btn-ghost btn-sm" id="maskClear">Clear</button>
+      <select id="maskMode" aria-label="Edit mode" style="${FIELD_STYLE}"><option value="remove" ${mode==='remove'?'selected':''}>Remove object</option><option value="edit" ${mode==='edit'?'selected':''}>Replace with a prompt</option></select>
+      <label class="empty-hint" style="padding:0" id="maskStrengthWrap">Change <input id="maskStrength" type="number" min="0.3" max="1" step="0.05" value="0.9" style="width:62px;${FIELD_STYLE}"></label>
+    </div>
+    <textarea id="maskPrompt" aria-label="What should be in the painted area" placeholder="${mode==='remove'?'Optional: what the background is, e.g. sandy beach and sea':'e.g. a red vintage scooter parked by the wall'}" style="width:100%;min-height:54px;margin-top:8px;${FIELD_STYLE}"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center"><button class="btn btn-amber" id="maskRun">${mode==='remove'?'Remove':'Repaint area'}</button><span class="empty-hint" style="padding:0">Uses SDXL in ComfyUI${imageSettingsFromTab().lora?' with your LoRA':''}. About a minute on this Mac.</span></div>`, root => {
+    const img = $('maskImg'), canvas = $('maskCanvas'), ctx = canvas.getContext('2d');
+    let mask = null, mctx = null, erasing = false, drawing = false, painted = false, last = null;
+    const setup = () => {
+      const w = img.clientWidth, h = img.clientHeight; canvas.width = w; canvas.height = h;
+      mask = document.createElement('canvas'); mask.width = img.naturalWidth; mask.height = img.naturalHeight;
+      mctx = mask.getContext('2d'); mctx.fillStyle = '#000'; mctx.fillRect(0, 0, mask.width, mask.height);
+      ctx.clearRect(0, 0, w, h); painted = false;
+    };
+    if (img.complete && img.naturalWidth) setup(); else img.onload = setup;
+    const pos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    const stroke = (a, b) => {
+      const size = Number($('maskBrush').value), k = mask.width / canvas.width;
+      for (const [c, scale, colour] of [[ctx, 1, 'rgba(255,70,70,.55)'], [mctx, k, '#fff']]) {
+        c.save(); c.globalCompositeOperation = erasing ? 'destination-out' : 'source-over';
+        if (c === mctx && erasing) { c.globalCompositeOperation = 'source-over'; colour = '#000'; }
+        c.strokeStyle = colour; c.lineWidth = size * scale; c.lineCap = 'round'; c.lineJoin = 'round';
+        c.beginPath(); c.moveTo(a.x * scale, a.y * scale); c.lineTo(b.x * scale, b.y * scale); c.stroke(); c.restore();
+      }
+      if (!erasing) painted = true;
+    };
+    canvas.onpointerdown = e => { drawing = true; canvas.setPointerCapture(e.pointerId); last = pos(e); stroke(last, last); };
+    canvas.onpointermove = e => { if (!drawing) return; const p = pos(e); stroke(last, p); last = p; };
+    canvas.onpointerup = canvas.onpointercancel = () => { drawing = false; };
+    $('maskErase').onclick = () => { erasing = !erasing; $('maskErase').setAttribute('aria-pressed', String(erasing)); $('maskErase').classList.toggle('btn-line', erasing); };
+    $('maskClear').onclick = setup;
+    const syncMode = () => { $('maskStrengthWrap').style.display = $('maskMode').value==='edit' ? '' : 'none'; $('maskRun').textContent = $('maskMode').value==='remove' ? 'Remove' : 'Repaint area'; };
+    $('maskMode').onchange = syncMode; syncMode();
+    $('maskRun').onclick = async () => {
+      if (!painted) return toast('Paint over the area first.');
+      const modeNow = $('maskMode').value, prompt = $('maskPrompt').value.trim();
+      if (modeNow==='edit' && !prompt) return toast('Describe what should be in the painted area.');
+      $('maskRun').disabled = true;
+      try { await apiPost('/api/images/edit', { ...imageSettingsFromTab(), mediaId: m.id, mode: modeNow, prompt, strength: Number($('maskStrength').value), mask: mask.toDataURL('image/png') }); jobStarted(modeNow==='remove' ? 'Removing the object on ComfyUI…' : 'Repainting the area on ComfyUI…'); }
+      catch (e) { toast(e.message); $('maskRun').disabled = false; }
+    };
+  });
+}
+
+function openExpand(m){
+  const shapes = [['16:9','Wider frame · 16:9'],['2.39:1','Cinema scope · 2.39:1'],['4:3','4:3'],['1:1','Square'],['4:5','Portrait 4:5'],['9:16','Vertical 9:16'],['wider','50% wider'],['taller','50% taller'],['all','More room on every side']];
+  openActionModal('Expand background', `
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start">
+      <img src="${mediaUrl(m.id)}" alt="${escapeHtml(m.originalName)}" style="width:100%;border-radius:8px;border:1px solid var(--line)">
+      <div><label class="empty-hint" style="padding:0">New frame</label><select id="expandTarget" aria-label="New frame" style="width:100%;margin:4px 0 8px;${FIELD_STYLE}">${shapes.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+        <textarea id="expandPrompt" aria-label="What is in the new area" placeholder="Optional: what the new area shows, e.g. more of the crowded street and neon signs" style="width:100%;min-height:70px;${FIELD_STYLE}"></textarea>
+        <button class="btn btn-amber" id="expandRun" style="margin-top:10px">Expand</button>
+        <p class="empty-hint" style="padding:6px 0 0">The picture stays in the middle; SDXL paints the new area to match. Good for turning a square still into a widescreen frame before animating it.</p></div></div>`, () => {
+    $('expandRun').onclick = async () => { $('expandRun').disabled = true; try { await apiPost('/api/images/expand', { ...imageSettingsFromTab(), mediaId: m.id, target: $('expandTarget').value, prompt: $('expandPrompt').value.trim() }); jobStarted('Expanding on ComfyUI…'); } catch (e) { toast(e.message); $('expandRun').disabled = false; } };
+  });
+}
+
+async function openUpscale(m){
+  let img = {}; try { img = await apiGet('/api/images/status'); } catch (_) {}
+  const models = img.upscalers || [];
+  openActionModal('Upscale', `
+    <p class="empty-hint" style="padding:0 0 8px">${models.length&&img.reachable?'Uses an upscale model in ComfyUI: sharper detail than a plain resize.':'No upscale model found (or ComfyUI is not running), so NOVA does a high-quality resize with ffmpeg. For sharper results, double-click "Add upscale model.command" in the brahmini folder and start ComfyUI.'}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="upFactor" aria-label="Upscale factor" style="${FIELD_STYLE}"><option value="2">2x</option><option value="4">4x</option></select>
+      ${models.length&&img.reachable?`<select id="upModel" aria-label="Upscale model" style="${FIELD_STYLE}">${models.map(x=>`<option>${escapeHtml(x)}</option>`).join('')}</select>`:''}
+      <button class="btn btn-amber" id="upRun">Upscale</button></div>`, () => {
+    $('upRun').onclick = async () => { $('upRun').disabled = true; try { await apiPost('/api/images/upscale', { mediaId: m.id, factor: Number($('upFactor').value), model: $('upModel') ? $('upModel').value : undefined }); jobStarted('Upscaling…'); } catch (e) { toast(e.message); $('upRun').disabled = false; } };
+  });
+}
+
+function openEnhance(m){
+  openActionModal('Enhance speech', `
+    <p class="empty-hint" style="padding:0 0 8px">Cleans dialogue on this Mac: removes rumble and hiss, reduces background noise, evens out the level and sets loudness to -16 LUFS. ${m.kind==='video'?'The picture is not touched.':''} The original is kept.</p>
+    <div style="display:flex;gap:8px;align-items:center"><select id="enhStrength" aria-label="Clean-up strength" style="${FIELD_STYLE}"><option value="light">Light · keeps the room sound</option><option value="strong">Strong · noisy location sound</option></select><button class="btn btn-amber" id="enhRun">Enhance</button></div>`, () => {
+    $('enhRun').onclick = async () => { $('enhRun').disabled = true; try { await apiPost('/api/media/'+encodeURIComponent(m.id)+'/enhance', { strength: $('enhStrength').value }); jobStarted('Enhancing speech…'); } catch (e) { toast(e.message); $('enhRun').disabled = false; } };
+  });
+}
+
+async function openTranslate(m){
+  let aud = {voice:{voices:[],kokoro:null}}; try { aud = await apiGet('/api/audio/status'); } catch (_) {}
+  const voiceOptions = lang => {
+    const k = aud.voice.kokoro && aud.voice.kokoro.ready ? aud.voice.kokoro.voices.filter(v=>v.locale.startsWith(lang)) : [];
+    const mac = (aud.voice.voices||[]).filter(v=>v.locale.toLowerCase().startsWith(lang));
+    return `<option value="">Automatic</option>${k.map(v=>`<option value="${escapeHtml(v.name)}">Kokoro · ${escapeHtml(v.label)}</option>`).join('')}${mac.map(v=>`<option value="${escapeHtml(v.name)}">macOS · ${escapeHtml(v.name)}</option>`).join('')}`;
+  };
+  openActionModal('Translate', `
+    <p class="empty-hint" style="padding:0 0 8px">NOVA transcribes the speech${m.transcript?' (already done)':''}, translates each line with your local model, then dubs it or burns in subtitles. The subtitle file is kept in the recipe. No lip sync.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="trLang" aria-label="Translate into" style="${FIELD_STYLE}">${TRANSLATE_LANGS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+      <select id="trMode" aria-label="Translation output" style="${FIELD_STYLE}"><option value="dub">Dub (spoken)</option>${m.kind==='video'?'<option value="subtitles">Subtitles (burned in)</option>':''}</select>
+      <select id="trVoice" aria-label="Dub voice" style="${FIELD_STYLE};max-width:260px">${voiceOptions('hi')}</select>
+      <label class="empty-hint" style="padding:0" id="trOrigWrap">Original sound <select id="trOriginal" aria-label="Original sound level" style="${FIELD_STYLE}"><option value="0.15">Low under the dub</option><option value="0.3">Medium</option><option value="0">Off</option></select></label>
+    </div>
+    <button class="btn btn-amber" id="trRun" style="margin-top:10px">Translate</button>`, () => {
+    const sync = () => { const dub = $('trMode').value==='dub'; $('trVoice').style.display = dub ? '' : 'none'; $('trOrigWrap').style.display = dub ? '' : 'none'; };
+    $('trLang').onchange = () => { $('trVoice').innerHTML = voiceOptions($('trLang').value); };
+    $('trMode').onchange = sync; sync();
+    $('trRun').onclick = async () => { $('trRun').disabled = true; try { await apiPost('/api/media/'+encodeURIComponent(m.id)+'/translate', { language: $('trLang').value, mode: $('trMode').value, voice: $('trVoice').value || undefined, originalVolume: Number($('trOriginal').value) }); jobStarted('Translating — transcribe, translate, then '+($('trMode').value==='dub'?'dub':'subtitles')+'…'); } catch (e) { toast(e.message); $('trRun').disabled = false; } };
+  });
+}
+
+/* ---- pick a board or timeline for a library item ---- */
+async function pickBoardFor(mediaIds){
+  let list = []; try { list = await apiGet('/api/boards'); } catch (e) { return toast(e.message); }
+  openActionModal('Add to board', `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="pickBoard" aria-label="Board" style="${FIELD_STYLE};min-width:240px">${list.map(b=>`<option value="${b.id}">${escapeHtml(b.name)} · ${b.items.length} items</option>`).join('')}<option value="__new">New board…</option></select>
+    <input id="pickBoardName" aria-label="New board name" placeholder="Board name, e.g. Asha — look book" style="${FIELD_STYLE};min-width:240px"><button class="btn btn-amber" id="pickBoardRun">Add</button></div>`, () => {
+    const sync = () => { $('pickBoardName').style.display = $('pickBoard').value==='__new' ? '' : 'none'; }; $('pickBoard').onchange = sync; sync();
+    $('pickBoardRun').onclick = async () => {
+      try {
+        let board = $('pickBoard').value==='__new' ? await apiPost('/api/boards', { name: $('pickBoardName').value.trim() || 'Untitled board' }) : list.find(b=>b.id===$('pickBoard').value);
+        board = await apiPost('/api/boards/'+encodeURIComponent(board.id), { ...board, items: [...board.items, ...placeOnBoard(board, mediaIds.map(id=>({type:'media', mediaId:id})))] }, 'PUT');
+        closeActionModal(); boardState.id = board.id; toast(`Added to ${board.name}.`);
+      } catch (e) { toast(e.message); }
+    };
+  });
+}
+function placeOnBoard(board, items){
+  const maxY = board.items.reduce((y, it) => Math.max(y, it.y + it.h), 0);
+  const hex = () => Array.from(crypto.getRandomValues(new Uint8Array(5)), x => x.toString(16).padStart(2, '0')).join('');
+  return items.map((it, i) => ({ id: 'bi_' + hex(), ...it, x: 40 + (i % 5) * 260, y: (board.items.length ? maxY + 30 : 40) + Math.floor(i / 5) * 220, w: it.type==='note' ? 220 : it.type==='color' ? 120 : 240, h: it.type==='note' ? 150 : it.type==='color' ? 120 : 180, z: board.items.length + i }));
+}
+function trackFor(m){
+  if (m.kind!=='audio') return 'video';
+  const p = m.provenance || {};
+  if (p.engine==='macos-say' || p.engine==='kokoro-82m' || m.source==='nova-voice') return 'voice';
+  if (p.engine==='stable-audio-open-1.0') return 'sfx';
+  return 'music';
+}
+async function pickTimelineFor(m){
+  let list = []; try { list = await apiGet('/api/timelines'); } catch (e) { return toast(e.message); }
+  const track = trackFor(m);
+  openActionModal('Add to timeline', `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="pickTl" aria-label="Timeline" style="${FIELD_STYLE};min-width:240px">${list.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}<option value="__new">New timeline…</option></select>
+    <input id="pickTlName" aria-label="New timeline name" placeholder="Scene name, e.g. Sc 12 — Marine Drive" style="${FIELD_STYLE};min-width:220px">
+    <select id="pickTrack" aria-label="Track" style="${FIELD_STYLE}">${m.kind==='image'?'<option value="video">Picture</option>':m.kind==='video'?'<option value="video">Picture</option><option value="music">Music (its sound only)</option><option value="sfx">Effects (its sound only)</option>':`<option value="voice" ${track==='voice'?'selected':''}>Voice</option><option value="music" ${track==='music'?'selected':''}>Music</option><option value="sfx" ${track==='sfx'?'selected':''}>Effects</option>`}</select>
+    <button class="btn btn-amber" id="pickTlRun">Add</button></div>`, () => {
+    const sync = () => { $('pickTlName').style.display = $('pickTl').value==='__new' ? '' : 'none'; }; $('pickTl').onchange = sync; sync();
+    $('pickTlRun').onclick = async () => {
+      try {
+        let tl = $('pickTl').value==='__new' ? await apiPost('/api/timelines', { name: $('pickTlName').value.trim() || 'Untitled scene' }) : list.find(t=>t.id===$('pickTl').value);
+        tl = await addToTimeline(tl, m, $('pickTrack').value);
+        closeActionModal(); timelineState.id = tl.id; toast(`Added to ${tl.name}.`);
+      } catch (e) { toast(e.message); }
+    };
+  });
+}
+async function mediaDuration(id){
+  if (timelineState.durations[id] != null) return timelineState.durations[id];
+  try { const info = await apiGet('/api/media/'+encodeURIComponent(id)+'/info'); timelineState.durations[id] = info.duration || 0; timelineState.hasAudio[id] = info.hasAudio; } catch (_) { timelineState.durations[id] = 0; }
+  return timelineState.durations[id];
+}
+async function addToTimeline(tl, m, track){
+  const tracks = JSON.parse(JSON.stringify(tl.tracks));
+  if (track==='video') tracks.video.push(m.kind==='image' ? { mediaId: m.id, seconds: 3 } : { mediaId: m.id, in: 0, clipVolume: 1 });
+  else {
+    let end = 0;
+    for (const it of tracks[track]) { const d = await mediaDuration(it.mediaId); end = Math.max(end, it.start + ((it.out ?? d) - it.in)); }
+    tracks[track].push({ mediaId: m.id, start: Math.round(end * 10) / 10, in: 0, volume: track==='music' ? 0.6 : 1 });
+  }
+  return apiPost('/api/timelines/'+encodeURIComponent(tl.id), { ...tl, tracks }, 'PUT');
+}
+
+/** A grid of library items to choose from; resolves with the chosen ids. */
+async function pickMedia({ title, kinds, multi = true }){
+  let items = []; try { items = (await apiGet('/api/media')).filter(m => kinds.includes(m.kind)); } catch (e) { toast(e.message); return []; }
+  return new Promise(resolve => {
+    const chosen = new Set();
+    openActionModal(title, items.length ? `<div class="pick-grid">${items.map(m=>`<button type="button" class="pick-item" data-id="${m.id}" aria-pressed="false" title="${escapeHtml(m.originalName)}">${m.kind==='image'?`<img src="${mediaUrl(m.id)}" alt="" loading="lazy">`:m.kind==='video'?`<video src="${mediaUrl(m.id)}#t=0.5" muted preload="metadata"></video>`:'<span class="pick-audio" data-lucide="audio-lines"></span>'}<span class="pick-name">${escapeHtml(m.originalName)}</span></button>`).join('')}</div>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-amber" id="pickDone">Add</button><span class="empty-hint" style="padding:0" id="pickCount">Nothing chosen.</span></div>` : '<p class="empty-hint">Nothing in the library of this kind yet.</p>', () => {
+      $$('.pick-item').forEach(b => b.onclick = () => {
+        if (!multi) { chosen.clear(); $$('.pick-item').forEach(x=>x.setAttribute('aria-pressed','false')); }
+        if (chosen.has(b.dataset.id)) chosen.delete(b.dataset.id); else chosen.add(b.dataset.id);
+        b.setAttribute('aria-pressed', String(chosen.has(b.dataset.id))); $('pickCount').textContent = chosen.size ? `${chosen.size} chosen` : 'Nothing chosen.';
+      });
+      if ($('pickDone')) $('pickDone').onclick = () => { closeActionModal(); resolve([...chosen]); };
+      const obs = new MutationObserver(() => { if (!$('actionModal').classList.contains('open')) { obs.disconnect(); resolve([]); } });
+      obs.observe($('actionModal'), { attributes: true, attributeFilter: ['class'] });
+    });
+  });
+}
+
+/* ===================== marker: RENDER:BOARDS ===================== */
+const boardState = { id: null, board: null, saveTimer: null, kinds: {} };
+function scheduleBoardSave(){
+  clearTimeout(boardState.saveTimer);
+  boardState.saveTimer = setTimeout(async () => { const b = boardState.board; if (!b) return; try { const saved = await apiPost('/api/boards/'+encodeURIComponent(b.id), b, 'PUT'); b.updatedAt = saved.updatedAt; const st = $('boardSaved'); if (st) st.textContent = 'Saved'; const cnt = document.querySelector(`.board-link[data-id="${b.id}"] .empty-hint`); if (cnt) cnt.textContent = `${saved.items.length} item(s)`; } catch (e) { toast(e.message); } }, 500);
+  const st = $('boardSaved'); if (st) st.textContent = 'Saving…';
+}
+async function renderBoardsView(){
+  const pad = $('boardsView').querySelector('.view-pad');
+  let list = [];
+  try { const [l, items] = await Promise.all([apiGet('/api/boards'), apiGet('/api/media')]); list = l; boardState.kinds = Object.fromEntries(items.map(m => [m.id, m.kind])); } catch (e) { pad.innerHTML = `<p class="empty-hint">${escapeHtml(e.message)}</p>`; return; }
+  if (!boardState.id || !list.some(b=>b.id===boardState.id)) boardState.id = list[0] ? list[0].id : null;
+  const b = list.find(x=>x.id===boardState.id) || null;
+  boardState.board = b;
+  pad.innerHTML = `
+    <div class="view-head"><div><span class="eyebrow">Create</span><h1 class="view-title">Boards</h1><p class="view-desc">Mood boards, look books and character sheets from your library: images, clips, notes and colour swatches on a free canvas.</p></div></div>
+    <div class="boards-layout">
+      <aside class="boards-list" aria-label="Boards"><button class="btn btn-amber btn-sm" id="boardNew" style="width:100%">New board</button>
+        ${list.map(x=>`<button class="board-link ${x.id===boardState.id?'active':''}" data-id="${x.id}"><strong>${escapeHtml(x.name)}</strong><span class="empty-hint" style="padding:0">${x.items.length} item(s)</span></button>`).join('')||'<p class="empty-hint">No boards yet.</p>'}</aside>
+      <section class="boards-main">${b?`
+        <div class="board-toolbar"><input id="boardName" aria-label="Board name" value="${escapeHtml(b.name)}" style="${FIELD_STYLE};min-width:200px">
+          <button class="btn btn-line btn-sm" id="boardAddMedia"><span data-lucide="image-plus" style="width:13px;height:13px"></span>From library</button>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload<input id="boardUpload" type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/quicktime" multiple hidden aria-label="Upload to board"></label>
+          <button class="btn btn-ghost btn-sm" id="boardAddNote">Note</button>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">Colour<input id="boardAddColor" type="color" value="#c0392b" aria-label="Add colour swatch" style="width:0;height:0;opacity:0;border:0;padding:0"></label>
+          <label class="empty-hint" style="padding:0">Background <input id="boardBg" type="color" value="${escapeHtml(b.background)}" aria-label="Board background"></label>
+          <span style="flex:1"></span><span class="empty-hint" style="padding:0" id="boardSaved">Saved</span>
+          <button class="btn btn-line btn-sm" id="boardExport">Save as image</button><button class="btn btn-ghost btn-sm" id="boardDelete">Delete board</button></div>
+        <div class="board-canvas" id="boardCanvas" style="background:${escapeHtml(b.background)}"><div class="board-stage" id="boardStage"></div></div>
+        <p class="empty-hint">Drag items to arrange them, drag the corner to resize, double-click a note to edit it. Items stay linked to the library.</p>`
+        : `<div class="panel" style="padding:24px;text-align:center"><p>Make a board for a look, a location or a character.</p><button class="btn btn-amber" id="boardNew2">New board</button></div>`}</section>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  const create = async () => { try { const nb = await apiPost('/api/boards', { name: 'Untitled board' }); boardState.id = nb.id; renderBoardsView(); } catch (e) { toast(e.message); } };
+  $('boardNew').onclick = create; if ($('boardNew2')) $('boardNew2').onclick = create;
+  $$('.board-link').forEach(x => x.onclick = () => { boardState.id = x.dataset.id; renderBoardsView(); });
+  if (!b) return;
+  drawBoard();
+  $('boardName').oninput = () => { b.name = $('boardName').value; scheduleBoardSave(); };
+  $('boardName').onchange = () => { const link = document.querySelector(`.board-link[data-id="${b.id}"] strong`); if (link) link.textContent = b.name; };
+  $('boardBg').oninput = () => { b.background = $('boardBg').value; $('boardCanvas').style.background = b.background; scheduleBoardSave(); };
+  $('boardAddMedia').onclick = async () => { const ids = await pickMedia({ title: 'Add from library', kinds: ['image','video'] }); if (ids.length) { b.items.push(...placeOnBoard(b, ids.map(id=>({type:'media', mediaId:id})))); drawBoard(); scheduleBoardSave(); } };
+  $('boardUpload').onchange = async e => { const ids = []; for (const f of e.target.files) { try { const rec = await uploadMediaFile(f); boardState.kinds[rec.id] = rec.kind; ids.push(rec.id); } catch (err) { toast(f.name+': '+err.message); } } if (ids.length) { b.items.push(...placeOnBoard(b, ids.map(id=>({type:'media', mediaId:id})))); drawBoard(); scheduleBoardSave(); } };
+  $('boardAddNote').onclick = () => { b.items.push(...placeOnBoard(b, [{ type:'note', text:'', color:'#f5d76e' }])); drawBoard(); scheduleBoardSave(); const last = $$('.board-note textarea').pop(); if (last) { last.readOnly = false; last.focus(); } };
+  $('boardAddColor').onchange = () => { b.items.push(...placeOnBoard(b, [{ type:'color', color:$('boardAddColor').value, caption:$('boardAddColor').value }])); drawBoard(); scheduleBoardSave(); };
+  $('boardDelete').onclick = async () => { if (!confirmInline($('boardDelete'), 'Really delete?')) return; try { await fetch(apiUrl('/api/boards/'+encodeURIComponent(b.id)), {method:'DELETE'}); boardState.id = null; renderBoardsView(); } catch (e) { toast(e.message); } };
+  $('boardExport').onclick = () => exportBoardImage(b);
+}
+/** Two-click confirmation on the button itself (no browser dialogs). */
+function confirmInline(btn, label){ if (btn.dataset.armed === '1') return true; btn.dataset.armed = '1'; const old = btn.textContent; btn.textContent = label; setTimeout(() => { btn.dataset.armed = ''; btn.textContent = old; }, 3000); return false; }
+function drawBoard(){
+  const b = boardState.board, stage = $('boardStage'); if (!b || !stage) return;
+  const w = Math.max(1600, ...b.items.map(it => it.x + it.w + 200)), h = Math.max(900, ...b.items.map(it => it.y + it.h + 200));
+  stage.style.width = w + 'px'; stage.style.height = h + 'px';
+  stage.innerHTML = b.items.slice().sort((a, c) => a.z - c.z).map(it => {
+    const inner = it.type==='media'
+      ? `<div class="board-media">${boardState.kinds[it.mediaId]==='video' ? `<video src="${mediaUrl(it.mediaId)}" muted loop playsinline autoplay preload="metadata"></video>` : `<img src="${mediaUrl(it.mediaId)}" alt="" draggable="false">`}</div>${it.caption?`<div class="board-caption">${escapeHtml(it.caption)}</div>`:''}`
+      : it.type==='note' ? `<textarea aria-label="Note" style="background:${escapeHtml(it.color)}" readonly>${escapeHtml(it.text)}</textarea>`
+      : `<div class="board-swatch" style="background:${escapeHtml(it.color)}"></div><div class="board-caption">${escapeHtml(it.caption||it.color)}</div>`;
+    return `<div class="board-item board-${it.type}" data-id="${it.id}" style="left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px;z-index:${it.z}">${inner}<button class="board-del" aria-label="Remove from board" data-id="${it.id}">×</button><span class="board-resize" aria-hidden="true"></span></div>`;
+  }).join('');
+  $$('.board-item', stage).forEach(el => {
+    const it = b.items.find(x => x.id === el.dataset.id);
+    el.onpointerdown = e => {
+      if (e.target.closest('.board-del') || (e.target.tagName==='TEXTAREA' && !e.target.readOnly)) return;
+      e.preventDefault();
+      const resize = e.target.classList.contains('board-resize');
+      const start = { x: e.clientX, y: e.clientY, ix: it.x, iy: it.y, iw: it.w, ih: it.h };
+      it.z = Math.max(0, ...b.items.map(x => x.z)) + 1; el.style.zIndex = it.z;
+      el.setPointerCapture(e.pointerId);
+      el.onpointermove = ev => {
+        const dx = ev.clientX - start.x, dy = ev.clientY - start.y;
+        if (resize) { it.w = Math.max(60, Math.round(start.iw + dx)); it.h = Math.max(40, Math.round(start.ih + dy)); el.style.width = it.w + 'px'; el.style.height = it.h + 'px'; }
+        else { it.x = Math.round(start.ix + dx); it.y = Math.round(start.iy + dy); el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
+      };
+      el.onpointerup = () => { el.onpointermove = null; el.onpointerup = null; scheduleBoardSave(); };
+    };
+    const ta = el.querySelector('textarea');
+    if (ta) { el.ondblclick = () => { ta.readOnly = false; ta.focus(); }; ta.onkeydown = e => { if (e.key === 'Escape') ta.blur(); }; ta.onblur = () => { ta.readOnly = true; }; ta.oninput = () => { it.text = ta.value; scheduleBoardSave(); }; }
+    el.querySelector('.board-del').onclick = () => { b.items = b.items.filter(x => x.id !== it.id); drawBoard(); scheduleBoardSave(); };
+  });
+}
+async function exportBoardImage(b){
+  if (!b.items.length) return toast('The board is empty.');
+  const pad = 40, minX = Math.min(...b.items.map(i=>i.x)) - pad, minY = Math.min(...b.items.map(i=>i.y)) - pad;
+  const W = Math.max(...b.items.map(i=>i.x+i.w)) - minX + pad, H = Math.max(...b.items.map(i=>i.y+i.h)) - minY + pad;
+  const scale = Math.min(2, 4096 / Math.max(W, H));
+  const c = document.createElement('canvas'); c.width = Math.round(W*scale); c.height = Math.round(H*scale);
+  const g = c.getContext('2d'); g.scale(scale, scale); g.fillStyle = b.background; g.fillRect(0, 0, W, H);
+  const load = src => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+  const frame = src => new Promise(res => { const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.onloadeddata = () => { v.currentTime = Math.min(0.5, (v.duration||1)/2); }; v.onseeked = () => res(v); v.onerror = () => res(null); v.src = src; });
+  for (const it of b.items.slice().sort((a, x) => a.z - x.z)) {
+    const x = it.x - minX, y = it.y - minY;
+    if (it.type==='media') {
+      const el = (await load(mediaUrl(it.mediaId))) || (await frame(mediaUrl(it.mediaId)));
+      if (el) { const iw = el.naturalWidth || el.videoWidth, ih = el.naturalHeight || el.videoHeight, k = Math.max(it.w/iw, it.h/ih); g.save(); g.beginPath(); g.rect(x, y, it.w, it.h); g.clip(); g.drawImage(el, x + (it.w - iw*k)/2, y + (it.h - ih*k)/2, iw*k, ih*k); g.restore(); }
+    } else if (it.type==='note') {
+      g.fillStyle = it.color; g.fillRect(x, y, it.w, it.h); g.fillStyle = '#222'; g.font = '14px -apple-system, system-ui, sans-serif';
+      const words = String(it.text).split(/\s+/); let line = '', ly = y + 24;
+      for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > it.w - 20) { g.fillText(line, x + 10, ly); line = w; ly += 19; } else line = t; if (ly > y + it.h - 8) break; }
+      if (line && ly <= y + it.h - 8) g.fillText(line, x + 10, ly);
+    } else { g.fillStyle = it.color; g.fillRect(x, y, it.w, it.h - 22); g.fillStyle = '#ddd'; g.font = '12px ui-monospace, monospace'; g.fillText(it.caption || it.color, x + 4, y + it.h - 6); }
+  }
+  c.toBlob(async blob => {
+    try { const file = new File([blob], `${b.name}.png`, { type: 'image/png' }); await uploadMediaFile(file); toast('Board saved to the library as an image.'); }
+    catch (e) { toast(e.message); }
+  }, 'image/png');
+}
+
+/* ===================== marker: RENDER:TIMELINE ===================== */
+const timelineState = { id: null, tl: null, selected: null, pps: 40, durations: {}, hasAudio: {}, saveTimer: null, poll: null };
+const TL_TRACKS = [['video','Picture'],['voice','Voice'],['music','Music'],['sfx','Effects']];
+function scheduleTimelineSave(){
+  clearTimeout(timelineState.saveTimer);
+  const st = $('tlSaved'); if (st) st.textContent = 'Saving…';
+  timelineState.saveTimer = setTimeout(async () => { const tl = timelineState.tl; if (!tl) return; try { const saved = await apiPost('/api/timelines/'+encodeURIComponent(tl.id), tl, 'PUT'); tl.updatedAt = saved.updatedAt; ['video','voice','music','sfx'].forEach(t => saved.tracks[t].forEach((it, i) => { if (tl.tracks[t][i]) tl.tracks[t][i].id = it.id; })); if ($('tlSaved')) $('tlSaved').textContent = 'Saved'; const cnt = document.querySelector(`#timelineView .board-link[data-id="${tl.id}"] .empty-hint`); if (cnt) cnt.textContent = `${saved.tracks.video.length} shot(s)`; const nm = document.querySelector(`#timelineView .board-link[data-id="${tl.id}"] strong`); if (nm) nm.textContent = saved.name; } catch (e) { toast(e.message); } }, 400);
+}
+function tlItemLength(it){ const d = timelineState.durations[it.mediaId] || 0; return it.kind==='image' || (it.seconds && it.in == null) ? it.seconds : Math.max(0.1, (it.out ?? d) - (it.in || 0)); }
+async function renderTimelineView(){
+  const pad = $('timelineView').querySelector('.view-pad');
+  let list = [], items = [], jobs = [];
+  try { [list, items, jobs] = await Promise.all([apiGet('/api/timelines'), apiGet('/api/media'), apiGet('/api/images/jobs')]); } catch (e) { pad.innerHTML = `<p class="empty-hint">${escapeHtml(e.message)}</p>`; return; }
+  if (!timelineState.id || !list.some(t=>t.id===timelineState.id)) timelineState.id = list[0] ? list[0].id : null;
+  const tl = list.find(t=>t.id===timelineState.id) || null;
+  timelineState.tl = tl;
+  const byId = Object.fromEntries(items.map(m=>[m.id, m]));
+  if (tl) await Promise.all([...tl.tracks.video.filter(i=>i.kind==='video'), ...tl.tracks.voice, ...tl.tracks.music, ...tl.tracks.sfx].map(i=>mediaDuration(i.mediaId)));
+  const exports = jobs.filter(j=>j.type==='timeline-export' && tl && j.settings && j.settings.timelineId===tl.id).slice(0,3);
+  pad.innerHTML = `
+    <div class="view-head"><div><span class="eyebrow">Create</span><h1 class="view-title">Timeline</h1><p class="view-desc">Cut a scene from your clips and stills, then lay voice, music and effects under it. Export renders one MP4 on this Mac.</p></div></div>
+    <div class="boards-layout">
+      <aside class="boards-list" aria-label="Timelines"><button class="btn btn-amber btn-sm" id="tlNew" style="width:100%">New timeline</button>
+        ${list.map(x=>`<button class="board-link ${x.id===timelineState.id?'active':''}" data-id="${x.id}"><strong>${escapeHtml(x.name)}</strong><span class="empty-hint" style="padding:0">${x.tracks.video.length} shot(s)</span></button>`).join('')||'<p class="empty-hint">No timelines yet.</p>'}</aside>
+      <section class="boards-main">${tl?`
+        <div class="board-toolbar"><input id="tlName" aria-label="Timeline name" value="${escapeHtml(tl.name)}" style="${FIELD_STYLE};min-width:200px">
+          <select id="tlSize" aria-label="Frame size" style="${FIELD_STYLE}">${[['1280x720','16:9 · 720p'],['1920x1080','16:9 · 1080p'],['2048x858','2.39:1 scope'],['1080x1080','1:1'],['720x1280','9:16 · 720p'],['1080x1920','9:16 · 1080p'],['704x480','3:2 · 480p']].map(([v,l])=>`<option value="${v}" ${tl.size===v?'selected':''}>${l}</option>`).join('')}</select>
+          <select id="tlFps" aria-label="Frame rate" style="${FIELD_STYLE}">${[24,25,30].map(f=>`<option ${tl.fps===f?'selected':''}>${f}</option>`).join('')}</select>
+          <button class="btn btn-line btn-sm" id="tlAddPicture">Add clips</button><button class="btn btn-line btn-sm" id="tlAddSound">Add sound</button>
+          <label class="empty-hint" style="padding:0">Zoom <input id="tlZoom" type="range" min="10" max="160" value="${timelineState.pps}" aria-label="Zoom"></label>
+          <span style="flex:1"></span><span class="empty-hint" style="padding:0" id="tlSaved">Saved</span>
+          <button class="btn btn-amber btn-sm" id="tlExport" ${tl.tracks.video.length?'':'disabled'}>Export MP4</button><button class="btn btn-ghost btn-sm" id="tlDelete">Delete</button></div>
+        <div class="tl-scroll" id="tlScroll"><div id="tlTracks"></div></div>
+        <div class="panel" id="tlInspector" style="padding:12px;margin-top:10px"></div>
+        ${exports.length?`<div class="cap-section-label">Exports</div>${exports.map(j=>`<div class="helper-job"><span class="helper-job-name">${escapeHtml(j.settings.prompt||'')}</span><span><span class="badge ${j.status==='done'?'badge-green':j.status==='running'?'badge-amber':'badge-red'}">${escapeHtml(j.status)}</span></span></div>${j.status==='running'&&j.progress?`<div class="empty-hint">${escapeHtml(j.progress)}</div>`:''}${j.error?`<div class="empty-hint">${escapeHtml(j.error)}</div>`:''}${j.status==='done'&&j.mediaIds[0]?`<video controls preload="metadata" src="${mediaUrl(j.mediaIds[0])}" style="width:min(640px,100%);border-radius:8px;border:1px solid var(--line);margin:6px 0"></video>`:''}`).join('')}`:''}`
+        : `<div class="panel" style="padding:24px;text-align:center"><p>Start a timeline for a scene, a trailer or an animatic with music.</p><button class="btn btn-amber" id="tlNew2">New timeline</button></div>`}</section>
+    </div>`;
+  const create = async () => { try { const t = await apiPost('/api/timelines', { name: 'Untitled scene' }); timelineState.id = t.id; renderTimelineView(); } catch (e) { toast(e.message); } };
+  $('tlNew').onclick = create; if ($('tlNew2')) $('tlNew2').onclick = create;
+  $$('#timelineView .board-link').forEach(x => x.onclick = () => { timelineState.id = x.dataset.id; timelineState.selected = null; renderTimelineView(); });
+  if (timelineState.poll) { clearTimeout(timelineState.poll); timelineState.poll = null; }
+  if (!tl) return;
+  timelineState.byId = byId;
+  drawTimeline();
+  $('tlName').oninput = () => { tl.name = $('tlName').value; scheduleTimelineSave(); };
+  $('tlSize').onchange = () => { tl.size = $('tlSize').value; scheduleTimelineSave(); };
+  $('tlFps').onchange = () => { tl.fps = Number($('tlFps').value); scheduleTimelineSave(); };
+  $('tlZoom').oninput = () => { timelineState.pps = Number($('tlZoom').value); drawTimeline(); };
+  $('tlAddPicture').onclick = async () => { const ids = await pickMedia({ title: 'Add clips and stills', kinds: ['image','video'] }); for (const id of ids) tl.tracks.video.push(byId[id].kind==='image' ? { mediaId:id, kind:'image', seconds:3 } : { mediaId:id, kind:'video', in:0, out:null, clipVolume:1 }); if (ids.length) { await Promise.all(ids.map(mediaDuration)); drawTimeline(); scheduleTimelineSave(); $('tlExport').disabled = !tl.tracks.video.length; } };
+  $('tlAddSound').onclick = async () => {
+    const ids = await pickMedia({ title: 'Add sound', kinds: ['audio','video'] });
+    for (const id of ids) { const m = byId[id], track = m.kind==='video' ? 'music' : trackFor(m); await mediaDuration(id); const end = tl.tracks[track].reduce((e, it) => Math.max(e, it.start + tlItemLength(it)), 0); tl.tracks[track].push({ mediaId:id, kind:m.kind, start:Math.round(end*10)/10, in:0, out:null, volume: track==='music'?0.6:1, fadeIn:0, fadeOut:0 }); }
+    if (ids.length) { drawTimeline(); scheduleTimelineSave(); }
+  };
+  $('tlDelete').onclick = async () => { if (!confirmInline($('tlDelete'), 'Really delete?')) return; await fetch(apiUrl('/api/timelines/'+encodeURIComponent(tl.id)), {method:'DELETE'}); timelineState.id = null; renderTimelineView(); };
+  $('tlExport').onclick = async () => { clearTimeout(timelineState.saveTimer); try { await apiPost('/api/timelines/'+encodeURIComponent(tl.id), tl, 'PUT'); await apiPost('/api/timelines/'+encodeURIComponent(tl.id)+'/export'); toast('Rendering the scene on this Mac…'); renderTimelineView(); } catch (e) { toast(e.message); } };
+  if (exports.some(j=>j.status==='running')) timelineState.poll = setTimeout(() => { if (currentView==='timeline') renderTimelineView(); }, 2500);
+}
+function drawTimeline(){
+  const tl = timelineState.tl, pps = timelineState.pps, host = $('tlTracks'); if (!tl || !host) return;
+  const byId = timelineState.byId || {};
+  let cursor = 0;
+  const picture = tl.tracks.video.map(it => { const len = tlItemLength(it); const x = { it, at: cursor, len }; cursor += len; return x; });
+  const total = Math.max(cursor, ...['voice','music','sfx'].flatMap(t => tl.tracks[t].map(it => it.start + tlItemLength(it))), 10);
+  const width = Math.ceil(total * pps) + 120;
+  const ticks = []; const step = pps >= 60 ? 1 : pps >= 25 ? 2 : 5;
+  for (let t = 0; t <= total + step; t += step) ticks.push(`<span class="tl-tick" style="left:${t*pps}px">${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</span>`);
+  const name = id => escapeHtml((byId[id] || {}).originalName || 'missing');
+  const block = (track, it, left, len, idx) => `<div class="tl-block tl-${track} ${timelineState.selected&&timelineState.selected.track===track&&timelineState.selected.idx===idx?'selected':''}" data-track="${track}" data-idx="${idx}" style="left:${left*pps}px;width:${Math.max(18, len*pps)}px" title="${name(it.mediaId)} · ${len.toFixed(1)}s" role="button" tabindex="0" aria-label="${TL_TRACKS.find(t=>t[0]===track)[1]} ${idx+1}: ${name(it.mediaId)}">${track==='video'&&(byId[it.mediaId]||{}).kind==='image'?`<img src="${mediaUrl(it.mediaId)}" alt="" draggable="false">`:''}<span>${name(it.mediaId)}</span></div>`;
+  host.innerHTML = `<div class="tl-ruler" style="width:${width}px">${ticks.join('')}</div>` + TL_TRACKS.map(([t, label]) => `<div class="tl-row"><div class="tl-label">${label}</div><div class="tl-lane" data-track="${t}" style="width:${width}px">${t==='video' ? picture.map((p, i) => block('video', p.it, p.at, p.len, i)).join('') : tl.tracks[t].map((it, i) => block(t, it, it.start, tlItemLength(it), i)).join('')}${(t==='video'?picture.length:tl.tracks[t].length)?'':`<span class="empty-hint tl-empty">${t==='video'?'Add clips and stills':'Add '+label.toLowerCase()}</span>`}</div></div>`).join('') + `<div class="tl-total empty-hint">Scene length ${cursor.toFixed(1)} s</div>`;
+  $$('.tl-block', host).forEach(el => {
+    const track = el.dataset.track, idx = Number(el.dataset.idx), it = tl.tracks[track][idx];
+    el.onclick = () => { timelineState.selected = { track, idx }; drawTimeline(); };
+    el.onkeydown = e => { if (e.key==='Enter' || e.key===' ') { e.preventDefault(); el.onclick(); } };
+    el.onpointerdown = e => {
+      const startX = e.clientX; let moved = false;
+      el.setPointerCapture(e.pointerId);
+      const orig = track==='video' ? idx : it.start;
+      el.onpointermove = ev => {
+        const dx = ev.clientX - startX; if (Math.abs(dx) > 3) moved = true; if (!moved) return;
+        if (track==='video') el.style.transform = `translateX(${dx}px)`;
+        else { it.start = Math.max(0, Math.round((orig + dx / pps) * 10) / 10); el.style.left = (it.start * pps) + 'px'; }
+      };
+      el.onpointerup = ev => {
+        el.onpointermove = null; el.onpointerup = null;
+        if (!moved) return;
+        if (track==='video') { // drop position decides the new order
+          const lane = el.parentElement.getBoundingClientRect(), t = (ev.clientX - lane.left) / pps;
+          let acc = 0, to = tl.tracks.video.length - 1;
+          for (let i = 0; i < tl.tracks.video.length; i++) { const len = tlItemLength(tl.tracks.video[i]); if (t < acc + len / 2) { to = i; break; } acc += len; }
+          const [x] = tl.tracks.video.splice(idx, 1); tl.tracks.video.splice(to > idx ? to - 1 : to, 0, x);
+          timelineState.selected = { track, idx: tl.tracks.video.indexOf(x) };
+        } else timelineState.selected = { track, idx };
+        drawTimeline(); scheduleTimelineSave();
+      };
+    };
+  });
+  drawTimelineInspector();
+}
+function drawTimelineInspector(){
+  const tl = timelineState.tl, box = $('tlInspector'); if (!tl || !box) return;
+  const sel = timelineState.selected, it = sel && tl.tracks[sel.track] && tl.tracks[sel.track][sel.idx];
+  if (!it) { box.innerHTML = '<p class="empty-hint" style="padding:0">Select a block to trim it, set its level, or move it. Drag picture blocks to reorder; drag sound blocks to change when they start.</p>'; return; }
+  const m = (timelineState.byId || {})[it.mediaId] || {}, d = timelineState.durations[it.mediaId] || 0;
+  const n = (id, label, value, attrs='') => `<label class="empty-hint" style="padding:0">${label} <input id="${id}" type="number" value="${value ?? ''}" ${attrs} style="width:72px;${FIELD_STYLE};padding:5px"></label>`;
+  box.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><strong style="font-size:12.5px">${escapeHtml(m.originalName||'')}</strong><span class="badge">${escapeHtml(TL_TRACKS.find(t=>t[0]===sel.track)[1])}</span>${d?`<span class="empty-hint" style="padding:0">source ${d.toFixed(1)} s</span>`:''}
+    ${sel.track==='video' ? (m.kind==='image' ? n('tliSeconds','Seconds',it.seconds,'min="0.5" max="60" step="0.5"') : n('tliIn','In',it.in,'min="0" step="0.1"') + n('tliOut','Out',it.out ?? '', `min="0" step="0.1" placeholder="${d.toFixed(1)}"`) + n('tliClipVol','Clip sound',it.clipVolume,'min="0" max="2" step="0.1"'))
+      : n('tliStart','Starts at',it.start,'min="0" step="0.1"') + n('tliIn','In',it.in,'min="0" step="0.1"') + n('tliOut','Out',it.out ?? '', `min="0" step="0.1" placeholder="${d.toFixed(1)}"`) + n('tliVol','Level',it.volume,'min="0" max="2" step="0.05"') + n('tliFadeIn','Fade in',it.fadeIn,'min="0" max="10" step="0.5"') + n('tliFadeOut','Fade out',it.fadeOut,'min="0" max="10" step="0.5"')}
+    ${sel.track==='video'?`<button class="btn btn-ghost btn-sm" id="tliLeft" ${sel.idx?'':'disabled'}>← Earlier</button><button class="btn btn-ghost btn-sm" id="tliRight" ${sel.idx<tl.tracks.video.length-1?'':'disabled'}>Later →</button>`:''}
+    <button class="btn btn-ghost btn-sm" id="tliRemove">Remove</button></div>`;
+  const bindNum = (id, key, nullable) => { const el = $(id); if (!el) return; el.onchange = () => { const v = el.value === '' ? null : Number(el.value); it[key] = v == null && nullable ? null : (v ?? 0); drawTimeline(); scheduleTimelineSave(); }; };
+  bindNum('tliSeconds','seconds'); bindNum('tliIn','in'); bindNum('tliOut','out',true); bindNum('tliClipVol','clipVolume'); bindNum('tliStart','start'); bindNum('tliVol','volume'); bindNum('tliFadeIn','fadeIn'); bindNum('tliFadeOut','fadeOut');
+  const move = dir => { const v = tl.tracks.video, i = sel.idx; [v[i], v[i+dir]] = [v[i+dir], v[i]]; sel.idx += dir; drawTimeline(); scheduleTimelineSave(); };
+  if ($('tliLeft')) $('tliLeft').onclick = () => move(-1);
+  if ($('tliRight')) $('tliRight').onclick = () => move(1);
+  $('tliRemove').onclick = () => { tl.tracks[sel.track].splice(sel.idx, 1); timelineState.selected = null; drawTimeline(); scheduleTimelineSave(); if ($('tlExport')) $('tlExport').disabled = !tl.tracks.video.length; };
+}
+
+/* ===================== marker: CHAT CREATE ===================== */
+/* "Make an image of…", "/video …", "write a song about…" in the Console become
+   a card you confirm; the job runs on this Mac and the result appears in the chat. */
+const CREATE_NOUNS = [
+  ['image', /^(image|picture|photo|photograph|illustration|poster|still|drawing|painting|artwork|concept art|storyboard frame)s?$/i],
+  ['video', /^(video|clip|shot|animation|film|scene)s?$/i],
+  ['song', /^(song|jingle|anthem|lullaby|ghazal|qawwali)s?$/i],
+  ['music', /^(music|track|tune|score|background music|bgm|instrumental)s?$/i],
+  ['sfx', /^(sound effect|sfx|sound|ambience|foley)s?$/i],
+  ['voice', /^(voice ?over|voiceover|narration|vo)s?$/i],
+];
+function createIntent(text){
+  const t = String(text||'').trim();
+  const slash = /^\/(image|img|video|song|music|sfx|sound|voice|speak|vo)\s+([\s\S]+)$/i.exec(t);
+  if (slash) { const k = slash[1].toLowerCase(); return { kind: {img:'image', sound:'sfx', speak:'voice', vo:'voice'}[k] || k, prompt: slash[2].trim() }; }
+  const m = /^(?:please\s+|can you\s+|could you\s+)?(?:generate|create|make|draw|paint|render|compose|produce|write|sing|record|animate)\s+(?:me\s+)?(?:an?|the|some|one|a short|a quick)?\s*((?:[a-z-]+\s+){0,3}?)(image|picture|photo|photograph|illustration|poster|still|drawing|painting|artwork|concept art|storyboard frame|video|clip|shot|animation|film|scene|song|jingle|anthem|lullaby|ghazal|qawwali|music|track|tune|score|background music|bgm|instrumental|sound effect|sfx|sound|ambience|foley|voice ?over|voiceover|narration|vo)s?\b\s*(?:of|about|for|showing|with|where|that|:|,|-)?\s*([\s\S]*)$/i.exec(t);
+  if (!m) return null;
+  const noun = m[2], kind = (CREATE_NOUNS.find(([, re]) => re.test(noun)) || [])[0];
+  if (!kind) return null;
+  const rest = (m[1] + (m[3] || '')).trim();
+  if (!rest) return null;
+  if (kind==='song' && /\b(lyrics only|just the lyrics)\b/i.test(t)) return null;
+  return { kind, prompt: rest.replace(/[.!?]+$/, '') };
+}
+const CREATE_LABELS_CHAT = { image:'an image', video:'a video clip', song:'a song (lyrics, then ACE-Step)', music:'instrumental music', sfx:'a sound effect', voice:'a voice-over' };
+async function createFromConversation(session, text, mediaIds){
+  const intent = createIntent(text);
+  if (!intent) return false;
+  const source = (mediaIds || [])[0] || null;
+  session.messages.push({ id: uid('msg'), role: 'assistant', createdAt: nowIso(), content: `I can make ${CREATE_LABELS_CHAT[intent.kind]} on this Mac${source && (intent.kind==='image'||intent.kind==='video') ? ' from the attached image' : ''}: “${intent.prompt}”. Press Generate, or open it in Media to adjust the settings first.`, create: { ...intent, sourceMediaId: source, status: 'proposed' } });
+  session.updatedAt = nowIso(); idbPut('sessions', session); renderConvo();
+  setPipelineState('COMPLETE', 'ready to generate');
+  return true;
+}
+function createCardHtml(m){
+  const c = m.create; if (!c) return '';
+  const media = (c.mediaIds||[]).map(id => c.kind==='image' ? `<a href="${mediaUrl(id)}" target="_blank" rel="noopener"><img src="${mediaUrl(id)}" alt="Generated image" style="max-width:320px;max-height:240px;border-radius:9px;border:1px solid var(--line)"></a>` : c.kind==='video' ? `<video controls playsinline preload="metadata" src="${mediaUrl(id)}" style="max-width:360px;border-radius:9px;border:1px solid var(--line)"></video>` : `<audio controls preload="none" src="${mediaUrl(id)}"></audio>`).join('');
+  return `<div class="create-card" data-msg="${m.id}">
+    ${c.status==='proposed'?`<button class="btn btn-amber btn-sm create-go" data-msg="${m.id}">Generate</button> <button class="btn btn-ghost btn-sm create-open" data-msg="${m.id}">Open in Media</button>`:''}
+    ${c.status==='running'?`<span class="badge badge-amber">working</span> <span class="empty-hint" style="padding:0">${escapeHtml(c.progress||'This runs on this Mac and can take a few minutes.')}</span>`:''}
+    ${c.status==='failed'?`<span class="badge badge-red">failed</span> <span class="empty-hint" style="padding:0">${escapeHtml(c.error||'')}</span> <button class="btn btn-ghost btn-sm create-go" data-msg="${m.id}">Try again</button>`:''}
+    ${c.status==='done'?`<div style="margin-top:6px">${media}</div><button class="btn btn-ghost btn-sm create-open" data-msg="${m.id}" style="margin-top:6px">Open in Media</button>`:''}
+  </div>`;
+}
+async function runCreate(session, msg){
+  const c = msg.create; c.status = 'running'; c.error = null; c.progress = null; idbPut('sessions', session); renderConvo();
+  try {
+    let job;
+    if (c.kind==='image') job = c.sourceMediaId ? await apiPost('/api/images/img2img', { mediaId: c.sourceMediaId, prompt: c.prompt, strength: 0.6 }) : await apiPost('/api/images/generate', { prompt: c.prompt, width: 1344, height: 768 });
+    else if (c.kind==='video') job = await apiPost('/api/video/animate', { engine: 'ltx', prompt: c.prompt, mediaId: c.sourceMediaId || undefined, seconds: 4 });
+    else if (c.kind==='song') { c.progress = 'Writing lyrics with your local model…'; renderConvo(); const l = await apiPost('/api/audio/song-lyrics', { idea: c.prompt, length: 'short' }); c.lyrics = l.lyrics; c.title = l.title; job = await apiPost('/api/audio/music', { prompt: l.style, lyrics: l.lyrics, title: l.title, seconds: l.seconds }); }
+    else if (c.kind==='music') job = await apiPost('/api/audio/music', { prompt: c.prompt, lyrics: '[instrumental]', seconds: 30 });
+    else if (c.kind==='sfx') job = await apiPost('/api/audio/sfx', { prompt: c.prompt, seconds: 10 });
+    else if (c.kind==='voice') job = await apiPost('/api/audio/voice', { text: c.prompt });
+    c.jobId = job.id; c.progress = c.kind==='song' ? `“${c.title}” — composing on ComfyUI…` : null; idbPut('sessions', session); renderConvo();
+    for (;;) {
+      await sleep(2500);
+      const j = await apiGet('/api/images/jobs/'+encodeURIComponent(c.jobId));
+      if (j.status==='running') { if (j.progress && j.progress !== c.progress) { c.progress = j.progress; renderConvo(); } continue; }
+      if (j.status==='done') { c.status = 'done'; c.mediaIds = j.mediaIds; }
+      else { c.status = 'failed'; c.error = j.error || j.status; }
+      break;
+    }
+  } catch (e) { c.status = 'failed'; c.error = e.message; }
+  session.updatedAt = nowIso(); idbPut('sessions', session); if (activeSession() === session) renderConvo();
+}
+function bindCreateCards(){
+  $$('.create-go').forEach(b => b.onclick = () => { const s = activeSession(); const m = s && s.messages.find(x => x.id === b.dataset.msg); if (m) runCreate(s, m); });
+  $$('.create-open').forEach(b => b.onclick = () => {
+    const s = activeSession(); const m = s && s.messages.find(x => x.id === b.dataset.msg); if (!m) return;
+    const c = m.create, tab = c.kind==='image' ? 'image' : c.kind==='video' ? 'video' : c.kind==='voice'||c.kind==='sfx'||c.kind==='song'||c.kind==='music' ? 'audio' : 'library';
+    if (c.status==='done') setMediaTab('library'); else { setMediaTab(tab); if (tab==='audio') audioMode = c.kind==='voice' ? 'voice' : c.kind==='sfx' ? 'sfx' : 'music'; }
+    if (c.status!=='done') {
+      const target = c.kind==='image' ? 'genPrompt' : c.kind==='video' ? 'aiVideoPrompt' : c.kind==='song' ? 'songIdea' : 'audioText';
+      pendingMediaFill = { [target]: c.prompt };
+      if (c.kind==='image' && c.sourceMediaId) pendingMediaFill.genSource = c.sourceMediaId;
+      if (c.kind==='video' && c.sourceMediaId && !videoShots.some(s=>s.mediaId===c.sourceMediaId)) videoShots.push({ mediaId: c.sourceMediaId, move: 'push-in', seconds: 3 });
+    }
+    showView('media');
+  });
 }
 
 /* ===================== marker: RENDER:MCP ===================== */
@@ -4296,7 +4946,7 @@ function simulateAttachFile(){
   logEvent('FILE', 'attached '+s._contextFiles[s._contextFiles.length-1]+' to session '+s.id);
 }
 function bindGlobalUI(){
-  $$('.nav-item').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+  $$('.nav-item').forEach(b=>b.onclick=()=>{ if (b.dataset.mediaTab) setMediaTab(b.dataset.mediaTab); showView(b.dataset.view); });
   $('railToggle').onclick = () => { railCollapsed = !railCollapsed; $('shell').classList.toggle('rail-collapsed', railCollapsed); };
   $('mobileNav').onclick = () => $('rail').classList.toggle('open');
   $('mobileSessions').onclick = () => $('sessPane').classList.toggle('open');
@@ -4348,7 +4998,9 @@ const VIEW_HELP = {
   workspace:'Local app development. Approve a folder, then plan changes, run tests, create projects from templates, and let the development loop fix failing tests. Nothing is written to your project until you approve a batch.',
   models:'Models NOVA can use. Sync from Ollama to see what you have pulled (ollama pull <name>). Qualification shows which models passed the coding checks.',
   knowledge:'Collections of your documents. Add files or text; NOVA splits and indexes them so chats and skills can cite them. Transcripts from Media can land here too.',
-  media:'Generate and edit images, video and audio on this Mac, transcribe recordings, and keep everything with its recipe. Items are also saved to your library folder.',
+  media:'Generate and edit images, video and audio on this Mac, transcribe recordings, and keep everything with its recipe. Items are also saved to your library folder. Actions on each item: edit an area, remove an object, expand, upscale, enhance speech, translate, add to a board or timeline.',
+  boards:'Mood boards, look books and character sheets. Drop in library images and clips, notes and colour swatches; drag to arrange, drag the corner to resize. Save the board as an image into the library.',
+  timeline:'Cut a scene: clips and stills in order on the picture track, and voice, music and effects on the sound tracks at the times you choose. Export renders one MP4 into the library.',
   retrieval:'Try searches against your Knowledge collections and see which passages come back and why.',
   automations:'Run a workflow or skill on a schedule (every N minutes, daily, weekly) or on demand.',
   evaluations:'A fixed benchmark for comparing models on the same tasks.',

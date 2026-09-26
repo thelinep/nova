@@ -152,4 +152,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { status, start, parseWhisperJson, recoverInterrupted, clock };
+module.exports = { status, start, transcribeNow, parseWhisperJson, recoverInterrupted, clock };
