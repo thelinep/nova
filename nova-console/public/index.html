@@ -398,6 +398,20 @@
   .hist-row.active-row{background:#ffffff0d;}
   .hist-row.active-row td:first-child{box-shadow:inset 3px 0 0 var(--amber);}
   .hist-detail{background:var(--bg-wash);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;margin-top:10px;font-size:12px;}
+/* helpers: list tools, inline help, prompt presets */
+.list-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 8px}
+.list-tools input[type=search]{flex:1;min-width:160px;max-width:320px;background:var(--panel2,transparent);border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--ink);font:inherit;font-size:12px}
+.list-tools select{background:var(--panel2,transparent);border:1px solid var(--line);border-radius:7px;padding:5px 6px;color:var(--ink);font-size:12px}
+.list-tools .list-count{padding:0;font-size:11px}
+.help-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted,#999);font-size:12px;font-weight:600;line-height:1;cursor:pointer;flex:none;align-self:flex-start;margin-left:8px}
+.help-btn:hover,.help-btn:focus-visible{color:var(--ink);border-color:var(--ink);outline:none}
+.panel-help{width:18px;height:18px;font-size:11px;vertical-align:2px;margin-left:6px}
+.help-box{margin:6px 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;line-height:1.5;max-width:75ch;background:var(--panel2,transparent)}
+.preset-chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:4px 0 2px}
+.preset-group{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#999);margin:0 2px 0 6px}
+.preset-group:first-child{margin-left:0}
+.preset-chip{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.preset-chip:hover,.preset-chip:focus-visible{border-color:var(--ink);outline:none}
 </style>
 <div id="shell" class="shell">
   <aside id="rail" class="rail">
@@ -2835,7 +2849,8 @@ function mediaRecipe(p){
   if (p.mode==='img2img') return [`From: ${p.sourceName||p.sourceMediaId} · strength ${p.strength}`, `Prompt: ${p.prompt}`, p.negative?`Negative: ${p.negative}`:'', `Checkpoint: ${p.checkpoint}`, `Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg} · ${p.sampler}`].filter(Boolean).join('\n');
   if (p.engine==='macos-say') return [`Voice: ${p.voice||'default'}${p.locale?' ('+p.locale+')':''} · rate ${p.rate}`, `Text: ${p.text}`].join('\n');
   if (p.engine==='stable-audio-open-1.0') return [`Sound effect · Stable Audio Open · ${p.seconds}s`, `Prompt: ${p.prompt}`, `Seed ${p.seed} · ${p.steps} steps`].join('\n');
-  if (p.engine==='ace-step-v1-3.5b') return [`Music · ACE-Step · ${p.seconds}s`, `Style: ${p.prompt}`, p.lyrics&&p.lyrics!=='[instrumental]'?`Lyrics: ${p.lyrics}`:'Instrumental', `Seed ${p.seed} · ${p.steps} steps`].join('\n');
+  if (p.generator==='ffmpeg-filter') return [`Filtered from ${p.sourceName||p.sourceMediaId}`, Object.entries(p).filter(([k,v])=>!['generator','kind','sourceMediaId','sourceName','jobId','prompt'].includes(k)&&v&&v!=='none'&&!(k==='speed'&&v===1)).map(([k,v])=>`${k}: ${v}`).join(' · ')].join('\n');
+  if (p.engine==='ace-step-v1-3.5b') return [`${p.title?p.title+' · ':''}Song · ACE-Step · ${p.seconds}s`, `Style: ${p.prompt}`, p.lyrics&&p.lyrics!=='[instrumental]'?`Lyrics: ${p.lyrics}`:'Instrumental', `Seed ${p.seed} · ${p.steps} steps`].join('\n');
   if (p.engine==='join') return [`Joined · ${p.size} · ${p.fps} fps`, ...(p.clips||[]).map((c,i)=>`${i+1}. ${c.name}`)].join('\n');
   if (p.generator==='last-frame') return `Last frame of ${p.videoName||p.videoId}`;
   if (p.engine==='camera-moves') return [`Camera moves · ${p.size} · ${p.fps} fps · ${p.seconds}s`, ...(p.shots||[]).map((sh,i)=>`${i+1}. ${sh.name} — ${sh.move}, ${sh.seconds}s`)].join('\n');
@@ -2847,7 +2862,8 @@ let videoShots = [];
 let videoJoin = [];
 let aiEngine = 'ltx';
 let audioMode = 'voice';
-const MEDIA_FORM_IDS = ['genPrompt','genNegative','genCheckpoint','genSize','genSteps','genCfg','genSeed','genSampler','motionSize','motionFps','aiVideoPrompt','aiVideoSeed','aiVideoMode','genSource','genStrength','audioText','audioVoice','audioRate','audioSeconds','audioLyrics','audioSeed'];
+let filterSourceId = '';
+const MEDIA_FORM_IDS = ['genPrompt','genNegative','genCheckpoint','genSize','genSteps','genCfg','genSeed','genSampler','motionSize','motionFps','aiVideoPrompt','aiVideoSeed','aiVideoMode','genSource','genStrength','audioText','audioVoice','audioRate','audioSeconds','audioLyrics','audioSeed','audioTitle','songIdea','songLang','songLength','fltLook','fltAspect','fltHeight','fltGrain','fltSpeed','fltFadeIn','fltFadeOut','fltTrimStart','fltTrimEnd'];
 const VIDEO_MOVES = [['push-in','Push in'],['pull-out','Pull out'],['pan-left','Pan left'],['pan-right','Pan right'],['tilt-up','Tilt up'],['tilt-down','Tilt down'],['hold','Hold']];
 async function renderMediaView(){
   const pad = $('mediaView').querySelector('.view-pad');
@@ -2882,7 +2898,7 @@ async function renderMediaView(){
       ${m.kind==='audio'||m.kind==='video'?`<div style="margin-top:6px">${t?`<span class="badge ${t.status==='done'?'badge-green':t.status==='failed'?'badge-red':'badge-amber'}">${escapeHtml(t.status==='running'?'transcribing…':t.status)}</span>`:''}${t&&t.error?`<div class="empty-hint">${escapeHtml(t.error)}</div>`:''}
         ${m.transcript?`<details ${t&&t.status==='done'?'open':''}><summary class="empty-hint" style="cursor:pointer">Transcript · ${m.transcript.segments.length} segments · ${escapeHtml(m.transcript.model||'')}</summary><pre aria-label="Transcript" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:11px">${escapeHtml(m.transcript.text)}</pre></details>`:''}
         ${busy?'':`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><select class="media-collection" data-id="${m.id}" aria-label="Add transcript to collection" style="${field};padding:5px"><option value="">Don't add to Knowledge</option>${collections.map(c=>`<option value="${escapeHtml(c.id)}">Add to ${escapeHtml(c.name)}</option>`).join('')}</select><button class="btn btn-line btn-sm media-transcribe" data-id="${m.id}" ${stt.ready?'':'disabled'}>${m.transcript?'Transcribe again':'Transcribe'}</button></div>`}</div>`:''}
-      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${m.kind==='image'?`<button class="btn btn-line btn-sm media-attach" data-id="${m.id}">Attach to chat</button><button class="btn btn-line btn-sm media-animate" data-id="${m.id}">Animate</button>`:''}${m.kind==='video'?`<button class="btn btn-line btn-sm media-lastframe" data-id="${m.id}" title="Save the final frame as a still and add it as the next shot">Continue from last frame</button><button class="btn btn-ghost btn-sm media-join" data-id="${m.id}" aria-pressed="${videoJoin.includes(m.id)}">${videoJoin.includes(m.id)?'Joining #'+(videoJoin.indexOf(m.id)+1):'Add to join'}</button><a class="btn btn-ghost btn-sm" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`:''}<button class="btn btn-ghost btn-sm media-delete" data-id="${m.id}">Delete</button></div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${m.kind==='image'?`<button class="btn btn-line btn-sm media-attach" data-id="${m.id}">Attach to chat</button><button class="btn btn-line btn-sm media-animate" data-id="${m.id}">Animate</button>`:''}${m.kind==='video'?`<button class="btn btn-line btn-sm media-lastframe" data-id="${m.id}" title="Save the final frame as a still and add it as the next shot">Continue from last frame</button><button class="btn btn-ghost btn-sm media-join" data-id="${m.id}" aria-pressed="${videoJoin.includes(m.id)}">${videoJoin.includes(m.id)?'Joining #'+(videoJoin.indexOf(m.id)+1):'Add to join'}</button><a class="btn btn-ghost btn-sm" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`:''}<button class="btn btn-ghost btn-sm media-filter" data-id="${m.id}">Filters</button><button class="btn btn-ghost btn-sm media-delete" data-id="${m.id}">Delete</button></div>
     </article>`;
   };
   pad.innerHTML = `
@@ -2949,22 +2965,48 @@ async function renderMediaView(){
     <div class="panel" id="audioPanel" style="padding:16px;margin-top:14px">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><span class="eyebrow">Text to audio</span><h2 style="font-size:16px;margin:5px 0">Voice, sound effects, music</h2></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${aud.voice.ready?'badge-green':'badge-amber'}">Voice ${aud.voice.ready?'ready':'Mac only'}</span><span class="badge ${aud.comfy.sfx.ready?'badge-green':aud.comfy.reachable?'badge-amber':'badge-red'}">Sound effects ${aud.comfy.sfx.ready?'ready':aud.comfy.reachable?'need models':'ComfyUI offline'}</span><span class="badge ${aud.comfy.music.ready?'badge-green':aud.comfy.reachable?'badge-amber':'badge-red'}">Music ${aud.comfy.music.ready?'ready':aud.comfy.reachable?'needs model':'ComfyUI offline'}</span></div></div>
-      <select id="audioMode" aria-label="Audio type" style="${field};margin:6px 0"><option value="voice" ${audioMode==='voice'?'selected':''}>Voice (macOS speech) · instant</option><option value="sfx" ${audioMode==='sfx'?'selected':''}>Sound effect (Stable Audio Open)</option><option value="music" ${audioMode==='music'?'selected':''}>Music (ACE-Step)</option></select>
+      <select id="audioMode" aria-label="Audio type" style="${field};margin:6px 0"><option value="voice" ${audioMode==='voice'?'selected':''}>Voice (macOS speech) · instant</option><option value="sfx" ${audioMode==='sfx'?'selected':''}>Sound effect (Stable Audio Open)</option><option value="music" ${audioMode==='music'?'selected':''}>Song / music (ACE-Step)</option></select>
       ${audioMode==='voice'?'':`${aud.comfy.reachable?'':`<p class="empty-hint">${escapeHtml(aud.comfy.error||'ComfyUI is not running.')}</p>`}${(aud.comfy[audioMode].missing||[]).length?`<p class="empty-hint">Needs: ${aud.comfy[audioMode].missing.map(escapeHtml).join('; ')}.</p>`:''}`}
-      <textarea id="audioText" aria-label="${audioMode==='voice'?'Words to speak':'Describe the sound'}" placeholder="${audioMode==='voice'?'Scene 12. Asha looks out at the sea. ASHA: The storm is coming.':audioMode==='sfx'?'Heavy monsoon rain on a tin roof, distant thunder':'Cinematic, tabla, strings, slow build, hopeful'}" style="width:100%;min-height:60px;${field}"></textarea>
-      ${audioMode==='music'?`<textarea id="audioLyrics" aria-label="Lyrics" placeholder="Lyrics (optional). Leave empty for instrumental. Use [verse] and [chorus] lines." style="width:100%;min-height:50px;margin-top:6px;${field}"></textarea>`:''}
+      ${audioMode==='music'?`<details id="songWriter" open style="margin:6px 0"><summary class="empty-hint" style="cursor:pointer;padding:0">Text to song: write lyrics from an idea (local model), then edit them below</summary>
+        <textarea id="songIdea" aria-label="Song idea" placeholder="Two strangers share an umbrella on Marine Drive in the first monsoon rain" style="width:100%;min-height:50px;margin-top:6px;${field}"></textarea>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center"><select id="songLang" aria-label="Lyrics language" style="${field}"><option value="english">English</option><option value="hindi-roman">Hindi (Roman letters)</option><option value="hindi">Hindi (Devanagari)</option><option value="hinglish">Hinglish</option><option value="punjabi">Punjabi</option><option value="urdu">Urdu</option></select>
+          <select id="songLength" aria-label="Song length" style="${field}"><option value="short">Short · ~1 min</option><option value="medium">Medium · ~2 min</option><option value="full">Full · ~3 min</option></select>
+          <button class="btn btn-line btn-sm" id="songWrite">Write lyrics</button></div></details>
+      <input id="audioTitle" aria-label="Song title" placeholder="Title (optional)" style="width:100%;margin-bottom:6px;${field}">`:''}
+      <textarea id="audioText" aria-label="${audioMode==='voice'?'Words to speak':audioMode==='music'?'Song style':'Describe the sound'}" placeholder="${audioMode==='voice'?'Scene 12. Asha looks out at the sea. ASHA: The storm is coming.':audioMode==='sfx'?'Heavy monsoon rain on a tin roof, distant thunder':'Cinematic, tabla, strings, slow build, hopeful'}" style="width:100%;min-height:60px;${field}"></textarea>
+      
+      ${audioMode==='music'?`<textarea id="audioLyrics" aria-label="Lyrics" placeholder="Lyrics: paste your own or write them from an idea above. Leave empty for instrumental. Use [verse], [chorus] and [bridge] lines." style="width:100%;min-height:50px;margin-top:6px;${field}"></textarea>`:''}
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center">
         ${audioMode==='voice'?`<select id="audioVoice" aria-label="Voice" style="${field};max-width:260px">${(aud.voice.voices||[]).map(v=>`<option value="${escapeHtml(v.name)}">${escapeHtml(v.name)} · ${escapeHtml(v.locale)}</option>`).join('')||'<option value="">Default voice</option>'}</select><label class="empty-hint" style="padding:0">Speed <input id="audioRate" type="number" min="90" max="360" step="5" value="175" style="width:64px;${field}"></label>`
           :`<label class="empty-hint" style="padding:0">Seconds <input id="audioSeconds" type="number" min="1" max="${audioMode==='sfx'?47:240}" value="${audioMode==='sfx'?10:30}" style="width:64px;${field}"></label><label class="empty-hint" style="padding:0">Seed <input id="audioSeed" type="number" min="0" placeholder="random" style="width:100px;${field}"></label>`}
         <button class="btn btn-amber" id="audioStart" ${audioMode==='voice'?(aud.voice.ready?'':'disabled'):(aud.comfy[audioMode].ready?'':'disabled')}>${audioMode==='voice'?'Speak':'Generate'}</button></div>
     </div>
+    ${(()=>{ const src = items.find(m=>m.id===filterSourceId) || items[0]; if (!src) return ''; const k = src.kind; return `<div class="panel" id="filterPanel" style="padding:16px;margin-top:14px">
+      <div><span class="eyebrow">Filters · ffmpeg</span><h2 style="font-size:16px;margin:5px 0">Looks, crop, speed, fades</h2></div>
+      <p class="empty-hint">The original is kept; the result is a new item with its settings in the recipe.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <select id="fltSource" aria-label="Item to filter" style="${field};max-width:280px">${items.map(m=>`<option value="${m.id}" ${m.id===src.id?'selected':''}>${escapeHtml(m.kind)} · ${escapeHtml(m.originalName)}</option>`).join('')}</select>
+        ${k!=='audio'?`<select id="fltLook" aria-label="Look" style="${field}">${[['none','No look'],['bw','Black & white'],['warm','Warm'],['cool','Cool'],['teal-orange','Teal & orange'],['vintage','Vintage'],['contrast','High contrast'],['faded','Faded film']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+        <select id="fltAspect" aria-label="Crop to" style="${field}">${[['none','Keep frame'],['16:9','16:9'],['2.39:1','2.39:1 scope'],['4:3','4:3'],['1:1','1:1'],['4:5','4:5'],['9:16','9:16']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+        <select id="fltHeight" aria-label="Resize" style="${field}">${[[0,'Keep size'],[480,'480p'],[720,'720p'],[1080,'1080p'],[2160,'4K']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+        <label class="empty-hint" style="padding:0">Grain <input id="fltGrain" type="number" min="0" max="40" step="2" value="0" style="width:56px;${field}"></label>
+        <label class="empty-hint" style="padding:0"><input id="fltVignette" type="checkbox"> Vignette</label>`:''}
+        ${k!=='image'?`<select id="fltSpeed" aria-label="Speed" style="${field}">${[[1,'1x'],[0.5,'0.5x slow'],[0.75,'0.75x'],[1.25,'1.25x'],[1.5,'1.5x'],[2,'2x fast']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+        <label class="empty-hint" style="padding:0">Fade in <input id="fltFadeIn" type="number" min="0" max="10" step="0.5" value="0" style="width:52px;${field}"></label>
+        <label class="empty-hint" style="padding:0">Fade out <input id="fltFadeOut" type="number" min="0" max="10" step="0.5" value="0" style="width:52px;${field}"></label>
+        <label class="empty-hint" style="padding:0">Trim from <input id="fltTrimStart" type="number" min="0" step="0.5" value="0" style="width:60px;${field}"></label>
+        <label class="empty-hint" style="padding:0">to <input id="fltTrimEnd" type="number" min="0" step="0.5" placeholder="end" style="width:60px;${field}"></label>
+        <label class="empty-hint" style="padding:0"><input id="fltNormalize" type="checkbox"> Normalise loudness</label>`:''}
+        ${k==='video'?`<label class="empty-hint" style="padding:0"><input id="fltMute" type="checkbox"> Remove sound</label>`:''}
+        <button class="btn btn-amber" id="fltApply">Apply</button></div>
+    </div>`; })()}
     <div class="panel" id="libraryPanel" style="padding:12px 16px;margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:240px"><span class="eyebrow">Library folder</span><div style="font-size:12.5px;margin-top:3px">${lib.needsRestart?'The NOVA server running now is older than this page. Stop it and run <code>npm start</code> again to turn on the library folder.':lib.enabled&&lib.dir?`Everything NOVA generates — images, videos, transcripts, skill outputs — is also saved as files with a recipe .json in <code>${escapeHtml(lib.dir)}</code>, one folder per day.`:'Saving to a library folder is off.'}</div></div>
       ${lib.needsRestart?'':lib.source==='env'?'<span class="empty-hint">Set by NOVA_LIBRARY_DIR</span>':`<input id="libraryDir" aria-label="Library folder" value="${escapeHtml(lib.dir||lib.defaultDir||'~/Documents/NOVA Library')}" style="${field};min-width:260px"><button class="btn btn-line btn-sm" id="librarySave">Save folder</button>`}
       <button class="btn btn-ghost btn-sm" id="libraryBackfill" ${lib.enabled?'':'disabled'}>Copy earlier items</button>
     </div>
     <div class="cap-section-label">Library · ${items.length} item(s)</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${items.map(itemHtml).join('')||'<p class="empty-hint">Nothing here yet. Generate an image or upload a file.</p>'}</div>`;
+    <div id="mediaLibrary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${items.map(itemHtml).join('')||'<p class="empty-hint">Nothing here yet. Generate an image or upload a file.</p>'}</div>`;
   for (const [id,v] of kept) if ($(id)) $(id).value = v;
   if (focusedId && $(focusedId)) $(focusedId).focus();
   if (window.lucide) lucide.createIcons();
@@ -2997,7 +3039,15 @@ async function renderMediaView(){
   if ($('genSourceUpload')) $('genSourceUpload').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const m = await uploadMediaFile(f); await renderMediaView(); if ($('genSource')) $('genSource').value = m.id; toast('Image added. Describe the change, then Generate.'); } catch(err){ toast(err.message); } };
   if ($('animateUpload')) $('animateUpload').onchange = async e => { let added = 0; for (const f of e.target.files){ try { const m = await uploadMediaFile(f); if (m && m.kind==='image') { videoShots.push({mediaId:m.id, move:VIDEO_MOVES[videoShots.length%4][0], seconds:3}); added++; } } catch(err){ toast(f.name+': '+err.message); } } if (added) toast(`Added ${added} shot${added>1?'s':''}.`); await renderMediaView(); $('videoPanel')&&$('videoPanel').scrollIntoView({behavior:'smooth',block:'start'}); };
   if ($('audioMode')) $('audioMode').onchange = () => { audioMode = $('audioMode').value; renderMediaView(); };
-  if ($('audioStart')) $('audioStart').onclick = async () => { const text = $('audioText').value.trim(); if (!text) return toast(audioMode==='voice'?'Type the words to speak first.':'Describe the sound first.'); try { if (audioMode==='voice') { await post('/api/audio/voice', {text, voice:$('audioVoice').value||undefined, rate:Number($('audioRate').value)}); toast('Speaking…'); } else { await post('/api/audio/'+audioMode, {prompt:text, lyrics:$('audioLyrics')?$('audioLyrics').value.trim():undefined, seconds:Number($('audioSeconds').value), seed:$('audioSeed').value===''?undefined:Number($('audioSeed').value)}); toast(audioMode==='sfx'?'Generating the sound effect on ComfyUI…':'Composing on ComfyUI — this takes a while.'); } renderMediaView(); } catch(e){ toast(e.message); } };
+  if ($('audioStart')) $('audioStart').onclick = async () => { const text = $('audioText').value.trim(); if (!text) return toast(audioMode==='voice'?'Type the words to speak first.':'Describe the sound first.'); try { if (audioMode==='voice') { await post('/api/audio/voice', {text, voice:$('audioVoice').value||undefined, rate:Number($('audioRate').value)}); toast('Speaking…'); } else { await post('/api/audio/'+audioMode, {prompt:text, lyrics:$('audioLyrics')?$('audioLyrics').value.trim():undefined, title:$('audioTitle')?$('audioTitle').value.trim():undefined, seconds:Number($('audioSeconds').value), seed:$('audioSeed').value===''?undefined:Number($('audioSeed').value)}); toast(audioMode==='sfx'?'Generating the sound effect on ComfyUI…':'Composing on ComfyUI — this takes a while.'); } renderMediaView(); } catch(e){ toast(e.message); } };
+  $$('.media-filter').forEach(b=>b.onclick=async()=>{ filterSourceId = b.dataset.id; await renderMediaView(); $('filterPanel')&&$('filterPanel').scrollIntoView({behavior:'smooth',block:'start'}); });
+  if ($('fltSource')) $('fltSource').onchange = () => { filterSourceId = $('fltSource').value; renderMediaView(); };
+  if ($('fltApply')) $('fltApply').onclick = async () => { const v = id => $(id) ? $(id).value : undefined, c = id => $(id) ? $(id).checked : undefined;
+    const body = {look:v('fltLook'), aspect:v('fltAspect'), height:v('fltHeight')!==undefined?Number(v('fltHeight')):undefined, grain:v('fltGrain')!==undefined?Number(v('fltGrain')):undefined, vignette:c('fltVignette'), speed:v('fltSpeed')!==undefined?Number(v('fltSpeed')):undefined, fadeIn:v('fltFadeIn')!==undefined?Number(v('fltFadeIn')):undefined, fadeOut:v('fltFadeOut')!==undefined?Number(v('fltFadeOut')):undefined, trimStart:v('fltTrimStart')!==undefined?Number(v('fltTrimStart')):undefined, trimEnd:v('fltTrimEnd'), normalize:c('fltNormalize'), mute:c('fltMute')};
+    try { await post('/api/media/'+encodeURIComponent($('fltSource').value)+'/filter', body); toast('Applying filters…'); renderMediaView(); } catch(e){ toast(e.message); } };
+  if ($('songWrite')) $('songWrite').onclick = async () => { const idea = $('songIdea').value.trim(); if (!idea) return toast('Describe the song idea first.'); const b = $('songWrite'); b.disabled = true; b.textContent = 'Writing…';
+    try { const r = await post('/api/audio/song-lyrics', {idea, language:$('songLang').value, length:$('songLength').value}); $('audioText').value = r.style; $('audioLyrics').value = r.lyrics; $('audioTitle').value = r.title; if ($('audioSeconds')) $('audioSeconds').value = r.seconds; toast('Lyrics written by '+r.model+'. Edit them, then Generate.'); }
+    catch(e){ toast(e.message); } finally { b.disabled = false; b.textContent = 'Write lyrics'; } };
   if ($('librarySave')) $('librarySave').onclick = async () => { try { await post('/api/library', {dir:$('libraryDir').value.trim()}); toast('Library folder saved.'); renderMediaView(); } catch(e){ toast(e.message); } };
   if ($('libraryBackfill')) $('libraryBackfill').onclick = async () => { try { const r = await post('/api/library/backfill'); toast(`Copied ${r.media} media, ${r.transcripts} transcripts and ${r.skillOutputs} skill outputs to the library.`); renderMediaView(); } catch(e){ toast(e.message); } };
   if (mediaPoll) { clearTimeout(mediaPoll); mediaPoll = null; }
@@ -4211,4 +4261,146 @@ function bindGlobalUI(){
 
 bindGlobalUI();
 init();
+
+/* ===================== marker: HELPERS (search/filter/sort · inline help · prompt presets) ===================== */
+// Works on every view without each renderer knowing about it: after a view renders, lists get a
+// search/filter/sort bar, the view and key panels get a "?" help button, and prompt boxes get
+// preset chips. List choices are remembered per view in this browser.
+const VIEW_HELP = {
+  console:'Chat with a local model. Pick the model in the top bar, attach images with the paperclip (needs a vision model such as llama3.2-vision), and your conversation is saved as a session.',
+  sessions:'Every conversation you have had. Search or filter by tag, open one to continue it, or delete what you no longer need.',
+  workspace:'Local app development. Approve a folder, then plan changes, run tests, create projects from templates, and let the development loop fix failing tests. Nothing is written to your project until you approve a batch.',
+  models:'Models NOVA can use. Sync from Ollama to see what you have pulled (ollama pull <name>). Qualification shows which models passed the coding checks.',
+  knowledge:'Collections of your documents. Add files or text; NOVA splits and indexes them so chats and skills can cite them. Transcripts from Media can land here too.',
+  media:'Generate and edit images, video and audio on this Mac, transcribe recordings, and keep everything with its recipe. Items are also saved to your library folder.',
+  retrieval:'Try searches against your Knowledge collections and see which passages come back and why.',
+  automations:'Run a workflow or skill on a schedule (every N minutes, daily, weekly) or on demand.',
+  evaluations:'A fixed benchmark for comparing models on the same tasks.',
+  skills:'Sandboxed tools: pre-production writers (Treatment, Shot List, Call Sheet), Translate, Slides, Summarizer and developer tools. Each keeps a history of its outputs.',
+  mcp:'Tool servers NOVA can call: files, git and a web browser. Each call follows the server approval policy; the browser needs network access on.',
+  agents:'An agent is a model plus instructions and the skills and tools it may use.',
+  workflows:'Chain agents, skills and approval steps into a repeatable process, e.g. brief, treatment, shot list, call sheet.',
+  collector:'The Brahmini Knowledge Collector: plans and evidence from the separate Next.js collector app.',
+  git:'Read-only git status and history for approved repositories, plus reviewed commit drafts.',
+  graph:'How models, skills, tool servers, agents and workflows connect.',
+  browser:'Open provider sites (Claude, ChatGPT, Gemini…) in a separate window, apart from your local NOVA data.',
+  history:'Everything that ran: chats, skills, tool calls, workflows and automations, with timing and results.',
+  runtime:'Live CPU, memory and GPU use, and what is loaded right now.',
+  trace:'Step-by-step events from recent runs, for troubleshooting.',
+  diagnostics:'Checks that NOVA\'s parts are working, with what to fix when one is not.',
+  settings:'Theme, language, privacy (network access), and NOVA-wide preferences.',
+};
+const PANEL_HELP = {
+  videoPanel:'Add shots with Animate or Upload stills. Camera moves render in seconds with ffmpeg. AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound. Continue from last frame chains clips; Join clips assembles them.',
+  audioPanel:'Voice reads text with macOS voices (add Hindi voices in System Settings > Accessibility > Spoken Content). Sound effects and songs need ComfyUI and the audio models. For a song, describe the idea and press Write lyrics, edit, then Generate; or paste your own lyrics.',
+  filterPanel:'Pick an item and one or more filters. The original is never changed: a new item appears with the settings in its recipe.',
+  libraryPanel:'Everything NOVA generates is also saved here as normal files, one folder per day, with a .json recipe beside each file.',
+};
+const PROMPT_PRESETS = {
+  genPrompt:{ Shot:['wide establishing shot','medium shot','close-up','extreme close-up','over-the-shoulder shot','aerial drone shot','low angle','high angle'], Lens:['24mm wide lens','35mm lens','50mm lens','85mm portrait lens','anamorphic lens flare','shallow depth of field'], Light:['golden hour','blue hour','harsh noon sun','neon night','candlelight','soft overcast light','rim light','chiaroscuro'], Style:['cinematic film still','Bollywood song sequence','1970s Hindi film look','documentary realism','film noir','monsoon mood','festival colours','35mm film grain'] },
+  genNegative:{ Avoid:['blurry','low quality','extra fingers','deformed hands','distorted face','text','watermark','logo','oversaturated'] },
+  aiVideoPrompt:{ Camera:['slow push-in','slow pull back','pan left','pan right','tilt up','handheld','orbit around the subject','static tripod'], Motion:['hair moves in the wind','rain falls','crowd walks past','flags flutter','smoke drifts','waves roll in','leaves fall'], Sound:['city traffic and horns','rain on a tin roof','distant thunder','crowd murmur','birdsong','temple bells','soft wind'] },
+  'audioText:sfx':{ Ambience:['heavy monsoon rain on a tin roof','Mumbai street traffic with horns','busy railway station announcements','temple bells and chanting','forest at night with crickets','ocean waves on rocks','crowded bazaar'], Foley:['footsteps on gravel','old wooden door creak','glass breaking','sword clash','horse gallop','tank tracks rumbling','gunshot echo in a valley'], Cinematic:['deep cinematic boom','whoosh transition','rising riser','suspense drone','heartbeat'] },
+  'audioText:music':{ Genre:['bollywood romantic ballad','punjabi bhangra','sufi qawwali','indian classical fusion','cinematic orchestral','lo-fi hip hop','folk','EDM'], Instruments:['tabla','sitar','bansuri flute','harmonium','dhol','shehnai','strings','piano','acoustic guitar'], Mood:['hopeful','melancholic','epic','romantic','tense','celebratory'], Vocals:['female vocals','male vocals','duet','choir','instrumental'], Tempo:['70 bpm','90 bpm','110 bpm','128 bpm'] },
+};
+const LIST_SELECTOR = '.cap-grid, .card-grid, tbody, #mediaLibrary, #autoList, #diagList, [data-list]';
+function listState(){ try { return JSON.parse(localStorage.getItem('nova.lists') || '{}'); } catch (_) { return {}; } }
+function saveListState(st){ try { localStorage.setItem('nova.lists', JSON.stringify(st)); } catch (_) {} }
+let listFocusKey = null;
+function itemName(el){ const t = el.querySelector('strong, .cap-card-title, .sess-title, td, h3, h2'); return ((t ? t.textContent : el.textContent) || '').trim().toLowerCase(); }
+function itemTags(el){ return [...new Set([...el.querySelectorAll('.badge')].map(b => b.textContent.trim().toLowerCase()).filter(t => t && t.length < 40))]; }
+function applyListState(list, key, bar){
+  const st = listState()[key] || {};
+  const items = [...list.children];
+  items.forEach((el, i) => { if (el.dataset.order == null) el.dataset.order = i; });
+  const terms = String(st.q || '').toLowerCase().split(/\s+/).filter(Boolean);
+  let shown = 0;
+  for (const el of items) {
+    const text = el.textContent.toLowerCase();
+    const ok = terms.every(t => text.includes(t)) && (!st.tag || itemTags(el).includes(st.tag));
+    el.style.display = ok ? '' : 'none'; if (ok) shown++;
+  }
+  const sorted = items.slice().sort((a, b) => st.sort === 'az' ? itemName(a).localeCompare(itemName(b)) : st.sort === 'za' ? itemName(b).localeCompare(itemName(a)) : st.sort === 'rev' ? b.dataset.order - a.dataset.order : a.dataset.order - b.dataset.order);
+  if (sorted.some((el, i) => el !== items[i])) sorted.forEach(el => list.appendChild(el));
+  const count = bar.querySelector('.list-count'); if (count) count.textContent = `${shown} of ${items.length}`;
+}
+function enhanceLists(view){
+  const viewName = view.id.replace(/View$/, '');
+  let n = 0;
+  view.querySelectorAll(LIST_SELECTOR).forEach(list => {
+    if (list.closest('.list-tools')) return;
+    const items = [...list.children];
+    if (items.length < (list.matches('.card-grid') ? 6 : 4)) return;
+    const key = viewName + ':' + (list.id || list.dataset.list || ('list' + n)); n++;
+    const anchor = list.tagName === 'TBODY' ? (list.closest('.table-wrap') || list.closest('table')) : list;
+    let bar = anchor.previousElementSibling;
+    if (!bar || !bar.classList.contains('list-tools') || bar.dataset.for !== key) {
+      const st = listState()[key] || {};
+      const tags = [...new Set(items.flatMap(itemTags))].sort();
+      bar = document.createElement('div');
+      bar.className = 'list-tools'; bar.dataset.for = key;
+      bar.innerHTML = `<input type="search" class="list-q" aria-label="Search this list" placeholder="Search…" value="${escapeHtml(st.q || '')}">
+        ${tags.length ? `<select class="list-tag" aria-label="Filter by tag"><option value="">All</option>${tags.map(t => `<option value="${escapeHtml(t)}" ${st.tag === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}</select>` : ''}
+        <select class="list-sort" aria-label="Sort"><option value="">Default order</option><option value="rev" ${st.sort === 'rev' ? 'selected' : ''}>Reverse order</option><option value="az" ${st.sort === 'az' ? 'selected' : ''}>Name A–Z</option><option value="za" ${st.sort === 'za' ? 'selected' : ''}>Name Z–A</option></select>
+        <span class="list-count empty-hint"></span>`;
+      anchor.parentNode.insertBefore(bar, anchor);
+      const update = patch => { const all = listState(); all[key] = { ...(all[key] || {}), ...patch }; saveListState(all); withoutObserver(() => applyListState(list, key, bar)); };
+      const q = bar.querySelector('.list-q');
+      q.oninput = () => update({ q: q.value });
+      q.onfocus = () => { listFocusKey = key; }; q.onblur = () => { if (listFocusKey === key) setTimeout(() => { if (document.activeElement !== q) listFocusKey = null; }, 0); };
+      if (bar.querySelector('.list-tag')) bar.querySelector('.list-tag').onchange = e => update({ tag: e.target.value });
+      bar.querySelector('.list-sort').onchange = e => update({ sort: e.target.value });
+      if (listFocusKey === key) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+    }
+    applyListState(list, key, bar);
+  });
+}
+function enhanceHelp(view){
+  const viewName = view.id.replace(/View$/, '');
+  const head = view.querySelector('.view-head');
+  if (head && VIEW_HELP[viewName] && !head.querySelector('.help-btn')) {
+    const b = document.createElement('button');
+    b.className = 'help-btn'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'What can I do here?'); b.title = 'What can I do here?';
+    b.onclick = () => { let box = head.nextElementSibling; if (box && box.classList.contains('help-box')) { box.remove(); return; } box = document.createElement('div'); box.className = 'help-box'; box.setAttribute('role', 'note'); box.textContent = VIEW_HELP[viewName]; head.after(box); };
+    head.appendChild(b);
+  }
+  for (const [id, text] of Object.entries(PANEL_HELP)) {
+    const panel = view.querySelector('#' + id);
+    if (!panel) continue;
+    const h = panel.querySelector('h2');
+    if (!h || h.querySelector('.help-btn')) continue;
+    const b = document.createElement('button');
+    b.className = 'help-btn panel-help'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'Help for this panel');
+    b.onclick = () => { let row = h; while (row.parentElement && row.parentElement !== panel) row = row.parentElement; const box = row.nextElementSibling; if (box && box.classList.contains('help-box')) { box.remove(); return; } const d = document.createElement('div'); d.className = 'help-box'; d.setAttribute('role', 'note'); d.textContent = text; row.after(d); };
+    h.appendChild(b);
+  }
+}
+function enhancePresets(view){
+  view.querySelectorAll('textarea[id], input[id]').forEach(box => {
+    const key = box.id === 'audioText' ? 'audioText:' + (typeof audioMode === 'string' ? audioMode : '') : box.id;
+    const groups = PROMPT_PRESETS[key];
+    if (!groups) return;
+    const next = box.nextElementSibling;
+    if (next && next.classList.contains('preset-chips') && next.dataset.for === key) return;
+    if (next && next.classList.contains('preset-chips')) next.remove();
+    const wrap = document.createElement('div');
+    wrap.className = 'preset-chips'; wrap.dataset.for = key;
+    wrap.innerHTML = Object.entries(groups).map(([g, list]) => `<span class="preset-group">${escapeHtml(g)}</span>${list.map(p => `<button type="button" class="preset-chip" data-text="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('')}`).join('');
+    wrap.onclick = e => { const c = e.target.closest('.preset-chip'); if (!c) return; const t = c.dataset.text, v = box.value.trim(); if (v.toLowerCase().includes(t.toLowerCase())) return; box.value = v ? v.replace(/[,.\s]*$/, '') + ', ' + t : t; box.dispatchEvent(new Event('input', { bubbles: true })); box.focus(); };
+    box.after(wrap);
+  });
+}
+let helperObserver = null, helperQueued = false;
+function withoutObserver(fn){ if (helperObserver) helperObserver.disconnect(); try { fn(); } finally { if (helperObserver) $$('.view').forEach(v => helperObserver.observe(v, { childList: true, subtree: true })); } }
+function enhanceView(view){ if (!view) return; withoutObserver(() => { enhanceHelp(view); enhancePresets(view); enhanceLists(view); }); }
+function startHelpers(){
+  helperObserver = new MutationObserver(() => {
+    if (helperQueued) return; helperQueued = true;
+    requestAnimationFrame(() => { helperQueued = false; enhanceView(document.querySelector('.view.active')); });
+  });
+  $$('.view').forEach(v => helperObserver.observe(v, { childList: true, subtree: true }));
+  enhanceView(document.querySelector('.view.active'));
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startHelpers); else startHelpers();
+
 </script>

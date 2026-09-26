@@ -7,8 +7,9 @@
  *    scratch VO, temp dialogue and read-throughs.
  *  • Sound effects: Stable Audio Open 1.0 through the local ComfyUI
  *    (up to 47 seconds: rain on a tin roof, crowd murmur, tank tracks).
- *  • Music: ACE-Step 3.5B through the local ComfyUI (tags such as
- *    "cinematic, tabla, strings" plus optional lyrics; up to 4 minutes).
+ *  • Music and songs: ACE-Step 3.5B through the local ComfyUI (tags such as
+ *    "cinematic, tabla, strings" plus lyrics; up to 4 minutes). Lyrics can be
+ *    written from an idea first by lib/song-writer.js.
  *
  * Results land in the media library (and the library folder) as audio with
  * their full recipe.
@@ -162,9 +163,9 @@ async function generate(store, dataDir, kind, input) {
   if (prompt.length > 1000) throw error('The description is limited to 1,000 characters.');
   const settings = kind === 'sfx'
     ? { engine: 'stable-audio-open-1.0', prompt, negative: String(input.negative || 'low quality, distorted').slice(0, 500), seconds: Math.round(Math.min(47, Math.max(1, Number(input.seconds) || 10)) * 10) / 10, steps: Math.round(Math.min(100, Math.max(10, Number(input.steps) || 50))), cfg: 5, seed: seedOf(input.seed), checkpoint: part.checkpoint, encoder: part.encoder }
-    : { engine: 'ace-step-v1-3.5b', prompt, lyrics: String(input.lyrics || '[instrumental]').slice(0, 4000) || '[instrumental]', seconds: Math.round(Math.min(240, Math.max(5, Number(input.seconds) || 30))), steps: Math.round(Math.min(100, Math.max(10, Number(input.steps) || 50))), seed: seedOf(input.seed), checkpoint: part.checkpoint };
+    : { engine: 'ace-step-v1-3.5b', title: String(input.title || '').trim().slice(0, 120) || null, prompt, lyrics: String(input.lyrics || '[instrumental]').slice(0, 4000) || '[instrumental]', seconds: Math.round(Math.min(240, Math.max(5, Number(input.seconds) || 30))), steps: Math.round(Math.min(100, Math.max(10, Number(input.steps) || 50))), seed: seedOf(input.seed), checkpoint: part.checkpoint };
   const g = kind === 'sfx' ? sfxGraph(settings, info.saveNode) : musicGraph(settings, info.saveNode);
-  return comfy.startJob(store, kind === 'sfx' ? 'audio-sfx' : 'audio-music', settings, job => comfy.runGraph(store, dataDir, job, { graph: g, kind: 'audio', ext: AUDIO_EXT, name: prompt.slice(0, 60), provenance: settings, timeoutMs: 60 * 60 * 1000, label: kind === 'sfx' ? 'Sound effect' : 'Music' }));
+  return comfy.startJob(store, kind === 'sfx' ? 'audio-sfx' : 'audio-music', settings, job => comfy.runGraph(store, dataDir, job, { graph: g, kind: 'audio', ext: AUDIO_EXT, name: (settings.title || prompt).slice(0, 60), provenance: settings, timeoutMs: 60 * 60 * 1000, label: kind === 'sfx' ? 'Sound effect' : 'Music' }));
 }
 
 /** macOS before 15.1 (Darwin < 24.1) cannot run ACE-Step's vocoder on the GPU, and the CPU fallback runs out of memory. */

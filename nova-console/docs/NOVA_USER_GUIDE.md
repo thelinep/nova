@@ -166,6 +166,7 @@ Open **Media** in the sidebar. Everything here runs on your computer, and each i
 - **Text to audio.** In **Voice, sound effects, music**:
   - **Voice** reads text aloud with any voice installed on your Mac (System Settings > Accessibility > Spoken Content > System voice > Manage Voices adds more, including Hindi). Instant; good for scratch VO and read-throughs.
   - **Sound effect** uses Stable Audio Open through ComfyUI, up to 47 seconds ("monsoon rain on a tin roof, distant thunder").
+  - **Text to song.** Choose **Song / music**, describe the idea (a story, scene or feeling), pick the lyrics language (English, Hindi in Roman or Devanagari letters, Hinglish, Punjabi, Urdu) and length, and press **Write lyrics**: a local model writes a title, a style line and [verse]/[chorus]/[bridge] lyrics. Edit anything, then **Generate** to have ACE-Step sing it. To sing your own lyrics, paste them in the Lyrics box instead. How well ACE-Step sings a given language varies; English and Roman-letter lyrics are the safest start.
   - **Music** uses ACE-Step through ComfyUI: style tags plus optional lyrics, up to 4 minutes. It needs macOS 15.1 or later (older macOS cannot decode it on the Apple GPU).
   Sound effects and music need `Add audio models.command` in the brahmini folder (about 13 GB).
 - **Image to video.** Press **Animate** on any image in the library, or **Upload stills to animate**, to add shots in **Animate stills**. Two engines:
@@ -176,6 +177,16 @@ Open **Media** in the sidebar. Everything here runs on your computer, and each i
   - **Continuity.** **Continue from last frame** on a clip saves its final frame as a still and adds it as the next shot, so the next AI motion clip starts exactly where the last one ended. **Add to join** on clips, in order, then **Join clips** to make one video. Keeping the same character across unrelated shots still depends on your keyframes showing the same character.
   Videos play in the library, can be downloaded, and keep a recipe (shots and moves, or prompt, seed, steps and models). MP4 and MOV uploads are accepted too.
 - **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM) or video (MP4, MOV; needs a working ffmpeg), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
+
+### Helpers in every view
+
+- **Search, filter and sort.** Every list (skills, sessions, models, documents, media, history, agents, tool servers and more) has a search box, a filter built from its tags (installed, generated video, running, failed…) and a sort. Your choices are remembered per list in this browser.
+- **Help.** The **?** next to each view title explains what the view is for; panels in Media have their own **?**.
+- **Prompt presets.** Under image, video, sound-effect and song prompts, click a chip (shot size, lens, light, style, camera move, ambience, genre, instrument, mood, tempo…) to add it to the prompt. Negative-prompt chips add common things to avoid.
+
+### Filters for images, video and audio
+
+Press **Filters** on any library item, or use the **Looks, crop, speed, fades** panel in Media. Images and video: looks (black & white, warm, cool, teal & orange, vintage, high contrast, faded film), film grain, vignette, crop to 16:9, 2.39:1, 4:3, 1:1, 4:5 or 9:16, and resize. Video and audio: speed 0.5×–2×, fade in and out, trim, loudness normalising; video can also have its sound removed. The original is kept; the result is a new item with its settings in the recipe.
 
 ### Library folder: everything NOVA makes, as files
 

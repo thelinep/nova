@@ -48,6 +48,8 @@ const videoLtx = require('./lib/video-ltx');
 const heavyJobs = require('./lib/heavy-jobs');
 const library = require('./lib/library');
 const audioGen = require('./lib/audio-gen');
+const songWriter = require('./lib/song-writer');
+const mediaFilters = require('./lib/media-filters');
 const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
@@ -302,6 +304,7 @@ const routes = [
       sendJson(res, 202, job);
     } },
   { method: 'GET', pattern: /^\/api\/audio\/status$/, handler: async (_req, res) => sendJson(res, 200, await audioGen.status()) },
+  { method: 'POST', pattern: /^\/api\/audio\/song-lyrics$/, handler: async (req, res) => sendJson(res, 200, await songWriter.writeLyrics(store, ollama, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/audio\/voice$/, handler: async (req, res) => { const { job } = audioGen.speak(store, DATA_DIR, await readJsonBody(req)); sendJson(res, 202, job); } },
   { method: 'POST', pattern: /^\/api\/audio\/(sfx|music)$/, handler: async (req, res, [kind]) => {
       heavyJobs.check(store, kind); await heavyJobs.freeMemory({ ollama });
@@ -309,6 +312,7 @@ const routes = [
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.audio.' + kind + '.started', jobId: job.id });
       sendJson(res, 202, job);
     } },
+  { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/filter$/, handler: async (req, res, [id]) => { const { job } = mediaFilters.start(store, DATA_DIR, decodeURIComponent(id), await readJsonBody(req)); sendJson(res, 202, job); } },
   { method: 'GET', pattern: /^\/api\/library$/, handler: async (_req, res) => sendJson(res, 200, library.info()) },
   { method: 'POST', pattern: /^\/api\/library$/, handler: async (req, res) => { const cfg = library.setDir(store, await readJsonBody(req)); desktopSecurity.appendAudit(DATA_DIR, { action: 'library.folder.changed', dir: cfg.dir }); sendJson(res, 200, library.info()); } },
   { method: 'POST', pattern: /^\/api\/library\/backfill$/, handler: async (_req, res) => sendJson(res, 200, library.backfill(store, DATA_DIR)) },

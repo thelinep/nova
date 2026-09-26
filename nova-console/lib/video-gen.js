@@ -337,4 +337,4 @@ async function startAi(store, dataDir, input) {
 
 async function status(dataDir) { return { cameraMoves: motionStatus(dataDir), ltx: ltx.status(), ai: await aiStatus() }; }
 
-module.exports = { status, motionStatus, aiStatus, startMotion, startAi, lastFrame, startJoin, normaliseMotion, normaliseAi, motionArgs, moveExpr, aiGraph, MOVES, MOTION_SIZES, AI_SIZES, DEFAULT_NEGATIVE };
+module.exports = { encoderArgs, status, motionStatus, aiStatus, startMotion, startAi, lastFrame, startJoin, normaliseMotion, normaliseAi, motionArgs, moveExpr, aiGraph, MOVES, MOTION_SIZES, AI_SIZES, DEFAULT_NEGATIVE };
