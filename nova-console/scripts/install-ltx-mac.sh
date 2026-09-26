@@ -37,7 +37,7 @@ if [ $TEST = 1 ]; then
   tmp=$(mktemp -d)
   if command -v ffmpeg >/dev/null; then ffmpeg -loglevel error -f lavfi -i "testsrc=size=512x512" -frames:v 1 "$tmp/still.png"
   else sips -s format png /System/Library/Desktop\ Pictures/*.heic --out "$tmp/still.png" >/dev/null 2>&1 || true; fi
-  .venv/bin/ltx-2-mlx generate -p "slow push-in, soft wind" --image "$tmp/still.png" -H 256 -W 256 -f 9 --seed 1 --model "$MODEL" --distilled --low-ram -o "$tmp/test.mp4"
+  .venv/bin/ltx-2-mlx generate -p "slow push-in, soft wind" --image "$tmp/still.png" -H 256 -W 256 -f 9 --frame-rate 24 --seed 1 --model "$MODEL" --distilled --low-ram -o "$tmp/test.mp4"
   [ -s "$tmp/test.mp4" ] && echo "Test clip OK: $tmp/test.mp4" || die "The test clip was not written."
 fi
 

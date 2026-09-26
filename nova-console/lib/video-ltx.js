@@ -71,7 +71,7 @@ function normalise(store, input) {
 }
 
 function args(s, imagePath, output) {
-  const a = ['generate', '--prompt', s.prompt, '--image', imagePath, '-H', String(s.height), '-W', String(s.width), '-f', String(s.frames), '--seed', String(s.seed), '--model', s.model, '-o', output];
+  const a = ['generate', '--prompt', s.prompt, '--image', imagePath, '-H', String(s.height), '-W', String(s.width), '-f', String(s.frames), '--frame-rate', String(s.fps), '--seed', String(s.seed), '--model', s.model, '-o', output];
   a.push(s.mode === 'two-stage' ? '--two-stage' : '--distilled');
   if (s.lowRam) a.push('--low-ram');
   return a;

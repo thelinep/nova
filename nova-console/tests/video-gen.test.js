@@ -185,6 +185,7 @@ test('LTX-2: reports what is missing, then runs ltx-2-mlx and saves the clip wit
     const a = ltx.args(n, '/in.png', '/out.mp4');
     assert.deepEqual(a.slice(0, 5), ['generate', '--prompt', 'waves crash, gulls call', '--image', '/in.png']);
     assert.ok(a.includes('--distilled') && a.includes('--low-ram') && a.includes('97'));
+    assert.equal(a[a.indexOf('--frame-rate') + 1], '24', 'current ltx-2-mlx requires --frame-rate');
     const { job, done } = ltx.start(db, dir, { mediaId: still.id, prompt: 'waves crash, gulls call', seconds: 4, seed: 9, mode: 'two-stage' });
     await done;
     const finished = db.get('generationJobs', job.id);
