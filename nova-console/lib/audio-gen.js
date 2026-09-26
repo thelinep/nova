@@ -109,6 +109,7 @@ async function comfyStatus() {
     if (!sfx.checkpoint || !sfx.encoder) sfxMissing.push(MODEL_HINTS.sfx);
     if (!emptyAce) musicMissing.push('a newer ComfyUI with ACE-Step nodes (update ComfyUI)');
     if (!music.checkpoint) musicMissing.push(MODEL_HINTS.music);
+    const osBlock = musicBlockedByOs(); if (osBlock) musicMissing.push(osBlock);
     return { reachable: true, url: comfy.baseUrl(), saveNode: saveMp3 ? 'SaveAudioMP3' : 'SaveAudio',
       sfx: { ready: !sfxMissing.length, missing: sfxMissing, ...sfx }, music: { ready: !musicMissing.length, missing: musicMissing, ...music } };
   } catch (e) {
@@ -164,6 +165,13 @@ async function generate(store, dataDir, kind, input) {
     : { engine: 'ace-step-v1-3.5b', prompt, lyrics: String(input.lyrics || '[instrumental]').slice(0, 4000) || '[instrumental]', seconds: Math.round(Math.min(240, Math.max(5, Number(input.seconds) || 30))), steps: Math.round(Math.min(100, Math.max(10, Number(input.steps) || 50))), seed: seedOf(input.seed), checkpoint: part.checkpoint };
   const g = kind === 'sfx' ? sfxGraph(settings, info.saveNode) : musicGraph(settings, info.saveNode);
   return comfy.startJob(store, kind === 'sfx' ? 'audio-sfx' : 'audio-music', settings, job => comfy.runGraph(store, dataDir, job, { graph: g, kind: 'audio', ext: AUDIO_EXT, name: prompt.slice(0, 60), provenance: settings, timeoutMs: 60 * 60 * 1000, label: kind === 'sfx' ? 'Sound effect' : 'Music' }));
+}
+
+/** macOS before 15.1 (Darwin < 24.1) cannot run ACE-Step's vocoder on the GPU, and the CPU fallback runs out of memory. */
+function musicBlockedByOs() {
+  if (process.env.NOVA_ALLOW_MUSIC_OLD_MACOS === '1' || process.platform !== 'darwin') return null;
+  const [maj, min] = os.release().split('.').map(Number);
+  return maj < 24 || (maj === 24 && min < 1) ? 'macOS 15.1 or later (older macOS cannot decode ACE-Step music on the Apple GPU)' : null;
 }
 
 async function status() {
