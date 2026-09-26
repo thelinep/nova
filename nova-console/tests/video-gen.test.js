@@ -172,13 +172,17 @@ test('LTX-2: reports what is missing, then runs ltx-2-mlx and saves the clip wit
     const fake = path.join(bin, 'ltx-2-mlx');
     fs.writeFileSync(fake, `#!/bin/sh\necho "$@" > "${path.join(dir, 'args.txt')}"\necho "Denoising 4/8" >&2\nwhile [ $# -gt 0 ]; do [ "$1" = "-o" ] && out="$2"; shift; done\n/bin/cp "${path.join(dir, 'fixture.mp4')}" "$out"\n`, { mode: 0o755 });
     process.env.LTX_MLX_BIN = fake; process.env.LTX_MLX_ANY_PLATFORM = '1';
-    process.env.NOVA_FREE_GB = '5';
-    assert.match(ltx.status().missing.join(' '), /about 70 GB free disk space/);
-    process.env.NOVA_FREE_GB = '500';
+    assert.match(ltx.status().missing.join(' '), /downloads only what Fast clips need/, 'without weights NOVA refuses rather than let ltx-2-mlx fetch 60 GB');
+    // Fake Hugging Face cache: only the Fast files, plus the Gemma text encoder.
+    const snap = path.join(fakeHome, '.cache', 'huggingface', 'hub', 'models--dgrauet--ltx-2.3-mlx-q4', 'snapshots', 'abc');
+    fs.mkdirSync(snap, { recursive: true });
+    for (const f of ['transformer-distilled-1.1.safetensors', 'connector.safetensors', 'vae_encoder.safetensors', 'vae_decoder.safetensors', 'audio_vae.safetensors', 'vocoder.safetensors', 'spatial_upscaler_x2_v1_1.safetensors', 'config.json']) fs.writeFileSync(path.join(snap, f), 'x');
+    const gem = path.join(fakeHome, '.cache', 'huggingface', 'hub', 'models--mlx-community--gemma-3-12b-it-4bit', 'snapshots', 'g');
+    fs.mkdirSync(gem, { recursive: true }); fs.writeFileSync(path.join(gem, 'model.safetensors'), 'x');
     const s = ltx.status();
     assert.equal(s.ready, true, s.missing.join('; '));
     assert.equal(s.model, 'dgrauet/ltx-2.3-mlx-q4');
-    assert.equal(s.weightsCached, false);
+    assert.equal(s.weightsDir, snap); assert.deepEqual(s.modes, ['distilled']);
     const db = store();
     const still = media.saveMedia(db, dir, { buffer: PNG, originalName: 'juhu.png' });
     const n = ltx.normalise(db, { mediaId: still.id, prompt: 'waves crash, gulls call', seconds: 4, seed: 9 });
@@ -189,11 +193,15 @@ test('LTX-2: reports what is missing, then runs ltx-2-mlx and saves the clip wit
     assert.deepEqual(a.slice(0, 5), ['generate', '--prompt', 'waves crash, gulls call', '--image', '/in.png']);
     assert.ok(a.includes('--distilled') && a.includes('--low-ram') && a.includes('97'));
     assert.equal(a[a.indexOf('--frame-rate') + 1], '24', 'current ltx-2-mlx requires --frame-rate');
+    assert.throws(() => ltx.normalise(db, { mediaId: still.id, prompt: 'x', mode: 'two-stage' }), /--better/);
+    for (const f of ['transformer-dev.safetensors', 'ltx-2.3-22b-distilled-lora-384.safetensors']) fs.writeFileSync(path.join(snap, f), 'x');
+    assert.deepEqual(ltx.status().modes, ['distilled', 'two-stage']);
     const { job, done } = ltx.start(db, dir, { mediaId: still.id, prompt: 'waves crash, gulls call', seconds: 4, seed: 9, mode: 'two-stage' });
     await done;
     const finished = db.get('generationJobs', job.id);
     assert.equal(finished.status, 'done', finished.error);
     assert.match(fs.readFileSync(path.join(dir, 'args.txt'), 'utf8'), /--two-stage --low-ram/);
+    assert.ok(fs.readFileSync(path.join(dir, 'args.txt'), 'utf8').includes('--model ' + snap), 'the local folder is passed, so nothing more is downloaded');
     const clip = db.get('media', finished.mediaIds[0]);
     assert.equal(clip.kind, 'video'); assert.equal(clip.source, 'ltx');
     assert.equal(clip.provenance.engine, 'ltx-2-mlx'); assert.equal(clip.provenance.seed, 9); assert.equal(clip.provenance.audio, true);

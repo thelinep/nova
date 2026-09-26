@@ -35,37 +35,50 @@ function binary() {
   return candidates.find(c => { try { fs.accessSync(c, fs.constants.X_OK); return true; } catch (_) { return false; } }) || null;
 }
 function model() { return process.env.LTX_MLX_MODEL || DEFAULT_MODEL; }
-/** True when the weights are fully downloaded (a transformer and the connector, and no unfinished downloads). */
-function weightsCached(name) {
-  const dir = path.join(process.env.HF_HOME || path.join(home(), '.cache', 'huggingface'), 'hub', 'models--' + name.replace(/\//g, '--'));
-  try {
-    if (fs.readdirSync(path.join(dir, 'blobs')).some(f => f.endsWith('.incomplete'))) return false;
-    return fs.readdirSync(path.join(dir, 'snapshots')).some(snap => { const files = fs.readdirSync(path.join(dir, 'snapshots', snap)); return files.some(f => /^transformer.*\.safetensors$/.test(f)) && files.includes('connector.safetensors'); });
-  } catch (_) { return false; }
-}
+/* NOVA uses only part of the weights repository (which holds about 60 GB of variants):
+   Fast = the distilled transformer plus shared parts (~21 GB); Better adds the dev transformer and
+   the distilled LoRA (+19 GB). scripts/ltx-fetch-weights.py downloads exactly these, and NOVA passes
+   the local snapshot folder to --model so ltx-2-mlx never starts a full download itself. */
+const FAST_FILES = ['connector.safetensors', 'vae_encoder.safetensors', 'vae_decoder.safetensors', 'audio_vae.safetensors', 'vocoder.safetensors', 'spatial_upscaler_x2_v1_1.safetensors'];
+const BETTER_FILES = ['transformer-dev.safetensors', 'ltx-2.3-22b-distilled-lora-384.safetensors'];
+const GEMMA = 'mlx-community/gemma-3-12b-it-4bit';
+function hubDir() { return process.env.HF_HUB_CACHE || path.join(process.env.HF_HOME || path.join(home(), '.cache', 'huggingface'), 'hub'); }
+const has = (dir, f) => { try { return fs.statSync(path.join(dir, f)).size > 0; } catch (_) { return false; } }; // follows the cache's symlinks
 
-const FIRST_DOWNLOAD_GB = 60;
-function freeGb(dir) {
-  if (process.env.NOVA_FREE_GB) return Number(process.env.NOVA_FREE_GB);
-  try { const st = fs.statfsSync(dir); return Math.floor((st.bavail * st.bsize) / 1024 ** 3); } catch (_) { return null; }
+/** The downloaded snapshot folder for a repository id, with what it can do: {dir, fast, better}. */
+function localWeights(name) {
+  if (fs.existsSync(name)) return { dir: name, fast: true, better: BETTER_FILES.every(f => has(name, f)) }; // a folder path in LTX_MLX_MODEL
+  const snaps = path.join(hubDir(), 'models--' + name.replace(/\//g, '--'), 'snapshots');
+  let best = null;
+  try {
+    for (const snap of fs.readdirSync(snaps)) {
+      const dir = path.join(snaps, snap);
+      const files = fs.readdirSync(dir);
+      const fast = FAST_FILES.every(f => has(dir, f)) && files.some(f => /^transformer-distilled.*\.safetensors$/.test(f) && has(dir, f));
+      if (fast) { const better = BETTER_FILES.every(f => has(dir, f)); if (!best || (better && !best.better)) best = { dir, fast, better }; }
+    }
+  } catch (_) {}
+  return best;
 }
+function gemmaCached() {
+  const snaps = path.join(hubDir(), 'models--' + GEMMA.replace(/\//g, '--'), 'snapshots');
+  try { return fs.readdirSync(snaps).some(s => fs.readdirSync(path.join(snaps, s)).some(f => f.endsWith('.safetensors'))); } catch (_) { return false; }
+}
+function weightsCached(name) { return Boolean(localWeights(name)); }
 
 function status() {
   const bin = binary(), m = model();
   const appleSilicon = (process.platform === 'darwin' && process.arch === 'arm64') || process.env.LTX_MLX_ANY_PLATFORM === '1'; // the override is for tests
   const missing = [];
   if (!appleSilicon) missing.push('an Apple Silicon Mac (LTX-2 runs on MLX)');
-  if (!bin) missing.push('ltx-2-mlx: double-click "Install LTX-2 video for NOVA.command" in the brahmini folder (about 30 GB with weights)');
-  const cached = weightsCached(m);
-  // ltx-2-mlx downloads the whole weights repository on first use (about 60 GB for the q4 pack, all
-  // variants included), which can fill the disk. Refuse to start that download without room for it.
-  const free = freeGb(home());
-  if (bin && !cached && free != null && free < FIRST_DOWNLOAD_GB + 10) missing.push(`about ${FIRST_DOWNLOAD_GB + 10} GB free disk space: the first LTX-2 clip downloads about ${FIRST_DOWNLOAD_GB} GB of weights and only ${free} GB is free`);
+  if (!bin) missing.push('ltx-2-mlx: double-click "Install LTX-2 video for NOVA.command" in the brahmini folder (about 28 GB with weights)');
+  const weights = localWeights(m), gemma = gemmaCached();
+  if (bin && (!weights || !gemma)) missing.push(`the LTX-2 weights NOVA uses (${!weights ? 'video model' : ''}${!weights && !gemma ? ' and ' : ''}${!gemma ? 'text encoder' : ''}): double-click "Install LTX-2 video for NOVA.command" again — it downloads only what Fast clips need (about 28 GB in all), not the whole 60 GB repository`);
   const notes = [];
-  if (bin && !cached) notes.push(`The ${m} weights are not downloaded yet; the first clip downloads them (about ${FIRST_DOWNLOAD_GB} GB).`);
+  if (weights && !weights.better) notes.push('Fast clips only. For "Better" (two-stage) clips, run the LTX-2 installer with --better (another 19 GB).');
   notes.push('Rough previews with sound: a few seconds at small sizes. Expect several minutes per clip on a 16 GB Mac.');
   if (heavy.totalGb() <= 24) notes.push(`On this ${heavy.totalGb()} GB Mac NOVA keeps LTX-2 to 480p, 5 seconds and low-RAM mode, frees other models first, and runs one video job at a time.`);
-  return { limits: heavy.ltxLimits(), engine: 'ltx-2-mlx', ready: missing.length === 0, binary: bin, model: m, weightsCached: cached, missing, notes, sizes: Object.keys(SIZES), modes: MODES };
+  return { limits: heavy.ltxLimits(), engine: 'ltx-2-mlx', ready: missing.length === 0, binary: bin, model: m, weightsDir: weights ? weights.dir : null, weightsCached: Boolean(weights), modes: weights && weights.better ? MODES : ['distilled'], missing, notes, sizes: Object.keys(SIZES) };
 }
 
 /** LTX wants 8k+1 frames. */
@@ -84,12 +97,14 @@ function normalise(store, input) {
   const seconds = Number.isFinite(secondsIn) ? Math.min(limits.maxSeconds, Math.max(1, secondsIn)) : 4;
   const frames = framesFor(seconds);
   const mode = MODES.includes(input.mode) ? input.mode : 'distilled';
+  const weights = localWeights(model());
+  if (mode === 'two-stage' && weights && !weights.better) throw error('"Better" clips need more LTX-2 files: run the LTX-2 installer with --better (another 19 GB), or choose Fast.', 412);
   const seed = Number.isSafeInteger(Number(input.seed)) && Number(input.seed) >= 0 && input.seed !== '' && input.seed != null ? Number(input.seed) : crypto.randomInt(0, 2 ** 31 - 1);
   return { engine: 'ltx-2-mlx', input: record ? 'image-to-video' : 'text-to-video', mediaId: record ? record.id : null, sourceName: record ? record.originalName : null, prompt, size, width: SIZES[size][0], height: SIZES[size][1], frames, fps: FPS, seconds: Math.round(((frames - 1) / FPS) * 10) / 10, mode, seed, model: model(), lowRam: limits.lowRam || input.lowRam !== false, audio: true };
 }
 
 function args(s, imagePath, output) {
-  const a = ['generate', '--prompt', s.prompt, ...(imagePath ? ['--image', imagePath] : []), '-H', String(s.height), '-W', String(s.width), '-f', String(s.frames), '--frame-rate', String(s.fps), '--seed', String(s.seed), '--model', s.model, '-o', output];
+  const a = ['generate', '--prompt', s.prompt, ...(imagePath ? ['--image', imagePath] : []), '-H', String(s.height), '-W', String(s.width), '-f', String(s.frames), '--frame-rate', String(s.fps), '--seed', String(s.seed), '--model', s.modelDir || s.model, '-o', output];
   a.push(s.mode === 'two-stage' ? '--two-stage' : '--distilled');
   if (s.lowRam) a.push('--low-ram');
   return a;
@@ -98,7 +113,7 @@ function args(s, imagePath, output) {
 function start(store, dataDir, input) {
   const info = status();
   if (!info.ready) throw error('LTX-2 needs: ' + info.missing.join('; ') + '.', 412);
-  const settings = normalise(store, input);
+  const settings = { ...normalise(store, input), modelDir: info.weightsDir };
   const source = settings.mediaId ? media.getMedia(store, settings.mediaId) : null;
   const job = { id: 'gen_' + crypto.randomBytes(8).toString('hex'), type: 'video-ltx', status: 'running', settings, promptId: null, mediaIds: [], error: null, progress: null, cancelRequested: false, createdAt: new Date().toISOString(), finishedAt: null };
   store.put('generationJobs', job);
@@ -107,7 +122,7 @@ function start(store, dataDir, input) {
     try {
       const out = path.join(work, 'clip.mp4');
       await new Promise((resolve, reject) => {
-        const child = spawn(info.binary, args(settings, source ? media.filePath(dataDir, source) : null, out), { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, PYTHONUNBUFFERED: '1' } });
+        const child = spawn(info.binary, args(settings, source ? media.filePath(dataDir, source) : null, out), { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, PYTHONUNBUFFERED: '1', HF_HUB_OFFLINE: '1' /* never start a surprise download */ } });
         let tail = '', lastSave = 0;
         const onData = d => {
           tail = (tail + d).slice(-4000);
