@@ -87,7 +87,7 @@ function fakeComfy({ models = true, clip = ['umt5_xxl_fp8_e4m3fn_scaled.safetens
 test('AI motion names the missing Wan 2.2 files', async () => {
   const server = fakeComfy({ models: false, clip: [] });
   await new Promise(r => server.listen(0, '127.0.0.1', r));
-  const saved = process.env.COMFYUI_URL; process.env.COMFYUI_URL = 'http://127.0.0.1:' + server.address().port;
+  const saved = process.env.COMFYUI_URL; process.env.COMFYUI_URL = 'http://127.0.0.1:' + server.address().port; process.env.NOVA_TOTAL_RAM_GB = '64'; // a large Mac, so the 16 GB Wan guard does not apply
   try {
     const s = await videoGen.aiStatus();
     assert.equal(s.reachable, true); assert.equal(s.ready, false);
@@ -95,14 +95,14 @@ test('AI motion names the missing Wan 2.2 files', async () => {
     assert.match(s.missing.join(' '), /wan2\.2_ti2v_5B_fp16.*umt5_xxl_fp16.*wan2\.2_vae/);
     const db = store(), dir = tmp('nova-v-'); const a = media.saveMedia(db, dir, { buffer: PNG, originalName: 'a.png' });
     await assert.rejects(() => videoGen.startAi(db, dir, { mediaId: a.id, prompt: 'x' }), /AI video needs/);
-  } finally { process.env.COMFYUI_URL = saved; if (saved === undefined) delete process.env.COMFYUI_URL; server.close(); }
+  } finally { delete process.env.NOVA_TOTAL_RAM_GB; process.env.COMFYUI_URL = saved; if (saved === undefined) delete process.env.COMFYUI_URL; server.close(); }
 });
 
 test('AI motion uploads the still, sends the Wan 2.2 graph and saves the clip with its recipe', async () => {
   const seen = {};
   const server = fakeComfy({}, seen);
   await new Promise(r => server.listen(0, '127.0.0.1', r));
-  const saved = process.env.COMFYUI_URL; process.env.COMFYUI_URL = 'http://127.0.0.1:' + server.address().port;
+  const saved = process.env.COMFYUI_URL; process.env.COMFYUI_URL = 'http://127.0.0.1:' + server.address().port; process.env.NOVA_TOTAL_RAM_GB = '64'; // a large Mac, so the 16 GB Wan guard does not apply
   try {
     const s = await videoGen.aiStatus();
     assert.equal(s.ready, true, s.missing.join('; '));
@@ -126,7 +126,7 @@ test('AI motion uploads the still, sends the Wan 2.2 graph and saves the clip wi
     const clip = db.get('media', finished.mediaIds[0]);
     assert.equal(clip.kind, 'video'); assert.equal(clip.source, 'comfyui');
     assert.equal(clip.provenance.mediaId, still.id); assert.equal(clip.provenance.frames, 73); assert.equal(clip.provenance.seconds, 3);
-  } finally { process.env.COMFYUI_URL = saved; if (saved === undefined) delete process.env.COMFYUI_URL; server.close(); }
+  } finally { delete process.env.NOVA_TOTAL_RAM_GB; process.env.COMFYUI_URL = saved; if (saved === undefined) delete process.env.COMFYUI_URL; server.close(); }
 });
 
 test('continuity: the last frame of a clip becomes a still, and clips join into one video', async t => {
@@ -194,5 +194,35 @@ test('LTX-2: reports what is missing, then runs ltx-2-mlx and saves the clip wit
     const clip = db.get('media', finished.mediaIds[0]);
     assert.equal(clip.kind, 'video'); assert.equal(clip.source, 'ltx');
     assert.equal(clip.provenance.engine, 'ltx-2-mlx'); assert.equal(clip.provenance.seed, 9); assert.equal(clip.provenance.audio, true);
+  } finally { process.env = saved; }
+});
+
+test('guard rails: one heavy job at a time, Wan refused on small Macs, LTX held to safe settings on 16 GB', async () => {
+  const heavy = require('../lib/heavy-jobs');
+  const ltx = require('../lib/video-ltx');
+  const saved = { ...process.env };
+  try {
+    process.env.NOVA_TOTAL_RAM_GB = '16'; delete process.env.NOVA_ALLOW_WAN_LOW_RAM;
+    const db = store(), dir = tmp('nova-guard-');
+    heavy.check(db, 'ltx');
+    assert.throws(() => heavy.check(db, 'wan'), /this Mac has 16 GB/);
+    process.env.NOVA_ALLOW_WAN_LOW_RAM = '1'; heavy.check(db, 'wan'); delete process.env.NOVA_ALLOW_WAN_LOW_RAM;
+    db.put('generationJobs', { id: 'gen_1', type: 'video-ltx', status: 'running', settings: { prompt: 'waves' } });
+    assert.throws(() => heavy.check(db, 'image'), /Another image or video job is still running \(waves\)/);
+    const still = media.saveMedia(db, dir, { buffer: PNG, originalName: 's.png' });
+    const n = ltx.normalise(db, { mediaId: still.id, prompt: 'x', seconds: 8, size: '960x544', lowRam: false });
+    assert.deepEqual([n.size, n.seconds <= 5, n.lowRam], ['704x480', true, true]);
+    process.env.NOVA_TOTAL_RAM_GB = '64';
+    const big = ltx.normalise(db, { mediaId: still.id, prompt: 'x', seconds: 8, size: '960x544' });
+    assert.deepEqual([big.size, big.frames], ['960x544', 193]);
+    // freeMemory unloads running Ollama models and asks ComfyUI to free its models.
+    const unloaded = []; let freed = null;
+    const server = http.createServer((req, res) => { let b = ''; req.on('data', c => b += c); req.on('end', () => { freed = { url: req.url, body: JSON.parse(b) }; res.end('{}'); }); });
+    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    const out = await heavy.freeMemory({ ollama: { status: async () => ({ runningModelNames: ['llama3:latest'] }), unload: async n => unloaded.push(n) }, comfyUrl: 'http://127.0.0.1:' + server.address().port });
+    server.close();
+    assert.deepEqual(unloaded, ['llama3:latest']);
+    assert.deepEqual(freed, { url: '/free', body: { unload_models: true, free_memory: true } });
+    assert.deepEqual(out, ['ollama:llama3:latest', 'comfyui']);
   } finally { process.env = saved; }
 });

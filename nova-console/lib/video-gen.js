@@ -33,6 +33,7 @@ const media = require('./media');
 const transcriber = require('./transcribe');
 const comfy = require('./image-gen');
 const ltx = require('./video-ltx');
+const heavy = require('./heavy-jobs');
 
 const { error } = comfy;
 const MOVES = ['push-in', 'pull-out', 'pan-left', 'pan-right', 'tilt-up', 'tilt-down', 'hold'];
@@ -248,6 +249,7 @@ async function aiStatus() {
     const missing = [];
     if (!latent) missing.push('a newer ComfyUI with the Wan 2.2 nodes (update ComfyUI)');
     for (const key of ['unet', 'clip', 'vae']) if (!models[key]) missing.push(MODEL_HINTS[key]);
+    if (heavy.totalGb() < 32 && process.env.NOVA_ALLOW_WAN_LOW_RAM !== '1') missing.push(`a Mac with 32 GB or more of memory (this one has ${heavy.totalGb()} GB; Wan 2.2 can freeze and restart it)`);
     const notes = [];
     if (apple && models.clip && /fp8/i.test(models.clip)) notes.push('Only the fp8 text encoder is installed; it does not run on Apple Silicon. Add umt5_xxl_fp16.safetensors.');
     if (apple) notes.push('On a Mac, expect several minutes per second of video at 832×480. Start short.');

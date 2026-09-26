@@ -19,6 +19,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const media = require('./media');
+const heavy = require('./heavy-jobs');
 
 const DEFAULT_MODEL = 'dgrauet/ltx-2.3-mlx-q4';
 const SIZES = { '704x480': [704, 480], '480x704': [480, 704], '512x512': [512, 512], '960x544': [960, 544] };
@@ -49,7 +50,8 @@ function status() {
   const notes = [];
   if (bin && !cached) notes.push(`The ${m} weights (roughly 20 GB with the text encoder) are not downloaded yet; the first clip downloads them.`);
   notes.push('Rough previews with sound: a few seconds at small sizes. Expect several minutes per clip on a 16 GB Mac.');
-  return { engine: 'ltx-2-mlx', ready: missing.length === 0, binary: bin, model: m, weightsCached: cached, missing, notes, sizes: Object.keys(SIZES), modes: MODES };
+  if (heavy.totalGb() <= 16) notes.push('On this 16 GB Mac NOVA keeps LTX-2 to 480p, 5 seconds and low-RAM mode, frees other models first, and runs one video job at a time.');
+  return { limits: heavy.ltxLimits(), engine: 'ltx-2-mlx', ready: missing.length === 0, binary: bin, model: m, weightsCached: cached, missing, notes, sizes: Object.keys(SIZES), modes: MODES };
 }
 
 /** LTX wants 8k+1 frames. */
@@ -61,13 +63,14 @@ function normalise(store, input) {
   const prompt = String(input.prompt || '').trim();
   if (!prompt) throw error('Describe the motion and sound you want, e.g. "slow push-in, waves crash, gulls call".');
   if (prompt.length > 2000) throw error('The prompt is limited to 2,000 characters.');
-  const size = SIZES[input.size] ? input.size : '704x480';
+  const limits = heavy.ltxLimits();
+  const size = SIZES[input.size] && (!limits.sizes || limits.sizes.includes(input.size)) ? input.size : '704x480';
   const secondsIn = Number(input.seconds);
-  const seconds = Number.isFinite(secondsIn) ? Math.min(8, Math.max(1, secondsIn)) : 4;
+  const seconds = Number.isFinite(secondsIn) ? Math.min(limits.maxSeconds, Math.max(1, secondsIn)) : 4;
   const frames = framesFor(seconds);
   const mode = MODES.includes(input.mode) ? input.mode : 'distilled';
   const seed = Number.isSafeInteger(Number(input.seed)) && Number(input.seed) >= 0 && input.seed !== '' && input.seed != null ? Number(input.seed) : crypto.randomInt(0, 2 ** 31 - 1);
-  return { engine: 'ltx-2-mlx', mediaId: record.id, sourceName: record.originalName, prompt, size, width: SIZES[size][0], height: SIZES[size][1], frames, fps: FPS, seconds: Math.round(((frames - 1) / FPS) * 10) / 10, mode, seed, model: model(), lowRam: input.lowRam !== false, audio: true };
+  return { engine: 'ltx-2-mlx', mediaId: record.id, sourceName: record.originalName, prompt, size, width: SIZES[size][0], height: SIZES[size][1], frames, fps: FPS, seconds: Math.round(((frames - 1) / FPS) * 10) / 10, mode, seed, model: model(), lowRam: limits.lowRam || input.lowRam !== false, audio: true };
 }
 
 function args(s, imagePath, output) {

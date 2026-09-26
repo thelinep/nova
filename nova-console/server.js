@@ -45,6 +45,7 @@ const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
 const videoGen = require('./lib/video-gen');
 const videoLtx = require('./lib/video-ltx');
+const heavyJobs = require('./lib/heavy-jobs');
 const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
@@ -286,6 +287,8 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/images\/jobs$/, handler: async (_req, res) => sendJson(res, 200, store.all('generationJobs').reverse()) },
   { method: 'GET', pattern: /^\/api\/images\/jobs\/([^/]+)$/, handler: async (_req, res, [id]) => { const job = store.get('generationJobs', decodeURIComponent(id)); if (!job) { sendJson(res, 404, { error: 'Unknown generation job.' }); return; } sendJson(res, 200, job); } },
   { method: 'POST', pattern: /^\/api\/images\/generate$/, handler: async (req, res) => {
+      heavyJobs.check(store, 'image');
+      await heavyJobs.freeMemory({ ollama });
       const { job } = await imageGen.generate(store, DATA_DIR, await readJsonBody(req));
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.image.generation.started', jobId: job.id, checkpoint: job.settings.checkpoint });
       sendJson(res, 202, job);
@@ -304,6 +307,9 @@ const routes = [
     } },
   { method: 'POST', pattern: /^\/api\/video\/animate$/, handler: async (req, res) => {
       const body = await readJsonBody(req);
+      heavyJobs.check(store, body.engine === 'wan' ? 'wan' : 'ltx');
+      const freed = await heavyJobs.freeMemory({ ollama, comfyUrl: body.engine === 'wan' ? null : (() => { try { return imageGen.baseUrl(); } catch (_) { return null; } })() });
+      if (freed.length) console.log('  freed memory before video: ' + freed.join(', '));
       // LTX-2 (local MLX, with sound) is the default; engine: 'wan' uses ComfyUI + Wan 2.2.
       const { job } = body.engine === 'wan' ? await videoGen.startAi(store, DATA_DIR, body) : videoLtx.start(store, DATA_DIR, body);
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.video.ai.started', engine: job.settings.engine, jobId: job.id, mediaId: job.settings.mediaId });
