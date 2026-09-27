@@ -76,3 +76,6 @@ Thumbs.db
 # Local scratch and assistant output (not source)
 /tmp/
 /Claude outputs/
+
+# Python caches
+__pycache__/

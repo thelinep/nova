@@ -116,6 +116,10 @@ e2e/                       Playwright browser tests
 
 What that coverage does *not* give you: the selectors are tied to Google Maps' current markup and will silently under-collect (or return nothing) if that markup changes -- the fixture tests catch regressions in the parsing logic, not drift in the live page, and nothing currently alerts you when a run comes back empty because of the latter. There's also no rate limiting beyond per-district retries, and scraping Google Maps at all may be subject to Google's terms of service -- review those before running this beyond local, personal-scale use. Treat a completed job's result count as "what the current selectors found on that run," not as an independently verified census of businesses in that district.
 
+## Event directory
+
+`scripts/event-directory/` builds a directory of event venues and vendors (24 categories) country by country, India first, from Overture Maps and OpenStreetMap plus the Google Maps collectors' own results, and can fill India's district gaps from Google Maps. See [docs/EVENT-DIRECTORY.md](docs/EVENT-DIRECTORY.md). Double-click `Build event directory.command` in the repository root to run it.
+
 ## Supervised district collection
 
 `scripts/collect-event-planners.cjs` (the standalone all-district event-planner collector, separate from the API-driven scraper above) halts on the *first* error or Google access-challenge it hits during a run rather than skipping past it -- by design, so nothing bypasses a real block silently. That makes a full 784-district pass tedious to babysit by hand, so `scripts/collection-supervisor.cjs` wraps it:
