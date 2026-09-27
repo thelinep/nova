@@ -1,11 +1,11 @@
-# Automatically generated command permission for NOVA's user-invoked native folder picker.
+# Automatically generated - DO NOT EDIT!
 
 [[permission]]
 identifier = "allow-pick-local-folder"
-description = "Allows the main NOVA window to open the native local-folder picker."
+description = "Enables the pick_local_folder command without any pre-configured scope."
 commands.allow = ["pick_local_folder"]
 
 [[permission]]
 identifier = "deny-pick-local-folder"
-description = "Denies the native local-folder picker command."
+description = "Denies the pick_local_folder command without any pre-configured scope."
 commands.deny = ["pick_local_folder"]
