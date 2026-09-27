@@ -442,8 +442,10 @@ mod tests {
     #[test]
     fn main_window_reloads_the_console_once_the_server_is_healthy() {
         let source = include_str!("main.rs");
-        assert!(source.contains("again now that the server is healthy"));
-        assert!(source.contains("window.navigate(url)"));
+        assert!(source.contains("now that the server is healthy"));
+        assert!(source.contains("WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL"));
+        let config = include_str!("../tauri.conf.json");
+        assert!(config.contains("\"windows\": []"));
     }
 
     #[test]
@@ -500,14 +502,19 @@ fn main() {
                 ServerProcess::Spawned(child)
             };
             app.manage(ServerChild(child));
-            // The configured window is created before this hook runs, so its first load can
-            // happen before the bundled server answers and leave a blank page. Load the console
-            // again now that the server is healthy.
-            if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
-                if let Ok(url) = format!("http://127.0.0.1:{PORT}/").parse() {
-                    let _ = window.navigate(url);
-                }
-            }
+            // The main window is created here, after the health check, rather than from
+            // tauri.conf.json: a configured window starts loading before the bundled server
+            // answers and stays blank. Creating it now that the server is healthy avoids that.
+            let url = format!("http://127.0.0.1:{PORT}/")
+                .parse()
+                .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{error}")))?;
+            let window = WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL, WebviewUrl::External(url))
+                .title("NOVA Runtime")
+                .inner_size(1360.0, 860.0)
+                .resizable(true)
+                .build()?;
+            let _ = window.show();
+            let _ = window.set_focus();
             Ok(())
         })
         .build(tauri::generate_context!())

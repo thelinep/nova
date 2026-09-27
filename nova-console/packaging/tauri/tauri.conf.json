@@ -9,23 +9,22 @@
   },
   "app": {
     "withGlobalTauri": true,
-    "windows": [
-      {
-        "title": "NOVA Runtime",
-        "url": "http://127.0.0.1:8787",
-        "width": 1360,
-        "height": 860,
-        "resizable": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage", "dmg", "nsis"],
-    "icon": ["icons/icon.icns"],
+    "targets": [
+      "deb",
+      "appimage",
+      "dmg",
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.icns"
+    ],
     "resources": {
       "../../server.js": "server.js",
       "../../package.json": "package.json",
