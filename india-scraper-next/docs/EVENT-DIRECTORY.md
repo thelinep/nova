@@ -4,10 +4,9 @@ A directory of event venues and vendors, built India first and extendable to any
 
 ## What counts
 
-`scripts/event-directory/taxonomy.json` defines 24 categories in two groups:
+`scripts/event-directory/taxonomy.json` defines 58 categories in 13 families: Venue & location · Planning & production · Design & décor · Technical production · Food & hospitality · Talent & entertainment · Photo, film & broadcast · Guest experience · Travel & logistics · Safety, permits & compliance · Branding & fabrication · Digital experience · Personal style & beauty. Every place carries its `family` and `primary_category`; `summary-<CC>.md` has a state × family table.
 
-- **Venues**: banquet/marriage halls, marriage lawns and party plots, event spaces, convention/exhibition centres, community halls and auditoriums (including baraat ghar, samaj bhawan, dharamshala), resorts.
-- **Vendors**: event/wedding planners, caterers, decorators and tent houses, florists, photographers/videographers, DJ/sound/lighting, bridal makeup, mehndi artists, bands and entertainers, choreographers, cake shops, invitation printers, party supplies, equipment rental, event security, wedding cars, priests/pandits, bridal wear.
+Broad categories (listed under `generic`, such as Overture's catch-all "party and event planning" or "printing service") give way to a specific name: "… Mangal Karyalay" becomes a banquet hall, "… Flex Printing" signage.
 
 Each category has a regex for source categories/tags, one for names (with Indian terms such as *kalyana mandapam*, *mangal karyalay*, *halwai*, *shamiana*), a Google search phrase and a per-district "gap" threshold. Edit the file to tune it; rebuild to apply.
 
