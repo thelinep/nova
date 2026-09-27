@@ -56,6 +56,15 @@ class EventDirectory(unittest.TestCase):
         self.assertTrue(any(g["category"] == "vendor.florist" and g["have"] == 0 for g in gaps))
         self.assertFalse(any(g["category"] == "vendor.caterer" and g["have"] >= g["want"] for g in gaps))
         self.assertTrue((out / "event-directory-IN.csv").read_text().startswith("id,name,"))
+        types = dict(con.execute("SELECT name, event_types FROM places"))
+        self.assertEqual(types["Royal Caterers"], "ALL")
+        cl = ed.parse_checklist(HERE.parent.parent / "docs" / "EVENT-PLANNING-CHECKLIST.md")
+        self.assertEqual(len(cl["codes"]), 13)
+        self.assertIn("WED", [c for s in cl["sections"] for it in s["items"] for c in it["codes"]])
+        rep = subprocess.run([sys.executable, str(HERE / "event_directory.py"), "report", "--event", "WED"], env=env, check=True, capture_output=True, text=True).stdout
+        self.assertIn("| Maharashtra | 3 |", rep)
+        chk = subprocess.run([sys.executable, str(HERE / "event_directory.py"), "checklist", "--event", "WED"], env=env, check=True, capture_output=True, text=True).stdout
+        self.assertIn("Florals & botanicals", chk); self.assertNotIn("Exhibition stands", chk)
 
 
 if __name__ == "__main__":

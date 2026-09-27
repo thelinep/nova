@@ -18,6 +18,18 @@ Each category has a regex for source categories/tags, one for names (with Indian
 | OpenStreetMap | `osm` | ODbL-1.0 | Overpass API, one state at a time, resumable (`raw/osm-<CC>.progress.json`). |
 | Google Maps (own collectors) | `google` | Google's terms | Imports the event-planner survey (`data/event-planners/collection.db`) and gap runs (`data/event-directory/google-IN.db`). India only. |
 
+## Event types
+
+[EVENT-PLANNING-CHECKLIST.md](EVENT-PLANNING-CHECKLIST.md) lists 13 event type codes (ALL, CONF, EXPO, LAUNCH, FEST, WED, GALA, CORP, SPORT, HYBRID, RETAIL, ROAD, NET) and about 300 planning items tagged with them, in the same 13 families. In `taxonomy.json` each category names the checklist items it supplies (`serves`); its event types are those items' codes, or its own `eventTypes` for trades the checklist does not name (banquet halls, pandits, mehndi). Every place gets `event_types` in `directory.db`.
+
+```sh
+python3 scripts/event-directory/event_directory.py report --event WED              # state x family counts for weddings
+python3 scripts/event-directory/event_directory.py report --event LAUNCH,HYBRID --state Maharashtra
+python3 scripts/event-directory/event_directory.py checklist --event CONF           # the checklist for a conference, with supplier categories
+```
+
+A place or item belongs to an event when it is tagged ALL or any of the event's codes. Reports are written to `data/event-directory/report-<CC>-<CODES>.md` and `checklist-<CODES>.md`.
+
 ## Build
 
 Double-click **Build event directory.command** in the brahmini folder (asks for a country code, default IN), or:

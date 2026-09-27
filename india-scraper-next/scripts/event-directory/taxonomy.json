@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "note": "Event venue and vendor categories. 'cat' is matched against source categories/tags (underscores read as spaces), 'name' against the business name. Both are case-insensitive Python/JS-compatible regexes. 'google' is the India Google Maps search phrase used only to fill gaps; 'gapMin' is how many places a district should have before it is not treated as a gap. Categories listed in 'generic' are broad: when a place matches only generic categories, a specific category from its name comes first.",
+  "note": "Event venue and vendor categories. 'cat' is matched against source categories/tags (underscores read as spaces), 'name' against the business name. Both are case-insensitive Python/JS-compatible regexes. 'google' is the India Google Maps search phrase used only to fill gaps; 'gapMin' is how many places a district should have before it is not treated as a gap. Categories listed in 'generic' are broad: when a place matches only generic categories, a specific category from its name comes first. 'serves' lists the items in docs/EVENT-PLANNING-CHECKLIST.md a category supplies; its event types are those items' codes, unless 'eventTypes' sets them (for trades the checklist does not name, such as banquet halls or pandits).",
   "exclude": "\\b(school|college|university|hospital|clinic|bank|atm|police|government|pharmacy|petrol|fuel|gas station|post office|courier|hardware|pet|veterinar|mosque|church|temple|gurdwara|real estate|insurance|mobile phone|electronics)\\b",
   "categories": [
     {
@@ -11,7 +11,19 @@
       "name": "\\b(banquet|banquets|marriage hall|wedding hall|shaadi hall|shadi hall|function hall|kalyana ?mandapam|kalyana ?mantapa|mangal karyalay|mangal karyalaya|mangal bhawan|mangal bhavan|vivah bhawan|vivah mandap|party hall|reception hall)\\b",
       "google": "banquet halls",
       "gapMin": 5,
-      "family": "venue"
+      "family": "venue",
+      "serves": [
+        "Site research & shortlisting",
+        "Parking, drop-off, valet"
+      ],
+      "eventTypes": [
+        "WED",
+        "GALA",
+        "CONF",
+        "CORP",
+        "NET",
+        "LAUNCH"
+      ]
     },
     {
       "id": "venue.lawn_garden",
@@ -21,7 +33,18 @@
       "name": "\\b(marriage garden|marriage lawn|wedding lawn|wedding garden|party lawn|party plot|lawns|farm ?house|vatika)\\b",
       "google": "marriage lawns and gardens",
       "gapMin": 3,
-      "family": "venue"
+      "family": "venue",
+      "serves": [
+        "Indoor / outdoor / hybrid options",
+        "Weather contingency & backup venue"
+      ],
+      "eventTypes": [
+        "WED",
+        "FEST",
+        "GALA",
+        "NET",
+        "LAUNCH"
+      ]
     },
     {
       "id": "venue.event_space",
@@ -31,7 +54,10 @@
       "name": "\\b(event venue|events venue|event space|celebration hall|party palace|marriage palace|wedding palace|resort and banquet)\\b",
       "google": "wedding venues",
       "gapMin": 5,
-      "family": "venue"
+      "family": "venue",
+      "serves": [
+        "Site research & shortlisting"
+      ]
     },
     {
       "id": "venue.convention",
@@ -41,7 +67,20 @@
       "name": "\\b(convention|conference cent(er|re)|exhibition cent(er|re)|expo cent(er|re)|trade cent(er|re))\\b",
       "google": "convention centres",
       "gapMin": 1,
-      "family": "venue"
+      "family": "venue",
+      "serves": [
+        "Loading dock & freight access",
+        "Capacity & occupancy limits"
+      ],
+      "eventTypes": [
+        "CONF",
+        "EXPO",
+        "GALA",
+        "LAUNCH",
+        "CORP",
+        "NET",
+        "HYBRID"
+      ]
     },
     {
       "id": "venue.community_hall",
@@ -51,7 +90,17 @@
       "name": "\\b(community hall|community cent(er|re)|baraat ghar|barat ghar|samaj bhawan|samaj bhavan|samaj mandir|sabhagar|auditorium|town hall|dharamshala|dharmashala)\\b",
       "google": "community halls",
       "gapMin": 3,
-      "family": "venue"
+      "family": "venue",
+      "serves": [
+        "Site research & shortlisting"
+      ],
+      "eventTypes": [
+        "WED",
+        "NET",
+        "CORP",
+        "CONF",
+        "FEST"
+      ]
     },
     {
       "id": "venue.resort",
@@ -61,7 +110,18 @@
       "name": "\\b(resort|resorts|heritage palace|destination wedding)\\b",
       "google": "resorts for weddings",
       "gapMin": 2,
-      "family": "venue"
+      "family": "venue",
+      "serves": [
+        "Site research & shortlisting",
+        "Hotels"
+      ],
+      "eventTypes": [
+        "WED",
+        "CORP",
+        "GALA",
+        "CONF",
+        "NET"
+      ]
     },
     {
       "id": "vendor.event_planner",
@@ -71,7 +131,12 @@
       "name": "\\b(event|events|wedding planner|wedding planners|event management|eventz|weddings)\\b",
       "google": "event planners",
       "gapMin": 3,
-      "family": "planning"
+      "family": "planning",
+      "serves": [
+        "Vendor selection & contracts",
+        "Master timeline",
+        "Run of show"
+      ]
     },
     {
       "id": "vendor.caterer",
@@ -81,7 +146,11 @@
       "name": "\\b(caterer|caterers|catering|halwai)\\b",
       "google": "caterers",
       "gapMin": 5,
-      "family": "food"
+      "family": "food",
+      "serves": [
+        "Catering vendor selection",
+        "Staffing: servers, bartenders, chefs"
+      ]
     },
     {
       "id": "vendor.decor_tent",
@@ -91,7 +160,12 @@
       "name": "\\b(tent house|tent|tents|decorator|decorators|decoration|decorations|decor|mandap|shamiana|light house)\\b",
       "google": "tent house and wedding decorators",
       "gapMin": 5,
-      "family": "decor"
+      "family": "decor",
+      "serves": [
+        "Set pieces & props",
+        "Furniture & rentals",
+        "Setup / teardown"
+      ]
     },
     {
       "id": "vendor.florist",
@@ -101,7 +175,10 @@
       "name": "\\b(florist|florists|flower|flowers|phool)\\b",
       "google": "florists",
       "gapMin": 3,
-      "family": "decor"
+      "family": "decor",
+      "serves": [
+        "Florals & botanicals"
+      ]
     },
     {
       "id": "vendor.photo_video",
@@ -111,7 +188,11 @@
       "name": "\\b(photographer|photographers|photography|photo studio|videography|films|studio photo|clicks)\\b",
       "google": "wedding photographers",
       "gapMin": 5,
-      "family": "media"
+      "family": "media",
+      "serves": [
+        "Photography: event, portrait, detail",
+        "Videography: highlight, documentary"
+      ]
     },
     {
       "id": "vendor.dj_sound_light",
@@ -121,7 +202,12 @@
       "name": "\\b(dj|d j|sound|sounds|light and sound|lights|audio)\\b",
       "google": "DJ and sound services",
       "gapMin": 3,
-      "family": "technical"
+      "family": "technical",
+      "serves": [
+        "Audio: PA, mics, monitors, mixing",
+        "Lighting: fixtures, control, cues",
+        "DJ"
+      ]
     },
     {
       "id": "vendor.makeup_bridal",
@@ -131,7 +217,11 @@
       "name": "\\b(makeup|make up|makeover|bridal studio|bridal makeup)\\b",
       "google": "bridal makeup artists",
       "gapMin": 3,
-      "family": "style"
+      "family": "style",
+      "serves": [
+        "Makeup",
+        "Hair styling"
+      ]
     },
     {
       "id": "vendor.mehndi",
@@ -141,7 +231,13 @@
       "name": "\\b(henna|mehndi|mehendi|mehandi)\\b",
       "google": "mehndi artists",
       "gapMin": 1,
-      "family": "style"
+      "family": "style",
+      "serves": [
+        "Glam schedule"
+      ],
+      "eventTypes": [
+        "WED"
+      ]
     },
     {
       "id": "vendor.music_band",
@@ -151,7 +247,10 @@
       "name": "\\b(band|brass band|orchestra|dhol|musical group|live band|shehnai)\\b",
       "google": "wedding bands",
       "gapMin": 2,
-      "family": "talent"
+      "family": "talent",
+      "serves": [
+        "Live bands"
+      ]
     },
     {
       "id": "vendor.choreographer",
@@ -161,7 +260,17 @@
       "name": "\\b(choreograph\\w*|sangeet)\\b",
       "google": "wedding choreographers",
       "gapMin": 1,
-      "family": "talent"
+      "family": "talent",
+      "serves": [
+        "Performers: dancers, acrobats, etc.",
+        "Rehearsal schedule"
+      ],
+      "eventTypes": [
+        "WED",
+        "GALA",
+        "FEST",
+        "LAUNCH"
+      ]
     },
     {
       "id": "vendor.cake_bakery",
@@ -171,7 +280,17 @@
       "name": "\\b(cake|cakes|bakery|bakers|patisserie)\\b",
       "google": "cake shops",
       "gapMin": 3,
-      "family": "food"
+      "family": "food",
+      "serves": [
+        "Menu design"
+      ],
+      "eventTypes": [
+        "WED",
+        "GALA",
+        "NET",
+        "CORP",
+        "LAUNCH"
+      ]
     },
     {
       "id": "vendor.invitation_print",
@@ -181,7 +300,12 @@
       "name": "\\b(cards|card house|invitation|invitations|printers|printing press|wedding card)\\b",
       "google": "wedding card printers",
       "gapMin": 2,
-      "family": "guest"
+      "family": "guest",
+      "serves": [
+        "Print collateral",
+        "Programs",
+        "Menus"
+      ]
     },
     {
       "id": "vendor.party_supplies",
@@ -191,7 +315,11 @@
       "name": "\\b(party shop|party store|party supplies|balloon|balloons|fancy dress)\\b",
       "google": "party supply shops",
       "gapMin": 1,
-      "family": "decor"
+      "family": "decor",
+      "serves": [
+        "Set pieces & props",
+        "Backdrops & photo moments"
+      ]
     },
     {
       "id": "vendor.equipment_rental",
@@ -201,7 +329,12 @@
       "name": "\\b(rental|rentals|on rent|kiraya|crockery house|generator)\\b",
       "google": "event equipment rental",
       "gapMin": 1,
-      "family": "decor"
+      "family": "decor",
+      "serves": [
+        "Furniture & rentals",
+        "Rentals: plates, glassware, cutlery",
+        "Kitchen equipment"
+      ]
     },
     {
       "id": "vendor.security",
@@ -211,7 +344,12 @@
       "name": "\\b(security services|bouncers|security agency)\\b",
       "google": "event security services",
       "gapMin": 1,
-      "family": "safety"
+      "family": "safety",
+      "serves": [
+        "Security: guards, bag check, metal detectors",
+        "Security",
+        "Crowd management"
+      ]
     },
     {
       "id": "vendor.wedding_transport",
@@ -221,7 +359,11 @@
       "name": "\\b(wedding car|vintage car|limousine|limo|ghodi|horse|baggi|buggy|doli)\\b",
       "google": "wedding car rental",
       "gapMin": 1,
-      "family": "travel"
+      "family": "travel",
+      "serves": [
+        "Valet",
+        "Driver coordination"
+      ]
     },
     {
       "id": "vendor.priest",
@@ -231,7 +373,13 @@
       "name": "\\b(pandit|pandit ji|purohit|priest|shastri|jyotish)\\b",
       "google": "pandits for weddings",
       "gapMin": 1,
-      "family": "guest"
+      "family": "guest",
+      "serves": [
+        "Run of show"
+      ],
+      "eventTypes": [
+        "WED"
+      ]
     },
     {
       "id": "vendor.bridal_wear",
@@ -241,7 +389,14 @@
       "name": "\\b(bridal|lehenga|lehnga|sherwani|wedding collection|dulhan|dulha)\\b",
       "google": "bridal wear shops",
       "gapMin": 2,
-      "family": "style"
+      "family": "style",
+      "serves": [
+        "Wardrobe styling",
+        "Fittings"
+      ],
+      "eventTypes": [
+        "WED"
+      ]
     },
     {
       "id": "venue.hotel_banquet",
@@ -251,7 +406,20 @@
       "cat": "\\b(hotel banquet|business hotel|conference hotel|heritage hotel|palace hotel)\\b",
       "name": "\\b(hotel and banquet|hotel & banquet|hotel banquet|palace hotel|heritage hotel|hotel and resort|hotel & resort)\\b",
       "google": "hotels with banquet halls",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Hotels",
+        "Room blocks"
+      ],
+      "eventTypes": [
+        "CONF",
+        "CORP",
+        "GALA",
+        "WED",
+        "NET",
+        "LAUNCH",
+        "HYBRID"
+      ]
     },
     {
       "id": "venue.farmhouse_villa",
@@ -261,7 +429,16 @@
       "cat": "\\b(farm stay|farmstay|villa rental|private estate)\\b",
       "name": "\\b(farmhouse|farm house|farm stay|party farm)\\b",
       "google": "farmhouses for parties",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Indoor / outdoor / hybrid options"
+      ],
+      "eventTypes": [
+        "WED",
+        "NET",
+        "CORP",
+        "FEST"
+      ]
     },
     {
       "id": "planning.production_house",
@@ -271,7 +448,12 @@
       "cat": "\\b(event production|event management company|production company|line producer|experiential marketing|event agency|mice)\\b",
       "name": "\\b(productions|production house|event management|experiential|activations|mice)\\b",
       "google": "event management companies",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Production schedule",
+        "Run of show",
+        "Load-in / load-out plan"
+      ]
     },
     {
       "id": "planning.exhibition_organiser",
@@ -281,7 +463,18 @@
       "cat": "\\b(exhibition organi[sz]er|conference organi[sz]er|trade show organi[sz]er|convention services|expo organi[sz]er)\\b",
       "name": "\\b(exhibitions|expo organi[sz]ers?|conclave|summit organi[sz]ers?)\\b",
       "google": "exhibition organisers",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Exhibition stands",
+        "Booths"
+      ],
+      "eventTypes": [
+        "EXPO",
+        "CONF",
+        "RETAIL",
+        "LAUNCH",
+        "ROAD"
+      ]
     },
     {
       "id": "planning.wedding_planner",
@@ -291,7 +484,14 @@
       "cat": "\\b(wedding planning|wedding planner|destination wedding)\\b",
       "name": "\\b(wedding planner|wedding planners|weddings|shaadi|vivah|destination wedding)\\b",
       "google": "wedding planners",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Run of show",
+        "Vendor selection & contracts"
+      ],
+      "eventTypes": [
+        "WED"
+      ]
     },
     {
       "id": "decor.lighting_decor",
@@ -301,7 +501,10 @@
       "cat": "\\b(decorative lighting|light decoration|fairy lights)\\b",
       "name": "\\b(light decoration|light decorators|jhalar|lighting decor|fairy lights)\\b",
       "google": "wedding light decorators",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Lighting design"
+      ]
     },
     {
       "id": "technical.stage_truss",
@@ -311,7 +514,11 @@
       "cat": "\\b(stage rental|staging|truss|scaffolding rental|hangar|german hanger|pagoda tent)\\b",
       "name": "\\b(stage rental|staging|truss|hangar|hanger|pagoda)\\b",
       "google": "stage and truss rental",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Staging & rigging",
+        "Stage design"
+      ]
     },
     {
       "id": "technical.led_av",
@@ -321,7 +528,11 @@
       "cat": "\\b(led screen|led wall|video wall|projector rental|audio visual equipment rental|av rental|av equipment)\\b",
       "name": "\\b(led wall|led screen|video wall|projector|av rental|audio visual)\\b",
       "google": "LED wall rental",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Video: screens, projection, IMAG",
+        "Digital signage"
+      ]
     },
     {
       "id": "technical.power",
@@ -331,7 +542,11 @@
       "cat": "\\b(generator rental|generator shop|genset|power rental)\\b",
       "name": "\\b(generator|generators|genset|power solutions)\\b",
       "google": "generator on rent",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Power distribution",
+        "Power, water, sanitation"
+      ]
     },
     {
       "id": "food.beverage_bar",
@@ -341,7 +556,11 @@
       "cat": "\\b(bartender|bartending|bar service|mixolog\\w*|mobile bar|beverage service)\\b",
       "name": "\\b(bartender|bartenders|bar service|mixolog\\w*|mocktail|mobile bar)\\b",
       "google": "bartending services",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Beverage: bar, mocktails, coffee, water",
+        "Alcohol licensing"
+      ]
     },
     {
       "id": "food.sweets",
@@ -351,7 +570,17 @@
       "cat": "\\b(sweet shop|sweets|mithai|indian sweets|confectioner\\w*)\\b",
       "name": "\\b(sweets|sweet house|mithai|misthan|mishtan|halwai)\\b",
       "google": "sweet shops",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Menu design"
+      ],
+      "eventTypes": [
+        "WED",
+        "GALA",
+        "NET",
+        "CORP",
+        "FEST"
+      ]
     },
     {
       "id": "talent.anchor_emcee",
@@ -361,7 +590,10 @@
       "cat": "\\b(emcee|master of ceremonies|anchor|event host)\\b",
       "name": "\\b(anchor|emcee|event host)\\b",
       "google": "event anchors",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "MC / host"
+      ]
     },
     {
       "id": "talent.artist_management",
@@ -371,7 +603,12 @@
       "cat": "\\b(talent agency|artist management|celebrity management|booking agency|modelling agency|model agency)\\b",
       "name": "\\b(artist management|celebrity management|talent management|model management|modelling agency)\\b",
       "google": "artist management companies",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Talent booking",
+        "Celebrity / VIP guests",
+        "Contracts & riders"
+      ]
     },
     {
       "id": "talent.performers",
@@ -381,7 +618,10 @@
       "cat": "\\b(magician|dance group|dance troupe|performer|performers|stand up comedian|comedian|puppet)\\b",
       "name": "\\b(magician|magic show|dance group|dance troupe|troupe|puppet|folk dance|nautanki|comedy)\\b",
       "google": "dance troupes for events",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Performers: dancers, acrobats, etc."
+      ]
     },
     {
       "id": "media.drone_aerial",
@@ -391,7 +631,10 @@
       "cat": "\\b(drone|aerial photography|aerial videography)\\b",
       "name": "\\b(drone|aerial)\\b",
       "google": "drone photography",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Drone / aerial"
+      ]
     },
     {
       "id": "media.live_stream",
@@ -401,7 +644,12 @@
       "cat": "\\b(live streaming|webcast|broadcast|outside broadcast|video production|film production|production house)\\b",
       "name": "\\b(live streaming|live stream|webcast|broadcast|media production|film production|video production)\\b",
       "google": "live streaming services",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Broadcast: live, multi-camera",
+        "Livestream platform",
+        "Live streaming"
+      ]
     },
     {
       "id": "guest.gifting",
@@ -411,7 +659,11 @@
       "cat": "\\b(gift shop|gift hamper|hampers|return gift|corporate gift\\w*|gifting)\\b",
       "name": "\\b(gift|gifts|hamper|hampers|return gift|gifting)\\b",
       "google": "return gift shops",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Gifting",
+        "Swag bags"
+      ]
     },
     {
       "id": "guest.hospitality_staff",
@@ -421,7 +673,11 @@
       "cat": "\\b(hospitality staff|event staff|ushers|hostess|promoters|manpower)\\b",
       "name": "\\b(hostess|hostesses|ushers|event staffing|event manpower|promoters)\\b",
       "google": "event hospitality staff",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Welcome & host team",
+        "Check-in"
+      ]
     },
     {
       "id": "guest.accommodation",
@@ -431,7 +687,11 @@
       "cat": "\\b(guest house|guesthouse|homestay|dharamshala|serviced apartment)\\b",
       "name": "\\b(guest house|guesthouse|homestay|yatri niwas|atithi)\\b",
       "google": "guest houses",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Hotels",
+        "Room blocks"
+      ]
     },
     {
       "id": "travel.agency_dmc",
@@ -441,7 +701,13 @@
       "cat": "\\b(travel agency|travel agent|tour operator|destination management|tours and travels)\\b",
       "name": "\\b(travels|tours|tour and travels|tours & travels|holidays|dmc)\\b",
       "google": "travel agencies",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Flights",
+        "Visa / passport",
+        "Room blocks",
+        "Train / rail"
+      ]
     },
     {
       "id": "travel.coach_bus",
@@ -451,7 +717,10 @@
       "cat": "\\b(bus rental|bus charter|coach hire|tempo traveller|minibus)\\b",
       "name": "\\b(bus service|bus hire|tempo traveller|coach)\\b",
       "google": "tempo traveller hire",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Shuttles"
+      ]
     },
     {
       "id": "travel.logistics",
@@ -461,7 +730,12 @@
       "cat": "\\b(event logistics|exhibition logistics|freight|cargo)\\b",
       "name": "\\b(event logistics|logistics|cargo|freight)\\b",
       "google": "event logistics",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Shipping & freight",
+        "Customs clearance",
+        "Material handling"
+      ]
     },
     {
       "id": "safety.fire_medical",
@@ -471,7 +745,11 @@
       "cat": "\\b(fire protection|fire safety|fire extinguisher|ambulance|first aid|emergency medical)\\b",
       "name": "\\b(fire safety|fire protection|fire services|ambulance|first aid)\\b",
       "google": "ambulance services",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Medical: first aid, ambulance, medics",
+        "Fire safety"
+      ]
     },
     {
       "id": "safety.permits_legal",
@@ -481,7 +759,11 @@
       "cat": "\\b(licen[sc]e consultant|licensing consultant|permit consultant|event licen[sc]e|liquor licen[sc]e)\\b",
       "name": "\\b(licen[sc]e consultants?|licensing|permits)\\b",
       "google": "event license consultants",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Permits: alcohol, food, noise, fire, building",
+        "Licenses: music, performance"
+      ]
     },
     {
       "id": "safety.sanitation",
@@ -491,7 +773,11 @@
       "cat": "\\b(portable toilet|mobile toilet|sanitation service|event cleaning)\\b",
       "name": "\\b(mobile toilet|portable toilet|sanitation)\\b",
       "google": "mobile toilet rental",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Waste management",
+        "Power, water, sanitation"
+      ]
     },
     {
       "id": "branding.fabrication",
@@ -501,7 +787,12 @@
       "cat": "\\b(exhibition stand|exhibit design|stall design|booth|fabricat\\w*|set design|set construction)\\b",
       "name": "\\b(fabricat\\w*|exhibits|stall|stalls|booth|interiors and exhibition|set design)\\b",
       "google": "exhibition stall fabricators",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Booths",
+        "Exhibition stands",
+        "Custom fabrication"
+      ]
     },
     {
       "id": "branding.signage_print",
@@ -511,7 +802,11 @@
       "cat": "\\b(signage|sign shop|sign maker|flex printing|banner|hoarding|large format|digital printing|screen printing)\\b",
       "name": "\\b(signage|signs|flex|banner|banners|hoarding|digital print\\w*|screen print\\w*)\\b",
       "google": "flex printing and signage",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Signage",
+        "Banners"
+      ]
     },
     {
       "id": "branding.merch",
@@ -521,7 +816,11 @@
       "cat": "\\b(promotional product|merchandise|branded merchandise|corporate merchandise|t shirt printing)\\b",
       "name": "\\b(merchandise|merch|promotional|t shirt printing|tshirt printing)\\b",
       "google": "promotional merchandise",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Merchandise",
+        "Swag bags"
+      ]
     },
     {
       "id": "digital.event_tech",
@@ -531,7 +830,13 @@
       "cat": "\\b(ticketing|event software|event app|registration service|rfid|badge printing|virtual event)\\b",
       "name": "\\b(ticketing|event app|rfid|virtual events|event tech)\\b",
       "google": "event ticketing and registration",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Registration platform",
+        "Ticketing system",
+        "Event app",
+        "RFID / NFC"
+      ]
     },
     {
       "id": "digital.immersive",
@@ -541,7 +846,11 @@
       "cat": "\\b(projection mapping|hologram|virtual reality|augmented reality|immersive|interactive installation|3d mapping)\\b",
       "name": "\\b(projection mapping|hologram|holographic|virtual reality|augmented reality|immersive|3d mapping|\\bvr\\b|\\bar\\b experiences)\\b",
       "google": "projection mapping",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "AR / VR",
+        "Interactive displays"
+      ]
     },
     {
       "id": "digital.social_marketing",
@@ -551,7 +860,11 @@
       "cat": "\\b(social media agency|social media marketing|digital marketing|advertising agency|marketing agency|influencer)\\b",
       "name": "\\b(digital marketing|social media|influencer|advertising|ads agency)\\b",
       "google": "digital marketing agencies",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Social media",
+        "Email marketing"
+      ]
     },
     {
       "id": "style.salon_grooming",
@@ -561,7 +874,12 @@
       "cat": "\\b(beauty salon|hair salon|barber|spa|grooming|unisex salon|nail salon)\\b",
       "name": "\\b(salon|parlour|parlor|spa|grooming|barber)\\b",
       "google": "beauty parlours",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Hair styling",
+        "Grooming",
+        "Nails"
+      ]
     },
     {
       "id": "style.jewellery",
@@ -571,7 +889,11 @@
       "cat": "\\b(jewelry store|jewellery store|jewelry|jewellery|artificial jewellery|accessories store)\\b",
       "name": "\\b(jewellers|jewelers|jewellery|jewelry|imitation|kundan|bangles)\\b",
       "google": "bridal jewellery on rent",
-      "gapMin": 1
+      "gapMin": 1,
+      "serves": [
+        "Jewelry",
+        "Accessories"
+      ]
     },
     {
       "id": "style.designer_boutique",
@@ -581,7 +903,12 @@
       "cat": "\\b(boutique|fashion designer|tailor|tailoring|couture|designer wear)\\b",
       "name": "\\b(boutique|couture|fashion designer|designer studio|tailors|tailor)\\b",
       "google": "designer boutiques",
-      "gapMin": 2
+      "gapMin": 2,
+      "serves": [
+        "Tailoring",
+        "Fittings",
+        "Wardrobe styling"
+      ]
     }
   ],
   "families": [

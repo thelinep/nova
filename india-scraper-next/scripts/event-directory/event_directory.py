@@ -84,6 +84,63 @@ def filter_hash(tax):
     return hashlib.sha1(prefilter_regex(tax).encode()).hexdigest()[:12]
 
 
+CHECKLIST = Path(os.environ.get("EVENT_CHECKLIST", HERE.parent.parent / "docs" / "EVENT-PLANNING-CHECKLIST.md"))
+
+
+def parse_checklist(path=None):
+    """Reads docs/EVENT-PLANNING-CHECKLIST.md: event type codes, and per section its items and their codes."""
+    text = Path(path or CHECKLIST).read_text(encoding="utf-8")
+    codes, sections, current = {}, [], None
+    for line in text.splitlines():
+        h = re.match(r"^##\s+(?:\d+\.\s*)?(.+?)\s*$", line)
+        if h:
+            title = h.group(1)
+            current = None if title.lower().startswith("event type codes") else {"title": title, "items": []}
+            if current is not None:
+                sections.append(current)
+            continue
+        code = re.match(r"^\*\s+([A-Z]+)\s+=\s+(.+)$", line)
+        if code and current is None:
+            codes[code.group(1)] = code.group(2).strip()
+            continue
+        item = re.match(r"^\*\s+(.+?)\s+[—–-]\s+([A-Z, ]+)$", line)
+        if item and current is not None:
+            current["items"].append({"name": item.group(1).strip(), "codes": [c.strip() for c in item.group(2).split(",") if c.strip()]})
+    return {"codes": codes, "sections": sections}
+
+
+def category_event_types(tax, checklist):
+    """Event type codes for each category: its own 'eventTypes', or the codes of the checklist items it serves."""
+    items = {}
+    for sec in checklist["sections"]:
+        for it in sec["items"]:
+            items.setdefault(it["name"], set()).update(it["codes"])
+    out = {}
+    for c in tax["categories"]:
+        if c.get("eventTypes"):
+            out[c["id"]] = sorted(c["eventTypes"])
+            continue
+        codes = set()
+        for name in c.get("serves", []):
+            if name not in items:
+                raise SystemExit(f"taxonomy.json: {c['id']} serves '{name}', which is not in {CHECKLIST.name}")
+            codes |= items[name]
+        out[c["id"]] = ["ALL"] if "ALL" in codes or not codes else sorted(codes)
+    return out
+
+
+def applies(types, wanted):
+    """True when a place or item tagged `types` belongs to an event of type `wanted` (ALL always does)."""
+    return "ALL" in types or bool(set(types) & set(wanted))
+
+
+def place_types(cat_ids, cat_types):
+    t = set()
+    for c in cat_ids:
+        t |= set(cat_types.get(c, []))
+    return ["ALL"] if "ALL" in t else sorted(t)
+
+
 def prefilter_regex(tax):
     """One broad regex for SQL/Overpass pre-filtering; precise matching happens in classify()."""
     parts = []
@@ -446,6 +503,30 @@ def assign_districts(cc, rows):
     return method
 
 
+# Boundary names that are not the name people use for the state (Overture labels a disputed area this way).
+STATE_ALIASES = {"IN": {"藏南": "Arunachal Pradesh"}}
+
+
+def region_names(cc):
+    """ISO subdivision code (IN-MH, and MH) -> state name, from the downloaded boundaries."""
+    path = RAW / f"divisions-{cc}.parquet"
+    if not path.exists():
+        return {}
+    import duckdb
+    out = {}
+    for code, name in duckdb.connect().execute(f"SELECT region, name FROM '{path}' WHERE subtype='region' AND region IS NOT NULL").fetchall():
+        out[code] = name
+        out[code.split("-", 1)[-1]] = name
+    return out
+
+
+def normalise_state(cc, state, names):
+    if not state:
+        return state
+    state = STATE_ALIASES.get(cc, {}).get(state, state)
+    return names.get(state, names.get(str(state).upper(), state)) if len(str(state)) <= 6 else state
+
+
 def build(cc, tax):
     OUT.mkdir(parents=True, exist_ok=True)
     rows = read_sources(cc)
@@ -461,9 +542,10 @@ def build(cc, tax):
         kept.append(r)
     log(f"Event-related: {len(kept):,}")
     method = assign_districts(cc, kept)
+    names = region_names(cc)
     for r in kept:
         r.setdefault("state", None)
-        r["state"] = r.get("state") or r.get("region")
+        r["state"] = normalise_state(cc, r.get("state") or r.get("region"), names)
         r["district"] = r.get("district") or r.get("district_tag") or r.get("search_district")
 
     # Merge duplicates: same normalised name within ~200 m, or same phone number within ~1 km.
@@ -488,6 +570,8 @@ def build(cc, tax):
 
     order = [c["id"] for c in tax["categories"]]
     fam = family_of(tax)
+    checklist = parse_checklist() if CHECKLIST.exists() else {"codes": {}, "sections": []}
+    cat_types = category_event_types(tax, checklist) if checklist["sections"] else {}
     places, links = [], []
     for members in groups.values():
         members.sort(key=lambda r: (SOURCE_RANK[r["source"]], 0 if r["match_basis"] == "category" else 1))
@@ -500,7 +584,7 @@ def build(cc, tax):
         phones = sorted({p for m in members for p in re.split(r"\s*\|\s*", str(m.get("phones") or "")) if p.strip()})
         places.append({
             "id": pid, "name": top["name"], "family": fam[primary], "primary_category": primary, "group": "venue" if fam[primary] == "venue" else "vendor",
-            "categories": ",".join(cats), "match_basis": basis,
+            "categories": ",".join(cats), "event_types": ",".join(place_types(cats, cat_types)), "match_basis": basis,
             "lat": round(top["lat"], 6), "lon": round(top["lon"], 6), "address": pick("address"), "locality": pick("locality"),
             "district": pick("district"), "state": pick("state"), "postcode": pick("postcode"), "country": cc,
             "phones": " | ".join(phones) or None, "websites": pick("websites"), "emails": pick("emails"), "socials": pick("socials"),
@@ -517,7 +601,7 @@ def build(cc, tax):
     db_path = OUT / "directory.db"
     con = sqlite3.connect(db_path)
     con.executescript("""
-      CREATE TABLE IF NOT EXISTS places (id TEXT PRIMARY KEY, name TEXT, family TEXT, primary_category TEXT, "group" TEXT, categories TEXT, match_basis TEXT,
+      CREATE TABLE IF NOT EXISTS places (id TEXT PRIMARY KEY, name TEXT, family TEXT, primary_category TEXT, "group" TEXT, categories TEXT, event_types TEXT, match_basis TEXT,
         lat REAL, lon REAL, address TEXT, locality TEXT, district TEXT, state TEXT, postcode TEXT, country TEXT, phones TEXT, websites TEXT,
         emails TEXT, socials TEXT, rating TEXT, reviews TEXT, overture_confidence REAL, sources TEXT, source_count INTEGER, source_urls TEXT, built_at TEXT);
       CREATE TABLE IF NOT EXISTS place_sources (place_id TEXT, source TEXT, source_id TEXT, source_url TEXT, source_categories TEXT, match_basis TEXT, licence TEXT);
@@ -527,7 +611,7 @@ def build(cc, tax):
       CREATE INDEX IF NOT EXISTS places_where ON places(country, state, district, primary_category);
       CREATE INDEX IF NOT EXISTS place_sources_place ON place_sources(place_id);
     """)
-    for table, col in (("places", "family"), ("categories", "family")):
+    for table, col in (("places", "family"), ("categories", "family"), ("places", "event_types"), ("categories", "event_types")):
         if col not in [r[1] for r in con.execute(f"PRAGMA table_info({table})")]:
             con.execute(f"ALTER TABLE {table} ADD COLUMN {col} TEXT")
     con.execute("DELETE FROM place_sources WHERE place_id IN (SELECT id FROM places WHERE country=?)", [cc])
@@ -538,7 +622,7 @@ def build(cc, tax):
         con.executemany(f'INSERT INTO places ({",".join(chr(34) + c + chr(34) for c in cols)}) VALUES ({",".join("?" * len(cols))})', [tuple(p.values()) + (built,) for p in places])
         con.executemany("INSERT INTO place_sources VALUES (?,?,?,?,?,?,?)", links)
     con.execute("DELETE FROM categories")
-    con.executemany('INSERT INTO categories (id, "group", label, google_query, family) VALUES (?,?,?,?,?)', [(c["id"], c["group"], c["label"], c["google"], c.get("family")) for c in tax["categories"]])
+    con.executemany('INSERT INTO categories (id, "group", label, google_query, family, event_types) VALUES (?,?,?,?,?,?)', [(c["id"], c["group"], c["label"], c["google"], c.get("family"), ",".join(cat_types.get(c["id"], []))) for c in tax["categories"]])
     con.execute("DELETE FROM families")
     con.executemany("INSERT INTO families VALUES (?,?,?)", [(f["id"], f["label"], i) for i, f in enumerate(tax.get("families", []))])
     counts = {s: sum(1 for r in rows if r["source"] == s) for s in SOURCE_RANK}
@@ -621,15 +705,89 @@ def write_summary_and_gaps(cc, tax, places, info):
     log(f"Summary → {OUT / f'summary-{cc}.md'}")
 
 
+def event_report(cc, tax, wanted, state=None):
+    """State x family counts of the places that serve an event of type `wanted` (e.g. ['WED'])."""
+    checklist = parse_checklist()
+    unknown = [w for w in wanted if w not in checklist["codes"]]
+    if unknown:
+        raise SystemExit(f"Unknown event type {', '.join(unknown)}. Codes: {', '.join(checklist['codes'])}")
+    cat_types, fam = category_event_types(tax, checklist), family_of(tax)
+    keep = {c for c, t in cat_types.items() if applies(t, wanted)}
+    con = sqlite3.connect(f"file:{OUT / 'directory.db'}?mode=ro", uri=True)
+    grid, totals = {}, {}
+    q = "SELECT state, categories FROM places WHERE country=?" + (" AND state=?" if state else "")
+    for st, cats in con.execute(q, [cc] + ([state] if state else [])):
+        ids = [c for c in (cats or "").split(",") if c in keep]
+        if not ids:
+            continue
+        f = fam[ids[0]]
+        st = st or "(unknown)"
+        grid.setdefault(st, {}); grid[st][f] = grid[st].get(f, 0) + 1
+        totals[st] = totals.get(st, 0) + 1
+    fams = tax["families"]
+    label = " + ".join(f"{w} ({checklist['codes'][w]})" for w in wanted)
+    lines = [f"# Event directory · {cc} · {label}", "",
+             f"Places whose categories serve this event type (tagged ALL or {', '.join(wanted)} in the checklist). "
+             f"{sum(totals.values()):,} places; {len(keep)} of {len(cat_types)} categories apply.", "",
+             "| State | Total | " + " | ".join(f["label"] for f in fams) + " |", "|---|---:|" + "---:|" * len(fams)]
+    for st, n in sorted(totals.items(), key=lambda x: -x[1]):
+        lines.append(f"| {st} | {n:,} | " + " | ".join(f"{grid[st].get(f['id'], 0):,}" for f in fams) + " |")
+    lines.append(f"| **All** | **{sum(totals.values()):,}** | " + " | ".join(f"**{sum(g.get(f['id'], 0) for g in grid.values()):,}**" for f in fams) + " |")
+    skipped = sorted(c["label"] for c in tax["categories"] if c["id"] not in keep)
+    if skipped:
+        lines += ["", "Left out for this event type: " + ", ".join(skipped) + "."]
+    out = OUT / f"report-{cc}-{'-'.join(wanted)}.md"
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    log(f"Report → {out}")
+    return out
+
+
+def event_checklist(tax, wanted):
+    """The checklist filtered to one event type, with the directory categories that supply each item."""
+    checklist = parse_checklist()
+    cat_types = category_event_types(tax, checklist)
+    suppliers = {}
+    for c in tax["categories"]:
+        if applies(cat_types[c["id"]], wanted):
+            for name in c.get("serves", []):
+                suppliers.setdefault(name, []).append(c["label"])
+    label = " + ".join(f"{w} ({checklist['codes'][w]})" for w in wanted)
+    lines = [f"# Checklist · {label}", "", "Items tagged ALL or " + ", ".join(wanted) + ". Suppliers are the event directory categories that provide the item.", ""]
+    n = 0
+    for sec in checklist["sections"]:
+        items = [it for it in sec["items"] if applies(it["codes"], wanted)]
+        if not items:
+            continue
+        lines += [f"## {sec['title']}", ""]
+        for it in items:
+            n += 1
+            sup = suppliers.get(it["name"])
+            lines.append(f"- [ ] {it['name']}" + (f" — *{', '.join(sup)}*" if sup else ""))
+        lines.append("")
+    out = OUT / f"checklist-{'-'.join(wanted)}.md"
+    OUT.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines), encoding="utf-8")
+    log(f"Checklist ({n} items) → {out}")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["overture", "osm", "google", "build", "all"])
+    ap.add_argument("stage", choices=["overture", "osm", "google", "build", "all", "report", "checklist"])
+    ap.add_argument("--event", default="", help="event type codes for report/checklist, e.g. WED or LAUNCH,HYBRID")
+    ap.add_argument("--state", help="report: one state only")
     ap.add_argument("--country", default="IN", help="ISO 3166-1 alpha-2 code, e.g. IN, AE, GB (default IN)")
     ap.add_argument("--overture-source", help="read Overture parquet from a local folder instead of S3 (tests)")
     ap.add_argument("--skip", default="", help="comma list of stages to skip in 'all', e.g. osm")
     ap.add_argument("--refresh", action="store_true", help="download Overture again and redo every OSM region")
     a = ap.parse_args()
     cc, tax, skip = a.country.upper(), load_taxonomy(), set(filter(None, a.skip.split(",")))
+    if a.stage in ("report", "checklist"):
+        wanted = [w.strip().upper() for w in a.event.split(",") if w.strip()]
+        if not wanted:
+            raise SystemExit("Give --event, e.g. --event WED (codes are listed in docs/EVENT-PLANNING-CHECKLIST.md).")
+        print((event_report(cc, tax, wanted, a.state) if a.stage == "report" else event_checklist(tax, wanted)).read_text(encoding="utf-8"))
+        return
     stages = ["overture", "osm", "google", "build"] if a.stage == "all" else [a.stage]
     for s in stages:
         if s in skip:
