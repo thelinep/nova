@@ -60,6 +60,12 @@ def classify(tax, cats, name):
     c, n = words(cats), str(name or "")
     by_cat = [x["id"] for x in tax["categories"] if c and x["cat_re"].search(c)]
     if by_cat:
+        # Overture files many venues and vendors under one catch-all ("party and event planning").
+        # When that is all the category says, a specific name ("… Mangal Karyalay", "… Caterers") wins.
+        if set(by_cat) <= {"vendor.event_planner"}:
+            by_name = [x["id"] for x in tax["categories"] if x["id"] != "vendor.event_planner" and x["name_re"].search(n)]
+            if by_name:
+                return by_name + by_cat, "category"
         return by_cat, "category"
     if c and tax["exclude_re"].search(c):
         return [], None
@@ -240,7 +246,8 @@ def osm_regions(cc):
 def osm_query(iso, level):
     sel = f'area["ISO3166-{level}"="{iso}"]->.a;'
     parts = [f'nwr(area.a)["{k}"~"^({v})$"];' for k, v in OSM_KEYS.items()]
-    parts.append(f'nwr(area.a)["name"~"{OSM_NAME}",i];')
+    if os.environ.get("OSM_NAME_SEARCH"):          # slow on public Overpass servers; off by default
+        parts.append(f'nwr(area.a)["name"~"{OSM_NAME}",i];')
     return f'[out:json][timeout:360];{sel}({"".join(parts)});out center tags;'
 
 
@@ -586,6 +593,7 @@ def main():
     ap.add_argument("--country", default="IN", help="ISO 3166-1 alpha-2 code, e.g. IN, AE, GB (default IN)")
     ap.add_argument("--overture-source", help="read Overture parquet from a local folder instead of S3 (tests)")
     ap.add_argument("--skip", default="", help="comma list of stages to skip in 'all', e.g. osm")
+    ap.add_argument("--refresh", action="store_true", help="download Overture again and redo every OSM region")
     a = ap.parse_args()
     cc, tax, skip = a.country.upper(), load_taxonomy(), set(filter(None, a.skip.split(",")))
     stages = ["overture", "osm", "google", "build"] if a.stage == "all" else [a.stage]
@@ -594,8 +602,14 @@ def main():
             continue
         try:
             if s == "overture":
+                ov = RAW / f"overture-{cc}.parquet"
+                if a.stage == "all" and not a.refresh and ov.exists() and (RAW / f"overture-{cc}.meta.json").exists() and time.time() - ov.stat().st_mtime < 7 * 86400:
+                    log(f"Overture data for {cc} is less than a week old; reusing it (--refresh to download again).")
+                    continue
                 fetch_overture(cc, tax, a.overture_source)
             elif s == "osm":
+                if a.refresh:
+                    (RAW / f"osm-{cc}.progress.json").unlink(missing_ok=True)
                 fetch_osm(cc)
             elif s == "google":
                 fetch_google(cc)

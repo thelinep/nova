@@ -3,101 +3,221 @@
   "note": "Event venue and vendor categories. 'cat' is matched against source categories/tags (underscores read as spaces), 'name' against the business name. Both are case-insensitive Python/JS-compatible regexes. 'google' is the India Google Maps search phrase used only to fill gaps; 'gapMin' is how many places a district should have before it is not treated as a gap.",
   "exclude": "\\b(school|college|university|hospital|clinic|bank|atm|police|government|pharmacy|petrol|fuel|gas station|post office|courier|hardware|pet|veterinar|mosque|church|temple|gurdwara|real estate|insurance|mobile phone|electronics)\\b",
   "categories": [
-    { "id": "venue.banquet_hall", "group": "venue", "label": "Banquet / marriage hall",
+    {
+      "id": "venue.banquet_hall",
+      "group": "venue",
+      "label": "Banquet / marriage hall",
       "cat": "\\b(banquet|marriage hall|wedding hall|function hall|reception hall|wedding venue|wedding chapel|kalyana mandapam)\\b",
       "name": "\\b(banquet|banquets|marriage hall|wedding hall|shaadi hall|shadi hall|function hall|kalyana ?mandapam|kalyana ?mantapa|mangal karyalay|mangal karyalaya|mangal bhawan|mangal bhavan|vivah bhawan|vivah mandap|party hall|reception hall)\\b",
-      "google": "banquet halls", "gapMin": 5 },
-    { "id": "venue.lawn_garden", "group": "venue", "label": "Marriage lawn / garden / party plot",
+      "google": "banquet halls",
+      "gapMin": 5
+    },
+    {
+      "id": "venue.lawn_garden",
+      "group": "venue",
+      "label": "Marriage lawn / garden / party plot",
       "cat": "\\b(marriage garden|wedding garden|party plot|farm ?house)\\b",
       "name": "\\b(marriage garden|marriage lawn|wedding lawn|wedding garden|party lawn|party plot|lawns|farm ?house|vatika)\\b",
-      "google": "marriage lawns and gardens", "gapMin": 3 },
-    { "id": "venue.event_space", "group": "venue", "label": "Event venue / event space",
+      "google": "marriage lawns and gardens",
+      "gapMin": 3
+    },
+    {
+      "id": "venue.event_space",
+      "group": "venue",
+      "label": "Event venue / event space",
       "cat": "\\b(venue and event space|events? venue|event space|party venue|private event|wedding venue|social centre|social center)\\b",
       "name": "\\b(event venue|events venue|event space|celebration hall|party palace|marriage palace|wedding palace|resort and banquet)\\b",
-      "google": "wedding venues", "gapMin": 5 },
-    { "id": "venue.convention", "group": "venue", "label": "Convention / conference / exhibition centre",
+      "google": "wedding venues",
+      "gapMin": 5
+    },
+    {
+      "id": "venue.convention",
+      "group": "venue",
+      "label": "Convention / conference / exhibition centre",
       "cat": "\\b(convention|conference cent(er|re)|exhibition cent(er|re)|exhibition hall|expo|trade fair|trade show|meeting room)\\b",
       "name": "\\b(convention|conference cent(er|re)|exhibition cent(er|re)|expo cent(er|re)|trade cent(er|re))\\b",
-      "google": "convention centres", "gapMin": 1 },
-    { "id": "venue.community_hall", "group": "venue", "label": "Community hall / auditorium",
-      "cat": "\\b(community cent(er|re)|community hall|town hall|auditorium|civic cent(er|re)|concert hall|theatre|theater)\\b",
+      "google": "convention centres",
+      "gapMin": 1
+    },
+    {
+      "id": "venue.community_hall",
+      "group": "venue",
+      "label": "Community hall / auditorium",
+      "cat": "\\b(community cent(er|re)|community hall|town hall|auditorium|civic cent(er|re)|concert hall)\\b",
       "name": "\\b(community hall|community cent(er|re)|baraat ghar|barat ghar|samaj bhawan|samaj bhavan|samaj mandir|sabhagar|auditorium|town hall|dharamshala|dharmashala)\\b",
-      "google": "community halls", "gapMin": 3 },
-    { "id": "venue.resort", "group": "venue", "label": "Resort / destination venue",
+      "google": "community halls",
+      "gapMin": 3
+    },
+    {
+      "id": "venue.resort",
+      "group": "venue",
+      "label": "Resort / destination venue",
       "cat": "\\b(resort|heritage hotel|palace hotel)\\b",
       "name": "\\b(resort|resorts|heritage palace|destination wedding)\\b",
-      "google": "resorts for weddings", "gapMin": 2 },
-    { "id": "vendor.event_planner", "group": "vendor", "label": "Event / wedding planner",
+      "google": "resorts for weddings",
+      "gapMin": 2
+    },
+    {
+      "id": "vendor.event_planner",
+      "group": "vendor",
+      "label": "Event / wedding planner",
       "cat": "\\b(event planning|event planner|party and event planning|wedding planning|wedding planner|party planner|event management|event organi[sz]er)\\b",
       "name": "\\b(event|events|wedding planner|wedding planners|event management|eventz|weddings)\\b",
-      "google": "event planners", "gapMin": 3 },
-    { "id": "vendor.caterer", "group": "vendor", "label": "Caterer",
+      "google": "event planners",
+      "gapMin": 3
+    },
+    {
+      "id": "vendor.caterer",
+      "group": "vendor",
+      "label": "Caterer",
       "cat": "\\b(caterer|caterers|catering)\\b",
       "name": "\\b(caterer|caterers|catering|halwai)\\b",
-      "google": "caterers", "gapMin": 5 },
-    { "id": "vendor.decor_tent", "group": "vendor", "label": "Decorator / tent house",
+      "google": "caterers",
+      "gapMin": 5
+    },
+    {
+      "id": "vendor.decor_tent",
+      "group": "vendor",
+      "label": "Decorator / tent house",
       "cat": "\\b(party equipment|party supply rental|tent|event decor|decorator|decorators|wedding decor|balloon|event rental|shamiana)\\b",
       "name": "\\b(tent house|tent|tents|decorator|decorators|decoration|decorations|decor|mandap|shamiana|light house)\\b",
-      "google": "tent house and wedding decorators", "gapMin": 5 },
-    { "id": "vendor.florist", "group": "vendor", "label": "Florist",
+      "google": "tent house and wedding decorators",
+      "gapMin": 5
+    },
+    {
+      "id": "vendor.florist",
+      "group": "vendor",
+      "label": "Florist",
       "cat": "\\b(florist|flower shop|flowers|flower delivery)\\b",
       "name": "\\b(florist|florists|flower|flowers|phool)\\b",
-      "google": "florists", "gapMin": 3 },
-    { "id": "vendor.photo_video", "group": "vendor", "label": "Photographer / videographer",
+      "google": "florists",
+      "gapMin": 3
+    },
+    {
+      "id": "vendor.photo_video",
+      "group": "vendor",
+      "label": "Photographer / videographer",
       "cat": "\\b(photographer|photography|videographer|videography|photo booth|event photography|photo studio|wedding photography)\\b",
       "name": "\\b(photographer|photographers|photography|photo studio|videography|films|studio photo|clicks)\\b",
-      "google": "wedding photographers", "gapMin": 5 },
-    { "id": "vendor.dj_sound_light", "group": "vendor", "label": "DJ / sound / lighting",
+      "google": "wedding photographers",
+      "gapMin": 5
+    },
+    {
+      "id": "vendor.dj_sound_light",
+      "group": "vendor",
+      "label": "DJ / sound / lighting",
       "cat": "\\b(dj|disc jockey|dj service|sound system|audio ?visual|lighting rental|stage lighting|sound and light|pa system)\\b",
       "name": "\\b(dj|d j|sound|sounds|light and sound|lights|audio)\\b",
-      "google": "DJ and sound services", "gapMin": 3 },
-    { "id": "vendor.makeup_bridal", "group": "vendor", "label": "Bridal makeup artist",
+      "google": "DJ and sound services",
+      "gapMin": 3
+    },
+    {
+      "id": "vendor.makeup_bridal",
+      "group": "vendor",
+      "label": "Bridal makeup artist",
       "cat": "\\b(makeup artist|make up artist|bridal makeup|bridal salon|bridal studio)\\b",
       "name": "\\b(makeup|make up|makeover|bridal studio|bridal makeup)\\b",
-      "google": "bridal makeup artists", "gapMin": 3 },
-    { "id": "vendor.mehndi", "group": "vendor", "label": "Mehndi / henna artist",
+      "google": "bridal makeup artists",
+      "gapMin": 3
+    },
+    {
+      "id": "vendor.mehndi",
+      "group": "vendor",
+      "label": "Mehndi / henna artist",
       "cat": "\\b(henna|mehndi|mehendi)\\b",
       "name": "\\b(henna|mehndi|mehendi|mehandi)\\b",
-      "google": "mehndi artists", "gapMin": 1 },
-    { "id": "vendor.music_band", "group": "vendor", "label": "Band / musicians / entertainers",
-      "cat": "\\b(musician|musicians|band|orchestra|brass band|dhol|singer|entertainer|entertainment|magician|live music)\\b",
+      "google": "mehndi artists",
+      "gapMin": 1
+    },
+    {
+      "id": "vendor.music_band",
+      "group": "vendor",
+      "label": "Band / musicians / entertainers",
+      "cat": "\\b(musician|musicians|band|orchestra|brass band|dhol|singer|entertainer|magician|live music)\\b",
       "name": "\\b(band|brass band|orchestra|dhol|musical group|live band|shehnai)\\b",
-      "google": "wedding bands", "gapMin": 2 },
-    { "id": "vendor.choreographer", "group": "vendor", "label": "Choreographer",
+      "google": "wedding bands",
+      "gapMin": 2
+    },
+    {
+      "id": "vendor.choreographer",
+      "group": "vendor",
+      "label": "Choreographer",
       "cat": "\\b(choreograph\\w*|wedding dance)\\b",
       "name": "\\b(choreograph\\w*|sangeet)\\b",
-      "google": "wedding choreographers", "gapMin": 1 },
-    { "id": "vendor.cake_bakery", "group": "vendor", "label": "Cake shop / bakery",
+      "google": "wedding choreographers",
+      "gapMin": 1
+    },
+    {
+      "id": "vendor.cake_bakery",
+      "group": "vendor",
+      "label": "Cake shop / bakery",
       "cat": "\\b(bakery|bakeries|cake|cakes|patisserie|pastry|cake shop)\\b",
       "name": "\\b(cake|cakes|bakery|bakers|patisserie)\\b",
-      "google": "cake shops", "gapMin": 3 },
-    { "id": "vendor.invitation_print", "group": "vendor", "label": "Invitation / wedding card printer",
+      "google": "cake shops",
+      "gapMin": 3
+    },
+    {
+      "id": "vendor.invitation_print",
+      "group": "vendor",
+      "label": "Invitation / wedding card printer",
       "cat": "\\b(invitation|wedding card|wedding cards|printing service|print shop|printer|printers|stationery)\\b",
       "name": "\\b(cards|card house|invitation|invitations|printers|printing press|wedding card)\\b",
-      "google": "wedding card printers", "gapMin": 2 },
-    { "id": "vendor.party_supplies", "group": "vendor", "label": "Party supply / costume shop",
-      "cat": "\\b(party supply|party store|party shop|costume|balloon|fancy dress|party)\\b",
+      "google": "wedding card printers",
+      "gapMin": 2
+    },
+    {
+      "id": "vendor.party_supplies",
+      "group": "vendor",
+      "label": "Party supply / costume shop",
+      "cat": "\\b(party supply|party store|party shop|costume|balloon|fancy dress)\\b",
       "name": "\\b(party shop|party store|party supplies|balloon|balloons|fancy dress)\\b",
-      "google": "party supply shops", "gapMin": 1 },
-    { "id": "vendor.equipment_rental", "group": "vendor", "label": "Event equipment / furniture rental",
+      "google": "party supply shops",
+      "gapMin": 1
+    },
+    {
+      "id": "vendor.equipment_rental",
+      "group": "vendor",
+      "label": "Event equipment / furniture rental",
       "cat": "\\b(event equipment|furniture rental|equipment rental|generator rental|stage rental|chair rental|crockery rental)\\b",
       "name": "\\b(rental|rentals|on rent|kiraya|crockery house|generator)\\b",
-      "google": "event equipment rental", "gapMin": 1 },
-    { "id": "vendor.security", "group": "vendor", "label": "Event security",
+      "google": "event equipment rental",
+      "gapMin": 1
+    },
+    {
+      "id": "vendor.security",
+      "group": "vendor",
+      "label": "Event security",
       "cat": "\\b(security service|security services|security guard|bouncer|bouncers)\\b",
       "name": "\\b(security services|bouncers|security agency)\\b",
-      "google": "event security services", "gapMin": 1 },
-    { "id": "vendor.wedding_transport", "group": "vendor", "label": "Wedding cars / transport",
+      "google": "event security services",
+      "gapMin": 1
+    },
+    {
+      "id": "vendor.wedding_transport",
+      "group": "vendor",
+      "label": "Wedding cars / transport",
       "cat": "\\b(limo|limousine|wedding car|vintage car|horse carriage|car rental|chauffeur|bus rental|tempo traveller)\\b",
       "name": "\\b(wedding car|vintage car|limousine|limo|ghodi|horse|baggi|buggy|doli)\\b",
-      "google": "wedding car rental", "gapMin": 1 },
-    { "id": "vendor.priest", "group": "vendor", "label": "Priest / pandit / officiant",
+      "google": "wedding car rental",
+      "gapMin": 1
+    },
+    {
+      "id": "vendor.priest",
+      "group": "vendor",
+      "label": "Priest / pandit / officiant",
       "cat": "\\b(priest|pandit|purohit|officiant|wedding officiant|astrologer)\\b",
       "name": "\\b(pandit|pandit ji|purohit|priest|shastri|jyotish)\\b",
-      "google": "pandits for weddings", "gapMin": 1 },
-    { "id": "vendor.bridal_wear", "group": "vendor", "label": "Bridal / groom wear",
+      "google": "pandits for weddings",
+      "gapMin": 1
+    },
+    {
+      "id": "vendor.bridal_wear",
+      "group": "vendor",
+      "label": "Bridal / groom wear",
       "cat": "\\b(bridal shop|wedding dress|bridal wear|sherwani|lehenga|wedding store|wedding boutique)\\b",
       "name": "\\b(bridal|lehenga|lehnga|sherwani|wedding collection|dulhan|dulha)\\b",
-      "google": "bridal wear shops", "gapMin": 2 }
+      "google": "bridal wear shops",
+      "gapMin": 2
+    }
   ]
 }
