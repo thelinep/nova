@@ -414,7 +414,7 @@
       "group": "vendor",
       "label": "Priest / pandit / officiant",
       "cat": "\\b(priest|pandit|purohit|officiant|wedding officiant|astrologer)\\b",
-      "name": "\\b(pandit|pandit ji|purohit|priest|shastri|jyotish)\\b",
+      "name": "\\b(pandit ji|panditji|purohit|priest|pujari|wedding pandit|pooja services)\\b",
       "google": "pandits for weddings",
       "gapMin": 1,
       "family": "guest",
@@ -788,7 +788,7 @@
       "family": "travel",
       "label": "Bus, coach & tempo traveller hire",
       "cat": "\\b(bus rental|bus charter|coach hire|tempo traveller|minibus)\\b",
-      "name": "\\b(bus service|bus hire|tempo traveller|coach)\\b",
+      "name": "\\b(bus hire|bus rental|bus on rent|coach hire|tempo traveller|traveller on rent|mini bus)\\b",
       "google": "tempo traveller hire",
       "gapMin": 1,
       "serves": [
@@ -1129,7 +1129,7 @@
       "family": "guest",
       "label": "Surveys, feedback & market research",
       "cat": "\\b(market research|survey|opinion research|research agency)\\b",
-      "name": "\\b(market research|surveys?|research)\\b",
+      "name": "\\b(market research|survey agency|surveys|feedback|opinion poll)\\b",
       "google": "market research agencies",
       "gapMin": 1,
       "serves": [
@@ -1187,7 +1187,7 @@
       "family": "travel",
       "label": "Valet & parking services",
       "cat": "\\b(valet|parking service|parking management)\\b",
-      "name": "\\b(valet|parking)\\b",
+      "name": "\\b(valet|valet parking|parking attendants?)\\b",
       "google": "valet parking services",
       "gapMin": 1,
       "serves": [
@@ -1200,9 +1200,9 @@
       "id": "safety.insurance",
       "group": "vendor",
       "family": "safety",
-      "label": "Event insurance",
+      "label": "Insurance agents & brokers",
       "cat": "\\b(insurance agency|insurance broker|insurance company|insurance)\\b",
-      "name": "\\b(insurance)\\b",
+      "name": "\\b(insurance (agency|agents?|brokers?|advisors?|consultants?)|lic agent|insurance point)\\b",
       "google": "event insurance",
       "gapMin": 1,
       "serves": [
@@ -1248,7 +1248,7 @@
       "family": "safety",
       "label": "Structural engineers & electrical contractors",
       "cat": "\\b(structural engineer\\w*|electrical contractor|electrician|electrical service)\\b",
-      "name": "\\b(structural|electricals?|electrical works|electricians?)\\b",
+      "name": "\\b(electrical contractors?|electrical works|electricians?|structural engineers?|structural consultants?)\\b",
       "google": "electrical contractors for events",
       "gapMin": 1,
       "serves": [

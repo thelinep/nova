@@ -548,20 +548,36 @@ def build(cc, tax):
         r["state"] = normalise_state(cc, r.get("state") or r.get("region"), names)
         r["district"] = r.get("district") or r.get("district_tag") or r.get("search_district")
 
-    # Merge duplicates: same normalised name within ~200 m, or same phone number within ~1 km.
-    dsu, cellsz = DSU(len(kept)), 0.002
-    by_name, by_phone = {}, {}
-    for i, r in enumerate(kept):
+    # Merge duplicates. Two listings are one place when, within ~330 m, they have the same normalised
+    # name or names that share a distinctive word and most of their words (token overlap >= 0.6);
+    # or when they share a phone number within ~2 km.
+    dsu, cellsz = DSU(len(kept)), 0.003
+    tok_freq = {}
+    for r in kept:
         r["_n"] = norm_name(r["name"])
+        r["_t"] = {w for w in r["_n"].split() if len(w) > 2}
+        for w in r["_t"]:
+            tok_freq[w] = tok_freq.get(w, 0) + 1
+    common = {w for w, n in tok_freq.items() if n > max(200, len(kept) // 2000)}   # "banquet", "caterers", "sharma"…
+    by_name, by_tok, by_phone = {}, {}, {}
+    for i, r in enumerate(kept):
         cx, cy = math.floor(r["lon"] / cellsz), math.floor(r["lat"] / cellsz)
+        rare = r["_t"] - common
         for dx in (-1, 0, 1):
             for dy in (-1, 0, 1):
                 for j in by_name.get((r["_n"], cx + dx, cy + dy), []):
                     dsu.union(i, j)
+                for w in rare:
+                    for j in by_tok.get((w, cx + dx, cy + dy), []):
+                        tj = kept[j]["_t"]
+                        if len(r["_t"] & tj) / max(1, len(r["_t"] | tj)) >= 0.6:
+                            dsu.union(i, j)
         by_name.setdefault((r["_n"], cx, cy), []).append(i)
+        for w in rare:
+            by_tok.setdefault((w, cx, cy), []).append(i)
         for ph in digits(r.get("phones")):
             for j in by_phone.get(ph, []):
-                if abs(kept[j]["lat"] - r["lat"]) < 0.01 and abs(kept[j]["lon"] - r["lon"]) < 0.01:
+                if abs(kept[j]["lat"] - r["lat"]) < 0.02 and abs(kept[j]["lon"] - r["lon"]) < 0.02:
                     dsu.union(i, j)
             by_phone.setdefault(ph, []).append(i)
     groups = {}
@@ -626,7 +642,13 @@ def build(cc, tax):
     con.execute("DELETE FROM families")
     con.executemany("INSERT INTO families VALUES (?,?,?)", [(f["id"], f["label"], i) for i, f in enumerate(tax.get("families", []))])
     counts = {s: sum(1 for r in rows if r["source"] == s) for s in SOURCE_RANK}
-    info = {"sourceRows": counts, "eventRelated": len(kept), "places": len(places), "districtMethod": method}
+    srcsets = [set(p["sources"].split(",")) for p in places]
+    g = sum(1 for x in srcsets if "google" in x)
+    both = sum(1 for x in srcsets if "google" in x and x & {"overture", "osm"})
+    multi = sum(1 for x in srcsets if len(x) > 1)
+    agreement = {"googlePlaces": g, "googleAlsoInOpenData": both, "googleConfirmedPct": round(100 * both / g, 1) if g else None,
+                 "multiSourcePlaces": multi, "multiSourcePct": round(100 * multi / max(1, len(places)), 2)}
+    info = {"sourceRows": counts, "eventRelated": len(kept), "places": len(places), "districtMethod": method, "agreement": agreement}
     con.execute("INSERT OR REPLACE INTO builds VALUES (?,?,?)", [cc, built, json.dumps(info)])
     con.commit()
     con.close()
@@ -647,6 +669,50 @@ def build(cc, tax):
 def district_key(s):
     s = re.sub(r"\b(district|dist|zila|jilla)\b", " ", str(s or "").lower())
     return re.sub(r"[^a-z]", "", s)
+
+
+VENUE_CORE = ("venue.banquet_hall", "venue.lawn_garden", "venue.event_space", "venue.convention", "venue.hotel_banquet",
+              "venue.farmhouse_villa", "venue.community_hall")
+
+
+def write_specialisation(cc, tax, places, min_places=500):
+    """District specialisation: location quotients (a district's share of a family / India's share).
+    1.0 = typical; 2.0 = twice the national share. Written to districts-<CC>.csv; returns summary lines."""
+    fams = [f["id"] for f in tax.get("families", [])]
+    if not fams or not places:
+        return []
+    grid, nat = {}, {}
+    for p in places:
+        k = (p["state"] or "(unknown)", p["district"] or "(unknown)")
+        d = grid.setdefault(k, {"_total": 0, "_core": 0})
+        d["_total"] += 1
+        d[p["family"]] = d.get(p["family"], 0) + 1
+        nat[p["family"]] = nat.get(p["family"], 0) + 1
+        if p["primary_category"] in VENUE_CORE:
+            d["_core"] += 1
+            nat["_core"] = nat.get("_core", 0) + 1
+    total = len(places)
+    lq = lambda n, tot, key: round((n / tot) / (nat[key] / total), 2) if tot and nat.get(key) else None
+    with open(OUT / f"districts-{cc}.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["state", "district", "places", "venue_core"] + fams + ["lq_venue_core"] + [f"lq_{x}" for x in fams])
+        for (st, di), d in sorted(grid.items()):
+            w.writerow([st, di, d["_total"], d["_core"]] + [d.get(x, 0) for x in fams]
+                       + [lq(d["_core"], d["_total"], "_core")] + [lq(d.get(x, 0), d["_total"], x) for x in fams])
+    big = [(k, d) for k, d in grid.items() if d["_total"] >= min_places and k[1] != "(unknown)"]
+    rank = sorted(big, key=lambda kd: -(lq(kd[1]["_core"], kd[1]["_total"], "_core") or 0))
+    row = lambda k, d: f"| {k[1]} | {k[0]} | {d['_total']:,} | {d['_core']:,} | {lq(d['_core'], d['_total'], '_core')} |"
+    lines = ["", "## District specialisation (venues)", "",
+             f"Location quotient for core event venues (banquet halls, lawns, event spaces, convention centres, hotel banquets, farmhouses, "
+             f"community halls): the district's share of its places that are venues, divided by India's share. Districts with at least {min_places} places. "
+             f"All families are in districts-{cc}.csv.", "",
+             "Most venue-specialised:", "", "| District | State | Places | Venues | LQ |", "|---|---|---:|---:|---:|"]
+    lines += [row(k, d) for k, d in rank[:12]]
+    lines += ["", "Least venue-specialised:", "", "| District | State | Places | Venues | LQ |", "|---|---|---:|---:|---:|"]
+    lines += [row(k, d) for k, d in rank[::-1][:12]]
+    none = sorted(k[1] + ", " + k[0] for k, d in grid.items() if d["_core"] == 0 and k[1] != "(unknown)")
+    lines += ["", f"{len(none)} districts have no core venue listed" + (": " + "; ".join(none[:40]) + ("…" if len(none) > 40 else "") if none else ".")]
+    return lines
 
 
 def write_summary_and_gaps(cc, tax, places, info):
@@ -677,6 +743,13 @@ def write_summary_and_gaps(cc, tax, places, info):
             lines.append(f"| {st} | {n:,} | " + " | ".join(f"{grid.get((st, f['id']), 0):,}" for f in fams) + " |")
     lines += ["", "## By state / region", "", "| State | Places |", "|---|---:|"]
     lines += [f"| {s} | {n:,} |" for s, n in sorted(by_state.items(), key=lambda x: -x[1])]
+    ag = info.get("agreement") or {}
+    if ag.get("googlePlaces"):
+        lines += ["", "## Source agreement", "",
+                  f"{ag['googleAlsoInOpenData']:,} of {ag['googlePlaces']:,} Google places ({ag['googleConfirmedPct']}%) were also found in Overture or OpenStreetMap; "
+                  f"{ag['multiSourcePlaces']:,} places ({ag['multiSourcePct']}%) have more than one source. Low agreement means the sources "
+                  "cover different businesses, or that duplicates were missed; check a sample before trusting totals."]
+    lines += write_specialisation(cc, tax, places)
     lines += ["", "## By source combination", "", "| Sources | Places |", "|---|---:|"]
     lines += [f"| {s} | {n:,} |" for s, n in sorted(by_src.items(), key=lambda x: -x[1])]
 

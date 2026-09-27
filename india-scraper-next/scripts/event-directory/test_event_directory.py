@@ -56,6 +56,8 @@ class EventDirectory(unittest.TestCase):
         self.assertTrue(any(g["category"] == "vendor.florist" and g["have"] == 0 for g in gaps))
         self.assertFalse(any(g["category"] == "vendor.caterer" and g["have"] >= g["want"] for g in gaps))
         self.assertTrue((out / "event-directory-IN.csv").read_text().startswith("id,name,"))
+        self.assertTrue((out / "districts-IN.csv").read_text().startswith("state,district,places,venue_core"))
+        self.assertIn("## Source agreement", (out / "summary-IN.md").read_text())
         types = dict(con.execute("SELECT name, event_types FROM places"))
         self.assertEqual(types["Royal Caterers"], "ALL")
         cl = ed.parse_checklist(HERE.parent.parent / "docs" / "EVENT-PLANNING-CHECKLIST.md")
