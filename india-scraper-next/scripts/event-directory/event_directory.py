@@ -47,6 +47,9 @@ def load_taxonomy():
         c["cat_re"] = re.compile(c["cat"], re.I)
         c["name_re"] = re.compile(c["name"], re.I)
     t["exclude_re"] = re.compile(t["exclude"], re.I)
+    # Names that mark a business as outside events (steel, fish, pharma…), applied when the match
+    # rests on the name alone or only on a broad category such as "party and event planning".
+    t["name_exclude_re"] = re.compile(t.get("nameExclude", r"(?!x)x"), re.I)
     return t
 
 
@@ -63,6 +66,8 @@ def classify(tax, cats, name):
     specific_first = lambda ids: [i for i in ids if i not in generic] + [i for i in ids if i in generic]
     by_cat = [x["id"] for x in tax["categories"] if c and x["cat_re"].search(c)]
     by_name = [x["id"] for x in tax["categories"] if x["name_re"].search(n)]
+    if (not by_cat or set(by_cat) <= generic) and tax["name_exclude_re"].search(n):
+        return [], None
     if by_cat:
         # Broad source categories (Overture's "party and event planning", "printing service") give way
         # to a specific name ("… Mangal Karyalay", "… Flex Printing", "… LED Wall").

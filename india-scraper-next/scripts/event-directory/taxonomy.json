@@ -1,7 +1,7 @@
 {
   "version": 2,
   "note": "Event venue and vendor categories. 'cat' is matched against source categories/tags (underscores read as spaces), 'name' against the business name. Both are case-insensitive Python/JS-compatible regexes. 'google' is the India Google Maps search phrase used only to fill gaps; 'gapMin' is how many places a district should have before it is not treated as a gap. Categories listed in 'generic' are broad: when a place matches only generic categories, a specific category from its name comes first. 'serves' lists the items in docs/EVENT-PLANNING-CHECKLIST.md a category supplies; its event types are those items' codes, unless 'eventTypes' sets them (for trades the checklist does not name, such as banquet halls or pandits).",
-  "exclude": "\\b(school|college|university|hospital|clinic|bank|atm|police|government|pharmacy|petrol|fuel|gas station|post office|courier|hardware|pet|veterinar|mosque|church|temple|gurdwara|real estate|insurance|mobile phone|electronics)\\b",
+  "exclude": "\\b(school|college|university|hospital|clinic|bank|atm|police|government|pharmacy|petrol|fuel|gas station|post office|courier|hardware|pet|veterinar|mosque|church|temple|gurdwara|real estate|insurance|mobile phone|electronics|agricultural|farm supply)\\b",
   "categories": [
     {
       "id": "venue.banquet_hall",
@@ -234,7 +234,7 @@
       "group": "vendor",
       "label": "DJ / sound / lighting",
       "cat": "\\b(dj|disc jockey|dj service|sound system|audio ?visual|lighting rental|stage lighting|sound and light|pa system)\\b",
-      "name": "\\b(dj|d j|sound|sounds|light and sound|lights|audio)\\b",
+      "name": "\\b(dj|d j|sound|sounds|light and sound|lights|audio (and|&) lights?|audio visual|audio rental)\\b",
       "google": "DJ and sound services",
       "gapMin": 3,
       "family": "technical",
@@ -296,7 +296,7 @@
       "group": "vendor",
       "label": "Choreographer",
       "cat": "\\b(choreograph\\w*|wedding dance)\\b",
-      "name": "\\b(choreograph\\w*|sangeet)\\b",
+      "name": "\\b(choreograph\\w*|wedding dance|sangeet (dance|choreograph\\w*))\\b",
       "google": "wedding choreographers",
       "gapMin": 1,
       "family": "talent",
@@ -801,8 +801,8 @@
       "group": "vendor",
       "family": "travel",
       "label": "Event logistics & cargo",
-      "cat": "\\b(event logistics|exhibition logistics|freight|cargo)\\b",
-      "name": "\\b(event logistics|logistics|cargo|freight)\\b",
+      "cat": "\\b(event logistics|exhibition logistics|freight forward\\w*)\\b",
+      "name": "\\b(event logistics|exhibition logistics|expo logistics|event cargo)\\b",
       "google": "event logistics",
       "gapMin": 1,
       "serves": [
@@ -866,8 +866,8 @@
       "group": "vendor",
       "family": "branding",
       "label": "Fabrication, stalls & exhibition stands",
-      "cat": "\\b(exhibition stand|exhibit design|stall design|booth|fabricat\\w*|set design|set construction)\\b",
-      "name": "\\b(fabricat\\w*|exhibits|stall|stalls|booth|interiors and exhibition|set design)\\b",
+      "cat": "\\b(exhibition stand|exhibit design|stall design|booth|(exhibition|stage|event|stall|booth|set) fabricat\\w*|set design|set construction)\\b",
+      "name": "\\b((exhibition|stage|event|stall|booth|set) fabricat\\w*|exhibits|exhibition stalls?|stall (design\\w*|makers?)|booth|interiors and exhibition|set design)\\b",
       "google": "exhibition stall fabricators",
       "gapMin": 1,
       "serves": [
@@ -1449,5 +1449,6 @@
     "vendor.equipment_rental",
     "vendor.party_supplies",
     "venue.resort"
-  ]
+  ],
+  "nameExclude": "\\b(industries|steel|fish|agro|chemicals?|pharma\\w*|motors|auto parts|hardware|tyres?|cement)\\b"
 }
