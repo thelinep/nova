@@ -14,6 +14,7 @@
 
 const crypto = require('node:crypto');
 const media = require('./media');
+const live = require('./comfy-live');
 
 const DEFAULT_URLS = ['http://127.0.0.1:8188', 'http://127.0.0.1:8000'];
 let discovered = null;
@@ -141,19 +142,32 @@ function graph(s) {
   }, s);
 }
 
+/**
+ * Queues a graph under NOVA's live client id (so the tensor view gets its steps and
+ * previews), records the prompt id on the job and returns it.
+ */
+async function queuePrompt(store, job, g, label = 'Generation') {
+  const queued = await (await call('/prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: g, client_id: live.CLIENT_ID, extra_data: live.extraData() }) })).json();
+  if (!queued.prompt_id) throw error('ComfyUI did not accept the job: ' + JSON.stringify(queued.node_errors || queued).slice(0, 300), 502);
+  job.promptId = queued.prompt_id; store.put('generationJobs', job);
+  try { live.register(queued.prompt_id, { graph: g, jobId: job.id, label, baseUrl: baseUrl() }); } catch (_) {}
+  return queued.prompt_id;
+}
+
 /** Polls ComfyUI's history until the prompt finishes, fails, times out or is cancelled. */
 async function waitForOutputs(store, job, promptId, timeoutMs, label = 'Generation') {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    if (job.cancelRequested) { await call('/interrupt', { method: 'POST' }).catch(() => {}); throw error('Cancelled.', 499); }
+    if (job.cancelRequested) { await call('/interrupt', { method: 'POST' }).catch(() => {}); live.settle(promptId, 'cancelled'); throw error('Cancelled.', 499); }
     const history = await (await call('/history/' + encodeURIComponent(promptId))).json();
     const entry = history[promptId];
     if (entry?.status?.status_str === 'error') {
       const detail = JSON.stringify(entry.status.messages || []);
+      live.settle(promptId, 'failed', 'ComfyUI reported an error');
       if (/Output channels > 65536 not supported at the MPS device/.test(detail)) throw error('This version of macOS cannot decode this audio on the Apple GPU (fixed in macOS 15.1). Update macOS to use music generation.', 502);
       throw error('ComfyUI reported an error: ' + detail.slice(0, 400), 502);
     }
-    if (entry?.outputs && Object.keys(entry.outputs).length) return entry.outputs;
+    if (entry?.outputs && Object.keys(entry.outputs).length) { live.settle(promptId, 'done'); return entry.outputs; }
     await new Promise(r => setTimeout(r, POLL_MS));
     const latest = store.get('generationJobs', job.id); if (latest) job.cancelRequested = latest.cancelRequested;
   }
@@ -161,11 +175,7 @@ async function waitForOutputs(store, job, promptId, timeoutMs, label = 'Generati
 }
 
 async function runGeneration(store, dataDir, job, settings) {
-  const clientId = 'nova-' + crypto.randomBytes(6).toString('hex');
-  const queued = await (await call('/prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: graph(settings), client_id: clientId }) })).json();
-  const promptId = queued.prompt_id;
-  if (!promptId) throw error('ComfyUI did not accept the job: ' + JSON.stringify(queued.node_errors || queued).slice(0, 300), 502);
-  job.promptId = promptId; store.put('generationJobs', job);
+  const promptId = await queuePrompt(store, job, graph(settings), 'Image · ' + settings.prompt.slice(0, 40));
   const outputs = await waitForOutputs(store, job, promptId, TIMEOUT_MS, 'Image generation');
   const images = Object.values(outputs).flatMap(o => o.images || []);
   if (!images.length) throw error('ComfyUI finished without producing an image.', 502);
@@ -214,9 +224,7 @@ async function uploadBuffer(buffer, name, mime = 'image/png') {
 
 /** Queues a graph, waits, downloads outputs of one kind and saves them with a recipe. */
 async function runGraph(store, dataDir, job, { graph: g, kind, ext, name, provenance, timeoutMs = TIMEOUT_MS, label = 'Generation', source = 'comfyui', transform = null }) {
-  const queued = await (await call('/prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: g, client_id: 'nova-' + crypto.randomBytes(6).toString('hex') }) })).json();
-  if (!queued.prompt_id) throw error('ComfyUI did not accept the job: ' + JSON.stringify(queued.node_errors || queued).slice(0, 300), 502);
-  job.promptId = queued.prompt_id; store.put('generationJobs', job);
+  const queued = { prompt_id: await queuePrompt(store, job, g, !name ? label : name.includes(label) ? name : `${label} · ${name}`) };
   const outputs = await waitForOutputs(store, job, queued.prompt_id, timeoutMs, label);
   const files = Object.values(outputs).flatMap(o => [...(o.images || []), ...(o.audio || []), ...(o.videos || [])]).filter(f => ext.test(f.filename || ''));
   if (!files.length) throw error(`ComfyUI finished without producing ${kind === 'audio' ? 'audio' : 'an image'}.`, 502);
@@ -296,4 +304,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { comboOptions, status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, uploadBuffer, withLora, normaliseLora, optionList, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, error, SAMPLERS };
+module.exports = { comboOptions, status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, uploadBuffer, withLora, normaliseLora, optionList, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, queuePrompt, error, SAMPLERS };

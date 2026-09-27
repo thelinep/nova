@@ -491,6 +491,50 @@
 .tl-total{padding:6px 10px 0}
 .create-card{margin-top:8px}
 @media (max-width:900px){.boards-layout{grid-template-columns:1fr}.boards-list{position:static;flex-direction:row;flex-wrap:wrap}}
+  /* ---- Tensor view: live look at a ComfyUI job's latent tensor ---- */
+  .tv-dock{position:fixed;right:18px;bottom:38px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh - 56px);overflow:auto;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 50px #0008;color:var(--ink);font-size:12.5px}
+  .tv-dock[hidden],.tv-pill[hidden]{display:none}
+  .tv-dock.tv-big{right:50%;bottom:50%;transform:translate(50%,50%);box-shadow:0 0 0 100vmax #0007,0 18px 50px #0008;width:min(980px,calc(100vw - 32px))}
+  .tv-dock.tv-big .tv-main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;align-items:start}
+  .tv-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line-soft);position:sticky;top:0;background:var(--panel);z-index:1}
+  .tv-dot{width:8px;height:8px;border-radius:50%;background:var(--muted-dim);flex:none}
+  .tv-dot.on{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+  .tv-dot.ok{background:var(--green)} .tv-dot.bad{background:var(--red)}
+  .tv-title{font-weight:600;white-space:nowrap}
+  .tv-label{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+  .tv-icon{background:none;border:1px solid transparent;color:var(--muted);border-radius:6px;padding:2px 6px;cursor:pointer;font:inherit;line-height:1}
+  .tv-icon:hover{color:var(--ink);border-color:var(--line)}
+  .tv-body{padding:12px}
+  .tv-stages{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+  .tv-stage{border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted);font-size:11px;white-space:nowrap}
+  .tv-stage.active{border-color:var(--amber-line);color:var(--amber);background:var(--amber-soft)}
+  .tv-stage.done{color:var(--ink-dim)} .tv-stage.done::before{content:"✓ ";color:var(--green)}
+  .tv-stage small{color:var(--muted-dim);margin-left:3px}
+  .tv-frame{position:relative;border:1px solid var(--line-soft);border-radius:8px;background:#0e0e14;min-height:150px;display:grid;place-items:center;overflow:hidden}
+  .tv-frame img{display:block;width:100%;height:auto;image-rendering:pixelated}
+  .tv-frame .tv-empty{color:var(--muted);padding:18px;text-align:center;line-height:1.5}
+  .tv-badge{position:absolute;left:8px;top:8px;background:#000a;color:#fff;border-radius:6px;padding:2px 7px;font:11px var(--font-mono)}
+  .tv-badge.right{left:auto;right:8px}
+  .tv-cap{color:var(--muted);margin:8px 0 0;line-height:1.45}
+  .tv-shape{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-dim);margin-top:8px;line-height:1.6}
+  .tv-shape b{color:var(--amber);font-weight:400}
+  .tv-sec{margin-top:12px}
+  .tv-sec-h{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+  .tv-bars{display:flex;align-items:flex-end;gap:2px;height:38px}
+  .tv-bars span{flex:1;min-width:2px;background:var(--amber);opacity:.75;border-radius:2px 2px 0 0}
+  .tv-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:4px}
+  .tv-strip button{padding:0;border:1px solid var(--line-soft);border-radius:4px;background:#0e0e14;cursor:pointer;overflow:hidden;position:relative}
+  .tv-strip button.sel{border-color:var(--amber)}
+  .tv-strip img{display:block;width:100%;height:34px;object-fit:cover}
+  .tv-strip small{position:absolute;right:2px;bottom:1px;font:9px var(--font-mono);color:#fff;text-shadow:0 0 3px #000}
+  .tv-meter{height:6px;border-radius:3px;background:var(--panel3);overflow:hidden}
+  .tv-meter i{display:block;height:100%;background:var(--blue)}
+  .tv-meter i.hot{background:var(--red)}
+  .tv-foot{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:12px;color:var(--muted);flex-wrap:wrap}
+  .tv-foot a{color:var(--amber)}
+  .tv-hint{margin-top:8px;padding:8px 10px;border:1px dashed var(--amber-line);border-radius:8px;color:var(--ink-dim);line-height:1.45}
+  .tv-pill{position:fixed;right:18px;bottom:38px;z-index:60;background:var(--panel);border:1px solid var(--amber-line);color:var(--ink);border-radius:999px;padding:7px 12px;font:12px var(--font-ui);cursor:pointer;box-shadow:0 8px 24px #0006;display:flex;gap:7px;align-items:center}
+  @media (max-width:760px){.tv-dock.tv-big .tv-main{grid-template-columns:1fr}}
 </style>
 <div id="shell" class="shell">
   <aside id="rail" class="rail">
@@ -5157,4 +5201,116 @@ function startHelpers(){
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startHelpers); else startHelpers();
 
+</script>
+<script>
+/* =====================================================================
+   Tensor view — watch a ComfyUI job work, step by step.
+   Polls /api/comfy/live (fast while a job runs, slow when idle) and shows:
+   the pipeline stage, the latent tensor's picture after each sampler step,
+   its shape, seconds per step, a film strip from noise to result, and memory.
+   Lives outside the views so re-rendering a view never interrupts it.
+   ===================================================================== */
+(function(){
+  const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const store = { get(k,d){ try{ const v = localStorage.getItem('nova.tv.'+k); return v==null?d:JSON.parse(v); }catch(_){ return d; } }, set(k,v){ try{ localStorage.setItem('nova.tv.'+k, JSON.stringify(v)); }catch(_){} } };
+  let snap = null, pinned = null, shownSeq = -1, shownPid = null, timer = null, failures = 0;
+  let minimized = store.get('min', false), big = false, closedPid = store.get('closed', null);
+
+  const dock = document.createElement('div');
+  dock.className = 'tv-dock'; dock.id = 'tensorDock'; dock.hidden = true;
+  dock.setAttribute('role', 'region'); dock.setAttribute('aria-label', 'Tensor view');
+  const pill = document.createElement('button');
+  pill.className = 'tv-pill'; pill.id = 'tensorPill'; pill.hidden = true; pill.type = 'button';
+  document.body.append(dock, pill);
+  pill.onclick = () => { minimized = false; store.set('min', false); render(); };
+
+  const gb = b => b==null ? null : Math.round(b / 1073741824 * 10) / 10;
+  const shape = a => a ? '[' + a.join(', ') + ']' : '—';
+  const secs = s => s==null ? '' : s < 60 ? s + ' s' : Math.floor(s/60) + ' min ' + (s%60) + ' s';
+
+  function caption(r, addon){
+    const kind = r.shapes && r.shapes.kind;
+    if (kind === 'audio') return addon.installed
+      ? 'The song\'s latent as a heatmap: one row per channel, time running left to right. Amber is positive, blue negative. It starts as random static; bands and beats appear as the sampler removes the noise.'
+      : 'Songs need NOVA\'s small ComfyUI add-on to draw their tensor.';
+    if (kind === 'video') return 'The first frame of the video latent, projected to colour.';
+    return 'The latent right now, projected to colour (4 channels mapped to RGB). Early steps are noise; shapes and colours settle as the sampler removes it. The final picture comes from the decoder, so it is sharper than this.';
+  }
+
+  function render(){
+    const r = snap && snap.run;
+    const show = r && r.promptId !== closedPid;
+    if (!show) { dock.hidden = true; pill.hidden = true; return; }
+    const running = !['done','failed','cancelled'].includes(r.status);
+    const stepTxt = r.max ? `step ${r.step}/${r.max}` : '';
+    if (minimized) {
+      dock.hidden = true; pill.hidden = false;
+      pill.innerHTML = `<span class="tv-dot ${running?'on':r.status==='done'?'ok':'bad'}"></span>Tensor view${running&&stepTxt?' · '+esc(stepTxt):running?' · '+esc(r.stage||'starting'):' · '+esc(r.status)}`;
+      return;
+    }
+    pill.hidden = true; dock.hidden = false; dock.classList.toggle('tv-big', big);
+    const addon = snap.addon || {};
+    const previews = r.previews || [];
+    const sample = previews.length > 16 ? Array.from({length:16}, (_,i) => previews[Math.round(i*(previews.length-1)/15)]) : previews;
+    const cur = pinned && previews.find(p=>p.seq===pinned) ? previews.find(p=>p.seq===pinned) : previews[previews.length-1];
+    const imgSrc = cur ? `/api/comfy/live/preview/${encodeURIComponent(r.promptId)}/${cur.seq}` : '';
+    const st = snap.stats, used = st && st.ramTotal!=null ? st.ramTotal - st.ramFree : null, pct = used!=null ? Math.round(used/st.ramTotal*100) : null;
+    const maxStep = Math.max(0.01, ...(r.stepTimes||[]));
+    const audioNeedsAddon = r.shapes && r.shapes.kind === 'audio' && !addon.installed;
+    const stateTxt = running ? (r.nodeClass ? 'running ' + r.nodeClass : 'waiting for ComfyUI') : r.status === 'done' ? 'finished in ' + secs(r.elapsed) : r.status + (r.error ? ': ' + r.error : '');
+    const frame = cur
+      ? `<img id="tvImg" alt="Latent tensor preview, ${esc(cur.max?('step '+cur.step+' of '+cur.max):'')}" src="${imgSrc}"><span class="tv-badge">${cur.max?`step ${cur.step}/${cur.max}`:'preview'}</span>${pinned?'<button class="tv-badge right tv-icon" id="tvLive" type="button" style="color:#fff">▶ live</button>':running?'<span class="tv-badge right">live</span>':''}`
+      : `<div class="tv-empty">${running ? (r.stage==='denoise' ? (audioNeedsAddon ? 'Denoising… (no tensor picture for songs yet — see below)' : 'Denoising… the first picture appears after step 1.') : 'The tensor picture appears when denoising starts.<br>Now: ' + esc(r.stages.find(s=>s.state==='active')?.label || 'queued') + '.') : 'No tensor pictures were sent for this run.'}</div>`;
+    const side = `
+      ${r.stepTimes && r.stepTimes.length ? `<div class="tv-sec"><div class="tv-sec-h"><span>Seconds per step</span><span>${r.secondsPerStep!=null?r.secondsPerStep+' s avg':''}${r.etaSeconds!=null?' · ~'+secs(r.etaSeconds)+' left':''}</span></div>
+        <div class="tv-bars" aria-label="Seconds per sampler step">${r.stepTimes.map((t,i)=>`<span title="step ${i+2}: ${t} s" style="height:${Math.max(6,Math.round(t/maxStep*100))}%"></span>`).join('')}</div></div>` : ''}
+      ${sample.length > 1 ? `<div class="tv-sec"><div class="tv-sec-h"><span>From noise to result</span><span>${previews.length} pictures</span></div>
+        <div class="tv-strip">${sample.map(p=>`<button type="button" data-seq="${p.seq}" class="${cur&&p.seq===cur.seq&&pinned?'sel':''}" title="step ${p.step}/${p.max}"><img alt="" loading="lazy" src="/api/comfy/live/preview/${encodeURIComponent(r.promptId)}/${p.seq}"><small>${p.step}</small></button>`).join('')}</div></div>` : ''}
+      ${pct!=null ? `<div class="tv-sec"><div class="tv-sec-h"><span>Memory in use</span><span>${gb(used)} / ${gb(st.ramTotal)} GB</span></div><div class="tv-meter"><i class="${pct>88?'hot':''}" style="width:${pct}%"></i></div></div>` : ''}`;
+    dock.innerHTML = `
+      <div class="tv-head"><span class="tv-dot ${running?'on':r.status==='done'?'ok':'bad'}"></span><span class="tv-title">Tensor view</span><span class="tv-label" title="${esc(r.label)}">${esc(r.label)}</span>
+        <button class="tv-icon" id="tvBig" type="button" title="${big?'Smaller':'Bigger'}" aria-label="${big?'Smaller':'Bigger'}">${big?'⤡':'⤢'}</button>
+        <button class="tv-icon" id="tvMin" type="button" title="Minimise" aria-label="Minimise">–</button>
+        <button class="tv-icon" id="tvClose" type="button" title="Close" aria-label="Close">×</button></div>
+      <div class="tv-body">
+        <div class="tv-stages">${r.stages.map(s=>`<span class="tv-stage ${s.state}">${esc(s.label)}${s.seconds!=null&&s.state!=='waiting'?`<small>${s.seconds}s</small>`:''}</span>`).join('')}</div>
+        <div class="tv-main"><div>
+          <div class="tv-frame">${frame}</div>
+          <p class="tv-cap">${esc(caption(r, addon))}</p>
+          ${audioNeedsAddon ? '<div class="tv-hint">To see songs and sounds as they form, double-click <b>Add tensor view.command</b> in the brahmini folder. It adds a small NOVA add-on to ComfyUI and restarts it.</div>' : ''}
+          <div class="tv-shape">${r.shapes && r.shapes.latent ? `Latent <b>${shape(r.shapes.latent)}</b> — ${esc(r.shapes.latentNote)}<br>` : r.shapes && r.shapes.latentNote ? `Latent: ${esc(r.shapes.latentNote)}<br>` : ''}${r.shapes && r.shapes.output ? `Output <b>${shape(r.shapes.output)}</b> — ${esc(r.shapes.outputNote)}<br>` : ''}<span style="color:var(--muted)">${esc(stateTxt)}${running?' · '+secs(r.elapsed):''}</span></div>
+        </div><div>${side}</div></div>
+        <div class="tv-foot"><a href="/tensors.html" target="_blank" rel="noopener">How this works →</a>${snap.live===false||snap.error?`<span>${esc(snap.error||'Live steps are off.')}</span>`:''}</div>
+      </div>`;
+    const q = id => dock.querySelector('#'+id);
+    q('tvBig').onclick = () => { big = !big; render(); };
+    q('tvMin').onclick = () => { minimized = true; store.set('min', true); big = false; render(); };
+    q('tvClose').onclick = () => { closedPid = r.promptId; store.set('closed', closedPid); big = false; render(); };
+    if (q('tvLive')) q('tvLive').onclick = () => { pinned = null; render(); };
+    dock.querySelectorAll('.tv-strip button').forEach(b => b.onclick = () => { pinned = Number(b.dataset.seq); render(); });
+    shownPid = r.promptId; shownSeq = cur ? cur.seq : -1;
+  }
+
+  async function tick(){
+    clearTimeout(timer);
+    if (!document.hidden) {
+      try {
+        const res = await fetch('/api/comfy/live', {cache:'no-store'});
+        if (!res.ok) throw new Error(res.status);
+        const next = await res.json(); failures = 0;
+        const r = next.run, prev = snap && snap.run;
+        if (r && (!prev || prev.promptId !== r.promptId)) pinned = null;
+        // Re-render only when something visible changed, so the picture does not flicker.
+        const sig = r ? [r.promptId, r.status, r.stage, r.step, r.previewSeq, r.elapsed, next.stats && Math.round((next.stats.ramFree||0)/5e8), (next.addon||{}).installed].join('|') : 'none';
+        snap = next;
+        if (sig !== tick.sig) { tick.sig = sig; render(); }
+      } catch (_) { failures++; }
+    }
+    const delay = failures > 3 ? 15000 : snap && snap.active ? 700 : 3000;
+    timer = setTimeout(tick, delay);
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+  window.novaTensorView = { refresh: tick, open(){ minimized = false; closedPid = null; store.set('min', false); store.set('closed', null); render(); } };
+  tick();
+})();
 </script>

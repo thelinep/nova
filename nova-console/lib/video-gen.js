@@ -303,9 +303,7 @@ async function runAi(store, dataDir, job, settings) {
   form.append('overwrite', 'true');
   const uploaded = await (await comfy.call('/upload/image', { method: 'POST', body: form }, 60000)).json();
   const imageName = uploaded.subfolder ? `${uploaded.subfolder}/${uploaded.name}` : uploaded.name;
-  const queued = await (await comfy.call('/prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: aiGraph(settings, imageName), client_id: 'nova-' + crypto.randomBytes(6).toString('hex') }) })).json();
-  if (!queued.prompt_id) throw error('ComfyUI did not accept the job: ' + JSON.stringify(queued.node_errors || queued).slice(0, 300), 502);
-  job.promptId = queued.prompt_id; store.put('generationJobs', job);
+  const queued = { prompt_id: await comfy.queuePrompt(store, job, aiGraph(settings, imageName), 'Video · ' + settings.prompt.slice(0, 40)) };
   const outputs = await comfy.waitForOutputs(store, job, queued.prompt_id, AI_TIMEOUT_MS, 'Video generation');
   const files = Object.values(outputs).flatMap(o => [...(o.videos || []), ...(o.images || []), ...(o.gifs || [])]).filter(f => /\.(mp4|mov|webm)$/i.test(f.filename || ''));
   if (!files.length) throw error('ComfyUI finished without producing a video.', 502);

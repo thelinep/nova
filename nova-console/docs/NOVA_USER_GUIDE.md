@@ -184,6 +184,19 @@ Tabs along the top separate the tools: **Image**, **Video**, **Audio**, **Transc
 - **Transcription (whisper.cpp).** Install `brew install whisper-cpp ffmpeg` (if ffmpeg will not install, NOVA uses the `afconvert` tool built into macOS for WAV, AIFF, MP3, M4A and FLAC) and put a model file such as `ggml-base.en.bin` in `nova-console/data/models/whisper` (or set `WHISPER_MODEL`). Upload audio (WAV, MP3, M4A, OGG, FLAC or WebM) or video (MP4, MOV; needs a working ffmpeg), choose a Knowledge collection if you want the transcript searchable, and click **Transcribe**. Transcripts carry timestamps like `[00:01:02]`.
 - **Spoken language.** Each item has a language list next to **Transcribe**: pick the language spoken, or **Language: detect**. The English model (`ggml-base.en.bin`) understands English only; for Hindi, Urdu, Punjabi, Tamil and other languages double-click `Add multilingual speech model.command` in the brahmini folder (whisper large-v3-turbo, about 575 MB; `--small` for a lighter one). NOVA then uses the English model for English (faster) and the multilingual one for everything else, and records the detected language on the transcript.
 
+### Tensor view: watch a job work
+
+Whenever NOVA sends a job to ComfyUI (images, image edits, upscales, songs, sound effects, ComfyUI video), the **Tensor view** opens at the bottom right. It shows:
+
+- the **stages** (load weights, text to embeddings, starting latent, denoise, decode, save) with the time each took;
+- a **picture of the latent tensor** after every sampler step. Images use ComfyUI's colour projection, so they look soft and blocky; songs show a channels × time heatmap (amber positive, blue negative);
+- the **shapes** of the latent and the output, for example `[1, 64, 750]` for a 30-second ACE-Step 1.5 song;
+- **seconds per step** with time left, a **film strip** from noise to result (click a frame to pause on it) and **memory in use**.
+
+Use ⤢ for a bigger view, – to shrink it to a pill, × to close it until the next job. **How this works →** opens a guide to tensors, the pipeline and noise schedules (`/tensors.html`).
+
+Images need nothing extra. For songs and sound effects, double-click **Add tensor view.command** in the brahmini folder once: it links NOVA's small ComfyUI add-on (`nova-console/comfy/nova_tensor_view`) into `~/ComfyUI/custom_nodes` and restarts ComfyUI and NOVA. The add-on only draws previews; it does not change what ComfyUI generates. Nothing from the Tensor view is saved to disk. LTX-2 clips (Fast/Better) run outside ComfyUI and do not appear in it.
+
 ### Create: the sidebar group for making things
 
 The **Create** group at the top of the sidebar opens **Image**, **Video** and **Audio** (the matching Media tabs), **Boards**, **Timeline** and **Library**.

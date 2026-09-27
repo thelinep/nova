@@ -1,0 +1,365 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NOVA Tensor Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0a0c10; --panel:#121620; --panel2:#171c28; --line:#262d3a; --line-soft:#1c222c;
+    --ink:#eef1f5; --ink-dim:#c7ced8; --muted:#8b96a6;
+    --amber:#f3a73e; --amber-soft:#f3a73e1f; --amber-line:#f3a73e55;
+    --blue:#5fa8e0; --blue-soft:#5fa8e01a; --green:#5fd39a;
+    --heat-zero:#0e0e14;
+    --ui:"Work Sans",-apple-system,"Segoe UI",sans-serif;
+    --mono:"Space Mono","SF Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      color-scheme: light;
+      --bg:#f5f7fa; --panel:#ffffff; --panel2:#eef2f6; --line:#cbd5e1; --line-soft:#e1e7ee;
+      --ink:#172033; --ink-dim:#334155; --muted:#5b6b80;
+      --amber:#c2680a; --amber-soft:#d9770618; --amber-line:#d9770666;
+      --blue:#2474b3; --blue-soft:#2879b818; --green:#16845b;
+    }
+  }
+  :root[data-theme="light"]{
+    color-scheme: light;
+    --bg:#f5f7fa; --panel:#ffffff; --panel2:#eef2f6; --line:#cbd5e1; --line-soft:#e1e7ee;
+    --ink:#172033; --ink-dim:#334155; --muted:#5b6b80;
+    --amber:#c2680a; --amber-soft:#d9770618; --amber-line:#d9770666;
+    --blue:#2474b3; --blue-soft:#2879b818; --green:#16845b;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--ui);margin:0}
+  .wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+  h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0}
+  h1{font-size:clamp(28px,4.2vw,44px);font-weight:700;letter-spacing:-.01em}
+  h2{font-size:24px;font-weight:600}
+  h3{font-size:16px;font-weight:600}
+  p{margin:0;max-width:68ch;color:var(--ink-dim)}
+  code,.mono{font-family:var(--mono);font-size:.88em}
+  .eyebrow{font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
+  .shape{font-family:var(--mono);color:var(--amber);white-space:nowrap}
+  section{display:grid;gap:14px;padding-block:34px;border-top:1px solid var(--line-soft)}
+  section:first-of-type{border-top:0;padding-top:8px}
+  .lede{font-size:17px;color:var(--ink-dim)}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:center}
+  .hero-copy{display:grid;gap:14px}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+  .stage canvas{width:100%;height:auto;display:block;border-radius:6px;background:var(--heat-zero);image-rendering:pixelated}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .seg button{background:none;border:0;color:var(--muted);font:500 13px var(--ui);padding:5px 12px;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--amber-soft);color:var(--amber)}
+  .btn{background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:5px 11px;font:500 13px var(--ui);cursor:pointer}
+  .btn:hover,.seg button:hover{color:var(--ink)}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  input[type=range]{accent-color:var(--amber);flex:1;min-width:140px}
+  .readout{font:12px/1.5 var(--mono);color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px}
+  .readout b{color:var(--ink);font-weight:400}
+
+  /* ladder */
+  .ladder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  .rung{background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:14px;display:grid;gap:10px;align-content:start}
+  .rung .viz{min-height:108px;display:grid;place-items:center}
+  .rung small{color:var(--muted);font-size:12.5px;line-height:1.45}
+  .cells{display:grid;gap:2px}
+  .cells span{display:block;width:16px;height:16px;border-radius:2px}
+  .stack{position:relative;width:118px;height:92px}
+  .stack .cells{position:absolute}
+
+  /* pipeline */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .pipe{display:grid;gap:0;counter-reset:step}
+  .pipe li{list-style:none;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:4px 14px;align-items:baseline;padding:12px 0;border-bottom:1px dashed var(--line)}
+  .pipe li::before{counter-increment:step;content:counter(step);font:700 12px var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:50%;width:26px;height:26px;display:grid;place-items:center;align-self:start}
+  .pipe li.hot::before{color:var(--amber);border-color:var(--amber-line);background:var(--amber-soft)}
+  .pipe .what{display:grid;gap:3px}
+  .pipe .what small{color:var(--muted);font-size:13px;line-height:1.5}
+  .pipe .shape{font-size:13px;text-align:right}
+  .pipe ol{margin:0;padding:0}
+
+  /* step lab */
+  .lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:14px;display:grid;gap:10px;align-content:start}
+  .grid-nums{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:2px;font:11px/1 var(--mono)}
+  .grid-nums span{aspect-ratio:1.25;display:grid;place-items:center;border-radius:3px;color:#fff;text-shadow:0 0 2px #000a;font-variant-numeric:tabular-nums}
+  .formula{font:13px/1.7 var(--mono);color:var(--ink-dim);background:var(--panel2);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+  .formula .a{color:var(--amber)} .formula .b{color:var(--blue)}
+  svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:5px}
+
+  /* guidance + memory */
+  .pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+  .bars{display:grid;gap:8px}
+  .bar{display:grid;grid-template-columns:130px minmax(0,1fr) 80px;gap:10px;align-items:center;font-size:13px}
+  .bar .track{height:12px;background:var(--panel2);border-radius:3px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--amber);border-radius:3px}
+  .bar .fill.blue{background:var(--blue)}
+  .bar .num{font-family:var(--mono);font-size:12px;text-align:right;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+
+  /* reading the view */
+  .anatomy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .anatomy .card h3{display:flex;gap:8px;align-items:center}
+  .chip{font:11px var(--mono);border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
+  .chip.on{border-color:var(--amber-line);color:var(--amber);background:var(--amber-soft)}
+  .note{font-size:13px;color:var(--muted)}
+
+  @media (max-width:860px){
+    .hero,.lab,.pair{grid-template-columns:1fr}
+    .ladder,.anatomy{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:520px){
+    .ladder,.anatomy{grid-template-columns:1fr}
+    .pipe li{grid-template-columns:34px minmax(0,1fr)}
+    .pipe .shape{grid-column:2;text-align:left}
+    .bar{grid-template-columns:96px minmax(0,1fr) 64px}
+  }
+  @media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto} }
+</style>
+</head><body>
+
+<div class="wrap">
+
+<section class="hero" aria-labelledby="t-hero">
+  <div class="hero-copy">
+    <span class="eyebrow">NOVA · how generation works</span>
+    <h1 id="t-hero">Every song and picture starts as a block of random numbers</h1>
+    <p class="lede">NOVA's models don't paint or sing directly. They take a tensor full of noise and, step by step, predict how to remove it. The block shown here is that tensor. Press play or drag the slider to watch it go from static to structure.</p>
+    <p class="note">This is a simulation with the same shapes and schedule NOVA uses. The Tensor view in NOVA shows the real thing while a job runs.</p>
+  </div>
+  <div class="stage">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="What to generate">
+        <button type="button" id="modeSong" aria-pressed="true">Song</button>
+        <button type="button" id="modeImage" aria-pressed="false">Image</button>
+      </div>
+      <button type="button" class="btn" id="play">Pause</button>
+    </div>
+    <canvas id="hero" width="750" height="320" aria-label="Animated latent tensor going from noise to structure"></canvas>
+    <div class="controls">
+      <label for="stepSlider" class="mono" style="color:var(--muted);font-size:12px">step</label>
+      <input type="range" id="stepSlider" min="0" max="8" value="0" step="1">
+    </div>
+    <div class="readout" id="heroReadout"></div>
+  </div>
+</section>
+
+<section aria-labelledby="t-what">
+  <span class="eyebrow">The basics</span>
+  <h2 id="t-what">A tensor is a grid of numbers with a shape</h2>
+  <p>The shape says how many numbers there are along each direction. NOVA writes shapes the way the models do, batch first: <span class="shape">[1, 64, 750]</span> means one item, 64 rows (channels), 750 columns (time). Colour here means value: amber is positive, blue is negative, dark is near zero.</p>
+  <div class="ladder">
+    <div class="rung"><h3>Scalar <span class="shape">[]</span></h3><div class="viz"><span class="mono" style="font-size:28px;color:var(--amber)">0.42</span></div><small>One number. A seed, a CFG value, the noise level σ.</small></div>
+    <div class="rung"><h3>Vector <span class="shape">[8]</span></h3><div class="viz"><div class="cells" id="vec" style="grid-template-columns:repeat(8,16px)"></div></div><small>A row of numbers. One token's embedding is a vector of 1,024 or 2,048 of these.</small></div>
+    <div class="rung"><h3>Matrix <span class="shape">[4, 6]</span></h3><div class="viz"><div class="cells" id="mat" style="grid-template-columns:repeat(6,16px)"></div></div><small>Rows and columns. A song latent is a matrix: channels × time.</small></div>
+    <div class="rung"><h3>3-D <span class="shape">[3, 4, 6]</span></h3><div class="viz"><div class="stack" id="cube"></div></div><small>Stacked matrices. An image latent is 4 stacked maps, each 1/8 of the picture's size.</small></div>
+  </div>
+</section>
+
+<section aria-labelledby="t-pipe">
+  <span class="eyebrow">The pipeline</span>
+  <h2 id="t-pipe">What happens between your prompt and the file</h2>
+  <p>These are the stages NOVA's Tensor view lights up, with the tensor shapes for a 30-second song and a 1024 × 1024 picture.</p>
+  <div class="tabs seg" role="group" aria-label="Pipeline" style="width:max-content">
+    <button type="button" id="pipeSong" aria-pressed="true">Song · ACE-Step 1.5</button>
+    <button type="button" id="pipeImage" aria-pressed="false">Image · SDXL</button>
+  </div>
+  <ol class="pipe" id="pipe"></ol>
+</section>
+
+<section aria-labelledby="t-lab">
+  <span class="eyebrow">One step up close</span>
+  <h2 id="t-lab">Each step mixes less noise into the model's guess</h2>
+  <p>At every step the model looks at the noisy tensor and predicts the clean one, called x̂₀. The sampler then builds the next, less noisy tensor. ACE-Step 1.5 uses a straight-line (flow) mix, shown below on an 8 × 8 corner of a song latent. SDXL follows the same idea with a curved schedule.</p>
+  <div class="lab">
+    <div class="card">
+      <div class="formula">x<sub>t</sub> = (1 − <span class="a">σ</span>) · <span class="b">x̂₀</span> + <span class="a">σ</span> · noise &nbsp;&nbsp; <span style="color:var(--muted)">σ = <span id="sigmaOut">1.00</span></span></div>
+      <div class="grid-nums" id="nums" aria-label="Values of an 8 by 8 patch of the latent"></div>
+      <div class="controls"><label for="labStep" class="mono" style="color:var(--muted);font-size:12px">step <span id="labStepOut">0</span>/8</label><input type="range" id="labStep" min="0" max="8" value="0"></div>
+    </div>
+    <div class="card">
+      <h3>Noise schedule and shift</h3>
+      <p class="note">σ is how much noise is left. <b>Shift</b> keeps σ high for longer, so early steps settle the big picture (the song's structure) before details. NOVA runs ACE-Step 1.5 with shift 3.</p>
+      <svg id="sched" viewBox="0 0 320 190" role="img" aria-label="Noise level per step for shift 1 and the chosen shift"></svg>
+      <div class="controls"><label for="shift" class="mono" style="color:var(--muted);font-size:12px">shift <span id="shiftOut">3</span></label><input type="range" id="shift" min="1" max="6" step="0.5" value="3"></div>
+      <div class="legend"><span><i style="background:var(--muted)"></i>shift 1</span><span><i style="background:var(--amber)"></i>chosen shift</span></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="t-cfg">
+  <span class="eyebrow">Speed and memory</span>
+  <h2 id="t-cfg">Why one engine is faster, and what fills 18 GB</h2>
+  <div class="pair">
+    <div class="card">
+      <h3>Guidance doubles the work</h3>
+      <p class="note">With classifier-free guidance (CFG above 1) the model runs twice per step, once with your prompt and once without, and pushes the result away from the prompt-less guess:</p>
+      <div class="formula">out = uncond + <span class="a">cfg</span> · (cond − uncond)</div>
+      <div class="bars" aria-label="Model passes per job">
+        <div class="bar"><span>ACE-Step 1.5 turbo</span><span class="track"><span class="fill" style="width:16%;display:block"></span></span><span class="num">8 passes</span></div>
+        <div class="bar"><span>SDXL, 25 steps</span><span class="track"><span class="fill blue" style="width:100%;display:block"></span></span><span class="num">50 passes</span></div>
+      </div>
+      <p class="note">ACE-Step 1.5 turbo uses 8 steps at CFG 1: one pass per step. On your M3 Pro it made a 30-second song in 105–138 s, against 261–294 s for ACE-Step 1.</p>
+    </div>
+    <div class="card">
+      <h3>The latent is tiny. The weights are not.</h3>
+      <p class="note">The tensor you watch is small. Memory goes to the model weights, which stay loaded while the job runs.</p>
+      <div class="bars" aria-label="Number of values in each tensor">
+        <div class="bar"><span>Song latent</span><span class="track"><span class="fill" style="width:1.7%;display:block"></span></span><span class="num">48,000</span></div>
+        <div class="bar"><span>Image latent</span><span class="track"><span class="fill" style="width:2.3%;display:block"></span></span><span class="num">65,536</span></div>
+        <div class="bar"><span>Song audio out</span><span class="track"><span class="fill blue" style="width:100%;display:block"></span></span><span class="num">2,880,000</span></div>
+      </div>
+      <p class="note">48,000 numbers is about 190 KB. The models behind it are several gigabytes each, which is why two engines loaded at once can push an 18 GB Mac to its limit. Watch the memory bar in the Tensor view.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="t-view">
+  <span class="eyebrow">In NOVA</span>
+  <h2 id="t-view">Reading the Tensor view</h2>
+  <p>It opens at the bottom right whenever NOVA sends a job to ComfyUI. Press ⤢ for a bigger view.</p>
+  <div class="anatomy">
+    <div class="card"><h3>Stages <span class="chip on">Denoise × 8</span></h3><p class="note">The pipeline above, live. Ticks mark finished stages with their time. Loading weights is often the slowest part of the first run.</p></div>
+    <div class="card"><h3>The picture</h3><p class="note">The model's current guess, x̂₀, after each step. Images are shown by ComfyUI's colour projection of the 4 channels, so they look soft and blocky. Songs are a channels × time heatmap drawn by NOVA's ComfyUI add-on.</p></div>
+    <div class="card"><h3>Shape line</h3><p class="note">The latent and output shapes for this job, worked out from its settings, such as <span class="shape">[1, 64, 750]</span> for 30 seconds.</p></div>
+    <div class="card"><h3>Seconds per step</h3><p class="note">One bar per sampler step, with the average and time left. Taller bars mid-run usually mean the Mac is short of memory.</p></div>
+    <div class="card"><h3>From noise to result</h3><p class="note">A film strip of up to 16 previews. Click one to pause on it, then ▶ live to follow the job again.</p></div>
+    <div class="card"><h3>Memory in use</h3><p class="note">From ComfyUI. On Apple silicon the GPU shares the Mac's memory, so this is the whole machine. It turns red above 88%.</p></div>
+  </div>
+  <p class="note">Songs show a picture only after the add-on is installed: double-click <b>Add tensor view.command</b> in the brahmini folder. Images work without it.</p>
+</section>
+
+</div>
+
+<script>
+(function(){
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // Seeded noise so every visit shows the same "seed".
+  let s = 20260927;
+  const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const heat = v => { // value in -1..1 -> [r,g,b], same colours as NOVA's add-on
+    const p = Math.max(0, v), n = Math.max(0, -v);
+    return [14 + p * 241 + n * 50, 14 + p * 162 + n * 126, 20 + p * 28 + n * 235];
+  };
+  const sigmaAt = (i, steps, shift) => { const t = 1 - i / steps; return shift * t / (1 + (shift - 1) * t); };
+
+  /* ---------------- hero ---------------- */
+  const SONG = { rows: 64, cols: 750, steps: 8, shift: 3 };
+  const IMG = { rows: 128, cols: 128, steps: 25, shift: 1 };
+  const songX0 = new Float32Array(SONG.rows * SONG.cols), songN = new Float32Array(SONG.rows * SONG.cols);
+  for (let c = 0; c < SONG.rows; c++) for (let t = 0; t < SONG.cols; t++) {
+    const x = t / SONG.cols * 30, i = c * SONG.cols + t;
+    let v = 0.6 * Math.sin(x * (0.2 + c * 0.05) + c) * (0.5 + 0.5 * Math.sin(x * 0.21));
+    if (c < 12 && Math.sin(x * 2 * Math.PI * 1.5) > 0.6) v += 1.4 - c * 0.08;
+    if (c >= 20 && c < 30) v += 0.9 * Math.sin(x * 0.8 + c * 0.3);
+    songX0[i] = v; songN[i] = gauss();
+  }
+  const imgX0 = new Float32Array(IMG.rows * IMG.cols * 3), imgN = new Float32Array(IMG.rows * IMG.cols * 3);
+  for (let y = 0; y < IMG.rows; y++) for (let x = 0; x < IMG.cols; x++) {
+    const sky = y / IMG.rows; let r = 250 - 120 * sky, g = 140 - 60 * sky, b = 90 + 120 * sky;
+    if ((x - 80) ** 2 + (y - 50) ** 2 < 180) { r = 255; g = 210; b = 120; }
+    if (y > 88 + 6 * Math.sin(x / 9)) { r = 30; g = 50 + y / 4; b = 70; }
+    if (x > 30 && x < 38 && y > 58 && y < 92) { r = 235; g = 235; b = 225; }
+    const i = (y * IMG.cols + x) * 3;
+    imgX0[i] = r / 127.5 - 1; imgX0[i + 1] = g / 127.5 - 1; imgX0[i + 2] = b / 127.5 - 1;
+    imgN[i] = gauss() * 0.9; imgN[i + 1] = gauss() * 0.9; imgN[i + 2] = gauss() * 0.9;
+  }
+  const canvas = document.getElementById('hero'), ctx = canvas.getContext('2d');
+  const slider = document.getElementById('stepSlider'), readout = document.getElementById('heroReadout');
+  let mode = 'song', step = 0, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, timer = null;
+  function drawHero(){
+    const cfg = mode === 'song' ? SONG : IMG, sig = sigmaAt(step, cfg.steps, cfg.shift);
+    if (mode === 'song') {
+      canvas.width = SONG.cols; canvas.height = SONG.rows * 5;
+      const img = ctx.createImageData(SONG.cols, SONG.rows);
+      let sum = 0, sq = 0; const n = SONG.rows * SONG.cols, mix = new Float32Array(n);
+      for (let i = 0; i < n; i++) { mix[i] = (1 - sig) * songX0[i] + sig * songN[i]; sum += mix[i]; sq += mix[i] * mix[i]; }
+      const mean = sum / n, sd = Math.sqrt(sq / n - mean * mean) * 2.5 + 1e-6;
+      for (let i = 0; i < n; i++) { const [r, g, b] = heat(Math.max(-1, Math.min(1, (mix[i] - mean) / sd))); img.data.set([r, g, b, 255], i * 4); }
+      const tmp = document.createElement('canvas'); tmp.width = SONG.cols; tmp.height = SONG.rows; tmp.getContext('2d').putImageData(img, 0, 0);
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(tmp, 0, 0, SONG.cols, SONG.rows * 5);
+    } else {
+      canvas.width = 512; canvas.height = 512;
+      const img = ctx.createImageData(IMG.cols, IMG.rows);
+      for (let p = 0; p < IMG.rows * IMG.cols; p++) for (let k = 0; k < 3; k++) { const i = p * 3 + k; img.data[p * 4 + k] = Math.max(0, Math.min(255, ((1 - sig) * imgX0[i] + sig * imgN[i] + 1) * 127.5)); img.data[p * 4 + 3] = 255; }
+      const tmp = document.createElement('canvas'); tmp.width = IMG.cols; tmp.height = IMG.rows; tmp.getContext('2d').putImageData(img, 0, 0);
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(tmp, 0, 0, 512, 512);
+    }
+    slider.max = cfg.steps; slider.value = step;
+    readout.innerHTML = mode === 'song'
+      ? `<span>shape <b>[1, 64, 750]</b></span><span>step <b>${step}/8</b></span><span>σ <b>${sig.toFixed(2)}</b></span><span>rows = channels · columns = time</span>`
+      : `<span>shape <b>[1, 4, 128, 128]</b> shown as RGB</span><span>step <b>${step}/25</b></span><span>σ <b>${sig.toFixed(2)}</b></span>`;
+  }
+  function tick(){ const cfg = mode === 'song' ? SONG : IMG; step = step >= cfg.steps ? 0 : step + 1; drawHero(); timer = setTimeout(tick, step === cfg.steps ? 1800 : mode === 'song' ? 650 : 220); }
+  function setPlaying(on){ playing = on; document.getElementById('play').textContent = on ? 'Pause' : 'Play'; clearTimeout(timer); if (on) timer = setTimeout(tick, 400); }
+  document.getElementById('play').onclick = () => setPlaying(!playing);
+  slider.oninput = () => { setPlaying(false); step = Number(slider.value); drawHero(); };
+  const setMode = m => { mode = m; step = 0; document.getElementById('modeSong').setAttribute('aria-pressed', m === 'song'); document.getElementById('modeImage').setAttribute('aria-pressed', m === 'image'); drawHero(); if (playing) setPlaying(true); };
+  document.getElementById('modeSong').onclick = () => setMode('song');
+  document.getElementById('modeImage').onclick = () => setMode('image');
+  if (!playing) { step = SONG.steps; }
+  drawHero(); setPlaying(playing);
+
+  /* ---------------- ladder ---------------- */
+  const cell = v => { const [r, g, b] = heat(v); return `<span style="background:rgb(${r|0},${g|0},${b|0})"></span>`; };
+  document.getElementById('vec').innerHTML = [0.8, -0.3, 0.1, 0.9, -0.9, 0.4, -0.1, 0.6].map(cell).join('');
+  document.getElementById('mat').innerHTML = Array.from({length: 24}, (_, i) => cell(Math.sin(i * 1.7) * 0.9)).join('');
+  const small = v => { const [r, g, b] = heat(v); return `<span style="width:12px;height:12px;background:rgb(${r|0},${g|0},${b|0})"></span>`; };
+  document.getElementById('cube').innerHTML = [0, 1, 2].map(k => `<div class="cells" style="grid-template-columns:repeat(6,12px);left:${k * 14}px;top:${(2 - k) * 12}px;opacity:${0.55 + k * 0.22}">${Array.from({length: 24}, (_, i) => small(Math.sin(i * 1.3 + k * 2) * 0.9)).join('')}</div>`).join('');
+
+  /* ---------------- pipeline ---------------- */
+  const PIPES = {
+    song: [
+      ['Load weights', 'The diffusion model, two Qwen text models and the audio VAE are read from disk into memory.', '', false],
+      ['Text → embeddings', 'Tags and lyrics become tokens, then vectors. The larger Qwen model can also plan the song as audio codes first.', '[1, tokens, 1024]', false],
+      ['Starting latent', 'A block of pure noise from the seed. 30 seconds is 750 time frames (25 a second).', '[1, 64, 750]', true],
+      ['Denoise × 8', 'Each step the model predicts the clean latent; the sampler removes a share of the noise (Euler, shift 3, CFG 1).', '[1, 64, 750]', true],
+      ['Decode', 'The audio VAE turns the 64 × 750 latent into sound: stereo samples at 48 kHz.', '[1, 2, 1440000]', false],
+      ['Save', 'ComfyUI writes an MP3 and NOVA stores it in Media with the full recipe.', '.mp3', false],
+    ],
+    image: [
+      ['Load weights', 'The SDXL checkpoint: UNet, two CLIP text encoders and the VAE.', '', false],
+      ['Text → embeddings', 'Your prompt (and negative prompt) through CLIP-L and CLIP-G, joined to 2,048 numbers per token, plus a pooled summary.', '[1, 77, 2048]', false],
+      ['Starting latent', 'Noise at 1/8 of the picture size in each direction, with 4 channels.', '[1, 4, 128, 128]', true],
+      ['Denoise × 25', 'Each step runs the UNet twice (with and without your prompt) and mixes them by CFG, 7 by default.', '[1, 4, 128, 128]', true],
+      ['Decode', 'The VAE expands the latent 8× each way into RGB pixels.', '[1, 3, 1024, 1024]', false],
+      ['Save', 'A PNG, stored in Media with prompt, seed, steps and sampler.', '.png', false],
+    ],
+  };
+  const renderPipe = k => {
+    document.getElementById('pipe').innerHTML = PIPES[k].map(([h, d, sh, hot]) => `<li class="${hot ? 'hot' : ''}"><div class="what"><h3>${h}</h3><small>${d}</small></div><span class="shape">${sh}</span></li>`).join('');
+    document.getElementById('pipeSong').setAttribute('aria-pressed', k === 'song');
+    document.getElementById('pipeImage').setAttribute('aria-pressed', k === 'image');
+  };
+  document.getElementById('pipeSong').onclick = () => renderPipe('song');
+  document.getElementById('pipeImage').onclick = () => renderPipe('image');
+  renderPipe('song');
+
+  /* ---------------- step lab ---------------- */
+  const patchX0 = Array.from({length: 64}, (_, i) => songX0[(i >> 3) * SONG.cols + (i & 7) * 12]);
+  const patchN = Array.from({length: 64}, (_, i) => songN[(i >> 3) * SONG.cols + (i & 7) * 12]);
+  const labStep = document.getElementById('labStep'), shiftIn = document.getElementById('shift');
+  function drawLab(){
+    const st = Number(labStep.value), sh = Number(shiftIn.value), sig = sigmaAt(st, 8, sh);
+    document.getElementById('labStepOut').textContent = st; document.getElementById('shiftOut').textContent = sh;
+    document.getElementById('sigmaOut').textContent = sig.toFixed(2);
+    document.getElementById('nums').innerHTML = patchX0.map((x, i) => { const v = (1 - sig) * x + sig * patchN[i]; const [r, g, b] = heat(Math.max(-1, Math.min(1, v / 1.6))); return `<span style="background:rgb(${r|0},${g|0},${b|0})">${v >= 0 ? '' : '−'}${Math.abs(v).toFixed(1)}</span>`; }).join('');
+    const W = 320, H = 190, L = 34, R = 10, T = 10, B = 26, px = i => L + i / 8 * (W - L - R), py = v => T + (1 - v) * (H - T - B);
+    const line = shv => Array.from({length: 9}, (_, i) => `${px(i).toFixed(1)},${py(sigmaAt(i, 8, shv)).toFixed(1)}`).join(' ');
+    const grid = [0, 0.5, 1].map(v => `<line x1="${L}" x2="${W - R}" y1="${py(v)}" y2="${py(v)}" stroke="${css('--line')}" stroke-width="1"/><text x="${L - 6}" y="${py(v) + 3}" text-anchor="end">${v.toFixed(1)}</text>`).join('');
+    const ticks = [0, 2, 4, 6, 8].map(i => `<text x="${px(i)}" y="${H - 8}" text-anchor="middle">${i}</text>`).join('');
+    document.getElementById('sched').innerHTML = `${grid}${ticks}<text x="${L}" y="${H - 8}" text-anchor="start" dx="-30">step</text>
+      <polyline points="${line(1)}" fill="none" stroke="${css('--muted')}" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <polyline points="${line(sh)}" fill="none" stroke="${css('--amber')}" stroke-width="2.2"/>
+      <circle cx="${px(st)}" cy="${py(sig)}" r="4.5" fill="${css('--amber')}" stroke="${css('--panel')}" stroke-width="2"/>`;
+  }
+  labStep.oninput = drawLab; shiftIn.oninput = drawLab; drawLab();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', drawLab);
+})();
+</script>
+</body></html>

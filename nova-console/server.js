@@ -43,6 +43,8 @@ const devLoop = require('./lib/dev-loop');
 const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
+const comfyLive = require('./lib/comfy-live');
+const liveAddon = { at: 0, installed: false, reachable: false };
 const videoGen = require('./lib/video-gen');
 const videoLtx = require('./lib/video-ltx');
 const heavyJobs = require('./lib/heavy-jobs');
@@ -290,6 +292,22 @@ const routes = [
       const { record } = transcriber.start(store, DATA_DIR, { ingestDocument, ollama }, decodeURIComponent(id), body);
       desktopSecurity.appendAudit(DATA_DIR, { action: 'media.transcription.started', mediaId: record.id, collectionId: body.collectionId || null });
       sendJson(res, 202, record);
+    } },
+  { method: 'GET', pattern: /^\/api\/comfy\/live$/, handler: async (_req, res) => {
+      const snap = comfyLive.snapshot();
+      // Is NOVA's ComfyUI add-on (audio tensor heatmaps) loaded? Checked at most once a minute.
+      if (!liveAddon.at || Date.now() - liveAddon.at > 60000) {
+        liveAddon.at = Date.now();
+        try { const info = await (await imageGen.call('/object_info/NovaTensorView', {}, 1500)).json(); liveAddon.installed = !!info?.NovaTensorView; liveAddon.reachable = true; }
+        catch (_) { liveAddon.reachable = false; }
+      }
+      sendJson(res, 200, { ...snap, addon: { installed: liveAddon.installed, comfyReachable: liveAddon.reachable } });
+    } },
+  { method: 'GET', pattern: /^\/api\/comfy\/live\/preview\/([^/]+)\/([^/]+)$/, handler: async (_req, res, [promptId, seq]) => {
+      const p = comfyLive.preview(decodeURIComponent(promptId), seq === 'latest' ? 'latest' : Number(seq));
+      if (!p) { sendJson(res, 404, { error: 'No preview yet.' }); return; }
+      res.writeHead(200, { 'Content-Type': p.mime, 'Content-Length': p.data.length, 'Cache-Control': seq === 'latest' ? 'no-store' : 'private, max-age=3600' });
+      res.end(p.data);
     } },
   { method: 'GET', pattern: /^\/api\/images\/status$/, handler: async (_req, res) => sendJson(res, 200, await imageGen.status()) },
   { method: 'GET', pattern: /^\/api\/images\/jobs$/, handler: async (_req, res) => sendJson(res, 200, store.all('generationJobs').reverse()) },
