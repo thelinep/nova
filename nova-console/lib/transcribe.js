@@ -29,7 +29,9 @@ const running = new Map();
 function error(message, statusCode = 400) { return Object.assign(new Error(message), { statusCode }); }
 
 function which(names) {
-  const dirs = String(process.env.PATH || '').split(path.delimiter).concat(['/opt/homebrew/bin', '/usr/local/bin']);
+  // Homebrew's folders are searched too (a desktop app's PATH often lacks them); NOVA_TOOL_DIRS replaces that list.
+  const extra = process.env.NOVA_TOOL_DIRS !== undefined ? process.env.NOVA_TOOL_DIRS.split(path.delimiter).filter(Boolean) : ['/opt/homebrew/bin', '/usr/local/bin'];
+  const dirs = String(process.env.PATH || '').split(path.delimiter).concat(extra);
   for (const name of names) for (const dir of dirs) {
     const candidate = path.join(dir, name);
     try { fs.accessSync(candidate, fs.constants.X_OK); if (fs.statSync(candidate).isFile()) return candidate; } catch (_) {}

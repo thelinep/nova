@@ -35,7 +35,7 @@ test('transcription reports exactly what is missing, then runs whisper and files
   const db = store(), dir = tmp('nova-tr-'), bin = tmp('nova-bin-');
   const saved = { ...process.env };
   try {
-    process.env.PATH = bin; delete process.env.WHISPER_BIN; delete process.env.WHISPER_MODEL; delete process.env.FFMPEG_BIN;
+    process.env.PATH = bin; process.env.NOVA_TOOL_DIRS = ''; delete process.env.WHISPER_BIN; delete process.env.WHISPER_MODEL; delete process.env.FFMPEG_BIN;
     const missing = transcriber.status(dir);
     assert.equal(missing.ready, false);
     assert.equal(missing.missing.length, 3);
@@ -149,7 +149,7 @@ test('a broken ffmpeg falls back to macOS afconvert, which refuses formats it ca
   const db = store(), dir = tmp('nova-af-'), bin = tmp('nova-afbin-');
   const saved = { ...process.env };
   try {
-    process.env.PATH = bin; delete process.env.WHISPER_BIN; delete process.env.WHISPER_MODEL; delete process.env.FFMPEG_BIN; delete process.env.AFCONVERT_BIN;
+    process.env.PATH = bin; process.env.NOVA_TOOL_DIRS = ''; delete process.env.WHISPER_BIN; delete process.env.WHISPER_MODEL; delete process.env.FFMPEG_BIN; delete process.env.AFCONVERT_BIN;
     fs.writeFileSync(path.join(bin, 'ffmpeg'), '#!/bin/sh\necho "dyld: Library not loaded" >&2\nexit 134\n', { mode: 0o755 });
     fs.writeFileSync(path.join(bin, 'afconvert'), '#!/bin/sh\nfor last; do :; done\nfor a; do case "$a" in -*) ;; *) [ -z "$src" ] && [ "$a" != "WAVE" ] && [ "$a" != "LEI16@16000" ] && [ "$a" != "1" ] && src="$a";; esac; done\n/bin/cp "$src" "$last"\n', { mode: 0o755 });
     fs.writeFileSync(path.join(bin, 'whisper-cli'), `#!/bin/sh\nwhile [ $# -gt 0 ]; do case "$1" in -of) of="$2"; shift;; esac; shift; done\n/bin/cat > "$of.json" <<'J'\n{"transcription":[{"offsets":{"from":0,"to":900},"text":" Hello."}]}\nJ\n`, { mode: 0o755 });

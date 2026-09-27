@@ -27,7 +27,11 @@ exec > >(tee "$LOG") 2>&1
 echo "== Packing $NAME"
 
 echo "== 1/5 Unit tests"
-node --test tests/*.test.js 2>&1 | grep -E "^# (tests|pass|fail)|^not ok" ; [ "${PIPESTATUS[0]}" -eq 0 ] || fail "Tests failed; nothing was packed. See $LOG"
+echo "   Node $(node -v) at $(command -v node)"
+TLOG="$DIST/$NAME-tests.log"
+node --test --test-reporter=tap tests/*.test.js > "$TLOG" 2>&1; TEST_EXIT=$?
+grep -E "^# (tests|pass|fail)|^not ok" "$TLOG" | sed 's/^/   /'
+[ "$TEST_EXIT" -eq 0 ] || fail "Tests failed; nothing was packed. Details: $TLOG"
 
 echo "== 2/5 Bundled Node runtime"
 BUNDLED="$NOVA/packaging/runtime/node/bin/node"
