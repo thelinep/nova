@@ -321,21 +321,26 @@ def reprioritise_gaps(cc, dist):
     if not path.exists():
         return
     g = json.loads(path.read_text())
-    by_key = {}
+    by_key, by_pair = {}, {}
     for (st, di), v in dist.items():
-        by_key[ed.district_key(di)] = v
+        by_key.setdefault(ed.district_key(di), v)
+        by_pair[(ed.district_key(st), ed.district_key(di))] = v
     trade_of = {c: t for t, (_, ids) in TRADES.items() for c in ids}
+    venue_boosted = set()   # one venue search per venue-less district goes first; the rest follow by population
     for i, gap in enumerate(g["gaps"]):
-        v = by_key.get(ed.district_key(gap["district"]))
+        v = by_pair.get((ed.district_key(gap.get("state")), ed.district_key(gap["district"]))) or by_key.get(ed.district_key(gap["district"]))
         t = trade_of.get(gap["category"])
         score, why = 0.0, []
         if v and t:
             score += v["far"][t]
             if v["far"][t] >= 1000:
-                why.append(f"{v['far'][t]:,.0f} people over {FAR_KM:.0f} km from a {TRADES[t][0].lower()}")
+                why.append(f"{v['far'][t]:,.0f} people over {FAR_KM:.0f} km from any {TRADES[t][0].lower()}")
+        dk = (ed.district_key(gap.get("state")), ed.district_key(gap["district"]))
         if v and v["venues"] == 0 and gap["category"].startswith("venue."):
-            score += 2e6
             why.append("no venue listed")
+            if dk not in venue_boosted:
+                venue_boosted.add(dk)
+                score += 2e6
         if v and v["places"] < 50:
             score += 5e5
             why.append("fewer than 50 places listed")
