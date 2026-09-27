@@ -9,6 +9,26 @@ hand-rolled vector search, Phase 3: hand-rolled MCP protocol): verify the
 constraint directly, and if the suggested stack is genuinely unreachable,
 build the real underlying mechanism by hand rather than fake the result.
 
+## Pack everything (one double-click)
+
+Double-click **Build NOVA app.command** in the brahmini folder. It runs the
+unit tests (temporary data only) and stops if any fail, then writes to
+`packaging/dist/` (ignored by Git):
+
+- `NOVA-Runtime-<version>-<commit>-mac-arm64.app.zip` — the Tauri app with its
+  own Node runtime, ad-hoc signed; plus a `.dmg` when macOS can make one;
+- `NOVA-Runtime-…-portable.tar.gz` — a folder with the server, console,
+  skills, tool servers, the Kokoro helper, the user guide and Node, started
+  with `Start NOVA.command` (opens the console in your browser);
+- a build log.
+
+The app and the portable folder keep data in
+`~/Library/Application Support/com.brahmini.nova-runtime`, not in
+`nova-console/data/`, so a packed NOVA starts with its own sessions and
+settings. Ollama, ComfyUI and the other engines stay outside the pack; set
+them up with the "Install … for NOVA" scripts. If Rust is not installed the
+app is skipped and only the portable pack is made.
+
 ## Current verified status
 
 The Tauri macOS application now builds and has been launched successfully.

@@ -5,3 +5,4 @@ packaging/tauri/target/
 packaging/tauri/gen/
 packaging/runtime/node/
 __pycache__/
+packaging/dist/

@@ -33,6 +33,8 @@
       "../../mcp-servers/**/*": "mcp-servers/",
       "../../skills/**/*": "skills/",
       "../../public/**/*": "public/",
+      "../../scripts/kokoro-say.py": "scripts/kokoro-say.py",
+      "../../docs/NOVA_USER_GUIDE.md": "docs/NOVA_USER_GUIDE.md",
       "../runtime/node/bin/node": "node/bin/node"
     }
   }
