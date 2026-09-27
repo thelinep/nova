@@ -56,21 +56,32 @@ def words(text):
 
 
 def classify(tax, cats, name):
-    """Returns (category ids, match basis) for one place, or ([], None) when it is not event-related."""
+    """Returns (category ids, match basis) for one place, or ([], None) when it is not event-related.
+    Specific categories come before broad ones ('generic' in taxonomy.json)."""
     c, n = words(cats), str(name or "")
+    generic = set(tax.get("generic", []))
+    specific_first = lambda ids: [i for i in ids if i not in generic] + [i for i in ids if i in generic]
     by_cat = [x["id"] for x in tax["categories"] if c and x["cat_re"].search(c)]
+    by_name = [x["id"] for x in tax["categories"] if x["name_re"].search(n)]
     if by_cat:
-        # Overture files many venues and vendors under one catch-all ("party and event planning").
-        # When that is all the category says, a specific name ("… Mangal Karyalay", "… Caterers") wins.
-        if set(by_cat) <= {"vendor.event_planner"}:
-            by_name = [x["id"] for x in tax["categories"] if x["id"] != "vendor.event_planner" and x["name_re"].search(n)]
-            if by_name:
-                return by_name + by_cat, "category"
-        return by_cat, "category"
+        # Broad source categories (Overture's "party and event planning", "printing service") give way
+        # to a specific name ("… Mangal Karyalay", "… Flex Printing", "… LED Wall").
+        if set(by_cat) <= generic:
+            named = [i for i in by_name if i not in generic and i not in by_cat]
+            if named:
+                return named + specific_first(by_cat), "category"
+        return specific_first(by_cat), "category"
     if c and tax["exclude_re"].search(c):
         return [], None
-    by_name = [x["id"] for x in tax["categories"] if x["name_re"].search(n)]
-    return (by_name, "name") if by_name else ([], None)
+    return (specific_first(by_name), "name") if by_name else ([], None)
+
+
+def family_of(tax):
+    return {c["id"]: c.get("family", c["group"]) for c in tax["categories"]}
+
+
+def filter_hash(tax):
+    return hashlib.sha1(prefilter_regex(tax).encode()).hexdigest()[:12]
 
 
 def prefilter_regex(tax):
@@ -201,7 +212,7 @@ def fetch_overture(cc, tax, source_root=None):
     con.execute(f"COPY ({sql}) TO '{out}' (FORMAT parquet)", [cc, cc])
     n = con.execute(f"SELECT count(*) FROM '{out}'").fetchone()[0]
     log(f"Overture: {n:,} candidate places in {time.time() - t0:.0f}s → {out.name}")
-    (RAW / f"overture-{cc}.meta.json").write_text(json.dumps({"release": release, "bbox": list(bbox), "fetchedAt": now(), "candidates": n}, indent=2))
+    (RAW / f"overture-{cc}.meta.json").write_text(json.dumps({"release": release, "bbox": list(bbox), "fetchedAt": now(), "candidates": n, "filter": filter_hash(tax)}, indent=2))
     return n
 
 
@@ -209,9 +220,9 @@ def fetch_overture(cc, tax, source_root=None):
 
 OSM_KEYS = {
     "amenity": "events_venue|conference_centre|exhibition_centre|community_centre|social_centre|marriage_hall|wedding_hall|banquet_hall|function_hall|arts_centre|theatre",
-    "craft": "caterer|photographer|florist|event_planner|musician|confectionery|photographic_laboratory",
-    "shop": "florist|party|wedding|bakery|pastry|cake|costume|photo|photo_studio|rental|bridal|confectionery|printing|stationery|beauty",
-    "office": "event_management|event_planner|wedding_planner|events",
+    "shop": "florist|party|wedding|bakery|pastry|cake|costume|photo|photo_studio|rental|bridal|confectionery|printing|stationery|beauty|hairdresser|jewelry|boutique|tailor|gift|travel_agency|copyshop",
+    "craft": "caterer|photographer|florist|event_planner|musician|confectionery|photographic_laboratory|signmaker|tailor|dressmaker|stand_builder|electrician",
+    "office": "event_management|event_planner|wedding_planner|events|travel_agent|advertising_agency|security",
     "leisure": "resort",
     "tourism": "resort",
 }
@@ -476,6 +487,7 @@ def build(cc, tax):
         groups.setdefault(dsu.find(i), []).append(kept[i])
 
     order = [c["id"] for c in tax["categories"]]
+    fam = family_of(tax)
     places, links = [], []
     for members in groups.values():
         members.sort(key=lambda r: (SOURCE_RANK[r["source"]], 0 if r["match_basis"] == "category" else 1))
@@ -487,7 +499,7 @@ def build(cc, tax):
         pid = "ev_" + hashlib.sha1("|".join(sorted(f"{m['source']}:{m['id']}" for m in members)).encode()).hexdigest()[:16]
         phones = sorted({p for m in members for p in re.split(r"\s*\|\s*", str(m.get("phones") or "")) if p.strip()})
         places.append({
-            "id": pid, "name": top["name"], "primary_category": primary, "group": primary.split(".")[0],
+            "id": pid, "name": top["name"], "family": fam[primary], "primary_category": primary, "group": "venue" if fam[primary] == "venue" else "vendor",
             "categories": ",".join(cats), "match_basis": basis,
             "lat": round(top["lat"], 6), "lon": round(top["lon"], 6), "address": pick("address"), "locality": pick("locality"),
             "district": pick("district"), "state": pick("state"), "postcode": pick("postcode"), "country": cc,
@@ -505,15 +517,19 @@ def build(cc, tax):
     db_path = OUT / "directory.db"
     con = sqlite3.connect(db_path)
     con.executescript("""
-      CREATE TABLE IF NOT EXISTS places (id TEXT PRIMARY KEY, name TEXT, primary_category TEXT, "group" TEXT, categories TEXT, match_basis TEXT,
+      CREATE TABLE IF NOT EXISTS places (id TEXT PRIMARY KEY, name TEXT, family TEXT, primary_category TEXT, "group" TEXT, categories TEXT, match_basis TEXT,
         lat REAL, lon REAL, address TEXT, locality TEXT, district TEXT, state TEXT, postcode TEXT, country TEXT, phones TEXT, websites TEXT,
         emails TEXT, socials TEXT, rating TEXT, reviews TEXT, overture_confidence REAL, sources TEXT, source_count INTEGER, source_urls TEXT, built_at TEXT);
       CREATE TABLE IF NOT EXISTS place_sources (place_id TEXT, source TEXT, source_id TEXT, source_url TEXT, source_categories TEXT, match_basis TEXT, licence TEXT);
-      CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, "group" TEXT, label TEXT, google_query TEXT);
+      CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, "group" TEXT, label TEXT, google_query TEXT, family TEXT);
+      CREATE TABLE IF NOT EXISTS families (id TEXT PRIMARY KEY, label TEXT, position INTEGER);
       CREATE TABLE IF NOT EXISTS builds (country TEXT PRIMARY KEY, built_at TEXT, info TEXT);
       CREATE INDEX IF NOT EXISTS places_where ON places(country, state, district, primary_category);
       CREATE INDEX IF NOT EXISTS place_sources_place ON place_sources(place_id);
     """)
+    for table, col in (("places", "family"), ("categories", "family")):
+        if col not in [r[1] for r in con.execute(f"PRAGMA table_info({table})")]:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {col} TEXT")
     con.execute("DELETE FROM place_sources WHERE place_id IN (SELECT id FROM places WHERE country=?)", [cc])
     con.execute("DELETE FROM places WHERE country=?", [cc])
     built = now()
@@ -521,7 +537,10 @@ def build(cc, tax):
     if places:
         con.executemany(f'INSERT INTO places ({",".join(chr(34) + c + chr(34) for c in cols)}) VALUES ({",".join("?" * len(cols))})', [tuple(p.values()) + (built,) for p in places])
         con.executemany("INSERT INTO place_sources VALUES (?,?,?,?,?,?,?)", links)
-    con.executemany("INSERT OR REPLACE INTO categories VALUES (?,?,?,?)", [(c["id"], c["group"], c["label"], c["google"]) for c in tax["categories"]])
+    con.execute("DELETE FROM categories")
+    con.executemany('INSERT INTO categories (id, "group", label, google_query, family) VALUES (?,?,?,?,?)', [(c["id"], c["group"], c["label"], c["google"], c.get("family")) for c in tax["categories"]])
+    con.execute("DELETE FROM families")
+    con.executemany("INSERT INTO families VALUES (?,?,?)", [(f["id"], f["label"], i) for i, f in enumerate(tax.get("families", []))])
     counts = {s: sum(1 for r in rows if r["source"] == s) for s in SOURCE_RANK}
     info = {"sourceRows": counts, "eventRelated": len(kept), "places": len(places), "districtMethod": method}
     con.execute("INSERT OR REPLACE INTO builds VALUES (?,?,?)", [cc, built, json.dumps(info)])
@@ -560,6 +579,18 @@ def write_summary_and_gaps(cc, tax, places, info):
              "Listings are what the sources publish, not a verified census. `match_basis=name` rows were matched on the name only; check them before use.", "",
              "## By category", "", "| Category | Places |", "|---|---:|"]
     lines += [f"| {labels[c]} | {n:,} |" for c, n in sorted(by_cat.items(), key=lambda x: -x[1])]
+    fams = tax.get("families", [])
+    if fams:
+        by_fam, grid = {}, {}
+        for p in places:
+            by_fam[p["family"]] = by_fam.get(p["family"], 0) + 1
+            k = (p["state"] or "(unknown)", p["family"])
+            grid[k] = grid.get(k, 0) + 1
+        lines += ["", "## By family", "", "| Family | Places |", "|---|---:|"]
+        lines += [f"| {f['label']} | {by_fam.get(f['id'], 0):,} |" for f in fams]
+        lines += ["", "## State × family", "", "| State | Total | " + " | ".join(f["label"] for f in fams) + " |", "|---|---:|" + "---:|" * len(fams)]
+        for st, n in sorted(by_state.items(), key=lambda x: -x[1]):
+            lines.append(f"| {st} | {n:,} | " + " | ".join(f"{grid.get((st, f['id']), 0):,}" for f in fams) + " |")
     lines += ["", "## By state / region", "", "| State | Places |", "|---|---:|"]
     lines += [f"| {s} | {n:,} |" for s, n in sorted(by_state.items(), key=lambda x: -x[1])]
     lines += ["", "## By source combination", "", "| Sources | Places |", "|---|---:|"]
@@ -606,9 +637,13 @@ def main():
         try:
             if s == "overture":
                 ov = RAW / f"overture-{cc}.parquet"
-                if a.stage == "all" and not a.refresh and ov.exists() and (RAW / f"overture-{cc}.meta.json").exists() and time.time() - ov.stat().st_mtime < 7 * 86400:
+                meta_path = RAW / f"overture-{cc}.meta.json"
+                same_filter = meta_path.exists() and json.loads(meta_path.read_text()).get("filter") == filter_hash(tax)
+                if a.stage == "all" and not a.refresh and ov.exists() and same_filter and time.time() - ov.stat().st_mtime < 7 * 86400:
                     log(f"Overture data for {cc} is less than a week old; reusing it (--refresh to download again).")
                     continue
+                if ov.exists() and not same_filter:
+                    log("Categories changed since the last download; fetching Overture again.")
                 fetch_overture(cc, tax, a.overture_source)
             elif s == "osm":
                 if a.refresh:
