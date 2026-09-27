@@ -7,7 +7,8 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT/india-scraper-next" || exit 1
 read -r -t 20 -p "Country code [IN] (starts with IN in 20 s): " CC; echo; CC="$(echo "${CC:-IN}" | tr '[:lower:]' '[:upper:]')"
 free=$(df -g "$HOME" | awk 'NR==2{print $4}')
-if [ "${free:-0}" -lt 5 ]; then echo "Only ${free} GB free. The build needs about 5 GB of working space; free some and try again."; exit 1; fi
+need=5; [ -f data/event-directory/raw/divisions-$CC.parquet ] && need=3
+if [ "${free:-0}" -lt $need ]; then echo "Only ${free} GB free. The build needs about ${need} GB of working space; free some and try again."; exit 1; fi
 VENV="$HOME/.brahmini-event-directory"
 if [ ! -x "$VENV/bin/python" ]; then echo "Setting up a small Python environment (DuckDB)…"; python3 -m venv "$VENV" || exit 1; fi
 "$VENV/bin/pip" install -q --upgrade pip duckdb || exit 1

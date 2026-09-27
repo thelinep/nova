@@ -135,7 +135,24 @@
       "serves": [
         "Vendor selection & contracts",
         "Master timeline",
-        "Run of show"
+        "Run of show",
+        "Budget & cost tracking",
+        "Staffing & roles",
+        "Procurement & purchasing",
+        "Stakeholder communications",
+        "Meetings, approvals & sign-off",
+        "Permits & compliance coordination",
+        "Rehearsals & walkthroughs",
+        "Documentation & archiving",
+        "Vendor coordination",
+        "Vendor management",
+        "Budget",
+        "Timeline",
+        "Communications",
+        "Site visits & recces",
+        "Neighbor / community liaison",
+        "VIP experience",
+        "Vendor access rules"
       ]
     },
     {
@@ -149,7 +166,13 @@
       "family": "food",
       "serves": [
         "Catering vendor selection",
-        "Staffing: servers, bartenders, chefs"
+        "Staffing: servers, bartenders, chefs",
+        "Dietary requirements: vegan, halal, kosher, allergies",
+        "Service style: buffet, plated, family, stations",
+        "Food safety & hygiene",
+        "Vendor meals",
+        "VIP / artist catering",
+        "Service timing & schedule"
       ]
     },
     {
@@ -164,7 +187,12 @@
       "serves": [
         "Set pieces & props",
         "Furniture & rentals",
-        "Setup / teardown"
+        "Setup / teardown",
+        "Tabletop, linens & glassware",
+        "Backdrops",
+        "Photo ops",
+        "Props",
+        "Lounge areas"
       ]
     },
     {
@@ -191,7 +219,14 @@
       "family": "media",
       "serves": [
         "Photography: event, portrait, detail",
-        "Videography: highlight, documentary"
+        "Videography: highlight, documentary",
+        "Crew: photographers, DPs, operators",
+        "Shot list",
+        "Storyboard",
+        "Interview setup",
+        "B-roll",
+        "Schedule",
+        "Recording"
       ]
     },
     {
@@ -220,7 +255,10 @@
       "family": "style",
       "serves": [
         "Makeup",
-        "Hair styling"
+        "Hair styling",
+        "Makeup & hair",
+        "Artists / team",
+        "Photography-ready looks"
       ]
     },
     {
@@ -249,7 +287,8 @@
       "gapMin": 2,
       "family": "talent",
       "serves": [
-        "Live bands"
+        "Live bands",
+        "Entertainment"
       ]
     },
     {
@@ -333,7 +372,9 @@
       "serves": [
         "Furniture & rentals",
         "Rentals: plates, glassware, cutlery",
-        "Kitchen equipment"
+        "Kitchen equipment",
+        "Furniture",
+        "Seating"
       ]
     },
     {
@@ -348,7 +389,9 @@
       "serves": [
         "Security: guards, bag check, metal detectors",
         "Security",
-        "Crowd management"
+        "Crowd management",
+        "Security perimeter",
+        "Queue management"
       ]
     },
     {
@@ -362,7 +405,8 @@
       "family": "travel",
       "serves": [
         "Valet",
-        "Driver coordination"
+        "Driver coordination",
+        "Ground transport"
       ]
     },
     {
@@ -409,7 +453,10 @@
       "gapMin": 2,
       "serves": [
         "Hotels",
-        "Room blocks"
+        "Room blocks",
+        "Lounge areas",
+        "Green room",
+        "Green room hospitality"
       ],
       "eventTypes": [
         "CONF",
@@ -452,7 +499,16 @@
       "serves": [
         "Production schedule",
         "Run of show",
-        "Load-in / load-out plan"
+        "Load-in / load-out plan",
+        "Stage management",
+        "Technical rehearsal",
+        "Crew: A/V, riggers, operators",
+        "Schematics, patch lists, documentation",
+        "Strike / de-rig",
+        "Load-in / load-out",
+        "Installation",
+        "Dismantling",
+        "Weatherproofing"
       ]
     },
     {
@@ -487,7 +543,10 @@
       "gapMin": 2,
       "serves": [
         "Run of show",
-        "Vendor selection & contracts"
+        "Vendor selection & contracts",
+        "Glam schedule",
+        "Seating",
+        "Coat check"
       ],
       "eventTypes": [
         "WED"
@@ -607,7 +666,12 @@
       "serves": [
         "Talent booking",
         "Celebrity / VIP guests",
-        "Contracts & riders"
+        "Contracts & riders",
+        "Fee negotiation",
+        "Payment & royalties",
+        "Contingency / backup talent",
+        "Technical rider",
+        "Autographs / meet-and-greet"
       ]
     },
     {
@@ -633,7 +697,8 @@
       "google": "drone photography",
       "gapMin": 1,
       "serves": [
-        "Drone / aerial"
+        "Drone / aerial",
+        "Permits"
       ]
     },
     {
@@ -648,7 +713,9 @@
       "serves": [
         "Broadcast: live, multi-camera",
         "Livestream platform",
-        "Live streaming"
+        "Live streaming",
+        "Broadcast / streaming tech",
+        "Virtual / hybrid platform"
       ]
     },
     {
@@ -676,7 +743,9 @@
       "gapMin": 1,
       "serves": [
         "Welcome & host team",
-        "Check-in"
+        "Check-in",
+        "Wayfinding",
+        "Coat check"
       ]
     },
     {
@@ -706,7 +775,11 @@
         "Flights",
         "Visa / passport",
         "Room blocks",
-        "Train / rail"
+        "Train / rail",
+        "Per diems",
+        "Travel manifests",
+        "Travel & accommodation",
+        "Hotels"
       ]
     },
     {
@@ -719,7 +792,8 @@
       "google": "tempo traveller hire",
       "gapMin": 1,
       "serves": [
-        "Shuttles"
+        "Shuttles",
+        "Ground transport"
       ]
     },
     {
@@ -734,7 +808,9 @@
       "serves": [
         "Shipping & freight",
         "Customs clearance",
-        "Material handling"
+        "Material handling",
+        "Load-in / load-out",
+        "Transport & storage"
       ]
     },
     {
@@ -762,7 +838,11 @@
       "gapMin": 1,
       "serves": [
         "Permits: alcohol, food, noise, fire, building",
-        "Licenses: music, performance"
+        "Licenses: music, performance",
+        "Permits & zoning",
+        "Zoning",
+        "Noise restrictions & curfew",
+        "Permits"
       ]
     },
     {
@@ -776,7 +856,9 @@
       "gapMin": 1,
       "serves": [
         "Waste management",
-        "Power, water, sanitation"
+        "Power, water, sanitation",
+        "Cleaning",
+        "Waste & recycling"
       ]
     },
     {
@@ -791,7 +873,12 @@
       "serves": [
         "Booths",
         "Exhibition stands",
-        "Custom fabrication"
+        "Custom fabrication",
+        "Photo ops",
+        "Backdrops",
+        "Props",
+        "Installation",
+        "Dismantling"
       ]
     },
     {
@@ -805,7 +892,11 @@
       "gapMin": 2,
       "serves": [
         "Signage",
-        "Banners"
+        "Banners",
+        "Signage & wayfinding",
+        "Signage & labeling",
+        "Wayfinding",
+        "Digital signage"
       ]
     },
     {
@@ -835,7 +926,19 @@
         "Registration platform",
         "Ticketing system",
         "Event app",
-        "RFID / NFC"
+        "RFID / NFC",
+        "Registration & RSVP",
+        "Ticketing",
+        "Badges & credentials",
+        "Badges",
+        "Agenda",
+        "Push notifications",
+        "Chat / Q&A",
+        "Polls",
+        "Networking",
+        "Gamification",
+        "Payment / consumption",
+        "Interactives"
       ]
     },
     {
@@ -863,7 +966,10 @@
       "gapMin": 1,
       "serves": [
         "Social media",
-        "Email marketing"
+        "Email marketing",
+        "Content calendar",
+        "Community management",
+        "Post-event follow-up"
       ]
     },
     {
@@ -907,7 +1013,379 @@
       "serves": [
         "Tailoring",
         "Fittings",
-        "Wardrobe styling"
+        "Wardrobe styling",
+        "Wardrobe",
+        "Backup outfits",
+        "Quick changes",
+        "Weather-appropriate clothing"
+      ]
+    },
+    {
+      "id": "planning.consultants",
+      "group": "vendor",
+      "family": "planning",
+      "label": "Sustainability, accessibility & DEI consultants",
+      "cat": "\\b(sustainability consult\\w*|environmental consult\\w*|accessibility consult\\w*|esg consult\\w*|diversity consult\\w*)\\b",
+      "name": "\\b(sustainability|green events|accessibility|esg)\\b",
+      "google": "sustainability consultants",
+      "gapMin": 1,
+      "serves": [
+        "Sustainability / green venue",
+        "Sustainability plan",
+        "DEI / accessibility plan",
+        "Sustainability",
+        "Accessibility & inclusion",
+        "DEI",
+        "Accessibility",
+        "Accessibility compliance",
+        "Accessibility & ADA compliance",
+        "Ethics",
+        "Post-event legacy"
+      ]
+    },
+    {
+      "id": "decor.art_installation",
+      "group": "vendor",
+      "family": "decor",
+      "label": "Artists, art studios & installations",
+      "cat": "\\b(art gallery|art studio|artist|sculptor|sculpture|installation art|mural)\\b",
+      "name": "\\b(art studio|arts|sculpture|murals?|installations?)\\b",
+      "google": "art installation artists",
+      "gapMin": 1,
+      "serves": [
+        "Installations & art",
+        "Materials & finishes"
+      ]
+    },
+    {
+      "id": "technical.sfx",
+      "group": "vendor",
+      "family": "technical",
+      "label": "Special effects: pyro, lasers, haze, confetti",
+      "cat": "\\b(pyrotechnic\\w*|fireworks|special effects|laser show|cold pyro|confetti|smoke machine|sfx)\\b",
+      "name": "\\b(pyro|pyrotechnics?|fireworks|laser show|sfx|special effects|cold pyro|confetti)\\b",
+      "google": "special effects pyro for events",
+      "gapMin": 1,
+      "serves": [
+        "Special effects: pyro, lasers, haze"
+      ]
+    },
+    {
+      "id": "technical.it_network",
+      "group": "vendor",
+      "family": "technical",
+      "label": "Event IT, Wi-Fi & radios",
+      "cat": "\\b(internet service provider|wifi|wi fi|network installation|walkie talkie|two way radio|it services|computer rental|laptop rental)\\b",
+      "name": "\\b(wifi|wi-fi|broadband|walkie|networks|laptop on rent|it solutions)\\b",
+      "google": "event wifi and walkie talkie rental",
+      "gapMin": 1,
+      "serves": [
+        "Internet & connectivity",
+        "Networking & IT",
+        "Cabling & infrastructure",
+        "Comms: intercom, radios",
+        "Wi-Fi",
+        "Charging stations",
+        "Cybersecurity",
+        "Redundancy & backup"
+      ]
+    },
+    {
+      "id": "media.post_production",
+      "group": "vendor",
+      "family": "media",
+      "label": "Post-production, editing & motion graphics",
+      "cat": "\\b(post production|video editing|animation studio|motion graphics|vfx|visual effects|dubbing studio)\\b",
+      "name": "\\b(post production|editing studio|animation|motion graphics|vfx|edit studio)\\b",
+      "google": "video editing studios",
+      "gapMin": 1,
+      "serves": [
+        "Editing",
+        "Color grading",
+        "Motion graphics",
+        "Deliverables: formats, resolutions",
+        "Data management & backup",
+        "Distribution"
+      ]
+    },
+    {
+      "id": "media.camera_rental",
+      "group": "vendor",
+      "family": "media",
+      "label": "Camera, lens & lighting rental",
+      "cat": "\\b(camera rental|camera equipment|lens rental|film equipment|lighting rental|studio equipment)\\b",
+      "name": "\\b(camera rental|cameras on rent|camera on rent|film equipment|lens rental)\\b",
+      "google": "camera rental",
+      "gapMin": 1,
+      "serves": [
+        "Equipment: cameras, lenses, lighting, audio",
+        "Lighting",
+        "Audio capture"
+      ]
+    },
+    {
+      "id": "guest.research_feedback",
+      "group": "vendor",
+      "family": "guest",
+      "label": "Surveys, feedback & market research",
+      "cat": "\\b(market research|survey|opinion research|research agency)\\b",
+      "name": "\\b(market research|surveys?|research)\\b",
+      "google": "market research agencies",
+      "gapMin": 1,
+      "serves": [
+        "Feedback & surveys",
+        "Measurement & KPIs",
+        "Objectives, KPIs & success metrics",
+        "Post-event reporting"
+      ]
+    },
+    {
+      "id": "travel.visa",
+      "group": "vendor",
+      "family": "travel",
+      "label": "Visa & passport services",
+      "cat": "\\b(visa consult\\w*|visa service\\w*|passport service\\w*|immigration consult\\w*)\\b",
+      "name": "\\b(visa|passport)\\b",
+      "google": "visa consultants",
+      "gapMin": 1,
+      "serves": [
+        "Visa / passport"
+      ]
+    },
+    {
+      "id": "travel.customs",
+      "group": "vendor",
+      "family": "travel",
+      "label": "Customs brokers & clearing agents",
+      "cat": "\\b(customs broker|customs clearance|clearing agent|clearing and forwarding|freight forwarder)\\b",
+      "name": "\\b(customs|clearing|forwarders?)\\b",
+      "google": "customs clearing agents",
+      "gapMin": 1,
+      "serves": [
+        "Customs",
+        "Customs clearance"
+      ]
+    },
+    {
+      "id": "travel.storage",
+      "group": "vendor",
+      "family": "travel",
+      "label": "Warehousing & storage",
+      "cat": "\\b(warehouse|storage facility|self storage|godown|cold storage)\\b",
+      "name": "\\b(warehouse|warehousing|storage|godown)\\b",
+      "google": "warehouse on rent",
+      "gapMin": 1,
+      "serves": [
+        "Storage",
+        "Inventory",
+        "Transport & storage"
+      ]
+    },
+    {
+      "id": "travel.valet_parking",
+      "group": "vendor",
+      "family": "travel",
+      "label": "Valet & parking services",
+      "cat": "\\b(valet|parking service|parking management)\\b",
+      "name": "\\b(valet|parking)\\b",
+      "google": "valet parking services",
+      "gapMin": 1,
+      "serves": [
+        "Parking",
+        "Parking, drop-off, valet",
+        "Valet"
+      ]
+    },
+    {
+      "id": "safety.insurance",
+      "group": "vendor",
+      "family": "safety",
+      "label": "Event insurance",
+      "cat": "\\b(insurance agency|insurance broker|insurance company|insurance)\\b",
+      "name": "\\b(insurance)\\b",
+      "google": "event insurance",
+      "gapMin": 1,
+      "serves": [
+        "Insurance & liability requirements",
+        "Insurance coordination",
+        "Insurance",
+        "Insurance: liability, workers comp"
+      ]
+    },
+    {
+      "id": "safety.consultant",
+      "group": "vendor",
+      "family": "safety",
+      "label": "Safety, risk & crowd consultants",
+      "cat": "\\b(safety consult\\w*|risk consult\\w*|fire safety consult\\w*|health and safety|crowd management|disaster management)\\b",
+      "name": "\\b(safety consultants?|risk management|crowd management|hse)\\b",
+      "google": "event safety consultants",
+      "gapMin": 1,
+      "serves": [
+        "Risk assessment",
+        "Risk register",
+        "Risk management",
+        "Emergency action plan",
+        "Evacuation routes",
+        "Emergency egress",
+        "Health & safety",
+        "COVID / health protocols",
+        "Weather monitoring",
+        "Incident reporting",
+        "Post-event compliance",
+        "Safety compliance",
+        "Emergency comms",
+        "Crowd flow",
+        "Queue management",
+        "Contingency plans",
+        "Contingency",
+        "Weather contingency & backup venue"
+      ]
+    },
+    {
+      "id": "safety.structural_electrical",
+      "group": "vendor",
+      "family": "safety",
+      "label": "Structural engineers & electrical contractors",
+      "cat": "\\b(structural engineer\\w*|electrical contractor|electrician|electrical service)\\b",
+      "name": "\\b(structural|electricals?|electrical works|electricians?)\\b",
+      "google": "electrical contractors for events",
+      "gapMin": 1,
+      "serves": [
+        "Structural / rigging inspections",
+        "Electrical safety",
+        "Power distribution",
+        "Maintenance"
+      ]
+    },
+    {
+      "id": "safety.legal",
+      "group": "vendor",
+      "family": "safety",
+      "label": "Lawyers & legal services",
+      "cat": "\\b(lawyer|law firm|legal service\\w*|attorney|advocate|notary)\\b",
+      "name": "\\b(advocates?|law firm|law chambers|legal|lawyers?|solicitors)\\b",
+      "google": "lawyers",
+      "gapMin": 1,
+      "serves": [
+        "Legal",
+        "Lease / rental contract",
+        "Rights & licensing",
+        "Data privacy / GDPR",
+        "Data privacy",
+        "Privacy",
+        "Child protection",
+        "Union rules"
+      ]
+    },
+    {
+      "id": "talent.speakers",
+      "group": "vendor",
+      "family": "talent",
+      "label": "Speakers & presenters",
+      "cat": "\\b(speaker bureau|motivational speaker|keynote speaker|public speaking|corporate trainer)\\b",
+      "name": "\\b(speaker|motivational|keynote|orator)\\b",
+      "google": "motivational speakers",
+      "gapMin": 1,
+      "serves": [
+        "Speakers / presenters"
+      ]
+    },
+    {
+      "id": "branding.design_studio",
+      "group": "vendor",
+      "family": "branding",
+      "label": "Design, branding & 3D visualisation studios",
+      "cat": "\\b(graphic design\\w*|design studio|branding agency|brand consult\\w*|3d rendering|3d visuali[sz]ation|architectural visuali[sz]ation|creative agency|event design)\\b",
+      "name": "\\b(design studio|designs|branding|creative studio|creatives|graphics studio|3d visual\\w*)\\b",
+      "google": "branding and design studios",
+      "gapMin": 1,
+      "serves": [
+        "Creative concept",
+        "Moodboards & references",
+        "Color palette",
+        "Renderings & visuals",
+        "Spatial design & floor plan",
+        "Floor plan & footprint",
+        "Brand identity",
+        "Logo usage",
+        "Typography",
+        "Brand integration",
+        "Brand alignment",
+        "Stage graphics"
+      ]
+    },
+    {
+      "id": "branding.uniforms",
+      "group": "vendor",
+      "family": "branding",
+      "label": "Uniforms & staff wear",
+      "cat": "\\b(uniform\\w*|workwear|corporate wear)\\b",
+      "name": "\\b(uniforms?|workwear)\\b",
+      "google": "uniform manufacturers",
+      "gapMin": 1,
+      "serves": [
+        "Uniforms"
+      ]
+    },
+    {
+      "id": "branding.vehicle_wrap",
+      "group": "vendor",
+      "family": "branding",
+      "label": "Vehicle wraps & graphics",
+      "cat": "\\b(vehicle wrap\\w*|car wrap\\w*|vinyl wrap\\w*|vehicle graphics|car graphics)\\b",
+      "name": "\\b(car wrap|vehicle wrap|wrapping|vinyl|car graphics)\\b",
+      "google": "vehicle branding",
+      "gapMin": 1,
+      "serves": [
+        "Vehicle wraps"
+      ]
+    },
+    {
+      "id": "digital.web_software",
+      "group": "vendor",
+      "family": "digital",
+      "label": "Web, app & software developers",
+      "cat": "\\b(web design|website design|web development|software company|software development|app development|mobile app|it company|crm)\\b",
+      "name": "\\b(web ?design|websites?|infotech|technologies|softwares?|apps|web solutions|digital solutions)\\b",
+      "google": "website developers",
+      "gapMin": 1,
+      "serves": [
+        "Event website",
+        "Landing pages",
+        "CRM integration",
+        "Chatbots",
+        "Data capture",
+        "Analytics"
+      ]
+    },
+    {
+      "id": "style.footwear",
+      "group": "vendor",
+      "family": "style",
+      "label": "Footwear",
+      "cat": "\\b(shoe store|shoe shop|footwear)\\b",
+      "name": "\\b(footwear|shoes|juttis?|mojari)\\b",
+      "google": "footwear shops",
+      "gapMin": 1,
+      "serves": [
+        "Shoes"
+      ]
+    },
+    {
+      "id": "style.cosmetics",
+      "group": "vendor",
+      "family": "style",
+      "label": "Cosmetics & skincare products",
+      "cat": "\\b(cosmetics|beauty supply|skin care|skincare|perfume)\\b",
+      "name": "\\b(cosmetics|beauty products|skin care|skincare|perfumes?)\\b",
+      "google": "cosmetics shops",
+      "gapMin": 1,
+      "serves": [
+        "Skincare",
+        "Products",
+        "Comfort items",
+        "Travel kit"
       ]
     }
   ],

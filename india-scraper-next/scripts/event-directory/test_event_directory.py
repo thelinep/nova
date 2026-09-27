@@ -65,6 +65,10 @@ class EventDirectory(unittest.TestCase):
         self.assertIn("| Maharashtra | 3 |", rep)
         chk = subprocess.run([sys.executable, str(HERE / "event_directory.py"), "checklist", "--event", "WED"], env=env, check=True, capture_output=True, text=True).stdout
         self.assertIn("Florals & botanicals", chk); self.assertNotIn("Exhibition stands", chk)
+        items = subprocess.run([sys.executable, str(HERE / "event_directory.py"), "items"], env=env, check=True, capture_output=True, text=True).stdout
+        self.assertIn("| Catering vendor selection | ALL | 1 |", items)
+        served = {n for c in ed.load_taxonomy()["categories"] for n in c.get("serves", [])}
+        self.assertEqual([i["name"] for s in cl["sections"] for i in s["items"] if i["name"] not in served], [], "every checklist item has a supplier category")
 
 
 if __name__ == "__main__":

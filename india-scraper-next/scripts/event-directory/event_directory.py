@@ -771,9 +771,62 @@ def event_checklist(tax, wanted):
     return out
 
 
+def item_report(cc, tax, wanted=None):
+    """For every checklist item: the categories that supply it and how many places, in India and per state."""
+    checklist = parse_checklist()
+    cat_types = category_event_types(tax, checklist)
+    labels = {c["id"]: c["label"] for c in tax["categories"]}
+    suppliers = {}
+    for c in tax["categories"]:
+        for name in c.get("serves", []):
+            suppliers.setdefault(name, []).append(c["id"])
+    con = sqlite3.connect(f"file:{OUT / 'directory.db'}?mode=ro", uri=True)
+    states = {}
+    # Count places per item exactly (a place supplying an item through two categories counts once).
+    item_total, item_state = {}, {}
+    rows = con.execute("SELECT id, state, categories FROM places WHERE country=?", [cc]).fetchall()
+    serves_of = {c["id"]: set(c.get("serves", [])) for c in tax["categories"]}
+    for pid, st, cats in rows:
+        st = st or "(unknown)"
+        states[st] = states.get(st, 0) + 1
+        items = set()
+        for c in (cats or "").split(","):
+            items |= serves_of.get(c, set())
+        for it in items:
+            item_total[it] = item_total.get(it, 0) + 1
+            item_state.setdefault(it, {})
+            item_state[it][st] = item_state[it].get(st, 0) + 1
+    tag = "-".join(wanted) if wanted else "ALL"
+    head = f"# Suppliers per checklist item · {cc}" + (f" · {', '.join(wanted)}" if wanted else "")
+    lines = [head, "", "How many places in the directory can supply each checklist item, through the categories that serve it. "
+             "A place is counted once per item. Per-state counts are in items-by-state-" + cc + "-" + tag + ".csv.", ""]
+    csv_rows = []
+    order = sorted(states, key=lambda s: -states[s])
+    for sec in checklist["sections"]:
+        items = [it for it in sec["items"] if not wanted or applies(it["codes"], wanted)]
+        if not items:
+            continue
+        lines += [f"## {sec['title']}", "", "| Item | Event types | Places | Supplied by |", "|---|---|---:|---|"]
+        for it in items:
+            cats = suppliers.get(it["name"], [])
+            n = item_total.get(it["name"], 0)
+            lines.append(f"| {it['name']} | {', '.join(it['codes'])} | {n:,} | {', '.join(labels[c] for c in cats) or '—'} |")
+            csv_rows.append([sec["title"], it["name"], " ".join(it["codes"]), n] + [item_state.get(it["name"], {}).get(s, 0) for s in order])
+        lines.append("")
+    OUT.mkdir(parents=True, exist_ok=True)
+    md = OUT / f"items-{cc}-{tag}.md"
+    md.write_text("\n".join(lines), encoding="utf-8")
+    with open(OUT / f"items-by-state-{cc}-{tag}.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["family", "item", "event_types", "places"] + order)
+        w.writerows(csv_rows)
+    log(f"Items → {md}")
+    return md
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["overture", "osm", "google", "build", "all", "report", "checklist"])
+    ap.add_argument("stage", choices=["overture", "osm", "google", "build", "all", "report", "checklist", "items"])
     ap.add_argument("--event", default="", help="event type codes for report/checklist, e.g. WED or LAUNCH,HYBRID")
     ap.add_argument("--state", help="report: one state only")
     ap.add_argument("--country", default="IN", help="ISO 3166-1 alpha-2 code, e.g. IN, AE, GB (default IN)")
@@ -782,6 +835,10 @@ def main():
     ap.add_argument("--refresh", action="store_true", help="download Overture again and redo every OSM region")
     a = ap.parse_args()
     cc, tax, skip = a.country.upper(), load_taxonomy(), set(filter(None, a.skip.split(",")))
+    if a.stage == "items":
+        wanted = [w.strip().upper() for w in a.event.split(",") if w.strip()]
+        print(item_report(cc, tax, wanted or None).read_text(encoding="utf-8"))
+        return
     if a.stage in ("report", "checklist"):
         wanted = [w.strip().upper() for w in a.event.split(",") if w.strip()]
         if not wanted:
