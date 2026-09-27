@@ -235,3 +235,56 @@ test('speech models: English-only models handle English; Hindi and detection nee
     assert.equal(db.get('media', fin.mediaIds[0]).provenance.spokenLanguage, 'hi');
   } finally { process.env = saved; audioGen._resetVoices(); }
 });
+
+test('ACE-Step 1.5: found in ComfyUI (new COMBO lists), becomes the default song engine, and Compare makes both versions', async () => {
+  const http = require('node:http');
+  const MP3 = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(200)]);
+  const seen = { graphs: [] };
+  const combo = items => ['COMBO', { options: items }];
+  const server = http.createServer((req, res) => {
+    const json = b => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(b)); };
+    const node = (n, field, spec) => json({ [n]: { input: { required: { [field]: spec } } } });
+    const u = req.url;
+    if (u === '/system_stats') return json({ system: { comfyui_version: 't' }, devices: [{ name: 'mps' }] });
+    if (u === '/object_info/CheckpointLoaderSimple') return node('CheckpointLoaderSimple', 'ckpt_name', combo(['ace_step_v1_3.5b.safetensors']));
+    if (u === '/object_info/CLIPLoader') return node('CLIPLoader', 'clip_name', combo(['qwen_0.6b_ace15.safetensors', 'qwen_1.7b_ace15.safetensors']));
+    if (u === '/object_info/DualCLIPLoader') return node('DualCLIPLoader', 'clip_name1', combo(['qwen_0.6b_ace15.safetensors', 'qwen_1.7b_ace15.safetensors']));
+    if (u === '/object_info/UNETLoader') return node('UNETLoader', 'unet_name', combo(['acestep_v1.5_turbo.safetensors']));
+    if (u === '/object_info/VAELoader') return node('VAELoader', 'vae_name', combo(['ace_1.5_vae.safetensors']));
+    if (['/object_info/EmptyAceStepLatentAudio', '/object_info/EmptyAceStep1.5LatentAudio', '/object_info/SaveAudioMP3', '/object_info/EmptyLatentAudio'].includes(u)) { const n = decodeURIComponent(u.split('/').pop()); return node(n, 'seconds', ['FLOAT', {}]); }
+    if (u === '/prompt') { let b = ''; req.on('data', c => b += c); req.on('end', () => { seen.graphs.push(JSON.parse(b).prompt); json({ prompt_id: 'p' + seen.graphs.length }); }); return; }
+    if (u.startsWith('/history/')) { const id = u.split('/').pop(); return json({ [id]: { status: { status_str: 'success' }, outputs: { '10': { audio: [{ filename: 'nova_' + id + '.mp3', subfolder: 'audio', type: 'output' }] } } } }); }
+    if (u.startsWith('/view?')) { res.writeHead(200); return res.end(MP3); }
+    res.writeHead(404); res.end();
+  });
+  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  const saved = { ...process.env };
+  process.env.COMFYUI_URL = 'http://127.0.0.1:' + server.address().port; process.env.NOVA_ALLOW_MUSIC_OLD_MACOS = '1';
+  try {
+    const st = await audioGen.comfyStatus();
+    assert.equal(st.music15.ready, true, st.music15.missing.join('; '));
+    assert.equal(st.music15.unet, 'acestep_v1.5_turbo.safetensors'); assert.equal(st.music.checkpoint, 'ace_step_v1_3.5b.safetensors');
+    assert.ok(st.music15.languages.includes('hi'));
+    const dir = tmp('nova-ace15-'), db = store();
+    const one = await audioGen.generate(db, dir, 'music', { prompt: 'bollywood romantic ballad, female vocals, tabla', lyrics: '[verse]\nबारिश में', language: 'hindi', seconds: 20, seed: 7 });
+    await one.done;
+    let fin = db.get('generationJobs', one.job.id);
+    assert.equal(fin.status, 'done', fin.error);
+    const g = seen.graphs[0];
+    assert.equal(g['5'].class_type, 'TextEncodeAceStepAudio1.5'); assert.equal(g['5'].inputs.language, 'hi', 'song-writer "hindi" maps to hi');
+    assert.deepEqual([g['8'].inputs.steps, g['8'].inputs.cfg, g['4'].inputs.shift, g['2'].inputs.type], [8, 1, 3, 'ace']);
+    assert.equal(db.get('media', fin.mediaIds[0]).provenance.engine, 'ace-step-1.5');
+    const old = await audioGen.generate(db, dir, 'music', { prompt: 'x', engine: 'ace-step-1', seconds: 10 });
+    await old.done;
+    assert.equal(seen.graphs[1]['14'].class_type, 'TextEncodeAceStepAudio', 'engine ace-step-1 still uses the old graph');
+    const cmp = await audioGen.compareMusic(db, dir, { prompt: 'cinematic, strings, hopeful', lyrics: '[verse]\nhello', title: 'Monsoon', language: 'en', seconds: 15, seed: 3 });
+    await cmp.done;
+    fin = db.get('generationJobs', cmp.job.id);
+    assert.equal(fin.status, 'done', fin.error); assert.equal(fin.mediaIds.length, 2);
+    const [a, b] = fin.mediaIds.map(id => db.get('media', id));
+    assert.deepEqual([a.provenance.engine, b.provenance.engine], ['ace-step-1.5', 'ace-step-v1-3.5b']);
+    assert.equal(a.provenance.compareGroup, b.provenance.compareGroup); assert.equal(a.provenance.seed, b.provenance.seed, 'same seed for a fair comparison');
+    assert.ok(Number.isFinite(a.provenance.secondsTaken));
+    assert.match(a.originalName, /Monsoon \(ACE-Step 1\.5\)/);
+  } finally { process.env = saved; server.close(); }
+});

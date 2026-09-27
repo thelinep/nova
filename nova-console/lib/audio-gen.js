@@ -28,7 +28,13 @@ const AUDIO_EXT = /\.(mp3|flac|wav|opus|ogg)$/i;
 const MODEL_HINTS = {
   sfx: 'stable-audio-open-1.0.safetensors in ComfyUI/models/checkpoints and t5-base.safetensors in ComfyUI/models/text_encoders (double-click "Add audio models.command")',
   music: 'ace_step_v1_3.5b.safetensors in ComfyUI/models/checkpoints (double-click "Add audio models.command")',
+  music15: 'ACE-Step 1.5: acestep_v1.5_turbo.safetensors (diffusion_models), qwen_0.6b_ace15 and qwen_1.7b_ace15 (text_encoders), ace_1.5_vae (vae) — double-click "Add ACE-Step 1.5.command" (about 10 GB)',
 };
+/* ACE-Step 1.5 sings in these languages (ComfyUI's TextEncodeAceStepAudio1.5 list, trimmed to the useful ones here). */
+const ACE15_LANGUAGES = ['en', 'hi', 'pa', 'ur', 'bn', 'ta', 'te', 'ne', 'sa', 'es', 'fr', 'de', 'it', 'pt', 'ja', 'ko', 'zh', 'ar', 'ru', 'tr', 'id', 'th', 'vi'];
+const KEYSCALES = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'].flatMap(r => [r + ' major', r + ' minor']);
+/** Song-writer language ids → ACE-Step 1.5 language codes. */
+const LYRIC_LANG = { english: 'en', hindi: 'hi', 'hindi-roman': 'hi', hinglish: 'hi', punjabi: 'pa', urdu: 'ur' };
 
 function which(name) { try { return execFileSync('/usr/bin/which', [name], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null; } catch (_) { return null; } }
 function sayBin() { return process.env.NOVA_SAY_BIN || (process.platform === 'darwin' ? which('say') : null); }
@@ -148,20 +154,27 @@ async function comfyStatus() {
   try {
     await comfy.discover();
     await comfy.call('/system_stats');
-    const [ckpts, clips, emptyAudio, emptyAce, saveMp3] = await Promise.all([nodeList('CheckpointLoaderSimple', 'ckpt_name'), nodeList('CLIPLoader', 'clip_name'), nodeList('EmptyLatentAudio', 'seconds'), nodeList('EmptyAceStepLatentAudio', 'seconds'), nodeList('SaveAudioMP3', 'filename_prefix')]);
+    const [ckpts, clips, emptyAudio, emptyAce, saveMp3, unets, dualClips, vaes, emptyAce15] = await Promise.all([nodeList('CheckpointLoaderSimple', 'ckpt_name'), nodeList('CLIPLoader', 'clip_name'), nodeList('EmptyLatentAudio', 'seconds'), nodeList('EmptyAceStepLatentAudio', 'seconds'), nodeList('SaveAudioMP3', 'filename_prefix'), nodeList('UNETLoader', 'unet_name'), nodeList('DualCLIPLoader', 'clip_name1'), nodeList('VAELoader', 'vae_name'), nodeList('EmptyAceStep1.5LatentAudio', 'seconds')]);
     const list = Array.isArray(ckpts) ? ckpts : [], clipList = Array.isArray(clips) ? clips : [];
     const sfx = { checkpoint: list.find(f => /stable[-_]audio/i.test(f)) || null, encoder: clipList.find(f => /t5[-_]base/i.test(f)) || null };
-    const music = { checkpoint: list.find(f => /ace[-_]step/i.test(f)) || null };
+    const music = { checkpoint: list.find(f => /ace[-_]step/i.test(f) && !/1[._]5/.test(f)) || null };
+    const arr = x => (Array.isArray(x) ? x : []);
+    const te = arr(dualClips).length ? arr(dualClips) : clipList;
+    const music15 = { unet: arr(unets).find(f => /acestep_v1\.5_turbo/i.test(f)) || arr(unets).find(f => /acestep_v1\.5/i.test(f) && !/xl/i.test(f)) || null,
+      clip1: te.find(f => /qwen_0\.6b_ace15/i.test(f)) || null, clip2: te.find(f => /qwen_1\.7b_ace15/i.test(f)) || te.find(f => /qwen_4b_ace15/i.test(f)) || null, vae: arr(vaes).find(f => /ace_1\.5_vae/i.test(f)) || null };
+    const music15Missing = [];
+    if (!emptyAce15) music15Missing.push('a newer ComfyUI with ACE-Step 1.5 nodes (update ComfyUI)');
+    if (!music15.unet || !music15.clip1 || !music15.clip2 || !music15.vae) music15Missing.push(MODEL_HINTS.music15);
     const sfxMissing = [], musicMissing = [];
     if (!emptyAudio) sfxMissing.push('a newer ComfyUI with audio nodes (update ComfyUI)');
     if (!sfx.checkpoint || !sfx.encoder) sfxMissing.push(MODEL_HINTS.sfx);
     if (!emptyAce) musicMissing.push('a newer ComfyUI with ACE-Step nodes (update ComfyUI)');
     if (!music.checkpoint) musicMissing.push(MODEL_HINTS.music);
-    const osBlock = musicBlockedByOs(); if (osBlock) musicMissing.push(osBlock);
+    const osBlock = musicBlockedByOs(); if (osBlock) { musicMissing.push(osBlock); music15Missing.push(osBlock); }
     return { reachable: true, url: comfy.baseUrl(), saveNode: saveMp3 ? 'SaveAudioMP3' : 'SaveAudio',
-      sfx: { ready: !sfxMissing.length, missing: sfxMissing, ...sfx }, music: { ready: !musicMissing.length, missing: musicMissing, ...music } };
+      sfx: { ready: !sfxMissing.length, missing: sfxMissing, ...sfx }, music: { ready: !musicMissing.length, missing: musicMissing, ...music }, music15: { ready: !music15Missing.length, missing: music15Missing, ...music15, languages: ACE15_LANGUAGES, keyscales: KEYSCALES } };
   } catch (e) {
-    return { reachable: false, error: e.message, sfx: { ready: false, missing: [] }, music: { ready: false, missing: [] } };
+    return { reachable: false, error: e.message, sfx: { ready: false, missing: [] }, music: { ready: false, missing: [] }, music15: { ready: false, missing: [], languages: ACE15_LANGUAGES, keyscales: KEYSCALES } };
   }
 }
 
@@ -200,18 +213,76 @@ function musicGraph(s, save) {
   };
 }
 
+/** ComfyUI's official ACE-Step 1.5 turbo text-to-song graph (8 steps, CFG 1, AuraFlow shift 3). */
+function music15Graph(s, save) {
+  return {
+    '1': { class_type: 'UNETLoader', inputs: { unet_name: s.unet, weight_dtype: 'default' } },
+    '2': { class_type: 'DualCLIPLoader', inputs: { clip_name1: s.clip1, clip_name2: s.clip2, type: 'ace', device: 'default' } },
+    '3': { class_type: 'VAELoader', inputs: { vae_name: s.vae } },
+    '4': { class_type: 'ModelSamplingAuraFlow', inputs: { model: ['1', 0], shift: 3 } },
+    '5': { class_type: 'TextEncodeAceStepAudio1.5', inputs: { clip: ['2', 0], tags: s.prompt, lyrics: s.lyrics, seed: s.seed, bpm: s.bpm, duration: s.seconds, timesignature: '4', language: s.language, keyscale: s.keyscale, generate_audio_codes: true, cfg_scale: 2, temperature: 0.85, top_p: 0.9, top_k: 0, min_p: 0 } },
+    '6': { class_type: 'ConditioningZeroOut', inputs: { conditioning: ['5', 0] } },
+    '7': { class_type: 'EmptyAceStep1.5LatentAudio', inputs: { seconds: s.seconds, batch_size: 1 } },
+    '8': { class_type: 'KSampler', inputs: { seed: s.seed, steps: s.steps, cfg: 1, sampler_name: 'euler', scheduler: 'simple', denoise: 1, model: ['4', 0], positive: ['5', 0], negative: ['6', 0], latent_image: ['7', 0] } },
+    '9': { class_type: 'VAEDecodeAudio', inputs: { samples: ['8', 0], vae: ['3', 0] } },
+    '10': saveNode(save, ['9', 0]),
+  };
+}
+
+function musicSettings(input, prompt, part, engine) {
+  const base = { title: String(input.title || '').trim().slice(0, 120) || null, prompt, lyrics: String(input.lyrics || '[instrumental]').slice(0, 4000) || '[instrumental]', seed: seedOf(input.seed) };
+  if (engine === 'ace-step-1.5') {
+    const language = ACE15_LANGUAGES.includes(input.language) ? input.language : LYRIC_LANG[input.language] || 'en';
+    const bpm = Math.round(Math.min(220, Math.max(40, Number(input.bpm) || 100)));
+    const keyscale = KEYSCALES.includes(input.keyscale) ? input.keyscale : 'C major';
+    return { engine, ...base, language, bpm, keyscale, seconds: Math.round(Math.min(360, Math.max(10, Number(input.seconds) || 30))), steps: Math.round(Math.min(50, Math.max(4, Number(input.steps) || 8))), unet: part.unet, clip1: part.clip1, clip2: part.clip2, vae: part.vae };
+  }
+  return { engine: 'ace-step-v1-3.5b', ...base, seconds: Math.round(Math.min(240, Math.max(5, Number(input.seconds) || 30))), steps: Math.round(Math.min(100, Math.max(10, Number(input.steps) || 50))), checkpoint: part.checkpoint };
+}
+
+/**
+ * Makes the same song with ACE-Step 1 and 1.5, one after the other (one heavy job at a time),
+ * and records how long each took so they can be compared by ear side by side.
+ */
+async function compareMusic(store, dataDir, input) {
+  const info = await comfyStatus();
+  if (!info.reachable) throw error(info.error, 503);
+  if (!info.music.ready) throw error('ACE-Step 1 needs: ' + info.music.missing.join('; ') + '.', 412);
+  if (!info.music15.ready) throw error('ACE-Step 1.5 needs: ' + info.music15.missing.join('; ') + '.', 412);
+  const prompt = String(input.prompt || '').trim();
+  if (!prompt) throw error('Describe the music style first.');
+  const seed = seedOf(input.seed), group = 'cmp_' + crypto.randomBytes(5).toString('hex');
+  const v1 = musicSettings({ ...input, seed }, prompt, info.music, 'ace-step-1');
+  const v15 = musicSettings({ ...input, seed }, prompt, info.music15, 'ace-step-1.5');
+  const settings = { engine: 'compare', prompt: `Compare ACE-Step 1 vs 1.5 · ${(v1.title || prompt).slice(0, 60)}`, group, title: v1.title, language: v15.language, seconds: v15.seconds };
+  return comfy.startJob(store, 'audio-music', settings, async job => {
+    const ids = [];
+    for (const [label, s, g] of [['1.5', v15, music15Graph(v15, info.saveNode)], ['1', v1, musicGraph(v1, info.saveNode)]]) {
+      const t0 = Date.now();
+      job.progress = `Composing with ACE-Step ${label}…`; store.put('generationJobs', job);
+      const got = await comfy.runGraph(store, dataDir, job, { graph: g, kind: 'audio', ext: AUDIO_EXT, name: `${(s.title || prompt).slice(0, 50)} (ACE-Step ${label})`, provenance: { ...s, compareGroup: group }, timeoutMs: 60 * 60 * 1000, label: 'ACE-Step ' + label });
+      const took = Math.round((Date.now() - t0) / 1000);
+      for (const id of got) { const r = store.get('media', id); if (r) { r.provenance = { ...r.provenance, secondsTaken: took }; store.put('media', r); } }
+      ids.push(...got);
+    }
+    return ids;
+  });
+}
+
 async function generate(store, dataDir, kind, input) {
   const info = await comfyStatus();
   if (!info.reachable) throw error(info.error, 503);
-  const part = info[kind];
-  if (!part.ready) throw error(`${kind === 'sfx' ? 'Sound effects need' : 'Music needs'}: ${part.missing.join('; ')}.`, 412);
+  // Songs use ACE-Step 1.5 when it is installed (unless engine 'ace-step-1' is asked for), else ACE-Step 1.
+  const engine = kind === 'music' ? (input.engine === 'ace-step-1' ? 'ace-step-1' : input.engine === 'ace-step-1.5' ? 'ace-step-1.5' : info.music15.ready ? 'ace-step-1.5' : 'ace-step-1') : null;
+  const part = engine === 'ace-step-1.5' ? info.music15 : info[kind];
+  if (!part.ready) throw error(`${kind === 'sfx' ? 'Sound effects need' : engine === 'ace-step-1.5' ? 'ACE-Step 1.5 needs' : 'Music needs'}: ${part.missing.join('; ')}.`, 412);
   const prompt = String(input.prompt || '').trim();
   if (!prompt) throw error(kind === 'sfx' ? 'Describe the sound, e.g. "heavy monsoon rain on a tin roof, distant thunder".' : 'Describe the music, e.g. "cinematic, tabla, strings, slow build".');
   if (prompt.length > 1000) throw error('The description is limited to 1,000 characters.');
   const settings = kind === 'sfx'
     ? { engine: 'stable-audio-open-1.0', prompt, negative: String(input.negative || 'low quality, distorted').slice(0, 500), seconds: Math.round(Math.min(47, Math.max(1, Number(input.seconds) || 10)) * 10) / 10, steps: Math.round(Math.min(100, Math.max(10, Number(input.steps) || 50))), cfg: 5, seed: seedOf(input.seed), checkpoint: part.checkpoint, encoder: part.encoder }
-    : { engine: 'ace-step-v1-3.5b', title: String(input.title || '').trim().slice(0, 120) || null, prompt, lyrics: String(input.lyrics || '[instrumental]').slice(0, 4000) || '[instrumental]', seconds: Math.round(Math.min(240, Math.max(5, Number(input.seconds) || 30))), steps: Math.round(Math.min(100, Math.max(10, Number(input.steps) || 50))), seed: seedOf(input.seed), checkpoint: part.checkpoint };
-  const g = kind === 'sfx' ? sfxGraph(settings, info.saveNode) : musicGraph(settings, info.saveNode);
+    : musicSettings(input, prompt, part, engine);
+  const g = kind === 'sfx' ? sfxGraph(settings, info.saveNode) : engine === 'ace-step-1.5' ? music15Graph(settings, info.saveNode) : musicGraph(settings, info.saveNode);
   return comfy.startJob(store, kind === 'sfx' ? 'audio-sfx' : 'audio-music', settings, job => comfy.runGraph(store, dataDir, job, { graph: g, kind: 'audio', ext: AUDIO_EXT, name: (settings.title || prompt).slice(0, 60), provenance: settings, timeoutMs: 60 * 60 * 1000, label: kind === 'sfx' ? 'Sound effect' : 'Music' }));
 }
 
@@ -228,4 +299,4 @@ async function status() {
   return { voice: { ready: Boolean(sayBin()) || kokoro.ready, voices: v, kokoro, error: sayBin() || kokoro.ready ? null : 'Voice uses the speech built into macOS, or Kokoro voices.' }, comfy: await comfyStatus() };
 }
 
-module.exports = { status, speak, synthesize, voiceFor, voices, kokoroStatus, kokoroLang, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };
+module.exports = { compareMusic, music15Graph, musicSettings, ACE15_LANGUAGES, KEYSCALES, LYRIC_LANG, status, speak, synthesize, voiceFor, voices, kokoroStatus, kokoroLang, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };

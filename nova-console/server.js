@@ -310,6 +310,12 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/audio\/status$/, handler: async (_req, res) => sendJson(res, 200, await audioGen.status()) },
   { method: 'POST', pattern: /^\/api\/audio\/song-lyrics$/, handler: async (req, res) => sendJson(res, 200, await songWriter.writeLyrics(store, ollama, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/audio\/voice$/, handler: async (req, res) => { const { job } = audioGen.speak(store, DATA_DIR, await readJsonBody(req)); sendJson(res, 202, job); } },
+  { method: 'POST', pattern: /^\/api\/audio\/music-compare$/, handler: async (req, res) => {
+      heavyJobs.check(store, 'music'); await heavyJobs.freeMemory({ ollama });
+      const { job } = await audioGen.compareMusic(store, DATA_DIR, await readJsonBody(req));
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'media.audio.music-compare.started', jobId: job.id });
+      sendJson(res, 202, job);
+    } },
   { method: 'POST', pattern: /^\/api\/audio\/(sfx|music)$/, handler: async (req, res, [kind]) => {
       heavyJobs.check(store, kind); await heavyJobs.freeMemory({ ollama });
       const { job } = await audioGen.generate(store, DATA_DIR, kind, await readJsonBody(req));
