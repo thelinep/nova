@@ -22,6 +22,9 @@ const { runSkillSandboxed } = require('./skill-runner');
 const { buildSkillHost } = require('./skill-host');
 
 const MAX_TOOL_ROUNDS = 6;
+// How deep hand-offs may go: an agent (depth 0) may hand off to a delegate
+// (depth 1), which may hand off once more (depth 2), and no further.
+const MAX_HANDOFF_DEPTH = Math.max(0, Math.min(4, Number(process.env.NOVA_AGENT_MAX_DEPTH || 2)));
 
 // Skills with a real sandboxed entrypoint (Phase 3) — mirrors server.js's
 // own REAL_SKILL_IDS. Anything else is still offered to the model as a
@@ -55,9 +58,11 @@ function toJsonSchema(inputSchema) {
  *  servers' same-named tools can't collide. A server that isn't connected
  *  contributes no tools — an agent can't call what isn't live, exactly
  *  like the manual Call button in the MCP view. */
-function buildToolSpecs(store, agent) {
+function buildToolSpecs(store, agent, opts = {}) {
   const specs = [];
   const owners = new Map();
+  const depth = opts.depth || 0;
+  const chain = opts.chain || [agent.id];
 
   for (const skillId of agent.skills || []) {
     const skill = store.get('skills', skillId);
@@ -86,6 +91,41 @@ function buildToolSpecs(store, agent) {
       });
       owners.set(name, { kind: 'mcp', serverId, toolName: t.name });
     }
+  }
+
+  // Hand-offs: each approved delegate becomes a tool, while depth allows.
+  // An agent already in this chain is never offered again (no loops), and
+  // a draft agent is never offered (drafts need a person's approval first).
+  if (depth < MAX_HANDOFF_DEPTH) {
+    for (const delegateId of agent.delegates || []) {
+      const d = store.get('agents', delegateId);
+      if (!d || d.status === 'draft' || chain.includes(d.id)) continue;
+      const name = 'agent__' + d.id.replace(/[^A-Za-z0-9_]/g, '_');
+      specs.push({
+        type: 'function',
+        function: {
+          name,
+          description: 'Hand a task to the agent "' + d.name + '" (' + (d.role || 'General') + '): ' + String(d.systemPrompt || '').slice(0, 200) + ' It replies with its result.',
+          parameters: { type: 'object', properties: { instruction: { type: 'string', description: 'What ' + d.name + ' should do' }, context: { type: 'string', description: 'Anything it needs to know' } }, required: ['instruction'] },
+        },
+      });
+      owners.set(name, { kind: 'agent', agentId: d.id });
+    }
+  }
+
+  // Drafting: an agent allowed to (canDraftAgents) may propose a new agent.
+  // The result is a DRAFT: it cannot run, be delegated to or join an
+  // approved workflow until a person tests and approves it.
+  if (agent.canDraftAgents && agent.status !== 'draft') {
+    specs.push({
+      type: 'function',
+      function: {
+        name: 'nova__draft_agent',
+        description: 'Propose a new agent for a task no available agent covers. It is saved as a draft that a person must test and approve before anyone can use it.',
+        parameters: { type: 'object', properties: { goal: { type: 'string', description: 'What the new agent should do, in a sentence or two' } }, required: ['goal'] },
+      },
+    });
+    owners.set('nova__draft_agent', { kind: 'draft' });
   }
   return { specs, owners };
 }
@@ -117,6 +157,28 @@ async function executeTool(store, owners, name, args, origin, runtime = {}) {
     return runSimulatedSkill(skill);
   }
 
+  if (owner.kind === 'agent') {
+    const target = store.get('agents', owner.agentId);
+    if (!target || target.status === 'draft') throw new Error('Agent "' + owner.agentId + '" is not available for hand-off');
+    const instruction = String(args.instruction || '').trim();
+    if (!instruction) throw new Error('A hand-off needs an instruction');
+    const from = runtime.agent;
+    const at = new Date().toISOString();
+    target.handoffs = [...(target.handoffs || []), { fromAgentId: from && from.id, toAgentId: target.id, reason: instruction.slice(0, 300), at }].slice(-50);
+    store.put('agents', target);
+    const result = await runAgentLoop(store, runtime.ollama, target, instruction, args.context, origin + ' → ' + (from ? from.name : 'agent'),
+      { depth: (runtime.depth || 0) + 1, chain: [...(runtime.chain || []), target.id] });
+    return { agent: target.name, content: result.content, toolCalls: result.toolTrace.map(t => t.name), rounds: result.rounds };
+  }
+
+  if (owner.kind === 'draft') {
+    const builder = require('./agent-builder');
+    const from = runtime.agent;
+    const draft = await builder.draftAgent(store, runtime.ollama, { goal: String(args.goal || ''), modelId: from && from.modelId, createdBy: 'agent:' + (from ? from.id : '?') });
+    return { draftAgentId: draft.id, name: draft.name, skills: draft.skills, mcpServers: draft.mcpServers,
+      note: 'Saved as a draft. A person must test and approve it in the Agents view before it can be used.' };
+  }
+
   // owner.kind === 'mcp' — real, approval-gated, waits for a human on 'ask'.
   return mcpManager.gatedCall(store, owner.serverId, owner.toolName, args, { wait: true, origin });
 }
@@ -141,9 +203,11 @@ function resolveOllamaModel(store, modelId) {
  *  what was called and what came back. `origin` labels who's driving this
  *  (the Agents view's manual Run button, or a workflow's 'agent' node) so
  *  MCP logs and approval records say so honestly. */
-async function runAgentLoop(store, ollama, agent, instruction, context, origin) {
+async function runAgentLoop(store, ollama, agent, instruction, context, origin, opts = {}) {
   const modelName = resolveOllamaModel(store, agent.modelId);
-  const { specs, owners } = buildToolSpecs(store, agent);
+  const depth = opts.depth || 0;
+  const chain = opts.chain || [agent.id];
+  const { specs, owners } = buildToolSpecs(store, agent, { depth, chain });
   const systemPrompt = agent.systemPrompt || 'You are a helpful workspace agent.';
 
   let messages = [
@@ -168,7 +232,7 @@ async function runAgentLoop(store, ollama, agent, instruction, context, origin) 
       const args = parseToolArgs(call);
       let resultText;
       try {
-        const result = await executeTool(store, owners, name, args, origin || 'agent', { ollama, modelId: agent.modelId });
+        const result = await executeTool(store, owners, name, args, origin || 'agent', { ollama, modelId: agent.modelId, agent, depth, chain });
         resultText = typeof result === 'string' ? result : JSON.stringify(result);
       } catch (e) {
         resultText = 'Error: ' + (e.message || String(e));
@@ -184,4 +248,4 @@ async function runAgentLoop(store, ollama, agent, instruction, context, origin) 
   );
 }
 
-module.exports = { runAgentLoop, buildToolSpecs, MAX_TOOL_ROUNDS };
+module.exports = { runAgentLoop, buildToolSpecs, MAX_TOOL_ROUNDS, MAX_HANDOFF_DEPTH };

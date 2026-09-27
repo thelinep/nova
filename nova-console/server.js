@@ -27,6 +27,7 @@ const mcpManager = require('./lib/mcp-manager');
 const { runSkillSandboxed } = require('./lib/skill-runner');
 const { buildSkillHost } = require('./lib/skill-host');
 const { runAgentLoop } = require('./lib/agent-loop');
+const agentBuilder = require('./lib/agent-builder');
 const workflowEngine = require('./lib/workflow-engine');
 const evalBench = require('./lib/eval-bench');
 const scheduler = require('./lib/scheduler');
@@ -659,29 +660,72 @@ const routes = [
       const instruction = (body.instruction || '').trim();
       if (!instruction) { sendJson(res, 400, { error: 'Expected a non-empty {instruction}' }); return; }
 
+      const wasDraft = agent.status === 'draft';
       agent.status = 'running';
       store.put('agents', agent);
       const startedAt = new Date().toISOString();
       const exec = logExecution(store, 'agent', agent.name + ' · run', 'running', instruction, agent.id);
       try {
-        const result = await runAgentLoop(store, ollama, agent, instruction, body.context, 'agent');
+        const result = await runAgentLoop(store, ollama, agent, instruction, body.context, wasDraft ? 'agent test' : 'agent');
         const finishedAt = new Date().toISOString();
-        agent.status = 'idle';
+        Object.assign(agent, store.get('agents', agent.id) || {});   // keep hand-off records written during the run
+        agent.status = wasDraft ? 'draft' : 'idle';
         agent.lastRun = finishedAt;
         agent.lastResult = { instruction, content: result.content, toolTrace: result.toolTrace, rounds: result.rounds, at: finishedAt };
         store.put('agents', agent);
+        if (wasDraft) Object.assign(agent, agentBuilder.recordTest(store, agent.id, { ok: true, instruction, content: String(result.content || '').slice(0, 1000), toolCalls: result.toolTrace.map(t => t.name) }));
         const ex = store.get('executions', exec.id);
         if (ex) { ex.status = 'success'; ex.finishedAt = finishedAt; ex.detail = result.toolTrace.length + ' tool call(s), ' + result.rounds + ' round(s)'; store.put('executions', ex); }
         sendJson(res, 200, { agent, result, startedAt, finishedAt });
       } catch (e) {
-        agent.status = 'error';
+        agent.status = wasDraft ? 'draft' : 'error';
         store.put('agents', agent);
+        if (wasDraft) agentBuilder.recordTest(store, agent.id, { ok: false, instruction, error: e.message || String(e) });
         const ex = store.get('executions', exec.id);
         if (ex) { ex.status = 'error'; ex.finishedAt = new Date().toISOString(); ex.detail = e.message || String(e); store.put('executions', ex); }
         throw e;
       }
     },
   },
+
+  /* ---- Builder: draft agents and workflows from a goal; approve, discard ---- */
+  { method: 'GET', pattern: /^\/api\/builder\/catalog$/, handler: async (_req, res) => sendJson(res, 200, agentBuilder.catalog(store)) },
+  {
+    method: 'POST', pattern: /^\/api\/builder\/agents$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      const agent = await agentBuilder.draftAgent(store, ollama, { goal: body.goal, modelId: body.modelId });
+      logExecution(store, 'agent', agent.name + ' · drafted', 'success', 'Drafted from goal: ' + String(body.goal || '').slice(0, 200), agent.id);
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'agent.drafted', agentId: agent.id });
+      sendJson(res, 201, agent);
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/builder\/workflows$/, handler: async (req, res) => {
+      const body = await readJsonBody(req);
+      const out = await agentBuilder.draftWorkflow(store, ollama, { goal: body.goal, modelId: body.modelId });
+      logExecution(store, 'workflow', out.workflow.name + ' · drafted', 'success', out.workflow.nodes.length + ' step(s), ' + out.agents.length + ' new draft agent(s)', out.workflow.id);
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'workflow.drafted', workflowId: out.workflow.id, agentIds: out.agents.map(a => a.id) });
+      sendJson(res, 201, out);
+    },
+  },
+  {
+    method: 'POST', pattern: /^\/api\/agents\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {
+      const agent = agentBuilder.approveAgent(store, decodeURIComponent(id));
+      logExecution(store, 'approval', agent.name + ' · approved', 'approved', 'Draft agent approved', agent.id);
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'agent.approved', agentId: agent.id });
+      sendJson(res, 200, agent);
+    },
+  },
+  { method: 'POST', pattern: /^\/api\/agents\/([^/]+)\/discard$/, handler: async (_req, res, [id]) => sendJson(res, 200, agentBuilder.discardAgent(store, decodeURIComponent(id))) },
+  {
+    method: 'POST', pattern: /^\/api\/workflows\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {
+      const wf = agentBuilder.approveWorkflow(store, decodeURIComponent(id));
+      logExecution(store, 'approval', wf.name + ' · approved', 'approved', 'Draft workflow approved', wf.id);
+      desktopSecurity.appendAudit(DATA_DIR, { action: 'workflow.approved', workflowId: wf.id });
+      sendJson(res, 200, wf);
+    },
+  },
+  { method: 'POST', pattern: /^\/api\/workflows\/([^/]+)\/discard$/, handler: async (_req, res, [id]) => sendJson(res, 200, agentBuilder.discardWorkflow(store, decodeURIComponent(id))) },
 
   /* ---- Phase 4: real, server-driven, restart-resilient workflow runs ---- */
   {

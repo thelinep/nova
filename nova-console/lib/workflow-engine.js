@@ -61,11 +61,15 @@ function summarizeOutput(output) {
   return text.length > 160 ? text.slice(0, 157) + '…' : text;
 }
 
-async function runNode(store, ollama, node, context) {
+async function runNode(store, ollama, node, context, workflow) {
   if (node.type === 'agent') {
     const agent = store.get('agents', node.ref);
     if (!agent) throw new Error('Workflow references unknown agent "' + node.ref + '"');
+    const testing = workflow && workflow.status === 'draft';
+    if (agent.status === 'draft' && !testing) throw new Error('Agent "' + agent.name + '" is still a draft; test and approve it in Agents first');
     const result = await runAgentLoop(store, ollama, agent, node.label, context, 'workflow');
+    // A draft workflow's test run also counts as a test of the draft agents in it.
+    if (agent.status === 'draft') require('./agent-builder').recordTest(store, agent.id, { ok: true, instruction: node.label, via: 'workflow ' + workflow.name, content: String(result.content || '').slice(0, 1000), toolCalls: result.toolTrace.map(t => t.name) });
     return result.content || '(agent produced no final content)';
   }
 
@@ -140,7 +144,7 @@ async function advanceRun(store, ollama, runId) {
 
     let output;
     try {
-      output = await runNode(store, ollama, node, run.lastOutput);
+      output = await runNode(store, ollama, node, run.lastOutput, workflow);
     } catch (e) {
       step.status = 'failed'; step.finishedAt = nowIso();
       run.status = 'failed'; run.finishedAt = nowIso(); run.error = e.message || String(e);

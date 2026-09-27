@@ -1287,6 +1287,9 @@ let mcpBusyServerIds = new Set(); // servers with a connect/disconnect in flight
 let skillRunBusyIds = new Set();
 let abSelectedSkills = new Set();
 let abSelectedMcp = new Set();
+let abSelectedDelegates = new Set();
+let agentAutoBuildOpen = false, agentAutoBuildBusy = false;
+let workflowAutoBuildOpen = false, workflowAutoBuildBusy = false;
 let gitSnapshot = null;
 let gitAutoRefresh = true;
 
@@ -3998,10 +4001,39 @@ function bindMcpView(){
 }
 
 /* ===================== marker: RENDER:AGENTS ===================== */
-const AGENT_STATUS_BADGE = {idle:'badge-blue', planning:'badge-amber', running:'badge-amber', awaiting_approval:'badge-rose', done:'badge-green', error:'badge-red'};
+const AGENT_STATUS_BADGE = {draft:'badge-violet', idle:'badge-blue', planning:'badge-amber', running:'badge-amber', awaiting_approval:'badge-rose', done:'badge-green', error:'badge-red'};
 function agentToolTraceHtml(trace){
   if (!trace || !trace.length) return '<div class="empty-hint">No tool calls this run.</div>';
   return trace.map(t=>`<div class="handoff-row">→ <b>${escapeHtml(t.name)}</b>(${escapeHtml(JSON.stringify(t.arguments||{}))}) — ${escapeHtml(String(t.result).slice(0,220))}${String(t.result).length>220?'…':''}</div>`).join('');
+}
+/** POST helper for the builder/approval routes; throws the server's message. */
+async function postJson(path, body){
+  const res = await fetch(apiUrl(path), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})});
+  const out = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(out.error || ('HTTP '+res.status));
+  return out;
+}
+function upsertLocal(store, rec){ const i = DB[store].findIndex(x=>x.id===rec.id); if (i>=0) DB[store][i]=rec; else DB[store].push(rec); }
+function localModelOptions(selected){
+  const local = DB.models.filter(m=>m.runtime==='ollama');
+  return local.length ? local.map(m=>`<option value="${escapeHtml(m.id)}" ${m.id===selected?'selected':''}>${escapeHtml(m.name||m.id)}</option>`).join('') : '<option value="">No local model — sync Ollama first</option>';
+}
+function agentDraftHtml(a){
+  const d = a.draft || {};
+  const tests = d.tests || [];
+  const passed = tests.some(t=>t.ok);
+  const testRows = tests.slice().reverse().map(t=>`<div class="handoff-row">${fmtClock(t.at)} — ${t.ok?'✓':'✗'} ${escapeHtml(t.instruction||'')}${t.via?' <span style="color:var(--muted-dim)">('+escapeHtml(t.via)+')</span>':''}${t.ok?(t.content?' — '+escapeHtml(String(t.content).slice(0,160)):''):(' — '+escapeHtml(t.error||'failed'))}</div>`).join('') || '<div class="empty-hint">Not tested yet. Pick a test prompt above or write your own, then click Test.</div>';
+  return `<div class="approval-banner" style="flex-direction:column;align-items:stretch">
+      <div><b>Draft.</b> ${escapeHtml(d.createdBy && d.createdBy.startsWith('agent:') ? 'Proposed by another agent.' : 'Built by NOVA from your goal.')} It can be tested here but cannot be handed work or run in an approved workflow until you approve it.</div>
+      ${d.goal ? `<div style="margin-top:6px"><b>Goal:</b> ${escapeHtml(d.goal)}</div>` : ''}
+      ${d.notes ? `<div style="margin-top:6px;color:var(--ink-dim)">${escapeHtml(d.notes)}</div>` : ''}
+      <div class="cap-chip-row" style="margin-top:8px">${(d.testPrompts||[]).map((t,i)=>`<button type="button" class="tag-chip agent-test-prompt" data-id="${a.id}" data-i="${i}" title="Use this test prompt">${escapeHtml(t)}</button>`).join('')}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-amber btn-sm agent-approve" data-id="${a.id}" ${passed?'':'disabled title="Run a successful test first"'}>Approve</button>
+        <button class="btn btn-ghost btn-sm agent-discard" data-id="${a.id}">Discard</button>
+      </div>
+    </div>
+    <div class="cap-section-label">Tests</div>${testRows}`;
 }
 function agentCardHtml(a){
   const model = modelById(a.modelId);
@@ -4009,6 +4041,8 @@ function agentCardHtml(a){
   const skillChips = (a.skills||[]).map(id=>{ const s=skillById(id); return s?`<span class="ref-chip">${escapeHtml(s.name)}</span>`:`<span class="ref-chip missing">${escapeHtml(id)}</span>`; }).join('') || '<span class="empty-hint">No skills</span>';
   const mcpChips = (a.mcpServers||[]).map(id=>{ const m=DB.mcpServers.find(x=>x.id===id); return m?`<span class="ref-chip">${escapeHtml(m.name)}</span>`:`<span class="ref-chip missing">${escapeHtml(id)}</span>`; }).join('') || '<span class="empty-hint">No MCP servers</span>';
   const running = a.status==='running' || a.status==='planning';
+  const isDraft = a.status==='draft' || (running && a.draft && !a.draft.approvedAt);
+  const delegateChips = (a.delegates||[]).map(id=>{ const d=DB.agents.find(x=>x.id===id); return `<span class="ref-chip" title="Can hand work to this agent">→ ${escapeHtml(d?d.name:id)}</span>`; }).join('') + (a.canDraftAgents?'<span class="ref-chip" title="Can propose new agents, saved as drafts">+ drafts agents</span>':'');
   const handoffs = (a.handoffs||[]).map(h=>{ const from=DB.agents.find(x=>x.id===h.fromAgentId); const to=DB.agents.find(x=>x.id===h.toAgentId);
     return `<div class="handoff-row">${fmtClock(h.at)} — ${escapeHtml(from?from.name:(h.fromAgentId||'—'))} → ${escapeHtml(to?to.name:h.toAgentId)}: ${escapeHtml(h.reason)}</div>`; }).join('') || '<div class="empty-hint">No handoffs yet.</div>';
   const lastResult = a.lastResult;
@@ -4017,13 +4051,13 @@ function agentCardHtml(a){
       <div><div class="cap-card-title">${escapeHtml(a.name)}</div><div class="cap-card-sub">${escapeHtml(a.role)} · ${model?escapeHtml(model.name):'No model'} · memory: ${a.memoryScope}</div></div>
       <span class="badge ${AGENT_STATUS_BADGE[a.status]||'badge-blue'}">${a.status.replace('_',' ')}</span>
     </div>
-    <div class="cap-chip-row">${skillChips}${mcpChips}</div>
+    <div class="cap-chip-row">${skillChips}${mcpChips}${delegateChips}</div>
+    ${isDraft ? agentDraftHtml(a) : ''}
     <div class="agent-run-row" style="display:flex;gap:8px;margin:10px 0">
       <input class="agent-instruction-input" data-id="${a.id}" placeholder="What should ${escapeHtml(a.name)} do? e.g. ${escapeHtml(a.role==='Engineering'?'Review the files in this repo for issues':'Summarize what is in this workspace')}" style="flex:1" ${running?'disabled':''}>
-      <button class="btn btn-amber btn-sm agent-start" data-id="${a.id}" ${running?'disabled':''}>${running?'Running…':'Run'}</button>
+      <button class="btn btn-amber btn-sm agent-start" data-id="${a.id}" ${running?'disabled':''}>${running?'Running…':(isDraft?'Test':'Run')}</button>
     </div>
     <div class="cap-card-actions">
-      <button class="btn btn-line btn-sm agent-handoff" data-id="${a.id}">Hand off…</button>
       <button class="btn btn-ghost btn-sm agent-details" data-id="${a.id}">${open?'Hide details':'Execution details'}</button>
     </div>
     ${open ? `
@@ -4031,7 +4065,7 @@ function agentCardHtml(a){
       ${lastResult ? `<div class="manifest-box" style="margin-bottom:8px"><b>Instruction:</b> ${escapeHtml(lastResult.instruction)}\n\n<b>Result (${lastResult.rounds} round${lastResult.rounds===1?'':'s'}):</b> ${escapeHtml(lastResult.content)}</div>
         <div class="cap-section-label">Tool calls this run</div>${agentToolTraceHtml(lastResult.toolTrace)}`
         : '<div class="empty-hint">No run yet — enter an instruction above and click Run. This agent’s skill and MCP tool calls go through the same approval-gated pipeline as the Skills and MCP Registry views.</div>'}
-      <div class="cap-section-label">Handoffs (simulated)</div>${handoffs}
+      <div class="cap-section-label">Hand-offs received</div>${handoffs}
       <div class="cap-section-label">System prompt</div><div class="manifest-box">${escapeHtml(a.systemPrompt)}</div>
     ` : ''}
   </div>`;
@@ -4048,6 +4082,8 @@ function agentBuilderHtml(){
       <div class="field-full"><label>System prompt</label><textarea id="abPrompt" placeholder="What this agent is for and its limits…"></textarea></div>
       <div class="field-full"><label>Skills</label><div class="multi-pick" id="abSkills">${DB.skills.filter(s=>s.status!=='available').map(s=>`<button type="button" class="tag-chip ab-skill-pick ${abSelectedSkills.has(s.id)?'active-tag':''}" data-id="${s.id}">${escapeHtml(s.name)}</button>`).join('')}</div></div>
       <div class="field-full"><label>MCP servers</label><div class="multi-pick" id="abMcp">${DB.mcpServers.map(s=>`<button type="button" class="tag-chip ab-mcp-pick ${abSelectedMcp.has(s.id)?'active-tag':''}" data-id="${s.id}">${escapeHtml(s.name)}</button>`).join('')}</div></div>
+      <div class="field-full"><label>Can hand work to (approved agents)</label><div class="multi-pick" id="abDelegates">${DB.agents.filter(x=>x.status!=='draft').map(x=>`<button type="button" class="tag-chip ab-delegate-pick ${abSelectedDelegates.has(x.id)?'active-tag':''}" data-id="${x.id}">${escapeHtml(x.name)}</button>`).join('') || '<span class="empty-hint">No other agents yet.</span>'}</div></div>
+      <div class="field-full"><label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink-dim)"><input type="checkbox" id="abCanDraft" style="width:auto"> Can propose new agents (saved as drafts you must test and approve)</label></div>
     </div>
     <div class="cap-card-actions" style="margin-top:14px">
       <button class="btn btn-amber btn-sm" id="abCreate">Create agent</button>
@@ -4055,13 +4091,30 @@ function agentBuilderHtml(){
     </div>
   </div>`;
 }
+function agentAutoBuildHtml(){
+  if (!agentAutoBuildOpen) return '';
+  return `<div class="panel" style="padding:16px;margin-bottom:18px">
+    <div class="cap-card-title" style="margin-bottom:6px">Build an agent with NOVA</div>
+    <div class="cap-card-sub" style="margin-bottom:10px">Describe what the agent should do. A local model drafts it using only the skills, tool servers and agents installed here. You then test it and approve it.</div>
+    <div class="agent-builder">
+      <div class="field-full"><label>Goal</label><textarea id="aabGoal" placeholder="e.g. Turn my shoot notes into a call sheet and translate it to Hindi" ${agentAutoBuildBusy?'disabled':''}></textarea></div>
+      <div><label>Model</label><select id="aabModel" ${agentAutoBuildBusy?'disabled':''}>${localModelOptions()}</select></div>
+    </div>
+    <div class="cap-card-actions" style="margin-top:14px">
+      <button class="btn btn-amber btn-sm" id="aabGo" ${agentAutoBuildBusy?'disabled':''}>${agentAutoBuildBusy?'Drafting…':'Draft agent'}</button>
+      <button class="btn btn-ghost btn-sm" id="aabCancel" ${agentAutoBuildBusy?'disabled':''}>Cancel</button>
+    </div>
+  </div>`;
+}
 function renderAgentsView(){
   const pad = $('agentsView').querySelector('.view-pad');
   pad.innerHTML = `
     <div class="view-head">
-      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Agents</h1><p class="view-desc">Each agent pairs a model with a fixed set of skills and MCP tools, a memory scope, and a run history. Run sends a real instruction through a real tool-calling loop against Ollama — the model can really call the agent's skills and MCP tools, approval-gated exactly like the Skills and MCP Registry views. Handoffs below are still simulated, not a real scheduler.</p></div>
-      <button class="btn btn-amber" id="newAgentBtn"><span data-lucide="plus" style="width:13px;height:13px"></span>New agent</button>
+      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Agents</h1><p class="view-desc">Each agent pairs a model with a fixed set of skills and MCP tools, a memory scope, and a run history. Run sends a real instruction through a real tool-calling loop against Ollama — the model can really call the agent's skills and MCP tools, approval-gated exactly like the Skills and MCP Registry views. An agent can hand work to the agents you allow (up to two levels deep, never in a loop). <b>Build with NOVA</b> drafts a new agent from a goal; drafts must be tested and approved before other agents or workflows can use them.</p></div>
+      <span style="display:flex;gap:8px"><button class="btn btn-amber" id="autoAgentBtn"><span data-lucide="sparkles" style="width:13px;height:13px"></span>Build with NOVA</button>
+      <button class="btn btn-line" id="newAgentBtn"><span data-lucide="plus" style="width:13px;height:13px"></span>New agent</button></span>
     </div>
+    ${agentAutoBuildHtml()}
     ${agentBuilderHtml()}
     <div class="cap-grid">${DB.agents.map(agentCardHtml).join('') || '<div class="empty-hint">No agents yet.</div>'}</div>
   `;
@@ -4069,16 +4122,36 @@ function renderAgentsView(){
   if (window.lucide) lucide.createIcons();
 }
 function bindAgentsView(){
-  $('newAgentBtn').onclick = () => { agentBuilderOpen = !agentBuilderOpen; if (agentBuilderOpen){ abSelectedSkills=new Set(); abSelectedMcp=new Set(); } renderAgentsView(); };
+  $('newAgentBtn').onclick = () => { agentBuilderOpen = !agentBuilderOpen; if (agentBuilderOpen){ abSelectedSkills=new Set(); abSelectedMcp=new Set(); abSelectedDelegates=new Set(); } renderAgentsView(); };
+  $('autoAgentBtn').onclick = () => { agentAutoBuildOpen = !agentAutoBuildOpen; renderAgentsView(); };
+  if (agentAutoBuildOpen){
+    $('aabCancel').onclick = () => { agentAutoBuildOpen=false; renderAgentsView(); };
+    $('aabGo').onclick = async () => {
+      const goal = $('aabGoal').value.trim();
+      if (goal.length < 8){ toast('Describe the goal in a sentence or two.'); return; }
+      agentAutoBuildBusy = true; const modelId = $('aabModel').value; renderAgentsView(); $('aabGoal').value = goal;
+      try {
+        const a = await postJson('/api/builder/agents', {goal, modelId});
+        upsertLocal('agents', a); agentAutoBuildOpen = false; agentDetailId = a.id;
+        logEvent('AGENT', a.name+' drafted by NOVA'); toast(a.name+' drafted — test it, then approve.');
+      } catch(e){ toast('Could not draft: '+e.message); }
+      finally { agentAutoBuildBusy = false; renderAgentsView(); }
+    };
+  }
+  $$('.agent-test-prompt').forEach(b=>b.onclick=()=>{ const a=DB.agents.find(x=>x.id===b.dataset.id); const input=document.querySelector('.agent-instruction-input[data-id="'+b.dataset.id+'"]'); if (a&&input){ input.value=(a.draft.testPrompts||[])[+b.dataset.i]||''; input.focus(); } });
+  $$('.agent-approve').forEach(b=>b.onclick=async()=>{ try { const a=await postJson('/api/agents/'+encodeURIComponent(b.dataset.id)+'/approve'); upsertLocal('agents', a); logEvent('APPROVAL', a.name+' approved'); toast(a.name+' approved.'); } catch(e){ toast(e.message); } renderAgentsView(); });
+  $$('.agent-discard').forEach(b=>b.onclick=async()=>{ try { await postJson('/api/agents/'+encodeURIComponent(b.dataset.id)+'/discard'); DB.agents=DB.agents.filter(x=>x.id!==b.dataset.id); toast('Draft discarded.'); } catch(e){ toast(e.message); } renderAgentsView(); });
   if (agentBuilderOpen){
     $('abCancel').onclick = () => { agentBuilderOpen=false; renderAgentsView(); };
     $$('.ab-skill-pick').forEach(b=>b.onclick=()=>{ abSelectedSkills.has(b.dataset.id) ? abSelectedSkills.delete(b.dataset.id) : abSelectedSkills.add(b.dataset.id); b.classList.toggle('active-tag'); });
     $$('.ab-mcp-pick').forEach(b=>b.onclick=()=>{ abSelectedMcp.has(b.dataset.id) ? abSelectedMcp.delete(b.dataset.id) : abSelectedMcp.add(b.dataset.id); b.classList.toggle('active-tag'); });
+    $$('.ab-delegate-pick').forEach(b=>b.onclick=()=>{ abSelectedDelegates.has(b.dataset.id) ? abSelectedDelegates.delete(b.dataset.id) : abSelectedDelegates.add(b.dataset.id); b.classList.toggle('active-tag'); });
     $('abCreate').onclick = () => {
       const name = $('abName').value.trim() || 'Untitled agent';
       const a = {id:uid('agt'), name, role:$('abRole').value.trim()||'General', status:'idle',
         systemPrompt:$('abPrompt').value.trim()||'You are a helpful workspace agent.',
         modelId:$('abModel').value, skills:Array.from(abSelectedSkills), mcpServers:Array.from(abSelectedMcp),
+        delegates:Array.from(abSelectedDelegates), canDraftAgents:$('abCanDraft').checked,
         memoryScope:$('abMemory').value, plan:[], handoffs:[], createdAt:nowIso(), lastRun:null};
       idbPut('agents', a); logEvent('AGENT', name+' created'); logExecution('agent', name+' · create', 'success', 'Agent created', a.id);
       agentBuilderOpen = false; toast(name+' created.'); renderAgentsView();
@@ -4091,16 +4164,6 @@ function bindAgentsView(){
     const instruction = input ? input.value.trim() : '';
     if (!instruction){ toast('Enter an instruction for '+a.name+' first.'); return; }
     runAgentNow(a.id, instruction);
-  });
-  $$('.agent-handoff').forEach(b=>b.onclick=()=>{
-    const a = DB.agents.find(x=>x.id===b.dataset.id); if (!a) return;
-    const others = DB.agents.filter(x=>x.id!==a.id); if (!others.length){ toast('No other agents to hand off to.'); return; }
-    const target = others[0];
-    target.handoffs = target.handoffs||[]; target.handoffs.push({fromAgentId:a.id, toAgentId:target.id, reason:'Handed off from '+a.name, at:nowIso()});
-    idbPut('agents', target);
-    a.status='idle'; idbPut('agents', a);
-    logEvent('AGENT', a.name+' handed off to '+target.name); logExecution('agent', a.name+' → '+target.name, 'success', 'Handoff', a.id);
-    toast('Handed off to '+target.name+'.'); renderAgentsView();
   });
 }
 let agentRunBusyIds = new Set();
@@ -4167,6 +4230,35 @@ function validateWorkflowNodes(workflow){
   const badEdges = workflow.nodes.filter(n=>(n.next||[]).some(id=>!workflow.nodes.find(x=>x.id===id)));
   return {nodeResults, edgesOk: badEdges.length===0, allOk: nodeResults.every(r=>r.ok) && badEdges.length===0};
 }
+function workflowAutoBuildHtml(){
+  if (!workflowAutoBuildOpen) return '';
+  return `<div class="panel" style="padding:16px;margin-bottom:18px">
+    <div class="cap-card-title" style="margin-bottom:6px">Build a workflow with NOVA</div>
+    <div class="cap-card-sub" style="margin-bottom:10px">Describe the job from start to finish. A local model lines up steps from the agents, skills and tool servers installed here, drafts any new agents a step needs, and adds a sign-off before anything that publishes or changes files.</div>
+    <div class="agent-builder">
+      <div class="field-full"><label>Goal</label><textarea id="wabGoal" placeholder="e.g. Summarise the new documents, get my sign-off, then translate the digest to Hindi" ${workflowAutoBuildBusy?'disabled':''}></textarea></div>
+      <div><label>Model</label><select id="wabModel" ${workflowAutoBuildBusy?'disabled':''}>${localModelOptions()}</select></div>
+    </div>
+    <div class="cap-card-actions" style="margin-top:14px">
+      <button class="btn btn-amber btn-sm" id="wabGo" ${workflowAutoBuildBusy?'disabled':''}>${workflowAutoBuildBusy?'Drafting… (this can take a minute)':'Draft workflow'}</button>
+      <button class="btn btn-ghost btn-sm" id="wabCancel" ${workflowAutoBuildBusy?'disabled':''}>Cancel</button>
+    </div>
+  </div>`;
+}
+function workflowDraftHtml(w){
+  const d = w.draft || {};
+  const waiting = w.nodes.filter(n=>n.type==='agent').map(n=>DB.agents.find(a=>a.id===n.ref)).filter(a=>!a || a.status==='draft');
+  return `<div class="approval-banner" style="flex-direction:column;align-items:stretch">
+    <div><b>Draft.</b> Built by NOVA from your goal. Use <b>Test run</b> to try it; approve it when it does what you want.</div>
+    ${d.goal?`<div style="margin-top:6px"><b>Goal:</b> ${escapeHtml(d.goal)}</div>`:''}
+    ${d.notes?`<div style="margin-top:6px;color:var(--ink-dim)">${escapeHtml(d.notes)}</div>`:''}
+    ${waiting.length?`<div style="margin-top:6px">Approve these agents in <b>Agents</b> first: ${waiting.map(a=>escapeHtml(a?a.name:'missing agent')).join(', ')}. A test run of this workflow counts as a test of them.</div>`:''}
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="btn btn-amber btn-sm wf-approve-draft" data-id="${w.id}" ${waiting.length?'disabled':''}>Approve workflow</button>
+      <button class="btn btn-ghost btn-sm wf-discard-draft" data-id="${w.id}">Discard draft${(d.agents||[]).length?' and its draft agents':''}</button>
+    </div>
+  </div>`;
+}
 function workflowCardHtml(w){
   const runs = DB.workflowRuns.filter(r=>r.workflowId===w.id).sort((a,b)=>b.startedAt.localeCompare(a.startedAt));
   const activeRun = runs.find(r=>r.status==='running'||r.status==='awaiting_approval'||r.status==='paused');
@@ -4177,10 +4269,11 @@ function workflowCardHtml(w){
       <span class="badge ${w.status==='active'?'badge-green':w.status==='scheduled'?'badge-blue':w.status==='paused'?'badge-amber':'badge-violet'}">${w.status}</span>
     </div>
     <div class="cap-card-desc">${escapeHtml(w.description)}</div>
+    ${w.status==='draft' ? workflowDraftHtml(w) : ''}
     ${wfChainHtml(w, activeRun)}
     <div class="cap-card-actions">
       <button class="btn btn-line btn-sm wf-validate" data-id="${w.id}">Validate</button>
-      <button class="btn btn-amber btn-sm wf-run" data-id="${w.id}" ${activeRun?'disabled':''}>${activeRun?'Run in progress':'Run now'}</button>
+      <button class="btn btn-amber btn-sm wf-run" data-id="${w.id}" ${activeRun?'disabled':''}>${activeRun?'Run in progress':(w.status==='draft'?'Test run':'Run now')}</button>
       ${w.status==='active'?`<button class="btn btn-line btn-sm wf-pause" data-id="${w.id}">Pause schedule</button>`:w.status==='paused'?`<button class="btn btn-line btn-sm wf-resume" data-id="${w.id}">Resume schedule</button>`:''}
       <button class="btn btn-ghost btn-sm wf-toggle-runs" data-id="${w.id}">${selected?'Hide run history':'Run history ('+runs.length+')'}</button>
     </div>
@@ -4196,13 +4289,34 @@ function renderWorkflowsView(){
   const pad = $('workflowsView').querySelector('.view-pad');
   pad.innerHTML = `
     <div class="view-head">
-      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Workflows</h1><p class="view-desc">Each workflow chains agents, skills, and MCP calls into one real, server-driven pipeline — an 'agent' node runs the real tool-calling loop, a 'skill'/'mcp' node makes a real call — with an approval gate wherever a node needs a sign-off before continuing. Run state is persisted after every node, so a run survives a server restart. Cron/event scheduling itself is not wired up yet — only "Run now" and the approval gate are real so far.</p></div>
+      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Workflows</h1><p class="view-desc">Each workflow chains agents, skills, and MCP calls into one real, server-driven pipeline — an 'agent' node runs the real tool-calling loop, a 'skill'/'mcp' node makes a real call — with an approval gate wherever a node needs a sign-off before continuing. Run state is persisted after every node, so a run survives a server restart. Cron/event scheduling itself is not wired up yet — only "Run now" and the approval gate are real so far. <b>Build with NOVA</b> drafts a workflow from a goal.</p></div>
+      <button class="btn btn-amber" id="autoWorkflowBtn"><span data-lucide="sparkles" style="width:13px;height:13px"></span>Build with NOVA</button>
     </div>
+    ${workflowAutoBuildHtml()}
     ${DB.workflows.map(workflowCardHtml).join('') || '<div class="empty-hint">No workflows defined.</div>'}
   `;
   bindWorkflowsView();
+  if (window.lucide) lucide.createIcons();
 }
 function bindWorkflowsView(){
+  $('autoWorkflowBtn').onclick = () => { workflowAutoBuildOpen = !workflowAutoBuildOpen; renderWorkflowsView(); };
+  if (workflowAutoBuildOpen){
+    $('wabCancel').onclick = () => { workflowAutoBuildOpen=false; renderWorkflowsView(); };
+    $('wabGo').onclick = async () => {
+      const goal = $('wabGoal').value.trim();
+      if (goal.length < 8){ toast('Describe the goal in a sentence or two.'); return; }
+      workflowAutoBuildBusy = true; const modelId = $('wabModel').value; renderWorkflowsView(); $('wabGoal').value = goal;
+      try {
+        const out = await postJson('/api/builder/workflows', {goal, modelId});
+        upsertLocal('workflows', out.workflow); (out.agents||[]).forEach(a=>upsertLocal('agents', a));
+        workflowAutoBuildOpen = false;
+        logEvent('WORKFLOW', out.workflow.name+' drafted by NOVA'); toast(out.workflow.name+' drafted'+((out.agents||[]).length?' with '+out.agents.length+' new draft agent(s)':'')+'.');
+      } catch(e){ toast('Could not draft: '+e.message); }
+      finally { workflowAutoBuildBusy = false; renderWorkflowsView(); }
+    };
+  }
+  $$('.wf-approve-draft').forEach(b=>b.onclick=async()=>{ try { const w=await postJson('/api/workflows/'+encodeURIComponent(b.dataset.id)+'/approve'); upsertLocal('workflows', w); toast(w.name+' approved.'); } catch(e){ toast(e.message); } renderWorkflowsView(); });
+  $$('.wf-discard-draft').forEach(b=>b.onclick=async()=>{ try { const r=await postJson('/api/workflows/'+encodeURIComponent(b.dataset.id)+'/discard'); DB.workflows=DB.workflows.filter(x=>x.id!==b.dataset.id); DB.agents=DB.agents.filter(a=>!(r.removedAgents||[]).includes(a.id)); toast('Draft discarded.'); } catch(e){ toast(e.message); } renderWorkflowsView(); });
   $$('.wf-toggle-runs').forEach(b=>b.onclick=()=>{ workflowSelectedId = workflowSelectedId===b.dataset.id?null:b.dataset.id; renderWorkflowsView(); });
   $$('.wf-validate').forEach(b=>b.onclick=()=>{
     const w = DB.workflows.find(x=>x.id===b.dataset.id); if (!w) return;

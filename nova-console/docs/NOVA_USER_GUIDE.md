@@ -156,6 +156,22 @@ Start with a small, low-risk task:
 
 Workflows are restart-resilient, but a restart cannot make an unavailable model, disconnected MCP server, rejected approval, or invalid input succeed. Treat any publishing, deletion, or external-effect node as a review point.
 
+#### Build with NOVA
+
+**Agents > Build with NOVA** drafts an agent from a goal written in plain words, for example "Turn my shoot notes into a call sheet and translate it to Hindi". A local model picks a name, instructions, and the skills, tool servers and other agents it needs, choosing only from what is installed here; anything else it suggests is dropped and listed in the draft's notes, as are placeholder skills and tool servers that are not connected. It also writes two or three test prompts.
+
+A draft is marked **Draft**. Click a test prompt (or write your own) and **Test**. **Approve** is available after one successful test. Until then a draft cannot be handed work by another agent or run inside an approved workflow. **Discard** deletes it.
+
+**Workflows > Build with NOVA** drafts a whole workflow: it lines up existing agents, skills and the Filesystem or Git servers, drafts a new agent for any step nothing installed covers (up to three), and is told to put a sign-off step before anything that publishes, sends, deletes or changes files. **Test run** runs the draft; a successful test run also counts as a test of the draft agents in it. Approve those agents, then **Approve workflow**. **Discard draft** removes the workflow and the draft agents it created; approved agents are kept.
+
+Drafting needs a local Ollama model; larger models (7B and up) give better drafts. Check a draft's instructions and tools before approving it.
+
+#### Hand-offs between agents
+
+In **New agent**, **Can hand work to** lists the approved agents this agent may pass a task to. During a run, each one appears to the model as a tool; the delegate runs with its own model, instructions and tools, and its answer comes back as the tool result. Hand-offs go at most two levels deep (set `NOVA_AGENT_MAX_DEPTH`, 0 to 4), never back to an agent already in the chain, and never to a draft. Every hand-off is listed under **Hand-offs received** on the receiving agent, and the delegate's own tool calls go through the same approvals as any other.
+
+**Can propose new agents** gives an agent a tool to draft a new agent when no available agent covers a task. What it creates is a draft like any other: it appears in Agents marked **Draft**, labelled as proposed by another agent, and nothing can use it until you test and approve it.
+
 ### Media: images, video, audio and transcripts
 
 Open **Media** in the sidebar. Everything here runs on your computer, and each item keeps the settings that made it.
