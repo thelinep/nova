@@ -243,8 +243,8 @@ def osm_regions(cc):
     return regions or [(cc, cc)]
 
 
-def osm_query(iso, level):
-    sel = f'area["ISO3166-{level}"="{iso}"]->.a;'
+def osm_query(iso, level, name=None):
+    sel = f'area["ISO3166-{level}"="{iso}"]->.a;' if not name else f'area["name:en"="{name}"]["admin_level"="4"]->.a;'
     parts = [f'nwr(area.a)["{k}"~"^({v})$"];' for k, v in OSM_KEYS.items()]
     if os.environ.get("OSM_NAME_SEARCH"):          # slow on public Overpass servers; off by default
         parts.append(f'nwr(area.a)["name"~"{OSM_NAME}",i];')
@@ -277,6 +277,9 @@ def fetch_osm(cc, pause=15):
             continue
         log(f"  {iso} {name}…")
         els = overpass(osm_query(iso, "2" if "-" in iso else "1")).get("elements", [])
+        if not els and name and "-" in iso:          # some states' areas lack the ISO code tag; try the English name
+            time.sleep(pause)
+            els = overpass(osm_query(iso, "2", name)).get("elements", [])
         with gzip.open(part, "wt", encoding="utf-8") as f:
             for e in els:
                 r = osm_row(e, name)
