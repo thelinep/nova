@@ -440,6 +440,13 @@ mod tests {
     }
 
     #[test]
+    fn main_window_reloads_the_console_once_the_server_is_healthy() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("again now that the server is healthy"));
+        assert!(source.contains("window.navigate(url)"));
+    }
+
+    #[test]
     fn provider_browser_has_stable_label_and_minimum_window_size() {
         let source = include_str!("main.rs");
         assert_eq!(PROVIDER_BROWSER_LABEL, "provider-browser");
@@ -493,6 +500,14 @@ fn main() {
                 ServerProcess::Spawned(child)
             };
             app.manage(ServerChild(child));
+            // The configured window is created before this hook runs, so its first load can
+            // happen before the bundled server answers and leave a blank page. Load the console
+            // again now that the server is healthy.
+            if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+                if let Ok(url) = format!("http://127.0.0.1:{PORT}/").parse() {
+                    let _ = window.navigate(url);
+                }
+            }
             Ok(())
         })
         .build(tauri::generate_context!())
