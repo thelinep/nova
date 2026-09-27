@@ -4,3 +4,4 @@ data/
 packaging/tauri/target/
 packaging/tauri/gen/
 packaging/runtime/node/
+__pycache__/
