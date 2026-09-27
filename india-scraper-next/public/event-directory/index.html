@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Directory Map</title>
+<link rel="stylesheet" href="../vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="../vendor/markercluster/MarkerCluster.css">
+<link rel="stylesheet" href="../vendor/markercluster/MarkerCluster.Default.css">
+<style>
+  :root { --bg:#f7f6f3; --panel:#fff; --ink:#1d1d1b; --muted:#6b6a66; --line:#e2e0da; --accent:#b4461f; --warn:#c0392b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161615; --panel:#20201e; --ink:#eceae4; --muted:#a09e97; --line:#35342f; --accent:#f08a5d; --warn:#ff7b6b; } }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #app { display:flex; height:100%; }
+  #side { width:340px; flex:none; overflow-y:auto; background:var(--panel); border-right:1px solid var(--line); padding:14px 16px 24px; }
+  #map { flex:1; }
+  h1 { font-size:17px; margin:0 0 2px; }
+  .sub { color:var(--muted); font-size:12px; margin-bottom:12px; }
+  label { display:block; font-size:12px; color:var(--muted); margin:12px 0 4px; }
+  select, input[type=search] { width:100%; padding:7px 8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); font:inherit; }
+  .row { display:flex; gap:8px; } .row > * { flex:1; }
+  .chk { display:flex; align-items:center; gap:6px; margin:6px 0; font-size:13px; color:var(--ink); }
+  .stats { margin-top:14px; border-top:1px solid var(--line); padding-top:10px; }
+  .stats table { width:100%; border-collapse:collapse; font-size:12px; }
+  .stats td { padding:3px 0; border-bottom:1px solid var(--line); } .stats td.n { text-align:right; font-variant-numeric:tabular-nums; }
+  #results { margin-top:6px; max-height:260px; overflow-y:auto; }
+  #results div { padding:5px 6px; border-radius:5px; cursor:pointer; font-size:13px; }
+  #results div:hover { background:var(--bg); } #results small { color:var(--muted); }
+  .legend { background:var(--panel); color:var(--ink); padding:8px 10px; border-radius:6px; font-size:12px; box-shadow:0 1px 4px #0003; line-height:1.5; }
+  .legend i { display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; }
+  .note { color:var(--muted); font-size:12px; margin-top:10px; }
+  #status { font-size:12px; color:var(--accent); min-height:16px; margin-top:8px; }
+  .leaflet-popup-content { font-size:13px; } .leaflet-popup-content b { font-size:14px; }
+  .tag { display:inline-block; font-size:11px; padding:0 5px; border-radius:4px; background:#0001; margin-right:3px; }
+  @media (max-width: 760px) { #app { flex-direction:column; } #side { width:auto; max-height:45%; border-right:0; border-bottom:1px solid var(--line); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <h1>Event directory map</h1>
+    <div class="sub" id="sub">Loading…</div>
+
+    <label for="q">Find a district, state or place</label>
+    <input id="q" type="search" placeholder="e.g. Kasaragod, Jaipur, Shree Banquet" autocomplete="off">
+    <div id="results"></div>
+
+    <label for="metric">Colour hexagons by</label>
+    <select id="metric">
+      <option value="per100k">Places per 100,000 people</option>
+      <option value="count">Number of places</option>
+      <option value="pop">Population</option>
+      <option value="none">Hide hexagons</option>
+    </select>
+
+    <div class="row">
+      <div><label for="family">Family</label><select id="family"><option value="">All families</option></select></div>
+      <div><label for="etype">Event type</label><select id="etype"><option value="">All types</option></select></div>
+    </div>
+    <label for="cat">Category</label>
+    <select id="cat"><option value="">All categories in the filter</option></select>
+
+    <label for="trade">Underserved areas: people far from any</label>
+    <select id="trade"><option value="">(hide)</option></select>
+
+    <label class="chk"><input type="checkbox" id="showDistricts" checked> District boundaries</label>
+    <label class="chk"><input type="checkbox" id="showPlaces" checked> Places when zoomed in</label>
+    <label class="chk"><input type="checkbox" id="nameOnly"> Only places matched on name alone</label>
+    <div id="status"></div>
+
+    <div class="stats" id="stats"></div>
+    <p class="note">Distances are straight lines from ~5 km² population hexagons to the nearest listed supplier, not travel times.
+      Population: Kontur Population (CC BY 4.0). Places: Google Maps via Brahmini, Overture Maps (CDLA-Permissive-2.0), OpenStreetMap (ODbL).</p>
+  </aside>
+  <div id="map"></div>
+</div>
+
+<script src="../vendor/leaflet/leaflet.js"></script>
+<script src="../vendor/markercluster/leaflet.markercluster.js"></script>
+<script>
+"use strict";
+const D = "data/";
+const $ = id => document.getElementById(id);
+const fmt = n => n == null ? "—" : Math.round(n).toLocaleString("en-IN");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const getJSON = async (p, optional) => { const r = await fetch(D + p); if (!r.ok) { if (optional) return null; throw new Error(p + ": " + r.status); } return r.json(); };
+
+let meta, hexes, under, index, districtsGeo;
+const placeCache = new Map();          // district key -> items
+let catOn = null;                      // Set of category indexes in the current filter
+let hexLayer, underLayer, distLayer, placeLayer;
+
+const map = L.map("map", { preferCanvas: true, zoomSnap: 0.5 }).setView([22.5, 80], 5);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+const canvas = L.canvas({ padding: 0.3 });
+
+const RAMP = ["#fff5eb","#fdd9b4","#fdae6b","#f98b3e","#e6550d","#b8410a","#7f2704"];
+const legend = L.control({ position: "bottomright" });
+legend.onAdd = () => L.DomUtil.create("div", "legend");
+legend.addTo(map);
+
+function applies(types, wanted) { return !wanted || types.includes("ALL") || types.includes(wanted); }
+
+function refreshFilter() {
+  const fam = $("family").value, et = $("etype").value, cat = $("cat").value;
+  catOn = new Set();
+  meta.categories.forEach((c, i) => {
+    if (cat !== "" ? String(i) === cat : ((fam === "" || String(c.family) === fam) && applies(c.eventTypes, et))) catOn.add(i);
+  });
+}
+
+function fillCatSelect() {
+  const fam = $("family").value, et = $("etype").value, keep = $("cat").value;
+  $("cat").innerHTML = '<option value="">All categories in the filter</option>' + meta.categories
+    .map((c, i) => [c, i]).filter(([c]) => (fam === "" || String(c.family) === fam) && applies(c.eventTypes, et))
+    .map(([c, i]) => `<option value="${i}">${esc(c.label)}</option>`).join("");
+  if ([...$("cat").options].some(o => o.value === keep)) $("cat").value = keep;
+}
+
+function hexValue(h) {
+  const m = $("metric").value;
+  if (m === "pop") return h[1] || null;
+  let n = 0; for (const k in h[2]) if (catOn.has(+k)) n += h[2][k];
+  if (m === "count") return n || null;
+  return h[1] >= 1000 ? n / h[1] * 1e5 : null;
+}
+
+function breaks(vals) {
+  const v = vals.filter(x => x != null && x > 0).sort((a, b) => a - b);
+  if (!v.length) return [];
+  return [0.15, 0.3, 0.5, 0.7, 0.85, 0.95].map(q => v[Math.min(v.length - 1, Math.floor(q * v.length))]);
+}
+const colour = (x, b) => { if (x == null || x <= 0) return null; let i = 0; while (i < b.length && x > b[i]) i++; return RAMP[i]; };
+
+function drawHexes() {
+  if (hexLayer) map.removeLayer(hexLayer);
+  const m = $("metric").value;
+  if (m === "none") { legend.getContainer().innerHTML = ""; return; }
+  const vals = hexes.map(hexValue), b = breaks(vals);
+  hexLayer = L.layerGroup();
+  hexes.forEach((h, i) => {
+    const c = colour(vals[i], b);
+    if (!c && m !== "per100k") return;
+    const poly = L.polygon(h[3], { renderer: canvas, stroke: false, fillColor: c || "#888", fillOpacity: c ? 0.62 : 0.12 });
+    poly.on("click", e => {
+      let rows = Object.entries(h[2]).filter(([k]) => catOn.has(+k)).sort((a, b) => b[1] - a[1]).slice(0, 8)
+        .map(([k, n]) => `<tr><td>${esc(meta.categories[k].label)}</td><td style="text-align:right">${fmt(n)}</td></tr>`).join("");
+      L.popup().setLatLng(e.latlng).setContent(`<b>Hexagon ~250 km²</b><br>People: ${fmt(h[1])}<br>` +
+        `${m === "per100k" ? "Places per 100k: " + (vals[i] == null ? "— (under 1,000 people)" : vals[i].toFixed(1)) : "Places in filter: " + fmt(vals[i])}` +
+        (rows ? `<table style="margin-top:6px">${rows}</table>` : "")).openOn(map);
+    });
+    hexLayer.addLayer(poly);
+  });
+  hexLayer.addTo(map);
+  const label = { per100k: "Places per 100,000 people", count: "Places", pop: "People" }[m];
+  const f = x => m === "per100k" ? x.toFixed(1) : fmt(x);
+  legend.getContainer().innerHTML = `<b>${label}</b><br>` + (b.length ? RAMP.map((c, i) =>
+    `<i style="background:${c}"></i>${i === 0 ? "up to " + f(b[0]) : i === RAMP.length - 1 ? "over " + f(b[b.length - 1]) : f(b[i - 1]) + "–" + f(b[i])}`).join("<br>") : "no data") +
+    (m === "per100k" ? `<br><i style="background:#888;opacity:.3"></i>none listed` : "");
+}
+
+function drawUnder() {
+  if (underLayer) { map.removeLayer(underLayer); underLayer = null; }
+  const t = $("trade").value;
+  if (t === "" || !under) return;
+  const ti = meta.trades.findIndex(x => x.id === t), far = meta.farKm;
+  underLayer = L.layerGroup();
+  let shown = 0;
+  for (const u of under) {
+    const km = u[3][ti];
+    if (km <= far) continue;
+    if (++shown > 25000) break;
+    const r = Math.max(2, Math.min(9, Math.sqrt(u[2]) / 18));
+    L.circleMarker([u[0], u[1]], { renderer: canvas, radius: r, weight: 0, fillColor: "#c0392b", fillOpacity: 0.45 })
+      .bindPopup(`<b>${fmt(u[2])} people</b> (~5 km²)<br>${esc(u[4] || "")}${u[5] ? ", " + esc(u[5]) : ""}<br>` +
+        meta.trades.map((x, j) => `${esc(x.label)}: ${u[3][j] >= 9999 ? "none listed" : u[3][j] + " km"}`).join("<br>"))
+      .addTo(underLayer);
+  }
+  underLayer.addTo(map);
+  setStatus(`${fmt(shown)} populated hexagons over ${far} km from any ${meta.trades[ti].label.toLowerCase()}` + (shown > 25000 ? " (largest 25,000 shown)" : ""));
+}
+
+function drawDistricts() {
+  if (distLayer) { map.removeLayer(distLayer); distLayer = null; }
+  if (!$("showDistricts").checked || !districtsGeo) return;
+  distLayer = L.geoJSON(districtsGeo, {
+    style: { color: "#555", weight: 0.7, fill: true, fillOpacity: 0, opacity: 0.6 },
+    onEachFeature: (f, l) => {
+      const p = f.properties;
+      l.bindPopup(() => `<b>${esc(p.district)}</b>${p.state ? ", " + esc(p.state) : ""}<br>People: ${fmt(p.population)}<br>Places: ${fmt(p.places)} · venues: ${fmt(p.venues)}<br>` +
+        `Places per 100k: ${p.places_per_100k ?? "—"} · venues per 100k: ${p.venues_per_100k ?? "—"}<br>` +
+        meta.trades.map(t => `Over ${meta.farKm} km from any ${esc(t.label.toLowerCase())}: ${p["share_over_" + meta.farKm + "km_" + t.id] ?? "—"}%`).join("<br>"));
+    }
+  }).addTo(map);
+  if (hexLayer) hexLayer.eachLayer(l => l.bringToBack && l.bringToBack());
+}
+
+// ---- places, loaded per district when zoomed in
+const inView = (b, bb) => !(bb[2] < b.getSouth() || bb[0] > b.getNorth() || bb[3] < b.getWest() || bb[1] > b.getEast());
+async function loadPlaces(keys) {
+  await Promise.all(keys.filter(k => !placeCache.has(k)).map(async k => placeCache.set(k, await getJSON("places/" + k + ".json").catch(() => []))));
+}
+function placePopup(p) {
+  const c = meta.categories[p[1]], src = ["Google", "Overture", "OSM"].filter((_, i) => p[8] & (1 << i));
+  return `<b>${esc(p[0])}</b><br>${esc(c ? c.label : "")}<br>` +
+    (p[6] ? `★ ${esc(p[6])}${p[7] ? " (" + esc(p[7]) + ")" : ""}<br>` : "") +
+    (p[4] ? `☎ ${esc(p[4])}<br>` : "") +
+    (p[5] ? `<a href="${esc(/^https?:/.test(p[5]) ? p[5] : "https://" + p[5])}" target="_blank" rel="noopener">website</a> · ` : "") +
+    `<a href="https://www.google.com/maps/search/?api=1&query=${p[2]},${p[3]}" target="_blank" rel="noopener">map</a>` +
+    (p[10] && /^https?:/.test(p[10]) ? ` · <a href="${esc(p[10])}" target="_blank" rel="noopener">source</a>` : "") +
+    `<br>${src.map(s => `<span class="tag">${s}</span>`).join("")}${p[9] ? '<span class="tag">matched on name</span>' : ""}`;
+}
+let placeTimer;
+async function drawPlaces() {
+  if (placeLayer) { map.removeLayer(placeLayer); placeLayer = null; }
+  if (!$("showPlaces").checked || !index) return;
+  if (map.getZoom() < 10) { setStatus(map.getZoom() >= 8 ? "Zoom in further to see individual places." : ""); return; }
+  const b = map.getBounds(), keys = index.filter(d => inView(b, d.bbox)).map(d => d.key).slice(0, 12);
+  setStatus("Loading places…");
+  await loadPlaces(keys);
+  const nameOnly = $("nameOnly").checked;
+  placeLayer = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 45, disableClusteringAtZoom: 16 });
+  let n = 0;
+  for (const k of keys) for (const p of placeCache.get(k) || []) {
+    if (!catOn.has(p[1]) || (nameOnly && !p[9])) continue;
+    if (p[2] < b.getSouth() - 0.2 || p[2] > b.getNorth() + 0.2 || p[3] < b.getWest() - 0.2 || p[3] > b.getEast() + 0.2) continue;
+    placeLayer.addLayer(L.marker([p[2], p[3]], { title: p[0] }).bindPopup(() => placePopup(p)));
+    n++;
+  }
+  placeLayer.addTo(map);
+  setStatus(`${fmt(n)} places in view (filtered)`);
+}
+const setStatus = s => { $("status").textContent = s; };
+
+// ---- search
+function search() {
+  const q = $("q").value.trim().toLowerCase();
+  const out = [];
+  if (q.length >= 2) {
+    const states = new Map();
+    for (const d of index) {
+      if ((d.district || "").toLowerCase().includes(q)) out.push({ t: "d", d });
+      if ((d.state || "").toLowerCase().includes(q)) states.set(d.state, [...(states.get(d.state) || []), d]);
+    }
+    for (const [s, ds] of states) out.unshift({ t: "s", s, ds });
+    for (const [k, items] of placeCache) for (const p of items) if (p[0].toLowerCase().includes(q)) { out.push({ t: "p", p }); if (out.length > 80) break; }
+  }
+  $("results").innerHTML = out.slice(0, 60).map((r, i) => r.t === "s" ? `<div data-i="${i}"><b>${esc(r.s)}</b> <small>state · ${r.ds.length} districts</small></div>` :
+    r.t === "d" ? `<div data-i="${i}">${esc(r.d.district)} <small>${esc(r.d.state || "")} · ${fmt(r.d.n)} places${r.d.pop ? " · " + fmt(r.d.pop) + " people" : ""}</small></div>` :
+    `<div data-i="${i}">${esc(r.p[0])} <small>${esc(meta.categories[r.p[1]]?.label || "")}</small></div>`).join("") ||
+    (q.length >= 2 ? `<small style="color:var(--muted)">No match. Place names are searched in districts you have zoomed into.</small>` : "");
+  $("results").onclick = e => {
+    const el = e.target.closest("[data-i]"); if (!el) return;
+    const r = out[+el.dataset.i];
+    if (r.t === "p") { map.setView([r.p[2], r.p[3]], 17); L.popup().setLatLng([r.p[2], r.p[3]]).setContent(placePopup(r.p)).openOn(map); return; }
+    const ds = r.t === "s" ? r.ds : [r.d];
+    const bb = ds.reduce((a, d) => [Math.min(a[0], d.bbox[0]), Math.min(a[1], d.bbox[1]), Math.max(a[2], d.bbox[2]), Math.max(a[3], d.bbox[3])], [90, 180, -90, -180]);
+    map.fitBounds([[bb[0], bb[1]], [bb[2], bb[3]]], { maxZoom: 12 });
+  };
+}
+
+function stats() {
+  const pop = meta.population;
+  $("stats").innerHTML = `<table><tr><td>Places</td><td class="n">${fmt(meta.places)}</td></tr>` +
+    (pop ? `<tr><td>People (Kontur)</td><td class="n">${fmt(pop)}</td></tr>` : "") +
+    meta.trades.map(t => {
+      const f = meta.peopleFar?.[t.id];
+      return f == null ? "" : `<tr><td>Over ${meta.farKm} km from any ${esc(t.label.toLowerCase())}</td><td class="n">${fmt(f)}${pop ? ` <small>(${(100 * f / pop).toFixed(1)}%)</small>` : ""}</td></tr>`;
+    }).join("") + "</table>";
+}
+
+async function main() {
+  try { meta = await getJSON("meta.json"); }
+  catch (e) { $("sub").innerHTML = 'No map data yet. Double-click <b>Build event map.command</b> in the brahmini folder.'; return; }
+  $("sub").textContent = `${meta.country} · built ${new Date(meta.builtAt).toLocaleString()}`;
+  meta.families.forEach((f, i) => $("family").add(new Option(f.label, i)));
+  Object.entries(meta.eventTypes).filter(([c]) => c !== "ALL").forEach(([c, d]) => $("etype").add(new Option(`${c} — ${d}`, c)));
+  meta.trades.forEach(t => $("trade").add(new Option(t.label, t.id)));
+  fillCatSelect(); refreshFilter(); stats();
+  setStatus("Loading hexagons…");
+  [hexes, index] = await Promise.all([getJSON("hex5.json"), getJSON("districts-index.json")]);
+  drawHexes(); setStatus("");
+  getJSON("underserved.json", true).then(u => { under = u; drawUnder(); });
+  getJSON("districts.geojson", true).then(g => { districtsGeo = g; drawDistricts(); if (!g) $("showDistricts").parentElement.style.display = "none"; });
+  const redraw = () => { refreshFilter(); drawHexes(); drawPlaces(); };
+  $("family").onchange = $("etype").onchange = () => { fillCatSelect(); redraw(); };
+  $("cat").onchange = redraw;
+  $("metric").onchange = drawHexes;
+  $("trade").onchange = drawUnder;
+  $("showDistricts").onchange = drawDistricts;
+  $("showPlaces").onchange = $("nameOnly").onchange = drawPlaces;
+  $("q").oninput = search;
+  map.on("moveend", () => { clearTimeout(placeTimer); placeTimer = setTimeout(drawPlaces, 250); });
+}
+main();
+</script>
+</body>
+</html>

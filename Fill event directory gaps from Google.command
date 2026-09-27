@@ -1,6 +1,7 @@
 #!/bin/bash
 # Double-click to search Google Maps for India's district x category gaps left by the open-data build
-# (up to 300 searches per run, emptiest first), then rebuild the directory with the new listings.
+# (up to 300 searches per run, in the order of gaps-IN.json: by population need once "Build event map" has run,
+# emptiest first otherwise), then rebuild the directory with the new listings.
 # Stops on any Google access challenge and does not try to get around it. Run again to continue.
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT/india-scraper-next" || exit 1
@@ -12,6 +13,7 @@ fi
 node --no-warnings scripts/event-directory/google-gaps.cjs --limit "${GAPS_LIMIT:-300}" 2>&1 | tee -a "$HOME/Brahmini-event-gaps.log"
 VENV="$HOME/.brahmini-event-directory"
 if [ -x "$VENV/bin/python" ]; then
-  "$VENV/bin/python" scripts/event-directory/event_directory.py google && "$VENV/bin/python" scripts/event-directory/event_directory.py build
+  "$VENV/bin/python" scripts/event-directory/event_directory.py google && "$VENV/bin/python" scripts/event-directory/event_directory.py build \
+    && if "$VENV/bin/python" -c "import h3, scipy" 2>/dev/null && [ -f data/event-directory/raw/kontur-IN.gpkg ]; then "$VENV/bin/python" scripts/event-directory/geo.py; fi
 fi
 echo; echo "You can close this window. Double-click again to continue with the next searches."

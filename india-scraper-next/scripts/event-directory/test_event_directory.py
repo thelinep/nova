@@ -1,6 +1,6 @@
 """Offline test of the event directory pipeline with small Overture/OSM/Google fixtures.
 Run: python3 scripts/event-directory/test_event_directory.py  (needs duckdb; no network)."""
-import gzip, json, os, sqlite3, subprocess, sys, tempfile, unittest
+import csv, gzip, json, os, sqlite3, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -71,6 +71,41 @@ class EventDirectory(unittest.TestCase):
         self.assertIn("| Catering vendor selection | ALL | 1 |", items)
         served = {n for c in ed.load_taxonomy()["categories"] for n in c.get("serves", [])}
         self.assertEqual([i["name"] for s in cl["sections"] for i in s["items"] if i["name"] not in served], [], "every checklist item has a supplier category")
+        self.geo(env, out, tmp)
+
+    def geo(self, env, out, tmp):
+        """Geospatial layer with a tiny population file: people near Pune's suppliers and a village ~100 km away."""
+        try:
+            import h3, numpy, scipy  # noqa: F401
+        except ImportError:
+            self.skipTest("h3/numpy/scipy not installed")
+        kp = tmp / "kontur.gpkg"
+        k = sqlite3.connect(kp)
+        k.execute("CREATE TABLE population (fid INTEGER, h3 TEXT, population REAL)")
+        k.executemany("INSERT INTO population VALUES (?,?,?)", [(1, h3.latlng_to_cell(18.52, 73.85, 8), 50000), (2, h3.latlng_to_cell(19.2, 74.8, 8), 3000)])
+        k.commit(); k.close()
+        web = tmp / "web"
+        genv = {**env, "EVENT_MAP_DIR": str(web)}
+        subprocess.run([sys.executable, str(HERE / "geo.py"), "--kontur-file", str(kp)], env=genv, check=True, capture_output=True)
+        s = json.loads((out / "geo" / "geo-summary-IN.json").read_text())
+        self.assertEqual(round(s["population"]), 53000)
+        self.assertEqual(round(s["peopleFar"]["venue"]), 3000, "the village is far from a venue")
+        self.assertEqual(round(s["peopleFar"]["photo"]), 53000, "no photographer anywhere")
+        with open(out / "geo" / "districts-geo-IN.csv") as f:
+            rows = list(csv.DictReader(f))
+        pune = [r for r in rows if r["district"] == "Pune"][0]
+        self.assertEqual(pune["population"], "53000"); self.assertEqual(pune["people_over_25km_venue"], "3000")
+        under = json.loads((web / "underserved.json").read_text())
+        self.assertEqual(len(under), 2); self.assertEqual(under[0][2], 50000)
+        meta = json.loads((web / "meta.json").read_text())
+        self.assertEqual(len(meta["categories"]), 80)
+        idx = json.loads((web / "districts-index.json").read_text())
+        places = json.loads((web / "places" / (idx[0]["key"] + ".json")).read_text())
+        self.assertIn("Shree Banquet Hall", [p[0] for p in places])
+        self.assertEqual([p for p in places if p[0] == "Shree Banquet Hall"][0][8], 7, "google+overture+osm")
+        gaps = json.loads((out / "gaps-IN.json").read_text())
+        self.assertIn("score", gaps["gaps"][0])
+        self.assertGreaterEqual(gaps["gaps"][0]["score"], gaps["gaps"][-1]["score"])
 
 
 if __name__ == "__main__":

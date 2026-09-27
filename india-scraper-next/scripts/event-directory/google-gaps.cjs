@@ -3,7 +3,8 @@
 /* Brahmini event directory — fill India's gaps from Google Maps.
  *
  * Reads data/event-directory/gaps-IN.json (district x category combinations where the open-data
- * build found too few places) and searches Google Maps for them, emptiest first, with the same
+ * build found too few places) and searches Google Maps for them in the file's order (by population need once
+ * geo.py has run; emptiest first otherwise), with the same
  * search code as the event-planner survey (scripts/collect-event-planners.cjs → collect()).
  *
  * Rules carried over from that collector:
