@@ -31,7 +31,9 @@
       "../../lib/**/*": "lib/",
       "../../mcp-servers/**/*": "mcp-servers/",
       "../../skills/**/*": "skills/",
-      "../../public/**/*": "public/",
+      "../../public/*.*": "public/",
+      "../../public/help/*.*": "public/help/",
+      "../../public/help/media/*.*": "public/help/media/",
       "../../scripts/kokoro-say.py": "scripts/kokoro-say.py",
       "../../docs/NOVA_USER_GUIDE.md": "docs/NOVA_USER_GUIDE.md",
       "../runtime/node/bin/node": "node/bin/node"
