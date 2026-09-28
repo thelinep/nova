@@ -1,0 +1,5 @@
+(function(){var q=document.getElementById('q'),box=document.getElementById('results');if(!q||!window.NOVA_HELP_INDEX)return;
+function run(){var t=q.value.trim().toLowerCase();if(t.length<2){box.style.display='none';return}var words=t.split(/\s+/);
+var hits=NOVA_HELP_INDEX.map(function(e){var s=0,title=e.t.toLowerCase(),body=e.b.toLowerCase(),keys=(e.k||'').toLowerCase();words.forEach(function(w){if(title.indexOf(w)>=0)s+=5;if(keys.indexOf(w)>=0)s+=2;if(body.indexOf(w)>=0)s+=1});return[s,e]}).filter(function(x){return x[0]>=words.length}).sort(function(a,b){return b[0]-a[0]}).slice(0,12);
+box.innerHTML=hits.length?hits.map(function(h){var e=h[1],i=Math.max(0,e.b.toLowerCase().indexOf(words[0]));var snip=e.b.slice(Math.max(0,i-40),i+90);return '<a href="'+e.u+'">'+e.t.replace(/</g,'&lt;')+'<small>'+e.s+' · …'+snip.replace(/</g,'&lt;')+'…</small></a>'}).join(''):'<a>No matches</a>';box.style.display='block'}
+q.addEventListener('input',run);q.addEventListener('keydown',function(e){if(e.key==='Escape'){q.value='';run()}});document.addEventListener('click',function(e){if(!box.contains(e.target)&&e.target!==q)box.style.display='none'})})();

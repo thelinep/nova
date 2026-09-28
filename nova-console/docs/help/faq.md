@@ -1,0 +1,135 @@
+---
+id: faq
+title: Frequently asked questions
+---
+## About NOVA
+
+### What is NOVA?
+
+A private AI workspace that runs on your Mac: chat with local models, search your own documents, make images, video and audio, and build agents and workflows. See [Welcome to NOVA](help:welcome).
+
+### Is NOVA cloud-hosted? Does my data leave my computer?
+
+No. NOVA's server listens only on `127.0.0.1`, and Ollama is local by default. Data leaves only if you turn on **Allow network access** and use something that needs it, load a remote model, or copy material out yourself. The privacy badge in the status bar tells you which state you are in. See [Settings, privacy and your data](help:settings-privacy).
+
+### Does NOVA include a model?
+
+No. Install Ollama, pull a model (for example `ollama pull llama3.2`), then press **Sync from Ollama** in Models. See [Models](help:models).
+
+### Can I use NOVA without Ollama?
+
+You can open NOVA, look around and use the media engines, but chat, document search, agents, evaluations and automations need a model from Ollama.
+
+### Does NOVA need the internet?
+
+Only to install things (Ollama models, ComfyUI, packages) and for features you point at the web, such as the collector. Everyday chat, search and media work offline.
+
+### Are the records I see real?
+
+Some screens start with labelled examples so you can see how they work. A synced model, an indexed document, a connected tool server and a finished run in Execution History are the proof that a feature is working on your Mac.
+
+## Chat and knowledge
+
+### How do I make NOVA answer from my documents?
+
+Add them to a collection in Knowledge, wait for indexing to finish, then attach the collection to your session and turn on **Retrieval**. Answers then cite the passages they used. See [Knowledge and Retrieval Lab](help:knowledge).
+
+### Which files can I add to Knowledge?
+
+Plain text, Markdown, HTML and other supported text documents. Scanned images without text are not read.
+
+### Why are search results poor?
+
+Check the chunks in Retrieval Lab. Clean up the source, split very long documents and ask more specific questions. An embedding model must be available in Ollama.
+
+### Can I branch a conversation?
+
+Yes. **Fork** copies the session so you can try another direction; **Snapshot** saves its current state. Both are in the command palette (**⌘K**).
+
+## Making things
+
+### What do I need for images, video and audio?
+
+ComfyUI for images, songs and sound effects, LTX-2 or Wan for AI video, Kokoro for better voices and whisper.cpp for transcripts. Each has a double-click installer in the brahmini folder. See [Images](help:media-images).
+
+### Where are the files NOVA makes?
+
+In `~/Documents/NOVA Library`, one folder per day, with a `.json` recipe next to each file so you can make it again. Change the folder in **Media → Library folder**.
+
+### Will a video job freeze my Mac?
+
+NOVA checks free memory before heavy jobs and refuses or lowers settings if there is not enough. Close other large apps for long videos. See [Video](help:media-video).
+
+### Can I edit an image or video after it is made?
+
+Yes. **Filters** applies looks, crops, speed changes and fades as a new item; the original is kept. Boards and the Timeline arrange and join clips. See [Boards, Timeline and Library](help:boards-library).
+
+## Agents, workflows and tools
+
+### Can NOVA build agents on its own?
+
+Yes. **Build with NOVA** on Agents drafts an agent from a description. Drafts must pass a test run and be approved by you before they can be used. See [Agents](help:agents).
+
+### What is the difference between an agent and a workflow?
+
+An agent decides its own steps to reach a goal using the tools you allow. A workflow is a fixed line of steps (agents, skills, tools and sign-offs) that runs the same way every time. See [Workflows](help:workflows).
+
+### Why does NOVA ask for approval?
+
+Tools can read files, run commands or change things. NOVA asks before a tool acts, following the approval policy of each tool server. See [Tools and approvals](help:tools-approvals).
+
+### Can NOVA publish, send or delete things by itself?
+
+Only if you give an agent or workflow a tool that can, and approve it. Put a sign-off step before anything that publishes, sends, deletes or changes files.
+
+### Can automations run on a schedule?
+
+Yes. Automations run on a timer while NOVA is open. Workflow schedules are not wired up yet; run a workflow from an automation instead. See [Automations and evaluations](help:automations).
+
+### Can NOVA change my code?
+
+Only in folders you approve in Local Workspace, and only after you review and apply each change batch. Every batch can be rolled back. See [Local Workspace and projects](help:workspace).
+
+## Data and settings
+
+### Where is my data stored?
+
+The app keeps its database and log in `~/Library/Application Support/com.brahmini.nova-runtime/`. Browser mode uses `nova-console/data/` unless `DATA_DIR` is set.
+
+### How do I back up NOVA?
+
+Quit NOVA, then copy the data folder and your NOVA Library. Restore with NOVA closed.
+
+### How do I delete my data?
+
+Delete single items in their views, or use **Settings → Reset workspace data** to delete everything in the database. Back up first; a reset cannot be undone.
+
+### Can I use NOVA in Hindi?
+
+Yes. **Settings → Interface language → हिन्दी** switches the interface. The **Translate** skill translates your text into Hindi or other languages.
+
+### Does NOVA work on a phone or small window?
+
+The console adjusts to narrow windows: the menu button opens the side rail and the inspector slides over the page. NOVA itself still runs on your Mac.
+
+## The app
+
+### Why does macOS say the app cannot be opened?
+
+The app is not signed with an Apple Developer ID or notarized. Right-click it and choose **Open**, or allow it in **System Settings → Privacy & Security**. See [The desktop app and portable pack](help:desktop-app).
+
+### Do I need to install Node?
+
+Not for the packed app or portable folder: they carry their own. Browser mode needs Node 22.5 or newer.
+
+### Is the app ready to give to other people?
+
+It works on Macs you trust, but it is not notarized, so each person has to approve it the first time. A public release needs Developer ID signing and notarization.
+
+### How do I update NOVA?
+
+Pull the latest code and double-click **Build NOVA app.command**, then replace the app in Applications. Your data stays in its own folder and is kept.
+
+### Where do I get more help?
+
+Open **Help & Support → Support** to check each part and make a support report. See [Get help and support](help:support).

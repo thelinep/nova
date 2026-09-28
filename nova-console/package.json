@@ -15,7 +15,9 @@
     "test:rust": "cargo test --manifest-path packaging/tauri/Cargo.toml",
     "test:ollama-planner": "node --no-warnings scripts/validate-real-code-planner.js",
     "test:all": "npm test && npm run test:ui && npm run test:rust",
-    "test:real-models": "node --no-warnings scripts/validate-real-models.js"
+    "test:real-models": "node --no-warnings scripts/validate-real-models.js",
+    "help:build": "node scripts/build-help.js",
+    "help:capture": "node scripts/capture-docs.js && node scripts/build-help.js"
   },
   "engines": {
     "node": ">=22.5.0"

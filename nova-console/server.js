@@ -61,6 +61,7 @@ const { ensureFirstPartySkills } = require('./lib/first-party-skills');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
+const supportReport = require('./lib/support-report');
 
 const PORT = process.env.PORT === undefined ? 8787 : Number(process.env.PORT);
 if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('PORT must be an integer from 0 to 65535');
@@ -92,6 +93,14 @@ async function refreshOllamaStatus() {
 }
 refreshOllamaStatus();
 setInterval(refreshOllamaStatus, 5000);
+
+function supportDeps() {
+  return {
+    store, storeNames: STORE_NAMES, dataDir: DATA_DIR, version: require('./package.json').version,
+    ollamaStatus: () => ollamaStatusCache, imageStatus: () => imageGen.status(), audioStatus: () => audioGen.status(),
+    transcribeStatus: () => transcriber.status(DATA_DIR), libraryInfo: () => library.info(),
+  };
+}
 
 /* ---------------------------- tiny helpers ---------------------------- */
 
@@ -147,7 +156,7 @@ function readJsonBody(req) {
   });
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm' };
 function serveStatic(req, res, pathname) {
   let rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const filePath = path.resolve(PUBLIC_DIR, rel);
@@ -160,7 +169,17 @@ function serveStatic(req, res, pathname) {
     if (err) { sendJson(res, 404, { error: 'Not found' }); return; }
     const ext = path.extname(canonical);
     // no-cache: the browser revalidates every load, so an updated console shows up on a normal refresh.
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': data.length, 'Cache-Control': 'no-cache' });
+    const type = MIME[ext] || 'application/octet-stream';
+    // Safari/WebKit only plays video that answers byte-range requests.
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range && (range[1] || range[2])) {
+      let start = range[1] ? Number(range[1]) : Math.max(0, data.length - Number(range[2]));
+      let end = range[1] && range[2] ? Math.min(Number(range[2]), data.length - 1) : data.length - 1;
+      if (start >= data.length || start > end) { res.writeHead(416, { 'Content-Range': `bytes */${data.length}` }); res.end(); return; }
+      res.writeHead(206, { 'Content-Type': type, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${data.length}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache' });
+      res.end(data.subarray(start, end + 1)); return;
+    }
+    res.writeHead(200, { 'Content-Type': type, 'Content-Length': data.length, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache' });
     res.end(data);
       });
     });
@@ -480,6 +499,17 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, collectorWorkflows.cancelRun(store, decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/collector\/evidence$/, handler: async (_req, res) => sendJson(res, 200, store.all('collectorEvidence').reverse()) },
   { method: 'GET', pattern: /^\/api\/collector\/venues$/, handler: async (_req, res) => sendJson(res, 200, store.all('venueObservations').reverse()) },
+  { method: 'GET', pattern: /^\/api\/support\/report$/, handler: async (req, res) => {
+    const includeLog = new URL(req.url, 'http://x').searchParams.get('log') === '1';
+    sendJson(res, 200, await supportReport.buildReport(supportDeps(), { includeLog }));
+  } },
+  { method: 'POST', pattern: /^\/api\/support\/report\/save$/, handler: async (req, res) => {
+    const body = await readJsonBody(req).catch(() => ({}));
+    const report = await supportReport.buildReport(supportDeps(), { includeLog: Boolean(body && body.includeLog) });
+    const lib = library.info();
+    const file = supportReport.saveReport(report, lib && lib.enabled && lib.dir ? lib.dir : DATA_DIR);
+    sendJson(res, 200, { ok: true, file: supportReport.redact(file) });
+  } },
   { method: 'GET', pattern: /^\/api\/health$/, handler: async (req, res) => sendJson(res, 200, { ok: true, pid: process.pid, dataDir: DATA_DIR }) },
 
   { method: 'GET', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => sendJson(res, 200, store.all(decodeURIComponent(name))) },

@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NOVA Console</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
@@ -579,6 +580,64 @@
     #privacyPillTop{display:none;}
     #modelStatusPill{max-width:46vw;}
   }
+
+/* ---------- Help Center ---------- */
+.help-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 16px}
+.help-bar input[type=search]{flex:1 1 240px;min-width:0;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2)}
+.help-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.help-tab{padding:7px 12px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;color:var(--muted);background:transparent}
+.help-tab.on{color:var(--amber);border-color:var(--amber-line);background:var(--amber-soft)}
+.help-group{font-size:13px;letter-spacing:.02em;margin:22px 0 10px;color:var(--muted)}
+.help-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px}
+.help-card{display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:inherit;text-decoration:none}
+.help-card:hover{border-color:var(--amber-line)}
+.help-card small{color:var(--muted);font-size:12px;line-height:1.45}
+.help-results{display:grid;gap:8px}
+.help-result{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.help-result small{grid-column:2;color:var(--muted);font-size:12px}
+.help-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start}
+.help-side{position:sticky;top:0;display:flex;flex-direction:column;gap:2px;font-size:12.5px;max-height:calc(100vh - 160px);overflow:auto}
+.help-side h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-dim);margin:12px 0 4px}
+.help-side a{padding:4px 8px;border-radius:6px;color:var(--muted);text-decoration:none}
+.help-side a.on{color:var(--amber);background:var(--amber-soft)}
+.help-main{min-width:0;max-width:78ch}
+.help-title{font-size:24px;margin:4px 0 6px}
+.help-toc{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.help-toc a{font-size:11.5px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--muted);text-decoration:none}
+.help-article{font-size:14px;line-height:1.65;overflow-wrap:anywhere}
+.help-article h2{font-size:17px;margin:26px 0 8px;scroll-margin-top:12px}
+.help-article h3{font-size:14.5px;margin:18px 0 6px}
+.help-article a{color:var(--amber)}
+.help-article code{font-family:var(--font-mono);font-size:12.5px;background:#ffffff0d;padding:1px 5px;border-radius:4px}
+.help-article pre{overflow:auto;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.help-article pre code{background:none;padding:0}
+.help-article table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0;display:block;overflow-x:auto}
+.help-article th,.help-article td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+.help-article th{background:var(--panel2)}
+.help-article figure{margin:14px 0}
+.help-article figure img,.help-article figure video{max-width:100%;height:auto;border:1px solid var(--line);border-radius:10px;display:block}
+.help-article figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+.help-article .help-callout{margin:14px 0;padding:10px 14px;border-left:3px solid var(--amber-line);background:var(--amber-soft);border-radius:0 8px 8px 0}
+.help-article .help-callout.warn{border-left-color:#e2645c;background:#e2645c1a}
+.help-article .table-wrap{overflow-x:auto;margin:10px 0}
+.help-article .table-wrap table{display:table;margin:0}
+.help-article blockquote{margin:12px 0;padding:10px 14px;border-left:3px solid var(--amber-line);background:var(--amber-soft);border-radius:0 8px 8px 0}
+.help-pager{display:flex;justify-content:space-between;gap:12px;margin:30px 0 10px;padding-top:14px;border-top:1px solid var(--line);font-size:13px}
+.help-pager a{color:var(--amber);text-decoration:none}
+.help-qa{border:1px solid var(--line);border-radius:8px;margin:6px 0;background:var(--panel2)}
+.help-qa>summary{cursor:pointer;padding:10px 12px;font-size:13.5px;font-weight:500}
+.help-qa>.help-article,.help-qa>pre{padding:0 14px 8px}
+.help-checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:8px;margin-top:12px}
+.help-check{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.help-check [data-lucide],.help-check svg{width:16px;height:16px;margin-top:2px}
+.help-check.ok svg{color:var(--green,#4ade80)}
+.help-check.bad svg{color:var(--amber)}
+.help-check small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;overflow-wrap:anywhere}
+.help-check a{font-size:11.5px;color:var(--amber);white-space:nowrap}
+.help-report{white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--font-mono);font-size:11px;max-height:340px;overflow:auto;padding:10px;border:1px solid var(--line);border-radius:7px;background:var(--bg)}
+.help-drawer-more{margin-top:12px;font-size:12.5px;line-height:1.8}
+.help-drawer-more a{color:var(--amber)}
+@media (max-width:820px){.help-layout{grid-template-columns:minmax(0,1fr)}.help-side{position:static;max-height:none;flex-direction:row;flex-wrap:wrap;gap:4px}.help-side h4{display:none}.help-side a{border:1px solid var(--line)}}
 </style>
 <div id="shell" class="shell">
   <aside id="rail" class="rail">
@@ -636,6 +695,7 @@
       <button class="nav-item" data-view="history"><span data-lucide="list-tree"></span><span class="rail-text">Execution History</span></button>
       <button class="nav-item" data-view="diagnostics"><span data-lucide="stethoscope"></span><span class="rail-text">Diagnostics</span></button>
       <button class="nav-item" data-view="settings"><span data-lucide="settings-2"></span><span class="rail-text">Settings</span></button>
+      <button class="nav-item" data-view="help"><span data-lucide="life-buoy"></span><span class="rail-text">Help &amp; Support</span></button>
     </div>
 
     <div class="rail-foot rail-text">
@@ -767,6 +827,7 @@
       <section id="diagnosticsView" class="view"><div class="view-pad"><!-- VIEW:diagnostics --></div></section>
       <!-- ===================== SETTINGS ===================== -->
       <section id="settingsView" class="view"><div class="view-pad"><!-- VIEW:settings --></div></section>
+      <section id="helpView" class="view"><div class="view-pad"></div></section>
     </main>
 
     <footer class="statusbar" id="statusBar"><!-- STATUSBAR --></footer>
@@ -931,8 +992,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1345,7 +1406,7 @@ const PIPELINE = {
 const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
-  runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings'};
+  runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
 function sessionById(id){ return DB.sessions.find(s => s.id === id); }
@@ -1399,13 +1460,14 @@ function showView(name){
   $$('.view').forEach(v => v.classList.remove('active'));
   const target = $(name + 'View'); if (target) target.classList.add('active');
   syncRailActive(name);
+  if (name !== 'help' && /^#help/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
     sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
-    runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView,
+    runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
   };
   if (renderers[name]) renderers[name]();
   if (name === 'console') renderConsole();
@@ -4412,6 +4474,19 @@ async function resolveWorkflowApproval(runId, decision){
  *  Agents, or History view is open, so node-by-node progress shows up
  *  without a manual refresh — the server is the one stepping now, not a
  *  client-side timer, so the client has to ask. */
+/** Re-renders a view without losing what someone is typing: text in fields with an id (or a data-id) comes back, with focus and cursor. */
+function keepTypedFields(viewId, render){
+  const view = $(viewId); const key = el => el.id ? '#'+el.id : (el.dataset.id ? el.className+'|'+el.dataset.id : null);
+  const saved = view ? [...view.querySelectorAll('textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]), select')].map(el => ({ k:key(el), v:el.value, f:document.activeElement===el, s:el.selectionStart, e:el.selectionEnd })).filter(x => x.k && x.v) : [];
+  render();
+  if (!view) return;
+  for (const x of saved) {
+    const el = [...view.querySelectorAll('textarea, input, select')].find(n => key(n) === x.k);
+    if (!el || el.disabled) continue;
+    el.value = x.v;
+    if (x.f) { el.focus(); try { el.setSelectionRange(x.s, x.e); } catch (_) {} }
+  }
+}
 async function refreshWorkflowProgress(){
   if (!['workflows','agents','history'].includes(currentView)) return;
   // Only poll while something is actually live — avoids yanking focus out
@@ -4427,8 +4502,8 @@ async function refreshWorkflowProgress(){
   const byId = new Map(DB.executions.map(e=>[e.id,e]));
   for (const e of execPage.rows||[]) byId.set(e.id, e);
   DB.executions = [...byId.values()];
-  if (currentView==='workflows') renderWorkflowsView();
-  if (currentView==='agents') renderAgentsView();
+  if (currentView==='workflows') keepTypedFields('workflowsView', renderWorkflowsView);
+  if (currentView==='agents') keepTypedFields('agentsView', renderAgentsView);
   if (currentView==='history') renderHistoryRows();
 }
 setInterval(refreshWorkflowProgress, 2000);
@@ -5074,6 +5149,131 @@ function bindSettingsViewEvents(){
   };
 }
 
+/* ===================== marker: HELP CENTER (guides · FAQ · troubleshooting · support) ===================== */
+// Content comes from public/help/help.json, built from docs/help/*.md by scripts/build-help.js.
+let HELP_DATA = null, helpTab = 'guides', helpArticleId = null, helpAnchor = null, helpQuery = '', helpReport = null, helpIncludeLog = false, helpReportBusy = false;
+async function loadHelpData(){
+  if (HELP_DATA) return HELP_DATA;
+  const r = await fetch('/help/help.json', {cache:'no-cache'});
+  if (!r.ok) throw new Error('help.json ' + r.status);
+  HELP_DATA = await r.json();
+  return HELP_DATA;
+}
+/** Opens the Help Center at an article id ("chat"), "faq", "troubleshooting" or "support-report", with an optional heading anchor. */
+function openHelp(target, anchor){
+  helpQuery = ''; helpAnchor = anchor || null; helpArticleId = null;
+  if (target === 'faq' || target === 'troubleshooting') helpTab = target;
+  else if (target === 'support-report') helpTab = 'support';
+  else if (target) { helpTab = 'guides'; helpArticleId = target; }
+  else helpTab = 'guides';
+  if (currentView === 'help') renderHelpView(); else showView('help');
+}
+function routeHelpHash(){
+  const m = /^#help(?:\/([\w-]+))?(?:\/([\w-]+))?$/.exec(location.hash || '');
+  if (!m) return;
+  openHelp(m[1] || null, m[2] || null);
+}
+window.addEventListener('hashchange', routeHelpHash);
+function helpTerms(q){ return String(q || '').toLowerCase().split(/\s+/).filter(t => t.length > 1); }
+function helpSearch(data, q){
+  const terms = helpTerms(q); if (!terms.length) return [];
+  const score = (title, extra, body) => { let s = 0; const t = title.toLowerCase(), e = extra.toLowerCase(), b = body.toLowerCase();
+    for (const w of terms) { if (t.includes(w)) s += 6; else if (e.includes(w)) s += 3; else if (b.includes(w)) s += 1; else return 0; } return s; };
+  const rows = [
+    ...data.articles.map(a => ({ kind:'Guide', title:a.title, sub:a.summary, go:() => openHelp(a.id), s:score(a.title, a.summary + ' ' + a.keywords, a.text) })),
+    ...data.faq.map(f => ({ kind:'FAQ', title:f.q, sub:f.text.slice(0, 140), go:() => openHelp('faq', f.id), s:score(f.q, f.group, f.text) })),
+    ...data.troubleshooting.map(f => ({ kind:'Troubleshooting', title:f.q, sub:f.text.slice(0, 140), go:() => openHelp('troubleshooting', f.id), s:score(f.q, f.group, f.text) })),
+  ];
+  return rows.filter(r => r.s > 0).sort((a, b) => b.s - a.s).slice(0, 30);
+}
+function helpQaHtml(list){
+  const groups = [...new Set(list.map(e => e.group))];
+  return groups.map(g => `<h2 class="help-group">${escapeHtml(g)}</h2>` + list.filter(e => e.group === g).map(e =>
+    `<details class="help-qa" id="help-qa-${escapeHtml(e.id)}"><summary>${escapeHtml(e.q)}</summary><div class="help-article">${e.html}</div></details>`).join('')).join('');
+}
+async function renderHelpView(){
+  const pad = $('helpView').querySelector('.view-pad');
+  let data;
+  try { data = await loadHelpData(); }
+  catch (e) { pad.innerHTML = `<div class="view-head"><div><span class="eyebrow">System</span><h1 class="view-title">Help &amp; Support</h1></div></div><p class="empty-hint">Help content is missing (${escapeHtml(e.message)}). Run <code>npm run help:build</code> in nova-console.</p>`; return; }
+  const tabs = [['guides','Guides'],['faq','FAQ'],['troubleshooting','Troubleshooting'],['support','Support']];
+  pad.innerHTML = `<div class="view-head"><div><span class="eyebrow">System</span><h1 class="view-title">Help &amp; Support</h1><p class="view-desc">Guides for every screen, answers to common questions, fixes for common problems, and a support report. Everything here works offline.</p></div></div>
+    <div class="help-bar"><input id="helpSearch" type="search" placeholder="Search help…" aria-label="Search help" value="${escapeHtml(helpQuery)}">
+      <div class="help-tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" class="help-tab ${helpTab === k && !helpQuery ? 'on' : ''}" data-tab="${k}" aria-selected="${helpTab === k && !helpQuery}">${l}</button>`).join('')}</div></div>
+    <div id="helpBody"></div>`;
+  const input = $('helpSearch');
+  input.oninput = () => { helpQuery = input.value; drawHelpBody(data); pad.querySelectorAll('.help-tab').forEach(b => b.classList.toggle('on', !helpQuery && b.dataset.tab === helpTab)); };
+  pad.querySelectorAll('.help-tab').forEach(b => b.onclick = () => { helpTab = b.dataset.tab; helpArticleId = null; helpAnchor = null; helpQuery = ''; renderHelpView(); });
+  drawHelpBody(data);
+}
+function drawHelpBody(data){
+  const body = $('helpBody'); if (!body) return;
+  if (helpQuery.trim()) {
+    const rows = helpSearch(data, helpQuery);
+    body.innerHTML = rows.length ? `<div class="help-results">${rows.map((r, i) => `<button type="button" class="help-result" data-i="${i}"><span class="badge">${r.kind}</span><strong>${escapeHtml(r.title)}</strong><small>${escapeHtml(r.sub)}</small></button>`).join('')}</div>`
+      : `<p class="empty-hint">Nothing matches “${escapeHtml(helpQuery)}”. Try fewer words, or open <a href="#help/troubleshooting">Troubleshooting</a>.</p>`;
+    body.querySelectorAll('.help-result').forEach(b => b.onclick = () => rows[+b.dataset.i].go());
+  } else if (helpTab === 'faq') {
+    body.innerHTML = `<p class="view-desc">${data.faq.length} short answers.</p>` + helpQaHtml(data.faq);
+  } else if (helpTab === 'troubleshooting') {
+    body.innerHTML = `<p class="view-desc">Find the symptom, then follow the fix. <a href="#" data-open-diagnostics>Diagnostics</a> tells you which part is not working.</p>` + helpQaHtml(data.troubleshooting);
+  } else if (helpTab === 'support') {
+    drawHelpSupport(body, data);
+  } else if (helpArticleId) {
+    const a = data.articles.find(x => x.id === helpArticleId);
+    if (!a) { helpArticleId = null; return drawHelpBody(data); }
+    const idx = data.articles.indexOf(a), prev = data.articles[idx - 1], next = data.articles[idx + 1];
+    body.innerHTML = `<div class="help-layout"><nav class="help-side" aria-label="Guides">${data.sections.map(s => `<h4>${escapeHtml(s)}</h4>${data.articles.filter(x => x.section === s).map(x => `<a href="#help/${x.id}" class="${x.id === a.id ? 'on' : ''}">${escapeHtml(x.title)}</a>`).join('')}`).join('')}</nav>
+      <article class="help-main"><button type="button" class="btn btn-ghost btn-sm" id="helpBack">← All guides</button><span class="eyebrow" style="display:block;margin-top:10px">${escapeHtml(a.section)}</span><h1 class="help-title">${escapeHtml(a.title)}</h1><p class="view-desc">${escapeHtml(a.summary)}</p>
+        ${a.headings.length > 2 ? `<div class="help-toc">${a.headings.map(h => `<a href="#help/${a.id}/${h.id}">${escapeHtml(h.text)}</a>`).join('')}</div>` : ''}
+        <div class="help-article">${a.html}</div>
+        <div class="help-pager">${prev ? `<a href="#help/${prev.id}">← ${escapeHtml(prev.title)}</a>` : '<span></span>'}${next ? `<a href="#help/${next.id}">${escapeHtml(next.title)} →</a>` : ''}</div></article></div>`;
+    $('helpBack').onclick = () => { helpArticleId = null; history.replaceState(null, '', '#help'); drawHelpBody(data); };
+    $('helpView').scrollTop = 0;
+  } else {
+    body.innerHTML = data.sections.map(s => `<h2 class="help-group">${escapeHtml(s)}</h2><div class="help-cards">${data.articles.filter(a => a.section === s).map(a => `<a class="help-card" href="#help/${a.id}"><strong>${escapeHtml(a.title)}</strong><small>${escapeHtml(a.summary)}</small></a>`).join('')}</div>`).join('')
+      + `<h2 class="help-group">More help</h2><div class="help-cards"><a class="help-card" href="#help/faq"><strong>Frequently asked questions</strong><small>${data.faq.length} short answers</small></a><a class="help-card" href="#help/troubleshooting"><strong>Troubleshooting</strong><small>Problems and fixes, by area</small></a><a class="help-card" href="#help/support-report"><strong>Get support</strong><small>Check each part and make a support report</small></a></div>`;
+  }
+  wireHelpLinks(body);
+  if (helpAnchor) {
+    const el = body.querySelector('#help-qa-' + CSS.escape(helpAnchor)) || body.querySelector('#' + CSS.escape(helpAnchor));
+    if (el) { if (el.tagName === 'DETAILS') el.open = true; setTimeout(() => el.scrollIntoView({block:'start'}), 30); }
+    helpAnchor = null;
+  }
+}
+function wireHelpLinks(root){
+  root.querySelectorAll('a[href^="#help"]').forEach(a => a.onclick = e => { e.preventDefault(); history.replaceState(null, '', a.getAttribute('href')); routeHelpHash(); });
+  root.querySelectorAll('[data-open-diagnostics]').forEach(a => a.onclick = e => { e.preventDefault(); showView('diagnostics'); });
+  root.querySelectorAll('.help-article a[href^="http"]').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+}
+async function fetchHelpReport(){
+  helpReportBusy = true;
+  try { const r = await fetch(apiUrl('/api/support/report' + (helpIncludeLog ? '?log=1' : ''))); if (!r.ok) throw new Error('HTTP ' + r.status); helpReport = await r.json(); }
+  catch (e) { helpReport = { error: e.message }; }
+  helpReportBusy = false;
+}
+async function drawHelpSupport(body, data){
+  const intro = data.articles.find(a => a.id === 'support');
+  const draw = () => {
+    const r = helpReport;
+    const checks = r && r.checks ? `<div class="help-checks">${r.checks.map(c => `<div class="help-check ${c.ok ? 'ok' : 'bad'}"><span data-lucide="${c.ok ? 'check-circle-2' : 'alert-triangle'}"></span><div><strong>${escapeHtml(c.label)}</strong><small>${escapeHtml(c.detail)}</small></div>${c.ok ? '' : `<a href="#help/${c.help}">How to fix</a>`}</div>`).join('')}</div>` : '';
+    body.innerHTML = `<div class="panel" style="padding:16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><span class="eyebrow">Support report</span><h2 style="font-size:16px;margin:5px 0">Check each part, then copy or save a report</h2></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="tag-chip" style="font-size:11px"><input type="checkbox" id="helpIncludeLog" ${helpIncludeLog ? 'checked' : ''}> Include log tail</label><button class="btn btn-line btn-sm" id="helpRecheck">${helpReportBusy ? 'Checking…' : 'Check again'}</button><button class="btn btn-line btn-sm" id="helpCopyReport" ${r && r.text ? '' : 'disabled'}>Copy report</button><button class="btn btn-amber btn-sm" id="helpSaveReport" ${r && r.text ? '' : 'disabled'}>Save report</button></div></div>
+      ${!r ? '<p class="empty-hint">Checking…</p>' : r.error ? `<p class="empty-hint">Could not make a report: ${escapeHtml(r.error)}. Is the NOVA server running?</p>` : checks}
+      ${r && r.text ? `<details class="help-qa" style="margin-top:12px"><summary>Show the report (${r.recentFailures.length} recent failure${r.recentFailures.length === 1 ? '' : 's'})</summary><pre class="help-report" aria-label="Support report">${escapeHtml(r.text)}</pre></details>` : ''}
+      <p style="font-size:11.5px;color:var(--muted);margin-top:10px">The report has versions, engine status, record counts and recent errors. It never includes chats, documents, prompts, media or passwords, and your home folder is shown as ~. Read it before you send it.</p></div>
+      ${intro ? `<div class="help-article" style="margin-top:16px">${intro.html}</div>` : ''}`;
+    if (window.lucide) lucide.createIcons();
+    wireHelpLinks(body);
+    $('helpIncludeLog').onchange = async e => { helpIncludeLog = e.target.checked; await fetchHelpReport(); draw(); };
+    $('helpRecheck').onclick = async () => { helpReportBusy = true; draw(); await fetchHelpReport(); draw(); };
+    $('helpCopyReport').onclick = async () => { try { await navigator.clipboard.writeText(helpReport.text); toast('Support report copied.'); } catch (_) { const pre = body.querySelector('.help-report'); if (pre) { pre.closest('details').open = true; const sel = getSelection(); const rg = document.createRange(); rg.selectNodeContents(pre); sel.removeAllRanges(); sel.addRange(rg); } toast('Select-all done: press ⌘C to copy.'); } };
+    $('helpSaveReport').onclick = async () => { try { const res = await fetch(apiUrl('/api/support/report/save'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({includeLog:helpIncludeLog})}); const j = await res.json(); if (!res.ok) throw new Error(j.error || res.status); toast('Saved to ' + j.file); } catch (e) { toast('Could not save the report: ' + e.message); } };
+  };
+  draw();
+  if (!helpReport || helpReport.error) { await fetchHelpReport(); if (helpTab === 'support' && !helpQuery && $('helpBody') === body) draw(); }
+}
+
 /* ===================== marker: WIRING ===================== */
 const COMMANDS = [
   {label:'New session', icon:'plus', run:()=>createSession()},
@@ -5095,6 +5295,10 @@ const COMMANDS = [
   {label:'Go to Execution History', icon:'list-tree', run:()=>showView('history')},
   {label:'Go to Diagnostics', icon:'stethoscope', run:()=>showView('diagnostics')},
   {label:'Go to Settings', icon:'settings-2', run:()=>showView('settings')},
+  {label:'Help & Support', icon:'life-buoy', run:()=>openHelp()},
+  {label:'Help: FAQ', icon:'circle-help', run:()=>openHelp('faq')},
+  {label:'Help: Troubleshooting', icon:'wrench', run:()=>openHelp('troubleshooting')},
+  {label:'Make a support report', icon:'clipboard-list', run:()=>openHelp('support-report')},
   {label:'Toggle rail', icon:'panel-left-close', run:()=>$('railToggle').click()},
   {label:'Toggle inspector', icon:'panel-right', run:()=>$('inspectorToggle').click()},
   {label:'Fork active session', icon:'split', run:()=>forkActiveSession()},
@@ -5205,7 +5409,7 @@ function bindGlobalUI(){
 }
 
 bindGlobalUI();
-init();
+init().then(routeHelpHash);
 
 /* ===================== marker: HELPERS (search/filter/sort · inline help · prompt presets) ===================== */
 // Works on every view without each renderer knowing about it: after a view renders, lists get a
@@ -5236,6 +5440,7 @@ const VIEW_HELP = {
   trace:'Step-by-step events from recent runs, for troubleshooting.',
   diagnostics:'Checks that NOVA\'s parts are working, with what to fix when one is not.',
   settings:'Theme, language, privacy (network access), and NOVA-wide preferences.',
+  help:'Guides for every screen, FAQ, troubleshooting, and a support report you can copy or save. Search looks through all of it.',
 };
 const PANEL_HELP = {
   _videoPanel:'Add shots with Animate or Upload stills. Camera moves render in seconds with ffmpeg. AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound. Continue from last frame chains clips; Join clips assembles them.',
@@ -5311,6 +5516,15 @@ function toggleHelpDrawer(viewName){
   d.innerHTML = `<div class="help-drawer-head"><strong>${escapeHtml(VIEW_LABELS[viewName] || viewName)} · help</strong><button type="button" class="btn btn-ghost btn-sm" aria-label="Close help">Close</button></div><div class="help-box" role="note">${escapeHtml(VIEW_HELP[viewName])}</div>`;
   d.querySelector('button').onclick = () => d.remove();
   document.body.appendChild(d);
+  loadHelpData().then(data => {
+    const id = data.viewMap && data.viewMap[viewName];
+    if (!id || !d.isConnected || viewName === 'help') return;
+    const a = data.articles.find(x => x.id === id);
+    const link = document.createElement('p'); link.className = 'help-drawer-more';
+    link.innerHTML = `<a href="#help/${id}">Read the full guide${a ? ': ' + escapeHtml(a.title) : ''} →</a><br><a href="#help/troubleshooting">Troubleshooting</a> · <a href="#help/support-report">Get support</a>`;
+    link.querySelectorAll('a').forEach(x => x.onclick = e => { e.preventDefault(); d.remove(); history.replaceState(null, '', x.getAttribute('href')); routeHelpHash(); });
+    d.appendChild(link);
+  }).catch(() => {});
 }
 function enhanceHelp(view){
   const viewName = view.id.replace(/View$/, '');
