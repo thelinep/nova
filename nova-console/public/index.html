@@ -2010,10 +2010,13 @@ async function sendMessage(){
   renderConvo(); renderSessList();
   logEvent('SESSION', 'prompt submitted · session '+s.id);
   if (msg.queued) { toast('Got it — I will answer that right after this reply.'); return; }
+  // With a folder/files added to the chat (or Computer on), NOVA answers directly from them
+  // instead of the older Local Workspace plan drafts, which need a folder approved there.
+  const hasSources = (SOURCES[s.id] || []).some(x => x.status !== 'failed');
   if (!s.preferences.computer) {
     if(await createFromConversation(s,text,msg.mediaIds))return;
-    if(await draftCodePlanFromConversation(s,text))return;
-    if(await draftWorkspacePlanFromConversation(s,text))return;
+    if(!hasSources && await draftCodePlanFromConversation(s,text))return;
+    if(!hasSources && await draftWorkspacePlanFromConversation(s,text))return;
   }
   await startReply(s, text);
 }

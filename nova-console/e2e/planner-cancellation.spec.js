@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 test('Stop aborts an outstanding conversational code-planning request', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#composer')).toBeVisible();
+  await page.waitForFunction(() => typeof activeSession === 'function' && activeSession()); // first-run seeding picks the session a moment after load
   await page.route('**/api/workspace/code-plan', () => {});
   const requested = page.waitForRequest('**/api/workspace/code-plan');
   await page.evaluate(() => {

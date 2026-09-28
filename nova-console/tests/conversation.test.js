@@ -374,3 +374,24 @@ test('chat turn: NOVA asks for a folder itself (use_folder), then works in it', 
     assert.equal(computer.folderPath('Desktop'), path.join(os.homedir(), 'Desktop'));
   } finally { activity._reset(); computer._reset(); db.close(); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(desk, { recursive: true, force: true }); }
 });
+
+test('chat turn: "scan and report" on a folder added to the chat runs the read-only scan', async () => {
+  activity._reset();
+  const { dir, store, db } = tempStore();
+  const proj = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'nova-scan-')));
+  try {
+    activity.configure(store);
+    fs.writeFileSync(path.join(proj, 'app.js'), '// TODO: tidy\nconsole.log(1)\n');
+    const src = chatSources.add(store, dir, activity, { sessionId: 's5', kind: 'folder', path: proj });
+    await waitFor(() => store.get('chatSources', src.id).status === 'ready');
+    const ollama = fakeOllama(() => ({ message: { content: 'x' } }));
+    const events = [];
+    await chatTurn.runTurn({ store, dataDir: dir, ollama }, { sessionId: 's5', model: 'm1', followups: false, messages: [{ role: 'user', content: 'Scan and report' }] }, e => events.push(e));
+    const system = ollama.calls.find(c => c.kind === 'stream').messages[0].content;
+    assert.match(system, /Read-only scan of/);
+    assert.match(system, /Code health/);
+    assert.match(system, /TODO/);
+    assert.ok(events.filter(e => e.type === 'steps').pop().steps.some(s => /^Scanning /.test(s.label) && s.status === 'done'));
+    assert.equal(store.all('workspaceRoots').length, 0, 'scanning does not add the folder to Local Workspace');
+  } finally { activity._reset(); db.close(); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(proj, { recursive: true, force: true }); }
+});

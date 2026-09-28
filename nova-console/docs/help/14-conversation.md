@@ -25,6 +25,8 @@ Press **+** under the message box:
 
 You can also drag files onto the conversation, or paste a link: NOVA offers to read the page or repository.
 
+Ask "scan and report" (or review, audit, check) about an added folder or repository and NOVA also runs its read-only scan (code health, security signals, tests, documentation gaps, duplicate files and git changes) and writes the report from the findings, citing files. Nothing in the folder is changed.
+
 Each thing you add appears as a chip above the message box. While it is being read the chip shows what is happening; when it is ready, ask about it. NOVA picks the passages that match your question and names the files it used under the answer. Remove a chip with **×**. **Inspector > Files** lists what was read.
 
 @screen media/conversation-add.jpg "The + menu."

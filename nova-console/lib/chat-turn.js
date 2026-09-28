@@ -24,6 +24,23 @@ const activity = require('./activity');
 const chatSources = require('./chat-sources');
 const computer = require('./computer');
 const memory = require('./user-memory');
+const workspaceScanner = require('./workspace-scanner');
+
+const SCAN_INTENT = /\b(scan|audit|review|report|analy[sz]e|analysis|health|inspect|check ?up|assess|overview)\b/i;
+
+/** Runs NOVA's read-only structured scan over a folder added to the chat and returns it as text for the model. */
+function scanFolder(store, folder, label) {
+  const had = store.all('workspaceRoots').some(r => r.path === folder);
+  const root = workspaceScanner.approveRoot(store, { path: folder, label });
+  try {
+    const report = workspaceScanner.createStructuredReport(store, { rootId: root.id });
+    const findings = report.sections.reduce((n, x) => n + (x.findings || []).length, 0);
+    const text = `Read-only scan of ${label} (${report.scope.filesConsidered} files${report.scope.truncated ? ', limit reached' : ''}). Heuristic signals, not verified facts:\n` + report.sections.map(sec => `## ${sec.title} — ${sec.status}\n${sec.summary}\n` + (sec.findings || []).slice(0, 6).map(f => `- [${f.severity}] ${f.title}: ${f.relativePath || ''}${f.line ? ':' + f.line : ''} ${String(f.detail || '').slice(0, 160)}`).join('\n')).join('\n\n');
+    return { text, sections: report.sections.length, findings, files: report.scope.filesConsidered, reportId: report.id };
+  } finally {
+    if (!had) store.delete('workspaceRoots', root.id); // the scan does not add the folder to Local Workspace
+  }
+}
 
 const MAX_ROUNDS = 10;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -119,6 +136,20 @@ async function runTurn(deps, body, emit, clientSignal) {
       const files = [...new Set(ctx.used.map(u => u.path))];
       st.done(files.length ? `${ctx.used.length} passage${ctx.used.length === 1 ? '' : 's'} from ${files.slice(0, 4).join(', ')}${files.length > 4 ? ` and ${files.length - 4} more` : ''}` : 'Overview only');
       emit({ type: 'context', used: ctx.used, sources: ctx.sources.map(s => ({ id: s.id, label: s.label, kind: s.kind })) });
+    }
+
+    /* 2b · "scan and report" on a folder or repo added to the chat */
+    if (SCAN_INTENT.test(String(last.content || ''))) {
+      const folders = srcs.filter(x => (x.kind === 'folder' || x.kind === 'git') && x.status !== 'failed').slice(0, 2);
+      for (const f of folders) {
+        const where = f.kind === 'git' ? (f.localPath || f.origin) : f.origin;
+        const st = job.step('Scanning ' + f.label, 'code health, security signals, tests, docs, duplicates, git changes');
+        try {
+          const r = scanFolder(store, where, f.label);
+          st.done(`${r.files} files · ${r.sections} checks · ${r.findings} findings`);
+          sys.push(r.text + '\n\nWrite the report for the person from this scan: a short overview first, then what stands out in each area, then suggested next steps. Cite files as path:line. Say plainly that these are automatic signals to review, not confirmed problems.');
+        } catch (e) { st.fail(e); }
+      }
     }
 
     /* 3 · retrieved knowledge passages (chosen by the console) */
