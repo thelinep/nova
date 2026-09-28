@@ -14,6 +14,7 @@ NOVA Runtime is a local AI workspace: chat with local models, search your docume
 - [Models](#models)
 - [Knowledge and Retrieval Lab](#knowledge-and-retrieval-lab)
 - [Automations and Evaluations](#automations-and-evaluations)
+- [Add sources, live steps, computer and voice](#add-sources-live-steps-computer-and-voice)
 - [Images](#images)
 - [Video](#video)
 - [Audio, songs and transcripts](#audio-songs-and-transcripts)
@@ -213,14 +214,15 @@ NOVA adapts to the window:
 
 1. Press **New session** (or pick one on the left).
 2. Check the model in the model pill at the top right. Click it to choose another synced model.
-3. Type in the box at the bottom and press Enter (Shift+Enter adds a line). The answer streams in; the line under it shows time to first token, speed and length.
-4. Press the pause button that replaces send to stop a long answer. The status line under the box shows each stage: prefill, generating, tool runtime, complete.
+3. Type in the box at the bottom and press Enter (Shift+Enter adds a line), or hold the **microphone** and speak. NOVA shows what it is doing step by step above the answer, then the answer streams in. The line under it shows how long the first words took, the speed and the length.
+4. Press the stop button that replaces send to stop a reply. You can type your next message while NOVA is still answering: it is queued and answered next.
 
 If the selected model is an example record, or Ollama is not running, NOVA says so instead of inventing a reply. **Settings > Demo mode** allows clearly labelled simulated replies for trying the interface.
 
 ### Options under the message box
 
-- **Paperclip**: attach PNG, JPEG, WebP or GIF images. Reading images needs a vision model, for example `ollama pull llama3.2-vision` or `llava`, then sync models. A text-only model refuses images and says why.
+- **+**: add files, a folder, a web page or a git repository for NOVA to read, or ask it to look at your screen. Images you add are shown to the model; reading them needs a vision model, for example `ollama pull llama3.2-vision` or `llava`. See [Add sources, live steps, computer and voice](#add-sources-live-steps-computer-and-voice).
+- **Computer**: lets NOVA use this Mac in this chat, asking before every action. **Voice**: reads replies aloud.
 - **Retrieval**: when on, NOVA searches your Knowledge collections for passages that match your message and gives them to the model. Cited passages appear as chips under the answer with their match score.
 - **Profile** (Balanced and your saved profiles): switches temperature, top-p, top-k and repeat penalty in one click. The Inference tab of the inspector shows the exact values.
 
@@ -330,6 +332,79 @@ An enabled automation that was due while NOVA was closed runs after NOVA starts.
 **Evaluations** compares models on NOVA's fixed benchmark datasets: accuracy, latency and throughput side by side. Sync the models first, and compare runs that used the same dataset and comparable settings. A score describes that benchmark, not a model's general accuracy or safety.
 
 ![Evaluations: two models compared on the same dataset.](../public/help/media/evaluations.jpg)
+
+## Add sources, live steps, computer and voice
+
+*Give NOVA a folder, files, a web page or a git repo to read, watch what it is doing step by step, let it use your Mac with your approval, and talk to it out loud.*
+
+Chat in NOVA works like talking to a colleague who can read what you hand them, show you what they are doing, and, when you allow it, use your computer.
+
+![A reply grounded in a folder of shoot notes, with its steps above it.](../public/help/media/conversation.jpg)
+### Add something for NOVA to read
+
+Press **+** under the message box:
+
+| Choice | What NOVA does |
+| --- | --- |
+| **Add files** | Reads documents, code, CSV, PDF (needs `pdftotext`), Word, PowerPoint and Excel text. Images go to the model as pictures (needs a vision model). |
+| **Add folder** | Reads the text files in a folder and its subfolders, skipping `node_modules`, `.git`, build folders and binary files. It never changes the folder. |
+| **Add web page** | Fetches the page and keeps its readable text. Needs **Settings > Allow network access**. |
+| **Add git repo** | Clones the latest commit (`https://github.com/owner/repo`, `owner/repo`, or the path of a repository on this Mac) and reads it, with its recent history. Remote repositories need network access. |
+| **Look at my screen** | Turns on Computer and asks NOVA to take a screenshot and describe it. |
+
+You can also drag files onto the conversation, or paste a link: NOVA offers to read the page or repository.
+
+Each thing you add appears as a chip above the message box. While it is being read the chip shows what is happening; when it is ready, ask about it. NOVA picks the passages that match your question and names the files it used under the answer. Remove a chip with **×**. **Inspector > Files** lists what was read.
+
+![The + menu.](../public/help/media/conversation-add.jpg)
+### See what NOVA is doing
+
+Above each reply, a steps panel shows every step as it happens: reading your sources, searching knowledge, thinking, each computer action and its result, writing the reply, with timings. When the reply is done it folds into one line ("Worked for 4 s · 5 steps"); click it to open it again.
+
+The **list icon** in the top bar opens **Activity**: everything running across all chats, such as replies, folders being read and repositories being cloned. Several things can run at once. Stop any of them there. The badge shows how many are running, and turns red when NOVA is waiting for your OK.
+
+You do not have to wait: type the next message while NOVA is answering and it is **queued**, then answered straight after.
+
+![Activity: every running task, and actions waiting for approval.](../public/help/media/activity.jpg)
+### Let NOVA use your computer
+
+Turn on **Computer** under the message box. It is off in every new chat. NOVA can then:
+
+- **Run commands** in a terminal, inside approved folders: folders you added to this chat and folders approved in Local Workspace.
+- **Open** a web link, an app or a file, or show a file in Finder.
+- **See and control the screen**: take a screenshot, click, type, press keys and scroll. Reading screenshots needs a vision model.
+- **Use the clipboard**, and **list, read, create, move and rename files** in approved folders. It never deletes; **Move to Trash** goes through Finder, so you can put the file back.
+
+Before every action NOVA shows exactly what it wants to do and waits:
+
+- **Allow** does it once.
+- **Allow for this chat** allows that kind of action for the rest of the conversation.
+- **Deny** tells NOVA not to, and it asks what you would prefer instead.
+
+Some things are always refused: administrator (`sudo`) commands, erasing disks, deleting your home folder, shutting down, and downloading and running a script in one step.
+
+![NOVA asks before running a command.](../public/help/media/computer-approval.jpg)
+[Video: Adding a folder, asking about it, and approving a command.](../public/help/media/conversation.mp4)
+The model must support tools, for example `qwen2.5`, `llama3.1` or `mistral-nemo`. If it does not, NOVA answers anyway and says why it could not act.
+
+**Settings > Computer** can turn computer use off everywhere, turn off screen control, or let read-only actions (looking at files, the screen or the clipboard) run without asking. On macOS, clicking and typing need **System Settings > Privacy & Security > Accessibility**, and screenshots of other windows need **Screen Recording**. Allow NOVA Runtime, or Terminal when you use browser mode.
+
+### Talk and listen
+
+- **Hold the microphone** while you speak and let go to send. Or click it once, speak, and click again. whisper.cpp turns your words into text on this Mac. **Settings > Send right after I speak** decides whether it sends straight away.
+- **Voice** reads every reply aloud, using Kokoro voices when installed, else the macOS voice. The **speaker** on any reply reads just that one.
+
+### Edit, retry, react, pin
+
+Hover a message for its buttons:
+
+- **Your message:** ✏ edit it and resend (the later replies are replaced), or copy it.
+- **A reply:** copy, read aloud, regenerate, 👍 / 👎, pin (pinned replies are listed under Inspector > Files), remember, or save to Knowledge.
+- **Follow-ups:** after a reply NOVA suggests three short follow-ups; click one to send it.
+
+### Memory
+
+Say "remember that I shoot on an FX3" and NOVA saves it; "forget the FX3" removes it. The **brain** button on a reply saves a note from it. NOVA reads your notes at the start of every chat. See, add and delete them in **Settings > Memory**. Nothing is saved unless you ask.
 
 ## Images
 
@@ -976,6 +1051,36 @@ That is the built-in macOS voice. Install Kokoro with **Install Kokoro voices fo
 
 Look in `~/Documents/NOVA Library` in that day's folder. If the item says it could not be saved there, check the folder in **Media → Library folder** and that the disk has space.
 
+### Sources, computer and voice
+
+#### "Reading web pages needs network access" or a git clone is refused
+
+Turn on **Settings > Privacy > Allow network access**. Private repositories need git to be signed in on this Mac already; NOVA never asks for passwords. A page that needs JavaScript or a sign-in may have no readable text.
+
+#### A folder was added but NOVA says it found no readable files
+
+NOVA reads text files only and skips `node_modules`, `.git`, build folders and binary files, up to 600 files and about 12 MB. Add the subfolder that holds your notes or code.
+
+#### Computer is on but NOVA only talks
+
+The model must support tools (for example `qwen2.5` or `llama3.1`); the steps above the reply say when it does not. Also check **Settings > Computer > Let NOVA use this Mac**.
+
+#### Clicks and typing do nothing
+
+Allow NOVA Runtime (or Terminal in browser mode) in **System Settings > Privacy & Security > Accessibility**, then quit and reopen NOVA.
+
+#### Screenshots show only the desktop wallpaper
+
+Allow NOVA Runtime (or Terminal) in **System Settings > Privacy & Security > Screen Recording**, then reopen NOVA.
+
+#### "Outside the approved folders"
+
+Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. Add the folder with **+ > Add folder**.
+
+#### The microphone does not work
+
+Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
+
 ### Agents, tools and workflows
 
 #### A skill or agent is blocked
@@ -1056,6 +1161,18 @@ Check the chunks in Retrieval Lab. Clean up the source, split very long document
 
 Yes. **Fork** copies the session so you can try another direction; **Snapshot** saves its current state. Both are in the command palette (**⌘K**).
 
+#### Can I give NOVA a folder, a web page or a git repository to read?
+
+Yes. Press **+** under the message box and choose **Add folder**, **Add files**, **Add web page** or **Add git repo**, or drag files onto the chat. NOVA reads it once and answers from it, naming the files it used. See [Add sources, live steps, computer and voice](conversation.html).
+
+#### Can I keep typing while NOVA is answering?
+
+Yes. Your next message is queued and answered as soon as the current reply finishes. Replies in different chats, and folders being read, run at the same time; the list icon at the top shows them all.
+
+#### Does NOVA remember things about me?
+
+Only what you ask it to. Say "remember that …", or press the brain on a reply. Notes are listed in **Settings > Memory**, where you can delete them. "Forget …" removes matching notes.
+
 ### Making things
 
 #### What do I need for images, video and audio?
@@ -1091,6 +1208,14 @@ Tools can read files, run commands or change things. NOVA asks before a tool act
 #### Can NOVA publish, send or delete things by itself?
 
 Only if you give an agent or workflow a tool that can, and approve it. Put a sign-off step before anything that publishes, sends, deletes or changes files.
+
+#### Can NOVA control my computer?
+
+Only in chats where you turn on **Computer**, and only after you approve each action. It can run commands in approved folders, open apps, files and links, look at the screen and click or type, use the clipboard, and create, move or rename files. It never deletes (Move to Trash can be undone) and refuses administrator and disk-erasing commands. See [Add sources, live steps, computer and voice](conversation.html).
+
+#### Can I talk to NOVA instead of typing?
+
+Yes. Hold the microphone button under the message box while you speak. whisper.cpp transcribes you on this Mac. Turn on **Voice** to hear replies read aloud.
 
 #### Can automations run on a schedule?
 

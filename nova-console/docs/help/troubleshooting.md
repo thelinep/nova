@@ -70,6 +70,36 @@ That is the built-in macOS voice. Install Kokoro with **Install Kokoro voices fo
 
 Look in `~/Documents/NOVA Library` in that day's folder. If the item says it could not be saved there, check the folder in **Media → Library folder** and that the disk has space.
 
+## Sources, computer and voice
+
+### "Reading web pages needs network access" or a git clone is refused
+
+Turn on **Settings > Privacy > Allow network access**. Private repositories need git to be signed in on this Mac already; NOVA never asks for passwords. A page that needs JavaScript or a sign-in may have no readable text.
+
+### A folder was added but NOVA says it found no readable files
+
+NOVA reads text files only and skips `node_modules`, `.git`, build folders and binary files, up to 600 files and about 12 MB. Add the subfolder that holds your notes or code.
+
+### Computer is on but NOVA only talks
+
+The model must support tools (for example `qwen2.5` or `llama3.1`); the steps above the reply say when it does not. Also check **Settings > Computer > Let NOVA use this Mac**.
+
+### Clicks and typing do nothing
+
+Allow NOVA Runtime (or Terminal in browser mode) in **System Settings > Privacy & Security > Accessibility**, then quit and reopen NOVA.
+
+### Screenshots show only the desktop wallpaper
+
+Allow NOVA Runtime (or Terminal) in **System Settings > Privacy & Security > Screen Recording**, then reopen NOVA.
+
+### "Outside the approved folders"
+
+Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. Add the folder with **+ > Add folder**.
+
+### The microphone does not work
+
+Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
+
 ## Agents, tools and workflows
 
 ### A skill or agent is blocked

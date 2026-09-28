@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>NOVA listens only while you hold or click the microphone button, and turns your words into text on this Mac.</string>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>NOVA uses System Events and Finder to type, press keys and move files to the Trash when you approve it in a chat.</string>
+</dict>
+</plist>

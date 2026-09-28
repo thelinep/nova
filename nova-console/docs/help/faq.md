@@ -46,6 +46,18 @@ Check the chunks in Retrieval Lab. Clean up the source, split very long document
 
 Yes. **Fork** copies the session so you can try another direction; **Snapshot** saves its current state. Both are in the command palette (**⌘K**).
 
+### Can I give NOVA a folder, a web page or a git repository to read?
+
+Yes. Press **+** under the message box and choose **Add folder**, **Add files**, **Add web page** or **Add git repo**, or drag files onto the chat. NOVA reads it once and answers from it, naming the files it used. See [Add sources, live steps, computer and voice](help:conversation).
+
+### Can I keep typing while NOVA is answering?
+
+Yes. Your next message is queued and answered as soon as the current reply finishes. Replies in different chats, and folders being read, run at the same time; the list icon at the top shows them all.
+
+### Does NOVA remember things about me?
+
+Only what you ask it to. Say "remember that …", or press the brain on a reply. Notes are listed in **Settings > Memory**, where you can delete them. "Forget …" removes matching notes.
+
 ## Making things
 
 ### What do I need for images, video and audio?
@@ -81,6 +93,14 @@ Tools can read files, run commands or change things. NOVA asks before a tool act
 ### Can NOVA publish, send or delete things by itself?
 
 Only if you give an agent or workflow a tool that can, and approve it. Put a sign-off step before anything that publishes, sends, deletes or changes files.
+
+### Can NOVA control my computer?
+
+Only in chats where you turn on **Computer**, and only after you approve each action. It can run commands in approved folders, open apps, files and links, look at the screen and click or type, use the clipboard, and create, move or rename files. It never deletes (Move to Trash can be undone) and refuses administrator and disk-erasing commands. See [Add sources, live steps, computer and voice](help:conversation).
+
+### Can I talk to NOVA instead of typing?
+
+Yes. Hold the microphone button under the message box while you speak. whisper.cpp transcribes you on this Mac. Turn on **Voice** to hear replies read aloud.
 
 ### Can automations run on a schedule?
 

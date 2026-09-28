@@ -62,6 +62,12 @@ const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
 const supportReport = require('./lib/support-report');
+const activity = require('./lib/activity');
+const chatSources = require('./lib/chat-sources');
+const computer = require('./lib/computer');
+const chatTurn = require('./lib/chat-turn');
+const userMemory = require('./lib/user-memory');
+const voiceChat = require('./lib/voice-chat');
 
 const PORT = process.env.PORT === undefined ? 8787 : Number(process.env.PORT);
 if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('PORT must be an integer from 0 to 65535');
@@ -80,6 +86,7 @@ function gitSnapshot() {
 
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
+activity.configure(store);
 const ollama = new OllamaClient(process.env.OLLAMA_HOST);
 const telemetry = new TelemetryReader();
 
@@ -499,6 +506,87 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, collectorWorkflows.cancelRun(store, decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/collector\/evidence$/, handler: async (_req, res) => sendJson(res, 200, store.all('collectorEvidence').reverse()) },
   { method: 'GET', pattern: /^\/api\/collector\/venues$/, handler: async (_req, res) => sendJson(res, 200, store.all('venueObservations').reverse()) },
+  /* ---------- conversation: sources, activity, computer, memory, voice ---------- */
+  { method: 'POST', pattern: /^\/api\/chat\/turn$/, handler: async (req, res) => {
+    const body = await readJsonBody(req);
+    const controller = new AbortController();
+    res.on('close', () => { if (!res.writableFinished) controller.abort(); });
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+    const emit = ev => { if (!res.writableEnded) res.write(JSON.stringify(ev) + '\n'); };
+    try { await chatTurn.runTurn({ store, dataDir: DATA_DIR, ollama, media }, body, emit, controller.signal); }
+    catch (e) { emit({ type: 'error', error: e.message || String(e) }); }
+    finally { res.end(); }
+  } },
+  { method: 'GET', pattern: /^\/api\/chat\/sources$/, handler: async (req, res) => sendJson(res, 200, chatSources.list(store, new URL(req.url, 'http://x').searchParams.get('sessionId'))) },
+  { method: 'POST', pattern: /^\/api\/chat\/sources$/, handler: async (req, res) => {
+    const body = await readJsonBody(req);
+    const source = chatSources.add(store, DATA_DIR, activity, body);
+    desktopSecurity.appendAudit(DATA_DIR, { action: 'chat.source.added', kind: source.kind, sourceId: source.id, origin: source.kind === 'file' ? source.label : source.origin });
+    sendJson(res, 202, source);
+  } },
+  { method: 'POST', pattern: /^\/api\/chat\/sources\/file$/, handler: async (req, res) => {
+    const q = new URL(req.url, 'http://x').searchParams;
+    const file = await readRawBody(req, 60 * 1024 * 1024);
+    const source = chatSources.add(store, DATA_DIR, activity, { kind: 'file', sessionId: q.get('sessionId'), name: q.get('name'), file });
+    sendJson(res, 202, source);
+  } },
+  { method: 'DELETE', pattern: /^\/api\/chat\/sources\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, chatSources.remove(store, DATA_DIR, decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/chat\/sources\/([^/]+)\/files$/, handler: async (_req, res, [id]) => sendJson(res, 200, chatSources.files(DATA_DIR, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/pick$/, handler: async (req, res) => {
+    const body = await readJsonBody(req).catch(() => ({}));
+    if (process.platform !== 'darwin') { sendJson(res, 501, { error: 'The native picker works on macOS. Type the full path instead.' }); return; }
+    const kind = body.kind === 'file' ? 'file' : 'folder';
+    const script = kind === 'folder' ? 'POSIX path of (choose folder with prompt "Add a folder to this conversation")' : 'set fs to (choose file with prompt "Add files to this conversation" with multiple selections allowed)\nset out to ""\nrepeat with f in fs\nset out to out & POSIX path of f & linefeed\nend repeat\nout';
+    const { execFile } = require('node:child_process');
+    execFile('/usr/bin/osascript', ['-e', 'tell application "System Events" to activate', '-e', script], { timeout: 10 * 60 * 1000 }, (err, stdout) => {
+      if (err) { sendJson(res, 400, { error: 'Nothing was chosen.' }); return; }
+      sendJson(res, 200, { paths: String(stdout).split('\n').map(s => s.trim()).filter(Boolean) });
+    });
+  } },
+  { method: 'POST', pattern: /^\/api\/chat\/sources\/local-file$/, handler: async (req, res) => {
+    const body = await readJsonBody(req);
+    const p = require('node:path').resolve(String(body.path || '').replace(/^~(?=$|\/)/, require('node:os').homedir()));
+    if (!fs.existsSync(p) || !fs.statSync(p).isFile()) { sendJson(res, 404, { error: 'File not found: ' + body.path }); return; }
+    const source = chatSources.add(store, DATA_DIR, activity, { kind: 'file', sessionId: body.sessionId, name: require('node:path').basename(p), file: fs.readFileSync(p) });
+    sendJson(res, 202, source);
+  } },
+  { method: 'GET', pattern: /^\/api\/activity$/, handler: async (req, res) => { const q = new URL(req.url, 'http://x').searchParams; sendJson(res, 200, { jobs: activity.list({ sessionId: q.get('sessionId') || null }), approvals: computer.pendingApprovals() }); } },
+  { method: 'GET', pattern: /^\/api\/activity\/stream$/, handler: async (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    res.write('retry: 3000\n\n');
+    const send = ev => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(ev)}\n\n`); };
+    const offA = activity.subscribe(send), offC = computer.subscribe(send);
+    const ping = setInterval(() => { if (!res.writableEnded) res.write(': ping\n\n'); }, 20000);
+    req.on('close', () => { clearInterval(ping); offA(); offC(); });
+  } },
+  { method: 'POST', pattern: /^\/api\/activity\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, { ok: activity.cancel(decodeURIComponent(id)) }) },
+  { method: 'GET', pattern: /^\/api\/computer\/status$/, handler: async (_req, res) => sendJson(res, 200, { ...(await computer.status()), policy: computer.policy(store), workspaceRoots: computer.workspaceRoots(store) }) },
+  { method: 'PUT', pattern: /^\/api\/computer\/policy$/, handler: async (req, res) => { const p = computer.setPolicy(store, await readJsonBody(req)); desktopSecurity.appendAudit(DATA_DIR, { action: 'computer.policy.changed', policy: p }); sendJson(res, 200, p); } },
+  { method: 'GET', pattern: /^\/api\/computer\/approvals$/, handler: async (_req, res) => sendJson(res, 200, computer.pendingApprovals()) },
+  { method: 'POST', pattern: /^\/api\/computer\/approvals\/([^/]+)$/, handler: async (req, res, [id]) => {
+    const body = await readJsonBody(req);
+    const pendingInfo = computer.pendingApprovals().find(a => a.id === decodeURIComponent(id));
+    const r = computer.decide(decodeURIComponent(id), body.decision);
+    desktopSecurity.appendAudit(DATA_DIR, { action: 'computer.approval', decision: r.decision, tool: pendingInfo && pendingInfo.tool, detail: pendingInfo && String(pendingInfo.detail || '').slice(0, 300) });
+    logExecution(store, 'computer', (pendingInfo ? pendingInfo.title + ': ' + String(pendingInfo.detail || '').slice(0, 80) : 'Computer action'), r.decision === 'deny' ? 'rejected' : 'success', 'Decision: ' + r.decision);
+    sendJson(res, 200, r);
+  } },
+  { method: 'GET', pattern: /^\/api\/computer\/shots\/([^/]+)$/, handler: async (_req, res, [name]) => { const f = computer.shotFile(DATA_DIR, decodeURIComponent(name)); const data = fs.readFileSync(f); res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': data.length, 'Cache-Control': 'private, max-age=3600' }); res.end(data); } },
+  { method: 'GET', pattern: /^\/api\/memory$/, handler: async (_req, res) => sendJson(res, 200, userMemory.list(store)) },
+  { method: 'POST', pattern: /^\/api\/memory$/, handler: async (req, res) => { const b = await readJsonBody(req); sendJson(res, 201, userMemory.add(store, b.text, b.source || 'you')); } },
+  { method: 'DELETE', pattern: /^\/api\/memory\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, userMemory.remove(store, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/voice\/transcribe$/, handler: async (req, res) => {
+    const q = new URL(req.url, 'http://x').searchParams;
+    const buffer = await readRawBody(req, 25 * 1024 * 1024);
+    sendJson(res, 200, await voiceChat.transcribeClip(DATA_DIR, buffer, req.headers['content-type'] || 'audio/webm', q.get('lang') || 'auto'));
+  } },
+  { method: 'POST', pattern: /^\/api\/voice\/speak$/, handler: async (req, res) => {
+    const b = await readJsonBody(req);
+    const out = await voiceChat.speakText(DATA_DIR, b.text, { voice: b.voice || null, rate: b.rate });
+    res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice) });
+    res.end(out.data);
+  } },
+
   { method: 'GET', pattern: /^\/api\/support\/report$/, handler: async (req, res) => {
     const includeLog = new URL(req.url, 'http://x').searchParams.get('log') === '1';
     sendJson(res, 200, await supportReport.buildReport(supportDeps(), { includeLog }));

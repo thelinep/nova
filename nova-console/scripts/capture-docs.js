@@ -37,6 +37,7 @@ const MODELS = [
   { name: 'nomic-embed-text:latest', model: 'nomic-embed-text:latest', size: 274302450, details: { family: 'nomic-bert', parameter_size: '137M', quantization_level: 'F16' } },
 ];
 const REPLY = 'Here is a short plan for the shoot:\n\n1. **Location** – Marine Drive at dusk, with the city lights starting to show.\n2. **Look** – warm, soft light and a slow push-in on the lead.\n3. **Sound** – waves, distant traffic and a single sustained piano note.\n\nWant me to turn this into a shot list?';
+const REPLY_SOURCES = 'From **brief.md**: the dusk shoot on Marine Drive is on **Friday**, call time 6:00, with two actors and one drone shot.\n\nFrom **budget.csv**: the camera package (FX3 + lenses) is **₹42,000** of the ₹1,85,000 total.\n\nStill TBC: parking and the nearest hospital.';
 const AGENT = { name: 'Shoot Planner', role: 'Pre-production', systemPrompt: 'You turn shoot notes into a shot list and a call sheet. Keep the director\'s wording, write TBC for anything the notes do not say (addresses, times, hospital), and list open questions at the end. Never invent facts.', skills: ['skl_shotlist', 'skl_callsheet'], mcpServers: [], delegates: [], memoryScope: 'session', testPrompts: ['Make a shot list from: dusk, Marine Drive, two actors, one drone shot.', 'What is still missing for the call sheet?'], notes: 'Uses the Shot List and Call Sheet skills.' };
 const WORKFLOW = { name: 'Shoot notes in Hindi', description: 'Summarise the shoot notes, get a sign-off, then translate the summary to Hindi.', steps: [{ type: 'skill', ref: 'skl_summarize', label: 'Summarise the shoot notes' }, { type: 'approval', label: 'Sign-off before translating' }, { type: 'skill', ref: 'skl_translate', label: 'Translate to Hindi' }], notes: 'A sign-off comes before the translation is shared.' };
 const usage = { total_duration: 1.4e9, load_duration: 1e8, prompt_eval_count: 42, prompt_eval_duration: 2e8, eval_count: 96, eval_duration: 1.1e9 };
@@ -62,12 +63,20 @@ function startOllama() {
         const system = (json.messages || []).filter(m => m.role === 'system').map(m => m.content).join('\n');
         if (json.stream) {
           res.writeHead(200, { 'Content-Type': 'application/x-ndjson' });
-          for (const piece of REPLY.match(/\S+\s*/g)) { res.write(JSON.stringify({ model: json.model, message: { role: 'assistant', content: piece }, done: false }) + '\n'); await sleep(45); }
+          const text = /Passages from those sources/.test(system) ? REPLY_SOURCES : REPLY;
+          for (const piece of text.match(/\S+\s*/g)) { res.write(JSON.stringify({ model: json.model, message: { role: 'assistant', content: piece }, done: false }) + '\n'); await sleep(45); }
           res.end(JSON.stringify({ model: json.model, message: { role: 'assistant', content: '' }, done: true, ...usage }) + '\n');
           return;
         }
         await sleep(600);
         let content = REPLY;
+        if (json.format === 'json' && /followups/.test(system)) return send({ model: json.model, message: { role: 'assistant', content: JSON.stringify({ followups: ['Make a call sheet for Friday', 'What is still TBC?', 'Translate the plan to Hindi'] }) }, done: true, ...usage });
+        if (Array.isArray(json.tools) && json.tools.length) {
+          const toolMsgs = (json.messages || []).filter(m => m.role === 'tool');
+          if (!toolMsgs.length) return send({ model: json.model, message: { role: 'assistant', content: 'I will look at what is in your shoot folder first.', tool_calls: [{ function: { name: 'run_command', arguments: { command: 'ls -la' } } }] }, done: true, ...usage });
+          const out = String(toolMsgs[toolMsgs.length - 1].content || '').split('\n').filter(l => /\.(md|csv|txt|fountain)$/.test(l)).map(l => '- ' + l.trim().split(/\s+/).pop()).join('\n');
+          return send({ model: json.model, message: { role: 'assistant', content: 'Your shoot folder has:\n' + (out || '- (no notes found)') + '\n\nWant me to turn the brief into a call sheet?' }, done: true, ...usage });
+        }
         if (json.format === 'json') content = JSON.stringify(/"steps"/.test(system) ? WORKFLOW : AGENT);
         else if (/translat/i.test(system)) content = '- मरीन ड्राइव पर शाम की शूटिंग अब शुक्रवार को है।\n- दो कलाकार और एक ड्रोन शॉट।\n- पार्किंग और नज़दीकी अस्पताल अभी तय नहीं (TBC)।';
         else if (/shot list/i.test(system)) content = '| # | Shot | Lens | Notes |\n| --- | --- | --- | --- |\n| 1 | Wide of Marine Drive at dusk | 24mm | City lights on |\n| 2 | Slow push-in on the lead | 50mm | Warm key |\n| 3 | Close-up, waves on the rocks | 85mm | Sound: waves |';
@@ -165,6 +174,35 @@ async function main() {
     await shot('media-audio', () => page.locator('.nav-item[data-media-tab="audio"]').click());
     await shot('media-library', () => page.locator('.nav-item[data-media-tab="library"]').click());
     await shot('media-transcribe', async () => { await page.locator('.nav-item[data-media-tab="audio"]').click(); await page.locator('#mediaView').getByText('Transcribe', { exact: true }).first().click({ timeout: 3000 }); });
+    // Conversation: sources, live steps, computer approval, activity
+    const shoot = path.join(dataDir, 'Marine Drive shoot');
+    fs.mkdirSync(shoot, { recursive: true });
+    fs.writeFileSync(path.join(shoot, 'brief.md'), '# Marine Drive dusk shoot\nFriday, unit call 6:00. Two actors, one drone shot.\nParking and nearest hospital: TBC.\n');
+    fs.writeFileSync(path.join(shoot, 'budget.csv'), 'item,cost\nFX3 + lenses,42000\nDrone operator,38000\nTotal,185000\n');
+    fs.writeFileSync(path.join(shoot, 'shot-ideas.txt'), 'Wide at dusk; slow push-in; waves on the rocks.\n');
+    await shot('conversation-add', async () => { await page.evaluate(() => showView('console')); await page.locator('#newSessionBtn').click(); await page.locator('#addBtn').click(); await page.locator('#addMenu [data-add="folder"]').hover(); }, { wait: 400 });
+    await page.keyboard.press('Escape');
+    if (want('conversation') || want('computer-approval') || want('activity')) {
+      try {
+        await page.evaluate(() => { const s = activeSession(); s.title = 'Marine Drive shoot'; });
+        await page.evaluate(p => addSource({ kind: 'folder', path: p }), shoot);
+        await page.waitForSelector('.src-chip.src-ready', { timeout: 15000 });
+        await page.locator('#composer').fill('What does the camera cost and when is the shoot?');
+        await page.locator('#sendBtn').click();
+        await page.waitForFunction(() => !TURNS[activeSession().id], null, { timeout: 30000 });
+        await sleep(2500);
+        await shot('conversation', () => page.evaluate(() => { const m = activeSession().messages.filter(x => x.role === 'assistant').pop(); stepsOpen.set(m.id, true); renderConvo(); }));
+        await page.locator('#computerToggleBtn').click();
+        await page.locator('#composer').fill('What is in my shoot folder?');
+        await page.locator('#sendBtn').click();
+        await page.waitForSelector('.msg-steps .approval-card', { timeout: 20000 });
+        await shot('computer-approval', async () => { await page.locator('.msg-steps .approval-card').scrollIntoViewIfNeeded(); }, { wait: 500 });
+        await shot('activity', () => page.locator('#activityBtn').click(), { wait: 700 });
+        await page.evaluate(() => toggleActivityDrawer(false));
+        await page.locator('.msg-steps .approval-go[data-d="allow"]').first().click();
+        await page.waitForFunction(() => !TURNS[activeSession().id], null, { timeout: 30000 });
+      } catch (e) { console.warn('  ! conversation: ' + e.message.split('\n')[0]); }
+    }
     await shot('help', () => page.evaluate(() => openHelp()));
     await shot('help-support', () => page.evaluate(() => openHelp('support-report')), { wait: 2500 });
     await shot('help-drawer', async () => { await page.evaluate(() => showView('agents')); await page.locator('#agentsView .help-btn').first().click(); }, { wait: 900 });
@@ -231,6 +269,23 @@ async function main() {
       const approve = p.locator(`.wf-approve-run[data-run="${runId}"]`);
       await approve.scrollIntoViewIfNeeded(); await sleep(1800);
       await approve.click(); await sleep(6000);
+    });
+    await clip('conversation', async p => {
+      await p.locator('#newSessionBtn').click(); await sleep(500);
+      await p.locator('#addBtn').click(); await sleep(700);
+      await p.evaluate(() => openAddForm('folder')); await sleep(300);
+      await p.locator('#addFormInput').click(); await p.keyboard.type(shoot, { delay: 12 });
+      await p.locator('#addFormGo').click();
+      await p.waitForSelector('.src-chip.src-ready', { timeout: 15000 }); await sleep(900);
+      await typeSlow(p, '#composer', 'What does the camera cost and when is the shoot?');
+      await p.locator('#sendBtn').click();
+      await p.waitForFunction(() => !TURNS[activeSession().id], null, { timeout: 30000 }); await sleep(2500);
+      await p.locator('#computerToggleBtn').click(); await sleep(900);
+      await typeSlow(p, '#composer', 'What is in my shoot folder?');
+      await p.locator('#sendBtn').click();
+      await p.waitForSelector('.msg-steps .approval-card', { timeout: 20000 }); await sleep(1600);
+      await p.locator('.msg-steps .approval-go[data-d="allow"]').first().click();
+      await p.waitForFunction(() => !TURNS[activeSession().id], null, { timeout: 30000 }); await sleep(2500);
     });
     await clip('help-tour', async p => {
       await p.evaluate(() => openHelp()); await sleep(1200);
