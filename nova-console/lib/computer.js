@@ -31,9 +31,16 @@ const listeners = new Set();
 
 function error(message, statusCode = 400) { return Object.assign(new Error(message), { statusCode }); }
 function home(p) { const h = os.homedir(); return h && typeof p === 'string' && p.startsWith(h) ? '~' + p.slice(h.length) : p; }
+/** "Desktop", "~/Desktop" or a full path → an absolute path (not yet checked). */
+function folderPath(p) {
+  let t = String(p || '').trim().replace(/^["']|["']$/g, '');
+  if (/^(desktop|documents|downloads|movies|music|pictures)$/i.test(t)) t = '~/' + t[0].toUpperCase() + t.slice(1).toLowerCase();
+  return path.resolve(expand(t));
+}
 function expand(p) { return String(p || '').trim().replace(/^~(?=$|\/)/, os.homedir()); }
 
 const TOOLS = [
+  { name: 'use_folder', risk: 'folder', description: 'Ask the person for permission to work in a folder, for example ~/Desktop, ~/Downloads or ~/Documents/Scripts. Call this whenever you need a folder that is not approved yet. The person approves it with one click; never ask them to type commands or menu paths instead.', parameters: { type: 'object', properties: { path: { type: 'string', description: 'Full path, or ~/Desktop style path' }, reason: { type: 'string', description: 'One short sentence: why you need it' } }, required: ['path'] } },
   { name: 'run_command', risk: 'run', description: 'Run a shell command on this Mac and get its output. Use for listing, searching, building, testing, git, and scripts. Runs in an approved folder.', parameters: { type: 'object', properties: { command: { type: 'string', description: 'The command line, e.g. "ls -la" or "npm test"' }, cwd: { type: 'string', description: 'Folder to run in (must be an approved folder; default: the first one)' } }, required: ['command'] } },
   { name: 'open', risk: 'change', description: 'Open a web link in the browser, launch an app, open a file in its app, or reveal a file in Finder.', parameters: { type: 'object', properties: { target: { type: 'string', description: 'A URL, a file or folder path, or an app name' }, app: { type: 'string', description: 'Optional app to open the target with, e.g. "Preview"' }, reveal: { type: 'boolean', description: 'Show the file in Finder instead of opening it' } }, required: ['target'] } },
   { name: 'screenshot', risk: 'read', description: 'Take a screenshot of the main screen so you can see what is on it. Coordinates for click use this image\'s pixels.', parameters: { type: 'object', properties: {} } },
@@ -303,6 +310,7 @@ function describe(name, args) {
     case 'move_file': return { title: 'Move or rename', detail: `${a.from} → ${a.to}` };
     case 'make_folder': return { title: 'Create a folder', detail: a.path };
     case 'move_to_trash': return { title: 'Move to Trash', detail: a.path };
+    case 'use_folder': return { title: 'Let NOVA work in a folder', detail: home(folderPath(a.path)) + (a.reason ? ' — ' + a.reason : '') };
     default: return { title: name, detail: JSON.stringify(a).slice(0, 300) };
   }
 }
@@ -320,8 +328,9 @@ function setPolicy(store, input = {}) {
 function approve(store, { sessionId, tool, args, signal }) {
   const spec = BY_NAME.get(tool);
   const p = policy(store);
-  if ((sessionAllow.get(sessionId) || new Set()).has(tool)) return { promise: Promise.resolve('allow'), auto: 'Allowed for this chat' };
-  if (p.autoRead && spec && spec.risk === 'read') return { promise: Promise.resolve('allow'), auto: 'Read-only: allowed by your settings' };
+  if (tool !== 'use_folder' && (sessionAllow.get(sessionId) || new Set()).has(tool)) return { promise: Promise.resolve('allow'), auto: 'Allowed for this chat' };
+  if (tool === 'use_folder') { /* always asks: a folder is a new permission */ }
+  else if (p.autoRead && spec && spec.risk === 'read') return { promise: Promise.resolve('allow'), auto: 'Read-only: allowed by your settings' };
   const id = 'apr_' + crypto.randomBytes(6).toString('hex');
   const info = { id, sessionId, tool, risk: spec ? spec.risk : 'change', ...describe(tool, args), requestedAt: new Date().toISOString() };
   const promise = new Promise(resolve => {
@@ -370,6 +379,7 @@ async function execute(name, args, ctx) {
     case 'move_file': return moveFile(a, ctx.roots);
     case 'make_folder': return makeFolder(a, ctx.roots);
     case 'move_to_trash': return moveToTrash(a, ctx.roots);
+    case 'use_folder': throw error('use_folder is handled by the conversation.');
     default: throw error('Unknown tool: ' + name);
   }
 }
@@ -398,4 +408,4 @@ function workspaceRoots(store) {
 
 function _reset() { for (const e of pending.values()) clearTimeout(e.timer); pending.clear(); sessionAllow.clear(); shots.clear(); listeners.clear(); }
 
-module.exports = { TOOLS, SCREEN_TOOLS, toolSpecs, execute, approve, decide, pendingApprovals, forgetSession, subscribe, policy, setPolicy, status, describe, checkCommand, insideRoots, shotFile, workspaceRoots, _reset };
+module.exports = { folderPath, TOOLS, SCREEN_TOOLS, toolSpecs, execute, approve, decide, pendingApprovals, forgetSession, subscribe, policy, setPolicy, status, describe, checkCommand, insideRoots, shotFile, workspaceRoots, _reset };

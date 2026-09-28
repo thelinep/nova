@@ -375,6 +375,8 @@ Turn on **Computer** under the message box. It is off in every new chat. NOVA ca
 - **See and control the screen**: take a screenshot, click, type, press keys and scroll. Reading screenshots needs a vision model.
 - **Use the clipboard**, and **list, read, create, move and rename files** in approved folders. It never deletes; **Move to Trash** goes through Finder, so you can put the file back.
 
+If NOVA needs a folder that is not approved yet (for example your Desktop), it asks for it right in the chat: **Allow this folder** approves it and NOVA carries on. You can also type `add folder ~/Desktop` (or `/folder Desktop`, `/url …`, `/git …`) in the message box instead of using the + menu.
+
 Before every action NOVA shows exactly what it wants to do and waits:
 
 - **Allow** does it once.
@@ -1075,7 +1077,7 @@ Allow NOVA Runtime (or Terminal) in **System Settings > Privacy & Security > Scr
 
 #### "Outside the approved folders"
 
-Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. Add the folder with **+ > Add folder**.
+Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. NOVA normally asks for the folder itself (press **Allow this folder**); you can also add it with **+ > Add folder**, or type `add folder ~/Desktop` in the message box.
 
 #### The microphone does not work
 

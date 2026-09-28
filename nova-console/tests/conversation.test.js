@@ -342,3 +342,35 @@ test('server: conversation routes (sources, activity, memory, computer, voice)',
     assert.ok(lines.some(l => l.type === 'error'), 'Ollama is unreachable here, so the turn reports an error instead of hanging');
   } finally { child.kill(); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(proj, { recursive: true, force: true }); }
 });
+
+test('chat turn: NOVA asks for a folder itself (use_folder), then works in it', async () => {
+  activity._reset(); computer._reset();
+  const { dir, store, db } = tempStore();
+  const desk = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'nova-desk-')));
+  try {
+    activity.configure(store);
+    store.put('models', { id: 'm1', name: 'm1', runtime: 'ollama', capabilities: ['completion', 'tools'] });
+    fs.writeFileSync(path.join(desk, 'poster.txt'), 'x');
+    let round = 0;
+    const ollama = fakeOllama((messages) => {
+      round++;
+      if (round === 1) {
+        const sys = messages[0].content;
+        assert.match(sys, /No folder is approved yet/);
+        assert.match(sys, /call use_folder/);
+        return { message: { role: 'assistant', content: '', tool_calls: [{ function: { name: 'use_folder', arguments: { path: desk, reason: 'to list your files' } } }] } };
+      }
+      if (round === 2) return { message: { role: 'assistant', content: '', tool_calls: [{ function: { name: 'list_files', arguments: { path: desk } } }] } };
+      return { message: { role: 'assistant', content: 'Files: ' + messages.filter(m => m.role === 'tool').pop().content } };
+    });
+    const events = [];
+    const kinds = [];
+    computer.subscribe(e => { if (e.type === 'approval.requested') { kinds.push(e.approval.risk); setTimeout(() => computer.decide(e.approval.id, 'allow'), 5); } });
+    await chatTurn.runTurn({ store, dataDir: dir, ollama }, { sessionId: 's9', model: 'm1', computer: true, followups: false, messages: [{ role: 'user', content: 'list the files on my desktop' }] }, e => events.push(e));
+    assert.deepEqual(kinds, ['folder', 'read']);
+    assert.ok(events.some(e => e.type === 'source' && e.source.origin === desk));
+    assert.match(events.find(e => e.type === 'done').content, /poster\.txt/);
+    assert.deepEqual(chatSources.folderRoots(store, 's9'), [desk]);
+    assert.equal(computer.folderPath('Desktop'), path.join(os.homedir(), 'Desktop'));
+  } finally { activity._reset(); computer._reset(); db.close(); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(desk, { recursive: true, force: true }); }
+});

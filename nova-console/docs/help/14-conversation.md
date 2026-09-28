@@ -48,6 +48,8 @@ Turn on **Computer** under the message box. It is off in every new chat. NOVA ca
 - **See and control the screen**: take a screenshot, click, type, press keys and scroll. Reading screenshots needs a vision model.
 - **Use the clipboard**, and **list, read, create, move and rename files** in approved folders. It never deletes; **Move to Trash** goes through Finder, so you can put the file back.
 
+If NOVA needs a folder that is not approved yet (for example your Desktop), it asks for it right in the chat: **Allow this folder** approves it and NOVA carries on. You can also type `add folder ~/Desktop` (or `/folder Desktop`, `/url …`, `/git …`) in the message box instead of using the + menu.
+
 Before every action NOVA shows exactly what it wants to do and waits:
 
 - **Allow** does it once.

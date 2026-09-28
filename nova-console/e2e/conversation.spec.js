@@ -89,4 +89,21 @@ test.describe('Conversation tools', () => {
     expect(overflow).toBeLessThanOrEqual(1);
     for (const id of ['#sendBtn', '#micBtn', '#addBtn', '#computerToggleBtn']) await expect(page.locator(id)).toBeInViewport();
   });
+
+  test('typing "add folder <path>" or "+ > Add folder" does it instead of sending a message', async ({ page }) => {
+    const proj = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-e2e-typed-'));
+    fs.writeFileSync(path.join(proj, 'a.md'), '# A');
+    try {
+      await page.goto('/');
+      await page.locator('#newSessionBtn').click();
+      await page.locator('#composer').fill('add folder ' + proj);
+      await page.keyboard.press('Enter');
+      await expect(page.locator('.src-chip')).toContainText(path.basename(proj));
+      await expect(page.locator('.msg.user')).toHaveCount(0);
+      await page.locator('#composer').fill('+ > Add folder');
+      await page.keyboard.press('Enter');
+      await expect(page.locator('#addForm')).toBeVisible(); // no native picker in this test browser
+      await expect(page.locator('.msg.user')).toHaveCount(0);
+    } finally { fs.rmSync(proj, { recursive: true, force: true }); }
+  });
 });

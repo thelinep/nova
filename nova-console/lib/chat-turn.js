@@ -43,7 +43,7 @@ function persona({ computerOn, roots, screen, today }) {
       'Prefer run_command and the file tools; use screenshot, click, type_text and press_key only for apps with no other way.' + (screen ? '' : ' (Screen control is turned off.)'),
       'Every action is shown to the person for approval. If they decline, do not repeat it: ask what they would prefer.',
       'Never say you did something unless a tool result confirms it. Keep commands safe and reversible; do not delete things.',
-      roots.length ? 'Approved folders (commands and file tools work only inside these): ' + roots.join(', ') : 'No folder is approved yet: file tools and commands will be refused until the person adds a folder (+ > Add folder).',
+      (roots.length ? 'Approved folders (commands and file tools work only inside these): ' + roots.join(', ') + '. ' : 'No folder is approved yet. ') + 'When you need a folder that is not approved (for example ~/Desktop), call use_folder with its path: the person approves it with one click. Never ask the person to type commands, menu paths or button names.',
     );
   }
   return lines.join('\n');
@@ -131,6 +131,12 @@ async function runTurn(deps, body, emit, clientSignal) {
     /* 4 · the conversation */
     const roots = body.computer ? [...new Set([...computer.workspaceRoots(store), ...chatSources.folderRoots(store, sessionId).map(p => { try { return fs.realpathSync.native(p); } catch (_) { return null; } }).filter(Boolean)])] : [];
     const pol = computer.policy(store);
+    const approveFolder = (args) => {
+      const src = chatSources.add(store, dataDir, activity, { sessionId, kind: 'folder', path: computer.folderPath(args.path) });
+      roots.push(src.origin);
+      emit({ type: 'source', source: src });
+      return { ok: true, summary: 'Approved ' + src.origin, output: `The person approved ${src.origin}. Commands and file tools now work there, and NOVA is reading its text files in the background.` };
+    };
     const computerOn = Boolean(body.computer) && pol.enabled && canTools;
     if (body.computer && !pol.enabled) job.note('Computer access is off', 'Turn it on in Settings > Computer');
     else if (body.computer && !canTools) job.note(`${record.name || model} cannot use tools`, 'Answering without computer access. Pick a model with tool support (for example qwen2.5 or llama3.1) to let me use the Mac.');
@@ -197,6 +203,12 @@ async function runTurn(deps, body, emit, clientSignal) {
           try {
             if (!computer.TOOLS.some(t => t.name === name)) throw new Error('Unknown tool ' + name);
             if (name === 'run_command') computer.checkCommand(args.command); // refuse before asking
+            if (name === 'use_folder') {
+              const want = computer.folderPath(args.path);
+              if (!fs.existsSync(want) || !fs.statSync(want).isDirectory()) throw new Error('There is no folder at ' + want + '. Ask the person which folder they mean.');
+              const real = fs.realpathSync.native(want);
+              if (roots.includes(real)) { step.done('Already approved'); messages.push({ role: 'tool', content: real + ' is already approved. Go ahead.' }); continue; }
+            }
             const ap = computer.approve(store, { sessionId, tool: name, args, signal });
             if (ap.info) { step.update({ waiting: true, approvalId: ap.info.id, detail: d.detail }); emit({ type: 'approval', approval: ap.info }); }
             const decision = await ap.promise;
@@ -204,7 +216,7 @@ async function runTurn(deps, body, emit, clientSignal) {
             if (decision === 'deny') { step.update({ status: 'failed', detail: 'You declined' }); resultText = 'The person declined this action. Do not try it again; ask what they would prefer.'; }
             else {
               if (ap.auto) step.update({ note: ap.auto });
-              const r = await computer.execute(name, args, { store, dataDir, sessionId, roots, signal });
+              const r = name === 'use_folder' ? approveFolder(args) : await computer.execute(name, args, { store, dataDir, sessionId, roots, signal });
               step.done(r.summary + (name === 'run_command' || name === 'read_file' || name === 'list_files' || name === 'clipboard_read' ? '\n' + r.output.slice(0, 1500) : ''));
               resultText = r.output;
               if (r.image) {

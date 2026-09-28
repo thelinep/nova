@@ -94,7 +94,7 @@ Allow NOVA Runtime (or Terminal) in **System Settings > Privacy & Security > Scr
 
 ### "Outside the approved folders"
 
-Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. Add the folder with **+ > Add folder**.
+Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. NOVA normally asks for the folder itself (press **Allow this folder**); you can also add it with **+ > Add folder**, or type `add folder ~/Desktop` in the message box.
 
 ### The microphone does not work
 

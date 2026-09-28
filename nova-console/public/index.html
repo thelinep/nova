@@ -1995,6 +1995,7 @@ async function sendMessage(){
   const s = activeSession(); if (!s) return;
   const simBusy = PIPELINE.sessionId === s.id && ['PREPARING','RETRIEVING','PREFILL','GENERATING','CANCELLING'].includes(PIPELINE.state) && !TURNS[s.id];
   if (simBusy) return;
+  if (await handleTypedAdd(s, $('composer').value.trim())) { $('composer').value = ''; autoSizeComposer(); return; }
   const ta = $('composer'); const pendingMedia = (s._pendingMedia || []).map(m => m.id);
   const text = ta.value.trim() || (pendingMedia.length ? 'Describe this image.' : '');
   if (!text) return;
@@ -5587,6 +5588,26 @@ async function submitAddForm(){
   if (src) closeAddForm();
 }
 
+/** "+ > Add folder", "add folder ~/Desktop", "/folder …", "/url …", "/git …", "/files" typed in the box do the action instead of going to the model. */
+async function handleTypedAdd(s, text){
+  const t = String(text || '').trim();
+  let m = /^(?:\+\s*>?\s*)?(?:\/|add\s+)(folder|dir|directory|url|page|link|web\s*page|git(?:\s*repo)?|repo|files?)\b[:\s]*(.*)$/i.exec(t.replace(/^\+\s*>\s*/, '+ '));
+  if (!m || (!/^[\/+]/.test(t) && !/^add\s/i.test(t)) || t.length > 400) return false;
+  const kind = m[1].toLowerCase().replace(/\s+/g, ''), arg = m[2].trim().replace(/^["']|["']$/g, '');
+  const isPath = /^(~|\/)/.test(arg) || /^(desktop|documents|downloads|movies|music|pictures)$/i.test(arg);
+  const isUrl = /^(https?:\/\/|git@)\S+$/.test(arg) || /^[\w.-]+\/[\w.-]+$/.test(arg);
+  if (arg && !(isPath || isUrl)) return false; // "add page numbers…" is a request, not a command
+  if (/^(folder|dir|directory)$/.test(kind)) {
+    if (!arg) { await addFolderFlow(); return true; }
+    const p = /^(desktop|documents|downloads|movies|music|pictures)$/i.test(arg) ? '~/' + arg[0].toUpperCase() + arg.slice(1).toLowerCase() : arg;
+    await addSource({kind:'folder', path:p}); return true;
+  }
+  if (/^(url|page|link|webpage)$/.test(kind)) { if (arg) await addSource({kind:'url', url:arg}); else openAddForm('url'); return true; }
+  if (/^(git|gitrepo|repo)$/.test(kind)) { if (arg) await addSource({kind:'git', url:arg}); else openAddForm('git'); return true; }
+  if (/^files?$/.test(kind)) { $('sourceInput').click(); return true; }
+  return false;
+}
+
 /* ---------- live activity (SSE) ---------- */
 function startActivityStream(){
   fetch(apiUrl('/api/activity')).then(r => r.ok ? r.json() : null).then(d => { if (d){ ACTIVITY = d; renderActivityBadge(); } }).catch(()=>{});
@@ -5628,8 +5649,8 @@ function renderActivityBadge(){
 function elapsed(job){ const end = job.finishedAt ? new Date(job.finishedAt) : new Date(); const s = Math.max(0, (end - new Date(job.startedAt)) / 1000); return s < 60 ? s.toFixed(s < 10 ? 1 : 0)+' s' : Math.floor(s/60)+' min '+Math.round(s%60)+' s'; }
 function approvalCardHtml(a){
   return `<div class="approval-card" data-approval="${a.id}">
-    <div class="approval-text"><span data-lucide="${a.risk==='run'?'terminal':a.risk==='read'?'eye':'mouse-pointer-click'}" style="width:14px;height:14px"></span><div><strong>${escapeHtml(a.title)}</strong>${a.detail?`<code>${escapeHtml(String(a.detail).slice(0,400))}</code>`:''}${a.where?`<small>in ${escapeHtml(a.where)}</small>`:''}</div></div>
-    <div class="approval-btns"><button class="btn btn-amber btn-sm approval-go" data-id="${a.id}" data-d="allow">Allow</button><button class="btn btn-line btn-sm approval-go" data-id="${a.id}" data-d="always" title="Allow this kind of action for the rest of this chat">Allow for this chat</button><button class="btn btn-ghost btn-sm approval-go" data-id="${a.id}" data-d="deny">Deny</button></div>
+    <div class="approval-text"><span data-lucide="${a.risk==='run'?'terminal':a.risk==='read'?'eye':a.risk==='folder'?'folder-lock':'mouse-pointer-click'}" style="width:14px;height:14px"></span><div><strong>${escapeHtml(a.title)}</strong>${a.detail?`<code>${escapeHtml(String(a.detail).slice(0,400))}</code>`:''}${a.where?`<small>in ${escapeHtml(a.where)}</small>`:''}</div></div>
+    <div class="approval-btns"><button class="btn btn-amber btn-sm approval-go" data-id="${a.id}" data-d="allow">${a.risk==='folder'?'Allow this folder':'Allow'}</button>${a.risk==='folder'?'':`<button class="btn btn-line btn-sm approval-go" data-id="${a.id}" data-d="always" title="Allow this kind of action for the rest of this chat">Allow for this chat</button>`}<button class="btn btn-ghost btn-sm approval-go" data-id="${a.id}" data-d="deny">Deny</button></div>
   </div>`;
 }
 async function decideApproval(id, decision){
@@ -5747,6 +5768,7 @@ function handleTurnEvent(s, msg, ev, t0){
     case 'steps': msg.steps = ev.steps; if (active){ const cur = currentStepLabel(msg); if (cur) setPipelineState(msg.content ? 'GENERATING' : 'WORKING', cur); } break;
     case 'approval': msg.approvals[ev.approval.id] = ev.approval; stepsOpen.set(msg.id, true); break;
     case 'image': msg.images.push({url:ev.url, caption:ev.caption}); break;
+    case 'source': if (ev.source) upsertSource(ev.source); break;
     case 'context': msg.sourcesUsed = [...new Map((ev.used||[]).map(u => [u.label+'|'+u.path, u])).values()].slice(0, 12); break;
     case 'memory': if (ev.saved) toast('Saved to memory: '+ev.saved.text); else if (ev.forgot) toast(ev.forgot.length ? 'Removed '+ev.forgot.length+' memory note'+(ev.forgot.length>1?'s':'') : 'Nothing in memory matched.'); break;
     case 'token':
