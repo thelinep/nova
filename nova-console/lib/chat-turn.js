@@ -25,6 +25,8 @@ const chatSources = require('./chat-sources');
 const computer = require('./computer');
 const memory = require('./user-memory');
 const workspaceScanner = require('./workspace-scanner');
+const ocr = require('./ocr');
+const imageToCode = require('./image-to-code');
 
 const SCAN_INTENT = /\b(scan|audit|review|report|analy[sz]e|analysis|health|inspect|check ?up|assess|overview)\b/i;
 
@@ -159,6 +161,60 @@ async function runTurn(deps, body, emit, clientSignal) {
       sys.push('Passages from the person\'s knowledge collections:\n' + retrieved.map(r => `--- ${r.docName || 'document'}\n${String(r.text).slice(0, 2500)}`).join('\n'));
     }
 
+    /* 3b · images in the latest message: exact text first, then (if asked) build a page from it */
+    const lastImages = media && Array.isArray(last.mediaIds) ? last.mediaIds.slice(0, 4) : [];
+    const imageFiles = [];
+    let ocrText = '';
+    if (lastImages.length) {
+      const codeHint = /\b(code|snippet|script|function|html|css|json|sql|terminal|command|error|stack|log)\b/i.test(String(last.content || ''));
+      const parts = [];
+      for (const id of lastImages) {
+        let rec; try { rec = media.getMedia(store, id); } catch (_) { continue; }
+        if (rec.kind !== 'image') continue;
+        const file = media.filePath(dataDir, rec); imageFiles.push(file);
+        const st = job.step('Reading the text in ' + (rec.originalName || 'the image'));
+        try {
+          const r = await ocr.recognize(file, { mode: codeHint ? 'code' : 'prose' });
+          const lines = r.text.split('\n').filter(l => l.trim()).length;
+          if (lines) { parts.push({ name: rec.originalName || 'image', text: r.text, code: codeHint || ocr.looksLikeCode(r.text) }); st.done(`${lines} line${lines === 1 ? '' : 's'} · ${r.engine === 'apple-vision' ? 'macOS text recognition' : r.engine}`); }
+          else st.done('No text in this image');
+        } catch (e) { st.fail(e); }
+      }
+      if (parts.length) {
+        ocrText = parts.map(p => p.text).join('\n\n');
+        sys.push('Text recognised in the attached image' + (parts.length > 1 ? 's' : '') + ' by text recognition on this Mac. These are the exact characters with the layout kept; use them for exact text and code, and the picture (if you can see it) for layout and meaning. When asked to extract code, reproduce it exactly from here, fixing only obvious recognition slips, in a code block.\n' + parts.map(p => `--- ${p.name}\n\`\`\`${p.code ? '' : 'text'}\n${p.text.slice(0, 12000)}\n\`\`\``).join('\n'));
+      }
+      if (caps.length && !canSee) {
+        job.note(`${record.name || model} cannot see pictures`, ocrText ? 'It gets the recognised text instead. For layout and visual details pick a vision model (llama3.2-vision, qwen2.5-vl).' : 'Pick a vision model (llama3.2-vision, qwen2.5-vl) to work with pictures.');
+        sys.push('The model you are running cannot see images; you only have the recognised text above. Say so if the person asks about visual details.');
+      }
+      if (imageFiles.length && imageToCode.wantsBuild(last.content)) {
+        try {
+          const build = await imageToCode.buildFromImage({ ollama, dataDir }, { model, imageFile: imageFiles[0], request: String(last.content).replace(/^\/build\s*/i, ''), canSee: canSee || !caps.length, ocrText, signal }, job);
+          const pct = v => v == null ? null : Math.round(v * 100) + '%';
+          const tries = build.attempts.length;
+          const check = build.similarity != null
+            ? `I checked it in a sandboxed browser (offline, fresh profile): it looks ${pct(build.similarity)} like your image${build.recall != null ? ` and has ${pct(build.recall)} of its text` : ''}. ${tries > 1 ? `I made ${tries} attempts and kept attempt ${build.best}.` : ''}`
+            : 'I could not check it visually (no Chrome, Chromium, Edge or Brave found), so treat it as a first draft.';
+          const intro = `Here is the page, built from your image. ${check}\n\nOpen it with **Open page** below, or copy the HTML:\n\n`;
+          const body = intro + '```html\n' + build.html + '\n```';
+          emit({ type: 'build', build: { ...build, html: undefined } });
+          content = body;
+          firstTokenAt = Date.now();
+          emit({ type: 'token', text: body });
+          const seconds = (Date.now() - started) / 1000;
+          job.done({ buildId: build.id });
+          emit({ type: 'steps', steps: job.job.steps, status: 'done' });
+          emit({ type: 'done', content, stats: { ttft: firstTokenAt - started, tokens: Math.round(content.length / 4.2), tokPerSec: null, seconds: +seconds.toFixed(1), steps: job.job.steps.length } });
+          return;
+        } catch (e) {
+          if (signal.aborted) throw e;
+          job.note('Could not build the page', e.message);
+          sys.push('You tried to build a page from the image but it failed: ' + e.message + '. Explain briefly and suggest what to try.');
+        }
+      }
+    }
+
     /* 4 · the conversation */
     const roots = body.computer ? [...new Set([...computer.workspaceRoots(store), ...chatSources.folderRoots(store, sessionId).map(p => { try { return fs.realpathSync.native(p); } catch (_) { return null; } }).filter(Boolean)])] : [];
     const pol = computer.policy(store);
@@ -174,7 +230,7 @@ async function runTurn(deps, body, emit, clientSignal) {
     const system = [persona({ computerOn, roots, screen: pol.screen, today: new Date().toDateString() }), ...sys].join('\n\n');
     const convo = trimHistory(history, Math.max(6000, budget * 1.2)).map(m => {
       const out = { role: m.role, content: String(m.content || '') };
-      if (Array.isArray(m.mediaIds) && m.mediaIds.length && media) out.images = media.imagesForChat(store, dataDir, m.mediaIds);
+      if (Array.isArray(m.mediaIds) && m.mediaIds.length && media && (canSee || !caps.length)) out.images = media.imagesForChat(store, dataDir, m.mediaIds);
       return out;
     });
     let messages = [{ role: 'system', content: system }, ...convo];

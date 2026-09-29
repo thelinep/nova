@@ -96,6 +96,14 @@ Allow NOVA Runtime (or Terminal) in **System Settings > Privacy & Security > Scr
 
 Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. NOVA normally asks for the folder itself (press **Allow this folder**); you can also add it with **+ > Add folder**, or type `add folder ~/Desktop` in the message box.
 
+### "Could not check it visually" when building a page from an image
+
+The check renders the page in a browser NOVA can find: Google Chrome, Chromium, Microsoft Edge or Brave. Install one (or set `NOVA_CHROME` to its path) and ask again.
+
+### Text from an image has mistakes
+
+Use a sharper or larger screenshot; tiny or blurred text is hard to read. On a Mac NOVA uses Apple's text recognition; if the support report shows "Text in images" as missing, install tesseract (`brew install tesseract`).
+
 ### The microphone does not work
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).

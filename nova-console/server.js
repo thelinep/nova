@@ -68,6 +68,8 @@ const computer = require('./lib/computer');
 const chatTurn = require('./lib/chat-turn');
 const userMemory = require('./lib/user-memory');
 const voiceChat = require('./lib/voice-chat');
+const imageToCode = require('./lib/image-to-code');
+const ocr = require('./lib/ocr');
 
 const PORT = process.env.PORT === undefined ? 8787 : Number(process.env.PORT);
 if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('PORT must be an integer from 0 to 65535');
@@ -572,6 +574,33 @@ const routes = [
     sendJson(res, 200, r);
   } },
   { method: 'GET', pattern: /^\/api\/computer\/shots\/([^/]+)$/, handler: async (_req, res, [name]) => { const f = computer.shotFile(DATA_DIR, decodeURIComponent(name)); const data = fs.readFileSync(f); res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': data.length, 'Cache-Control': 'private, max-age=3600' }); res.end(data); } },
+  { method: 'GET', pattern: /^\/api\/builds\/([^/]+)\/([^/]+)$/, handler: async (_req, res, [id, name]) => {
+    const f = imageToCode.buildFile(DATA_DIR, decodeURIComponent(id), decodeURIComponent(name));
+    const data = fs.readFileSync(f);
+    const html = f.endsWith('.html');
+    // A built page runs in an opaque sandbox: it cannot reach NOVA's API or the network.
+    res.writeHead(200, { 'Content-Type': html ? 'text/html; charset=utf-8' : 'image/png', 'Content-Length': data.length, 'Cache-Control': 'no-store',
+      ...(html ? { 'Content-Security-Policy': "sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:" } : {}) });
+    res.end(data);
+  } },
+  { method: 'POST', pattern: /^\/api\/builds\/([^/]+)\/save$/, handler: async (req, res, [id]) => {
+    const body = await readJsonBody(req);
+    const src = store.get('chatSources', String(body.sourceId || ''));
+    if (!src || src.kind !== 'folder') { sendJson(res, 400, { error: 'Choose a folder added to this chat.' }); return; }
+    const name = String(body.name || 'index.html').trim().replace(/[\\/:*?"<>|]+/g, '-').replace(/^\.+/, '');
+    if (!/\.html?$/i.test(name) || name.length > 120) { sendJson(res, 400, { error: 'Use a file name ending in .html' }); return; }
+    const dest = require('node:path').join(src.origin, name);
+    if (fs.existsSync(dest)) { sendJson(res, 409, { error: name + ' already exists in ' + src.label + '. Pick another name.' }); return; }
+    fs.copyFileSync(imageToCode.buildFile(DATA_DIR, decodeURIComponent(id), 'index.html'), dest, fs.constants.COPYFILE_EXCL);
+    desktopSecurity.appendAudit(DATA_DIR, { action: 'build.saved', buildId: decodeURIComponent(id), path: dest });
+    sendJson(res, 201, { ok: true, path: dest });
+  } },
+  { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/ocr$/, handler: async (req, res, [id]) => {
+    const body = await readJsonBody(req).catch(() => ({}));
+    const rec = media.getMedia(store, decodeURIComponent(id));
+    if (rec.kind !== 'image') { sendJson(res, 400, { error: 'Text can only be read from images.' }); return; }
+    sendJson(res, 200, await ocr.recognize(media.filePath(DATA_DIR, rec), { mode: body.mode === 'code' ? 'code' : 'prose' }));
+  } },
   { method: 'GET', pattern: /^\/api\/memory$/, handler: async (_req, res) => sendJson(res, 200, userMemory.list(store)) },
   { method: 'POST', pattern: /^\/api\/memory$/, handler: async (req, res) => { const b = await readJsonBody(req); sendJson(res, 201, userMemory.add(store, b.text, b.source || 'you')); } },
   { method: 'DELETE', pattern: /^\/api\/memory\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, userMemory.remove(store, decodeURIComponent(id))) },

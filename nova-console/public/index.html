@@ -761,6 +761,14 @@ pre.st-detail{white-space:pre-wrap;max-height:220px;overflow:auto;background:var
   .msg-actions{opacity:1}
   .add-menu,.add-form{left:-4px}
 }
+.build-card{margin:0 4% 8px 0;border:1px solid var(--amber-line);border-radius:11px;padding:10px;background:#ffffff05}
+.build-imgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.build-imgs figure{margin:0}
+.build-imgs img{width:100%;max-height:260px;object-fit:contain;object-position:top;border:1px solid var(--line);border-radius:8px;background:#fff}
+.build-imgs figcaption{font-size:11px;color:var(--muted);margin-top:4px}
+.build-stats{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin:8px 0}
+.build-stats b{color:var(--ink)}
+.build-btns{display:flex;gap:6px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.typing span,.caret,.spin-dot,.st-running .st-ico,.mic-btn.recording,.activity-badge.attn,.msg-steps.running .steps-dot{animation:none}}
 </style>
 <div id="shell" class="shell">
@@ -1903,6 +1911,7 @@ function msgHtml(m){
     ${images}
     ${m.role==='assistant' ? stepsHtml(m) : ''}
     ${shots}
+    ${m.build ? buildCardHtml(m) : ''}
     ${bubble}
     ${cites?`<div class="msg-cites">${cites}</div>`:''}
     ${planAction}
@@ -2014,7 +2023,8 @@ async function sendMessage(){
   // instead of the older Local Workspace plan drafts, which need a folder approved there.
   const hasSources = (SOURCES[s.id] || []).some(x => x.status !== 'failed');
   if (!s.preferences.computer) {
-    if(await createFromConversation(s,text,msg.mediaIds))return;
+    const buildAsk = (msg.mediaIds||[]).length && (/^\/build\b/i.test(text) || (/\b(build|make|create|recreate|replicate|clone|convert|turn|generate|code|implement|write|develop)\b/i.test(text) && /\b(html|css|web ?page|webpage|landing|website|site|ui|component|react|tailwind|layout|front-?end|screen|page)\b/i.test(text)));
+    if(!buildAsk && await createFromConversation(s,text,msg.mediaIds))return;
     if(!hasSources && await draftCodePlanFromConversation(s,text))return;
     if(!hasSources && await draftWorkspacePlanFromConversation(s,text))return;
   }
@@ -3531,6 +3541,8 @@ async function renderMediaView(){
   $$('.shot-seconds').forEach(el=>el.onchange=()=>{ videoShots[Number(el.dataset.idx)].seconds = Number(el.value)||3; });
   $$('.shot-remove').forEach(el=>el.onclick=()=>{ videoShots.splice(Number(el.dataset.idx),1); renderMediaView(); });
   $$('.shot-up').forEach(el=>el.onclick=()=>{ const i=Number(el.dataset.idx); if (i>0){ [videoShots[i-1],videoShots[i]]=[videoShots[i],videoShots[i-1]]; renderMediaView(); } });
+  $$('.media-ocr').forEach(b=>b.onclick=async()=>{ b.disabled = true; toast('Reading the text…'); try { const r = await postJson('/api/media/'+encodeURIComponent(b.dataset.id)+'/ocr', {mode:'code'}); if (!r.text.trim()) { toast('No text found in this image.'); return; } await navigator.clipboard.writeText(r.text).catch(()=>{}); openActionModal('Text in the image', `<p style="font-size:12px;color:var(--muted)">Read by ${r.engine==='apple-vision'?'macOS text recognition':escapeHtml(r.engine)} on this Mac and copied to the clipboard.</p><pre style="white-space:pre;overflow:auto;max-height:60vh;font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px">${escapeHtml(r.text)}</pre>`); } catch(e){ toast(e.message); } finally { b.disabled = false; } });
+  $$('.media-build').forEach(b=>b.onclick=()=>{ const rec = items.find(x=>x.id===b.dataset.id) || {id:b.dataset.id, originalName:'image'}; showView('console'); if (!activeSession()) createSession(); if (attachMediaToSession(rec)) { $('composer').value = 'Build this as a web page (HTML and CSS).'; autoSizeComposer(); $('composer').focus(); toast('Check the request, then send.'); } });
   $$('.media-lastframe').forEach(b=>b.onclick=async()=>{ try { const still = await post('/api/media/'+encodeURIComponent(b.dataset.id)+'/last-frame'); videoShots.push({mediaId:still.id, move:'hold', seconds:3}); toast('Last frame saved and added as the next shot.'); await renderMediaView(); $('videoPanel')&&$('videoPanel').scrollIntoView({behavior:'smooth',block:'start'}); } catch(e){ toast(e.message); } });
   $$('.media-join').forEach(b=>b.onclick=()=>{ const i=videoJoin.indexOf(b.dataset.id); if (i>=0) videoJoin.splice(i,1); else videoJoin.push(b.dataset.id); renderMediaView(); });
   if ($('joinClear')) $('joinClear').onclick=()=>{ videoJoin=[]; renderMediaView(); };
@@ -3584,7 +3596,7 @@ function mediaActionsMenu(m){
   const b = (cls, label, extra='') => `<button type="button" role="menuitem" class="menu-item ${cls}" data-id="${m.id}" ${extra}>${label}</button>`;
   const a = (act, label) => b('media-act', label, `data-act="${act}"`);
   const items = [];
-  if (m.kind==='image') items.push(a('edit','Edit area…'), a('remove','Remove object…'), a('expand','Expand background…'), a('upscale','Upscale…'), a('img2img','Image to image'), b('media-attach','Attach to chat'));
+  if (m.kind==='image') items.push(a('edit','Edit area…'), a('remove','Remove object…'), a('expand','Expand background…'), a('upscale','Upscale…'), a('img2img','Image to image'), b('media-attach','Attach to chat'), b('media-ocr','Copy text in image'), b('media-build','Build a web page from it'));
   if (m.kind==='video') items.push(b('media-lastframe','Continue from last frame','title="Save the final frame as a still and add it as the next shot"'), b('media-join', videoJoin.includes(m.id)?'Remove from join':'Add to join'), a('translate','Translate…'), a('enhance','Enhance speech…'), a('transcribe','Transcribe'));
   if (m.kind==='audio') items.push(a('enhance','Enhance speech…'), a('translate','Translate…'), a('transcribe','Transcribe'));
   items.push('<hr>', a('board','Add to board…'), a('timeline','Add to timeline…'), b('media-filter','Filters'), `<a role="menuitem" class="menu-item" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`);
@@ -5772,6 +5784,7 @@ function handleTurnEvent(s, msg, ev, t0){
     case 'approval': msg.approvals[ev.approval.id] = ev.approval; stepsOpen.set(msg.id, true); break;
     case 'image': msg.images.push({url:ev.url, caption:ev.caption}); break;
     case 'source': if (ev.source) upsertSource(ev.source); break;
+    case 'build': msg.build = ev.build; break;
     case 'context': msg.sourcesUsed = [...new Map((ev.used||[]).map(u => [u.label+'|'+u.path, u])).values()].slice(0, 12); break;
     case 'memory': if (ev.saved) toast('Saved to memory: '+ev.saved.text); else if (ev.forgot) toast(ev.forgot.length ? 'Removed '+ev.forgot.length+' memory note'+(ev.forgot.length>1?'s':'') : 'Nothing in memory matched.'); break;
     case 'token':
@@ -5794,6 +5807,24 @@ function cancelTurn(sessionId){
   if (t.jobId) postJson('/api/activity/'+encodeURIComponent(t.jobId)+'/cancel', {}).catch(()=>{});
   t.controller.abort();
   return true;
+}
+
+/* ---------- image → page builds ---------- */
+function buildCardHtml(m){
+  const b = m.build; const pct = v => v == null ? '—' : Math.round(v*100)+'%';
+  const folders = (SOURCES[activeSession()?.id] || []).filter(x => x.kind === 'folder' && x.status === 'ready');
+  return `<div class="build-card">
+    <div class="build-imgs"><figure><img src="${apiUrl(b.originalUrl)}" alt="Your image" loading="lazy"><figcaption>Your image</figcaption></figure>${b.previewUrl?`<figure><img src="${apiUrl(b.previewUrl)}" alt="NOVA's page, rendered" loading="lazy"><figcaption>NOVA's page (attempt ${b.best})</figcaption></figure>`:''}</div>
+    <div class="build-stats"><span>Looks alike <b>${pct(b.similarity)}</b></span><span>Text matched <b>${pct(b.recall)}</b></span><span>${b.attempts.length} attempt${b.attempts.length===1?'':'s'}</span><span>${b.width}px wide</span></div>
+    <div class="build-btns"><a class="btn btn-amber btn-sm" href="${apiUrl(b.htmlUrl)}" target="_blank" rel="noopener">Open page</a><button class="btn btn-line btn-sm build-copy" data-url="${b.htmlUrl}">Copy HTML</button>${folders.length?`<button class="btn btn-line btn-sm build-save" data-id="${b.id}" data-src="${folders[0].id}" data-label="${escapeHtml(folders[0].label)}">Save to ${escapeHtml(folders[0].label)}</button>`:''}</div>
+  </div>`;
+}
+function bindBuildButtons(){
+  $$('.build-copy').forEach(b => b.onclick = async () => { try { const t = await (await fetch(apiUrl(b.dataset.url))).text(); await navigator.clipboard.writeText(t); toast('HTML copied.'); } catch(e){ toast('Could not copy: '+e.message); } });
+  $$('.build-save').forEach(b => b.onclick = async () => {
+    const name = prompt('Save the page into '+b.dataset.label+' as:', 'index.html'); if (!name) return;
+    try { const out = await postJson('/api/builds/'+encodeURIComponent(b.dataset.id)+'/save', {sourceId:b.dataset.src, name}); toast('Saved '+out.path); } catch(e){ toast(e.message); }
+  });
 }
 
 /* ---------- message actions: edit, react, pin, remember, speak, follow-ups ---------- */
@@ -5835,6 +5866,7 @@ function bindConversationMsgEvents(){
   const find = id => s.messages.find(x => x.id === id);
   $$('.msg-steps').forEach(d => d.addEventListener('toggle', () => stepsOpen.set(d.dataset.id, d.open)));
   bindApprovalButtons($('msgList'));
+  bindBuildButtons();
   $$('.msg-edit').forEach(b => b.onclick = () => { editingMsgId = b.dataset.id; renderConvo(); const ta = $('msgEditBox'); if (ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } });
   if ($('msgEditSave')) $('msgEditSave').onclick = () => saveEditedMessage();
   if ($('msgEditCancel')) $('msgEditCancel').onclick = () => { editingMsgId = null; renderConvo(); };

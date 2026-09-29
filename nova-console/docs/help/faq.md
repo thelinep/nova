@@ -50,6 +50,14 @@ Yes. **Fork** copies the session so you can try another direction; **Snapshot** 
 
 Yes. Press **+** under the message box and choose **Add folder**, **Add files**, **Add web page** or **Add git repo**, or drag files onto the chat. NOVA reads it once and answers from it, naming the files it used. See [Add sources, live steps, computer and voice](help:conversation).
 
+### Can NOVA read code or text from a screenshot?
+
+Yes. Add the image and ask, for example, "extract the code". NOVA reads the exact text with text recognition on this Mac and gives it to the model, so even text-only models can work with it. See [Add sources, live steps, computer and voice](help:conversation).
+
+### Can NOVA turn a screenshot or design into a web page?
+
+Yes. Attach it and ask "build this as a web page". NOVA writes the HTML, checks it in a sandboxed browser against your image, fixes the differences (up to three tries) and shows both side by side with **Open page** and **Copy HTML**.
+
 ### Can I keep typing while NOVA is answering?
 
 Yes. Your next message is queued and answered as soon as the current reply finishes. Replies in different chats, and folders being read, run at the same time; the list icon at the top shows them all.

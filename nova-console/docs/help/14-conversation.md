@@ -4,7 +4,7 @@ title: Add sources, live steps, computer and voice
 section: Chat and knowledge
 order: 14
 summary: Give NOVA a folder, files, a web page or a git repo to read, watch what it is doing step by step, let it use your Mac with your approval, and talk to it out loud.
-keywords: add folder add file add url web page git repo clone source attach drag drop steps activity parallel queue computer run command open app screenshot click type clipboard approval allow deny voice microphone talk read aloud speak memory remember forget edit resend regenerate react pin follow-up
+keywords: ocr text recognition extract code from image screenshot to html build page from image design to code sandbox browser compare add folder add file add url web page git repo clone source attach drag drop steps activity parallel queue computer run command open app screenshot click type clipboard approval allow deny voice microphone talk read aloud speak memory remember forget edit resend regenerate react pin follow-up
 views: console
 ---
 Chat in NOVA works like talking to a colleague who can read what you hand them, show you what they are doing, and, when you allow it, use your computer.
@@ -80,6 +80,27 @@ Hover a message for its buttons:
 - **Your message:** ✏ edit it and resend (the later replies are replaced), or copy it.
 - **A reply:** copy, read aloud, regenerate, 👍 / 👎, pin (pinned replies are listed under Inspector > Files), remember, or save to Knowledge.
 - **Follow-ups:** after a reply NOVA suggests three short follow-ups; click one to send it.
+
+## Pictures: exact text, code and pages
+
+When you add an image (with **+**, by dragging it in, or with **Attach to chat** in Media), NOVA first reads the text in it with text recognition on this Mac — Apple's built-in text recognition, or tesseract elsewhere — and gives the model the exact characters with the layout kept. That makes these reliable:
+
+- "Extract the code from this screenshot" — the code comes back in a code block, indentation included. Even a model that cannot see pictures (such as llama3) gets the text.
+- "What does this error say?", "Copy the table in this photo", "Translate this sign".
+
+A vision model (`llama3.2-vision`, `qwen2.5-vl`, `llava`) also sees the picture, for layout, colours and anything that is not text.
+
+**Build a page from a picture.** Attach a screenshot or design and ask, for example, "Build this as a web page" or "recreate this landing page in HTML". NOVA:
+
+1. Writes one self-contained HTML file (no external links, fonts or images).
+2. Opens it in a **sandboxed browser** — a throwaway profile with the network blocked — and takes a picture of it.
+3. Compares that picture with yours (layout and colour, and the text) and sends the differences back to the model to fix. Up to three attempts; the best one is kept.
+
+The reply shows your image and NOVA's page side by side, how alike they are and how much of the text matched, with **Open page**, **Copy HTML** and, when a folder is added to the chat, **Save to** that folder. Built pages open in a sandbox that cannot reach NOVA or the internet. The check needs Google Chrome, Chromium, Edge or Brave installed; without one NOVA still writes the page but cannot check it.
+
+In **Media**, an image's **Actions** menu has **Copy text in image** and **Build a web page from it**.
+
+@screen media/image-build.jpg "A page built from a screenshot, checked in a sandboxed browser."
 
 ## Memory
 

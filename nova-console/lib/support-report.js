@@ -100,6 +100,8 @@ async function buildReport(deps, options = {}) {
     { id: 'voice', label: 'Voice', ok: Boolean(audio.voice && audio.voice.ready), detail: audio.voice ? (audio.voice.kokoro && audio.voice.kokoro.ready ? 'Kokoro voices' : audio.voice.ready ? 'macOS voices' : 'No voice engine') : (audio.error || 'Unknown'), help: 'media-audio' },
     { id: 'transcribe', label: 'Transcription', ok: Boolean(transcribe.ready), detail: transcribe.ready ? (transcribe.modelName || 'Ready') : ((transcribe.missing || []).join('; ') || transcribe.error || 'Not set up'), help: 'media-audio' },
     { id: 'tools', label: 'Tool servers', ok: mcp.some(s => s.status === 'connected'), detail: mcp.length ? mcp.filter(s => s.status === 'connected').length + ' of ' + mcp.length + ' connected' : 'None configured', help: 'tools-approvals' },
+    (() => { const e = require('./ocr').engines(); return { id: 'ocr', label: 'Text in images', ok: e.length > 0, detail: e.length ? (e[0] === 'apple-vision' ? 'macOS text recognition' : e[0]) : 'Needs macOS or tesseract', help: 'conversation' }; })(),
+    (() => { const b = require('./image-to-code').findBrowser(); return { id: 'browser', label: 'Page checking browser', ok: Boolean(b), detail: b ? require('node:path').basename(b) : 'Install Google Chrome to check pages built from images', help: 'conversation' }; })(),
   ].map(c => ({ ...c, detail: redact(c.detail) }));
 
   const report = {

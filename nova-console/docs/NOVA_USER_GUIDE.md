@@ -406,6 +406,26 @@ Hover a message for its buttons:
 - **A reply:** copy, read aloud, regenerate, 👍 / 👎, pin (pinned replies are listed under Inspector > Files), remember, or save to Knowledge.
 - **Follow-ups:** after a reply NOVA suggests three short follow-ups; click one to send it.
 
+### Pictures: exact text, code and pages
+
+When you add an image (with **+**, by dragging it in, or with **Attach to chat** in Media), NOVA first reads the text in it with text recognition on this Mac — Apple's built-in text recognition, or tesseract elsewhere — and gives the model the exact characters with the layout kept. That makes these reliable:
+
+- "Extract the code from this screenshot" — the code comes back in a code block, indentation included. Even a model that cannot see pictures (such as llama3) gets the text.
+- "What does this error say?", "Copy the table in this photo", "Translate this sign".
+
+A vision model (`llama3.2-vision`, `qwen2.5-vl`, `llava`) also sees the picture, for layout, colours and anything that is not text.
+
+**Build a page from a picture.** Attach a screenshot or design and ask, for example, "Build this as a web page" or "recreate this landing page in HTML". NOVA:
+
+1. Writes one self-contained HTML file (no external links, fonts or images).
+2. Opens it in a **sandboxed browser** — a throwaway profile with the network blocked — and takes a picture of it.
+3. Compares that picture with yours (layout and colour, and the text) and sends the differences back to the model to fix. Up to three attempts; the best one is kept.
+
+The reply shows your image and NOVA's page side by side, how alike they are and how much of the text matched, with **Open page**, **Copy HTML** and, when a folder is added to the chat, **Save to** that folder. Built pages open in a sandbox that cannot reach NOVA or the internet. The check needs Google Chrome, Chromium, Edge or Brave installed; without one NOVA still writes the page but cannot check it.
+
+In **Media**, an image's **Actions** menu has **Copy text in image** and **Build a web page from it**.
+
+![A page built from a screenshot, checked in a sandboxed browser.](../public/help/media/image-build.jpg)
 ### Memory
 
 Say "remember that I shoot on an FX3" and NOVA saves it; "forget the FX3" removes it. The **brain** button on a reply saves a note from it. NOVA reads your notes at the start of every chat. See, add and delete them in **Settings > Memory**. Nothing is saved unless you ask.
@@ -1081,6 +1101,14 @@ Allow NOVA Runtime (or Terminal) in **System Settings > Privacy & Security > Scr
 
 Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. NOVA normally asks for the folder itself (press **Allow this folder**); you can also add it with **+ > Add folder**, or type `add folder ~/Desktop` in the message box.
 
+#### "Could not check it visually" when building a page from an image
+
+The check renders the page in a browser NOVA can find: Google Chrome, Chromium, Microsoft Edge or Brave. Install one (or set `NOVA_CHROME` to its path) and ask again.
+
+#### Text from an image has mistakes
+
+Use a sharper or larger screenshot; tiny or blurred text is hard to read. On a Mac NOVA uses Apple's text recognition; if the support report shows "Text in images" as missing, install tesseract (`brew install tesseract`).
+
 #### The microphone does not work
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
@@ -1168,6 +1196,14 @@ Yes. **Fork** copies the session so you can try another direction; **Snapshot** 
 #### Can I give NOVA a folder, a web page or a git repository to read?
 
 Yes. Press **+** under the message box and choose **Add folder**, **Add files**, **Add web page** or **Add git repo**, or drag files onto the chat. NOVA reads it once and answers from it, naming the files it used. See [Add sources, live steps, computer and voice](conversation.html).
+
+#### Can NOVA read code or text from a screenshot?
+
+Yes. Add the image and ask, for example, "extract the code". NOVA reads the exact text with text recognition on this Mac and gives it to the model, so even text-only models can work with it. See [Add sources, live steps, computer and voice](conversation.html).
+
+#### Can NOVA turn a screenshot or design into a web page?
+
+Yes. Attach it and ask "build this as a web page". NOVA writes the HTML, checks it in a sandboxed browser against your image, fixes the differences (up to three tries) and shows both side by side with **Open page** and **Copy HTML**.
 
 #### Can I keep typing while NOVA is answering?
 

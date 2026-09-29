@@ -37,6 +37,7 @@ const MODELS = [
   { name: 'nomic-embed-text:latest', model: 'nomic-embed-text:latest', size: 274302450, details: { family: 'nomic-bert', parameter_size: '137M', quantization_level: 'F16' } },
 ];
 const REPLY = 'Here is a short plan for the shoot:\n\n1. **Location** – Marine Drive at dusk, with the city lights starting to show.\n2. **Look** – warm, soft light and a slow push-in on the lead.\n3. **Sound** – waves, distant traffic and a single sustained piano note.\n\nWant me to turn this into a shot list?';
+const DESIGN_HTML = '<!doctype html><html><head><style>body{margin:0;font:16px -apple-system,Helvetica,Arial,sans-serif;background:#0f1720;color:#f5f5f5}.hero{padding:48px 40px}.hero h1{font-size:34px;margin:0 0 10px}.hero p{color:#b6c2cf;margin:0 0 22px}.btn{display:inline-block;background:#f5a524;color:#111;padding:12px 20px;border-radius:8px;font-weight:600}.cards{display:flex;gap:16px;padding:0 40px}.card{flex:1;background:#18222e;border-radius:10px;padding:18px}</style></head><body><div class="hero"><h1>Marine Drive Nights</h1><p>A two-minute dusk film, shot on location.</p><span class="btn">Book a screening</span></div><div class="cards"><div class="card"><b>Friday</b><br>Call 6:00</div><div class="card"><b>Two actors</b><br>One drone shot</div><div class="card"><b>Budget</b><br>₹1,85,000</div></div></body></html>';
 const REPLY_SOURCES = 'From **brief.md**: the dusk shoot on Marine Drive is on **Friday**, call time 6:00, with two actors and one drone shot.\n\nFrom **budget.csv**: the camera package (FX3 + lenses) is **₹42,000** of the ₹1,85,000 total.\n\nStill TBC: parking and the nearest hospital.';
 const AGENT = { name: 'Shoot Planner', role: 'Pre-production', systemPrompt: 'You turn shoot notes into a shot list and a call sheet. Keep the director\'s wording, write TBC for anything the notes do not say (addresses, times, hospital), and list open questions at the end. Never invent facts.', skills: ['skl_shotlist', 'skl_callsheet'], mcpServers: [], delegates: [], memoryScope: 'session', testPrompts: ['Make a shot list from: dusk, Marine Drive, two actors, one drone shot.', 'What is still missing for the call sheet?'], notes: 'Uses the Shot List and Call Sheet skills.' };
 const WORKFLOW = { name: 'Shoot notes in Hindi', description: 'Summarise the shoot notes, get a sign-off, then translate the summary to Hindi.', steps: [{ type: 'skill', ref: 'skl_summarize', label: 'Summarise the shoot notes' }, { type: 'approval', label: 'Sign-off before translating' }, { type: 'skill', ref: 'skl_translate', label: 'Translate to Hindi' }], notes: 'A sign-off comes before the translation is shared.' };
@@ -70,6 +71,7 @@ function startOllama() {
         }
         await sleep(600);
         let content = REPLY;
+        if (/self-contained HTML file/.test(system)) { await sleep(400); return send({ model: json.model, message: { role: 'assistant', content: '```html\n' + DESIGN_HTML + '\n```' }, done: true, ...usage }); }
         if (json.format === 'json' && /followups/.test(system)) return send({ model: json.model, message: { role: 'assistant', content: JSON.stringify({ followups: ['Make a call sheet for Friday', 'What is still TBC?', 'Translate the plan to Hindi'] }) }, done: true, ...usage });
         if (Array.isArray(json.tools) && json.tools.length) {
           const toolMsgs = (json.messages || []).filter(m => m.role === 'tool');
@@ -202,6 +204,20 @@ async function main() {
         await page.locator('.msg-steps .approval-go[data-d="allow"]').first().click();
         await page.waitForFunction(() => !TURNS[activeSession().id], null, { timeout: 30000 });
       } catch (e) { console.warn('  ! conversation: ' + e.message.split('\n')[0]); }
+    }
+    if (want('image-build')) {
+      try {
+        const i2c = require('../lib/image-to-code');
+        fs.writeFileSync(path.join(dataDir, 'design.html'), DESIGN_HTML.replace('#f5a524', '#e0892a'));
+        const design = await i2c.render(path.join(dataDir, 'design.html'), path.join(dataDir, 'Marine Drive design.png'), { width: 900, height: 420 });
+        await page.evaluate(() => { showView('console'); createSession(); });
+        await page.waitForFunction(() => activeSession());
+        await page.setInputFiles('#sourceInput', design); await sleep(800);
+        await page.locator('#composer').fill('Build this as a web page');
+        await page.locator('#sendBtn').click();
+        await page.waitForFunction(() => { const m = activeSession().messages.filter(x => x.role === 'assistant').pop(); return m && m.build && !m.pending && !TURNS[activeSession().id]; }, null, { timeout: 90000 });
+        await shot('image-build', () => page.evaluate(() => { const m = activeSession().messages.filter(x => x.role === 'assistant').pop(); stepsOpen.set(m.id, true); renderConvo(); const el = document.querySelector('.build-card'); if (el) el.scrollIntoView({ block: 'center' }); }), { wait: 900 });
+      } catch (e) { console.warn('  ! image-build: ' + e.message.split('\n')[0]); }
     }
     await shot('help', () => page.evaluate(() => openHelp()));
     await shot('help-support', () => page.evaluate(() => openHelp('support-report')), { wait: 2500 });
