@@ -7,15 +7,24 @@
   "node_version": "v22.22.3",
   "npm_version": "12.0.2",
   "test_results": {
-    "main_suite":    { "command": "npm test",             "pass": 86, "fail": 0 },
-    "browser_suite": { "command": "npm run test:browser", "pass": 12, "fail": 0 }
+    "main_suite": {
+      "command": "npm test",
+      "pass": 80,
+      "fail": 0,
+      "note": "80 main tests on this branch; 86 on nova-model-qualification (adds 6 hardening tests)"
+    },
+    "browser_suite": {
+      "command": "npm run test:browser",
+      "pass": 12,
+      "fail": 0
+    }
   },
   "artifacts": {
-    "lib/browser-service.js":       "420 lines, named error classes, 9 tools",
-    "lib/db.js":                    "5 browser tables + 9 store helpers",
-    "server.js":                    "11 /browser/* routes with validation",
+    "lib/browser-service.js": "420 lines, named error classes, 9 tools",
+    "lib/db.js": "5 browser tables + 9 store helpers",
+    "server.js": "11 /browser/* routes with validation",
     "playwright.browser.config.js": "isolated ./test, no webServer",
-    "test/browser.spec.js":         "12 Playwright tests, loopback only"
+    "test/browser.spec.js": "12 Playwright tests, loopback only"
   },
   "rollback": "git checkout l1-browser-service-readable"
 }

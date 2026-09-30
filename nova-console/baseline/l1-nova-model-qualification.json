@@ -7,7 +7,12 @@
   "node_version": "v22.22.3",
   "npm_version": "12.0.2",
   "test_results": {
-    "main_suite": { "command": "npm test", "pass": 86, "fail": 0 }
+    "main_suite": {
+      "command": "npm test",
+      "pass": 86,
+      "fail": 0,
+      "note": "86 main tests on this branch; 80 on browser-service-readable (which adds browser tables/routes without hardening tests)"
+    }
   },
   "notes": [
     "Browser tables/routes/tests are NOT integrated on this branch.",
