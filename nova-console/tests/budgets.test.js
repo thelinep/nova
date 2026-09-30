@@ -158,3 +158,17 @@ test('10 multi_kind_enforcement', () => {
   assert.equal(r.exceeded[0].kind, 'usd');
   cleanup(env);
 });
+
+test('11 exactly_at_limit_is_exceeded', () => {
+  const env = fresh();
+  const b = new BudgetEngine(env.store);
+  b.setBudget({ subject: { type: 'agent', id: 'a' }, limits: { usd: 4 } });
+  b.charge({ type: 'agent', id: 'a' }, 'usd', 2);
+  assert.equal(b.check({ type: 'agent', id: 'a' }).ok, true);
+  b.charge({ type: 'agent', id: 'a' }, 'usd', 2);
+  const r = b.check({ type: 'agent', id: 'a' });
+  assert.equal(r.ok, false);
+  assert.equal(r.exceeded[0].used, 4);
+  assert.equal(r.exceeded[0].limit, 4);
+  cleanup(env);
+});
