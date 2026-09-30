@@ -314,7 +314,8 @@ class L2Certifier {
       requirements,
     };
 
-    const canonical = JSON.stringify(manifest, Object.keys(manifest).sort());
+    const hashable = { kind: manifest.kind, version: manifest.version, commit: manifest.commit, tree: manifest.tree, node_version: manifest.node_version, requirements: requirements.map((r) => ({ id: r.id, passed: r.passed, evidence_hash: r.evidence_hash })), };
+    const canonical = JSON.stringify(hashable);
     const bundle_hash = sha256(canonical);
     manifest.bundle_hash = bundle_hash;
 
