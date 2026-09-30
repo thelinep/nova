@@ -1,12 +1,12 @@
 {
   "kind": "nova-l2-certification",
   "version": "1.0",
-  "generated_at": "2026-09-30T19:43:29.554Z",
+  "generated_at": "2026-09-30T19:46:06.760Z",
   "ok": true,
   "passed": 10,
   "total": 10,
-  "commit": "8d98ebb52cfe107f362a9d065c2696e31a91e739",
-  "tree": "654f003cb8be17eab5c7a31b5e1ac4da342f4929",
+  "commit": "54d5520c2f8ccaa403b75ae25c5c46a8f8083b20",
+  "tree": "ef2a31c0d235e1c85917e581d5d823a392512beb",
   "node_version": "v22.22.3",
   "requirements": [
     {
@@ -90,5 +90,5 @@
       "evidence_hash": "07eea2bdaf43256ae76fe1bc20523ae1ce0c5d5a0df8102ca866d5b2464ae364"
     }
   ],
-  "bundle_hash": "09fa27cb06a3c4907cd7fa71758750d1711754fd8a65adfeb872cb06a89af7fe"
+  "bundle_hash": "6dc88d4ad00feaa43a731d3df798443eada802ad6c4c021c79a49781933bcbab"
 }
