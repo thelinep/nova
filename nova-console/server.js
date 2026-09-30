@@ -41,6 +41,8 @@ const workspaceChanges = require('./lib/workspace-changes');
 const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
+const { Workbench } = require('./lib/workbench');
+
 
 const PORT = process.env.PORT === undefined ? 8787 : Number(process.env.PORT);
 if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('PORT must be an integer from 0 to 65535');
@@ -610,6 +612,7 @@ const routes = [
   },
   { method: 'GET', pattern: /^\/api\/scheduler\/status$/, handler: async (req, res) => sendJson(res, 200, scheduler.getSchedulerStatus(store)) },
 
+{ method: 'GET', pattern: /^\/api\/workbench\/snapshot$/, handler: async (_req, res) => sendJson(res, 200, new Workbench(store).snapshot())},
   /* ---- Phase 5: real fixed-benchmark evaluation runs ---- */
   {
     method: 'POST', pattern: /^\/api\/evaluations\/run$/, handler: async (req, res) => {
