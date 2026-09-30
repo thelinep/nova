@@ -30,7 +30,8 @@
     "test:test-synthesis": "node --test tests/test-synthesis.test.js",
     "test:semantic-vote": "node --test tests/semantic-vote.test.js",
     "test:dafny-pro": "node --test tests/dafny-pro.test.js",
-    "test:clover": "node --test tests/clover.test.js"
+    "test:clover": "node --test tests/clover.test.js",
+    "test:ollama-provider": "node --test tests/ollama-provider.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
