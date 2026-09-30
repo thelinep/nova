@@ -88,7 +88,24 @@ function openDb(dataDir) {
     payload_json TEXT, timestamp TEXT NOT NULL
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_job_events_job ON job_events(job_id);`);
-
+  db.exec(`CREATE TABLE IF NOT EXISTS policies (
+    id TEXT PRIMARY KEY, subject_type TEXT NOT NULL, subject_id TEXT NOT NULL,
+    resource_type TEXT NOT NULL, resource_id TEXT NOT NULL,
+    effect TEXT NOT NULL, scope TEXT, conditions_json TEXT,
+    expires_at TEXT, revoked_at TEXT,
+    created_at TEXT NOT NULL, created_by TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_policies_subject ON policies(subject_type, subject_id);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_policies_resource ON policies(resource_type, resource_id);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS policy_decisions (
+    id TEXT PRIMARY KEY, policy_id TEXT,
+    subject_type TEXT NOT NULL, subject_id TEXT NOT NULL,
+    resource_type TEXT NOT NULL, resource_id TEXT NOT NULL,
+    decision TEXT NOT NULL, reason TEXT NOT NULL,
+    inputs_hash TEXT NOT NULL, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_policy_decisions_policy ON policy_decisions(policy_id);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_policy_decisions_ts ON policy_decisions(timestamp);`);
 
   return { db, dbPath };
 }
@@ -188,7 +205,13 @@ class Store {
   jobsFindTimedOut() { const nowStr=new Date().toISOString(); return this._stmt('SELECT * FROM jobs WHERE state=? AND timeout_at IS NOT NULL AND timeout_at < ?').all('running',nowStr); }
   jobsInsertEvent(row) { this._stmt('INSERT INTO job_events (id,job_id,kind,payload_json,timestamp) VALUES (?,?,?,?,?)').run(row.id,row.job_id,row.kind,row.payload_json||null,row.timestamp); return row; }
   jobsListEvents(jobId) { return this._stmt('SELECT * FROM job_events WHERE job_id=? ORDER BY timestamp ASC').all(jobId); }
-
+  policiesInsert(row) { this._stmt('INSERT INTO policies (id,subject_type,subject_id,resource_type,resource_id,effect,scope,conditions_json,expires_at,revoked_at,created_at,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.subject_type,row.subject_id,row.resource_type,row.resource_id,row.effect,row.scope||null,row.conditions_json||null,row.expires_at||null,row.revoked_at||null,row.created_at,row.created_by); return this.policiesGet(row.id); }
+  policiesGet(id) { return this._stmt('SELECT * FROM policies WHERE id=?').get(id) || null; }
+  policiesUpdate(id, patch) { const cur=this.policiesGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE policies SET subject_type=?,subject_id=?,resource_type=?,resource_id=?,effect=?,scope=?,conditions_json=?,expires_at=?,revoked_at=? WHERE id=?').run(n.subject_type,n.subject_id,n.resource_type,n.resource_id,n.effect,n.scope,n.conditions_json,n.expires_at,n.revoked_at,id); return this.policiesGet(id); }
+  policiesList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.subject_type){c.push('subject_type=?');a.push(filter.subject_type);} if(filter.subject_id){c.push('subject_id=?');a.push(filter.subject_id);} if(filter.resource_type){c.push('resource_type=?');a.push(filter.resource_type);} if(filter.resource_id){c.push('resource_id=?');a.push(filter.resource_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM policies'+w+' ORDER BY created_at ASC').all(...a); }
+  policyDecisionsInsert(row) { this._stmt('INSERT INTO policy_decisions (id,policy_id,subject_type,subject_id,resource_type,resource_id,decision,reason,inputs_hash,timestamp) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.policy_id||null,row.subject_type,row.subject_id,row.resource_type,row.resource_id,row.decision,row.reason,row.inputs_hash,row.timestamp); return row; }
+  policyDecisionsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.policy_id){c.push('policy_id=?');a.push(filter.policy_id);} if(filter.subject_id){c.push('subject_id=?');a.push(filter.subject_id);} if(filter.decision){c.push('decision=?');a.push(filter.decision);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM policy_decisions'+w+' ORDER BY timestamp ASC').all(...a); }
+  policyDecisionsCountSince(policyId, sinceIso) { const r=this._stmt('SELECT COUNT(*) AS n FROM policy_decisions WHERE policy_id=? AND decision=? AND timestamp>=?').get(policyId,'allow',sinceIso); return r?r.n:0; }
 
 }
 
