@@ -1,0 +1,537 @@
+npm notice run nova-runtime@0.1.0 test
+npm notice run node --test tests/*.test.js
+TAP version 13
+# Subtest: real HTTP boundary, persisted CRUD, restart, validation and loopback-only listener
+ok 1 - real HTTP boundary, persisted CRUD, restart, validation and loopback-only listener
+  ---
+  duration_ms: 1221.616209
+  type: 'test'
+  ...
+# Subtest: rejects malformed JSON without persisting a draft
+ok 2 - rejects malformed JSON without persisting a draft
+  ---
+  duration_ms: 8.055792
+  type: 'test'
+  ...
+# Subtest: rejects wrong schema without persisting a draft
+ok 3 - rejects wrong schema without persisting a draft
+  ---
+  duration_ms: 1.231333
+  type: 'test'
+  ...
+# Subtest: rejects empty changes without persisting a draft
+ok 4 - rejects empty changes without persisting a draft
+  ---
+  duration_ms: 0.935875
+  type: 'test'
+  ...
+# Subtest: rejects truncated output without persisting a draft
+ok 5 - rejects truncated output without persisting a draft
+  ---
+  duration_ms: 0.965
+  type: 'test'
+  ...
+# Subtest: rejects missing match without persisting a draft
+ok 6 - rejects missing match without persisting a draft
+  ---
+  duration_ms: 1.093833
+  type: 'test'
+  ...
+# Subtest: rejects no effect without persisting a draft
+ok 7 - rejects no effect without persisting a draft
+  ---
+  duration_ms: 0.72725
+  type: 'test'
+  ...
+# Subtest: rejects unpresented file without persisting a draft
+ok 8 - rejects unpresented file without persisting a draft
+  ---
+  duration_ms: 0.64175
+  type: 'test'
+  ...
+# Subtest: timeout aborts inference and rejects late results
+ok 9 - timeout aborts inference and rejects late results
+  ---
+  duration_ms: 32.245542
+  type: 'test'
+  ...
+# Subtest: cancellation aborts inference and rejects late results
+ok 10 - cancellation aborts inference and rejects late results
+  ---
+  duration_ms: 2.076417
+  type: 'test'
+  ...
+# Subtest: already cancelled request never calls Ollama
+ok 11 - already cancelled request never calls Ollama
+  ---
+  duration_ms: 0.796875
+  type: 'test'
+  ...
+# Subtest: large repository skips oversized noise and presents the requested file
+ok 12 - large repository skips oversized noise and presents the requested file
+  ---
+  duration_ms: 79.077375
+  type: 'test'
+  ...
+# Subtest: semantic oracle rejects a valid draft that fails the request
+ok 13 - semantic oracle rejects a valid draft that fails the request
+  ---
+  duration_ms: 1.791625
+  type: 'test'
+  ...
+# Subtest: multi-file oracle checks all changes and dependency order
+ok 14 - multi-file oracle checks all changes and dependency order
+  ---
+  duration_ms: 29.2845
+  type: 'test'
+  ...
+# Subtest: ambiguous fixture requires clarification and no draft
+ok 15 - ambiguous fixture requires clarification and no draft
+  ---
+  duration_ms: 0.774709
+  type: 'test'
+  ...
+# Subtest: large context prioritizes requested files and records omitted scope
+ok 16 - large context prioritizes requested files and records omitted scope
+  ---
+  duration_ms: 10.801916
+  type: 'test'
+  ...
+# Subtest: timeout during metadata prevents any later inference
+ok 17 - timeout during metadata prevents any later inference
+  ---
+  duration_ms: 21.851708
+  type: 'test'
+  ...
+# Subtest: model output cannot override the approved root
+ok 18 - model output cannot override the approved root
+  ---
+  duration_ms: 0.979208
+  type: 'test'
+  ...
+# Subtest: ambiguity gate rejects vague requests before any Ollama call
+ok 19 - ambiguity gate rejects vague requests before any Ollama call
+  ---
+  duration_ms: 0.605416
+  type: 'test'
+  ...
+# Subtest: one bounded repair converts malformed fields and preserves both responses
+ok 20 - one bounded repair converts malformed fields and preserves both responses
+  ---
+  duration_ms: 0.805667
+  type: 'test'
+  ...
+# Subtest: failed repair preserves evidence and creates no proposal
+ok 21 - failed repair preserves evidence and creates no proposal
+  ---
+  duration_ms: 0.593959
+  type: 'test'
+  ...
+# Subtest: real-model planner capability-checks Ollama and creates a draft without writing files
+ok 22 - real-model planner capability-checks Ollama and creates a draft without writing files
+  ---
+  duration_ms: 4.761042
+  type: 'test'
+  ...
+# Subtest: capability report rejects models without completion, chat templates, or adequate context
+ok 23 - capability report rejects models without completion, chat templates, or adequate context
+  ---
+  duration_ms: 0.484166
+  type: 'test'
+  ...
+# Subtest: planner rejects an installed but incapable model before inference
+ok 24 - planner rejects an installed but incapable model before inference
+  ---
+  duration_ms: 1.227666
+  type: 'test'
+  ...
+# Subtest: planner rejects demo models, unavailable models, unsafe paths, and malformed output
+ok 25 - planner rejects demo models, unavailable models, unsafe paths, and malformed output
+  ---
+  duration_ms: 0.734209
+  type: 'test'
+  ...
+# Subtest: repository context budget preserves output room and caps large-context models
+ok 26 - repository context budget preserves output room and caps large-context models
+  ---
+  duration_ms: 0.058083
+  type: 'test'
+  ...
+# Subtest: versioned collector evidence preserves source timestamps and every raw observation
+ok 27 - versioned collector evidence preserves source timestamps and every raw observation
+  ---
+  duration_ms: 1.678041
+  type: 'test'
+  ...
+# Subtest: replayed query evidence is idempotent while observations remain query-specific
+ok 28 - replayed query evidence is idempotent while observations remain query-specific
+  ---
+  duration_ms: 0.642417
+  type: 'test'
+  ...
+# Subtest: collector evidence rejects malformed schema, source, timestamps, count and provenance
+ok 29 - collector evidence rejects malformed schema, source, timestamps, count and provenance
+  ---
+  duration_ms: 0.561417
+  type: 'test'
+  ...
+# Subtest: collector creates a bounded Delhi plan and requires approval
+ok 30 - collector creates a bounded Delhi plan and requires approval
+  ---
+  duration_ms: 2.373125
+  type: 'test'
+  ...
+# Subtest: collector recovery pauses interrupted runs with a resumable checkpoint note
+ok 31 - collector recovery pauses interrupted runs with a resumable checkpoint note
+  ---
+  duration_ms: 0.1285
+  type: 'test'
+  ...
+# Subtest: paused runs require fresh approval and retain persisted checkpoint progress
+ok 32 - paused runs require fresh approval and retain persisted checkpoint progress
+  ---
+  duration_ms: 0.075084
+  type: 'test'
+  ...
+# Subtest: challenge evidence stops the batch regardless of runner exit code
+ok 33 - challenge evidence stops the batch regardless of runner exit code
+  ---
+  duration_ms: 0.21125
+  type: 'test'
+  ...
+# Subtest: inactive collector runs cannot be cancelled
+ok 34 - inactive collector runs cannot be cancelled
+  ---
+  duration_ms: 0.272125
+  type: 'test'
+  ...
+# (node:53156) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: audit records are encrypted at rest and form a verified hash chain
+ok 35 - audit records are encrypted at rest and form a verified hash chain
+  ---
+  duration_ms: 3.495709
+  type: 'test'
+  ...
+# Subtest: encrypted backup restores stores and retains a pre-restore safety backup
+ok 36 - encrypted backup restores stores and retains a pre-restore safety backup
+  ---
+  duration_ms: 1.671209
+  type: 'test'
+  ...
+# Subtest: permission registry pins exact paths and denies traversal identifiers
+ok 37 - permission registry pins exact paths and denies traversal identifiers
+  ---
+  duration_ms: 0.278417
+  type: 'test'
+  ...
+# (node:53157) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: background training isolates execution and leaves artifacts awaiting quality evaluation
+ok 38 - background training isolates execution and leaves artifacts awaiting quality evaluation
+  ---
+  duration_ms: 47.566416
+  type: 'test'
+  ...
+# Subtest: encrypted secrets expose metadata only and release gate fails closed without all evidence
+ok 39 - encrypted secrets expose metadata only and release gate fails closed without all evidence
+  ---
+  duration_ms: 15.563
+  type: 'test'
+  ...
+# Subtest: rejects remote peers even when local headers are forged
+ok 40 - rejects remote peers even when local headers are forged
+  ---
+  duration_ms: 0.547333
+  type: 'test'
+  ...
+# Subtest: rejects rebinding hosts, missing hosts, and wrong ports
+ok 41 - rejects rebinding hosts, missing hosts, and wrong ports
+  ---
+  duration_ms: 0.101833
+  type: 'test'
+  ...
+# Subtest: mutations require the exact origin, including port and scheme
+ok 42 - mutations require the exact origin, including port and scheme
+  ---
+  duration_ms: 0.215417
+  type: 'test'
+  ...
+# Subtest: browser cross-origin reads are rejected; local CLI health checks work
+ok 43 - browser cross-origin reads are rejected; local CLI health checks work
+  ---
+  duration_ms: 0.06125
+  type: 'test'
+  ...
+# (node:53159) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: qualification requires three distinct trials, digest isolation, and zero failures
+ok 44 - qualification requires three distinct trials, digest isolation, and zero failures
+  ---
+  duration_ms: 3.14375
+  type: 'test'
+  ...
+# Subtest: selection prefers qualified llama3 and restricts smaller models and missing control checks
+ok 45 - selection prefers qualified llama3 and restricts smaller models and missing control checks
+  ---
+  duration_ms: 0.931666
+  type: 'test'
+  ...
+# Subtest: production cannot bypass missing digests; ambiguity previews never contact Ollama
+ok 46 - production cannot bypass missing digests; ambiguity previews never contact Ollama
+  ---
+  duration_ms: 1.233209
+  type: 'test'
+  ...
+# Subtest: registry persists across SQLite reopen and preview reports actually omitted files
+ok 47 - registry persists across SQLite reopen and preview reports actually omitted files
+  ---
+  duration_ms: 20.478
+  type: 'test'
+  ...
+# Subtest: micro tensor factory trains a purpose-bound dense tensor artifact
+ok 48 - micro tensor factory trains a purpose-bound dense tensor artifact
+  ---
+  duration_ms: 7.295708
+  type: 'test'
+  ...
+# Subtest: macro work requires one explicit approval and consumes it on training
+ok 49 - macro work requires one explicit approval and consumes it on training
+  ---
+  duration_ms: 0.957791
+  type: 'test'
+  ...
+# Subtest: qubit factory trains a state-vector circuit and states the physical boundary
+ok 50 - qubit factory trains a state-vector circuit and states the physical boundary
+  ---
+  duration_ms: 2.64575
+  type: 'test'
+  ...
+# Subtest: factory rejects oversized, malformed and unsupported specifications
+ok 51 - factory rejects oversized, malformed and unsupported specifications
+  ---
+  duration_ms: 0.170375
+  type: 'test'
+  ...
+# Subtest: Ollama cancellation closes real HTTP transport during metadata
+ok 52 - Ollama cancellation closes real HTTP transport during metadata
+  ---
+  duration_ms: 32.461334
+  type: 'test'
+  ...
+# Subtest: Ollama cancellation closes real HTTP transport during generation
+ok 53 - Ollama cancellation closes real HTTP transport during generation
+  ---
+  duration_ms: 11.962375
+  type: 'test'
+  ...
+# (node:53163) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: knowledge ingestion writes embeddings and returns ranked local results
+ok 54 - knowledge ingestion writes embeddings and returns ranked local results
+  ---
+  duration_ms: 14.21
+  type: 'test'
+  ...
+# Subtest: MCP approval gates a real filesystem call and sandboxed skill uses the connected server
+ok 55 - MCP approval gates a real filesystem call and sandboxed skill uses the connected server
+  ---
+  duration_ms: 60.65375
+  type: 'test'
+  ...
+# Subtest: agent completion and workflow approval transitions are persisted
+ok 56 - agent completion and workflow approval transitions are persisted
+  ---
+  duration_ms: 11.214917
+  type: 'test'
+  ...
+# Subtest: scheduler recovery reschedules overdue automation without replaying a missed run
+ok 57 - scheduler recovery reschedules overdue automation without replaying a missed run
+  ---
+  duration_ms: 9.004792
+  type: 'test'
+  ...
+# Subtest: draft patch preserves original and runs syntax checks in a bounded workspace copy
+ok 58 - draft patch preserves original and runs syntax checks in a bounded workspace copy
+  ---
+  duration_ms: 34.584334
+  type: 'test'
+  ...
+# Subtest: semantic acceptance checks run against the isolated copy and block omitted targets
+ok 59 - semantic acceptance checks run against the isolated copy and block omitted targets
+  ---
+  duration_ms: 58.939291
+  type: 'test'
+  ...
+# Subtest: patch proposals reject ambiguous text, path escape and stale source
+ok 60 - patch proposals reject ambiguous text, path escape and stale source
+  ---
+  duration_ms: 1.138625
+  type: 'test'
+  ...
+# Subtest: each original-workspace write requires approval and records rollback evidence
+ok 61 - each original-workspace write requires approval and records rollback evidence
+  ---
+  duration_ms: 2.04075
+  type: 'test'
+  ...
+# Subtest: multi-file batches validate dependency order and apply atomically after one approval
+ok 62 - multi-file batches validate dependency order and apply atomically after one approval
+  ---
+  duration_ms: 34.42325
+  type: 'test'
+  ...
+# Subtest: multi-file batches reject duplicate files, missing dependencies, and cycles
+ok 63 - multi-file batches reject duplicate files, missing dependencies, and cycles
+  ---
+  duration_ms: 0.864042
+  type: 'test'
+  ...
+# Subtest: a batch with one invalid parser result cannot be approved
+ok 64 - a batch with one invalid parser result cannot be approved
+  ---
+  duration_ms: 24.89825
+  type: 'test'
+  ...
+# Subtest: source changes invalidate batch validation and approval fingerprints
+ok 65 - source changes invalidate batch validation and approval fingerprints
+  ---
+  duration_ms: 2.61725
+  type: 'test'
+  ...
+# Subtest: approved batches stop before writing when any source changed
+ok 66 - approved batches stop before writing when any source changed
+  ---
+  duration_ms: 2.097458
+  type: 'test'
+  ...
+# Subtest: a mid-write failure restores every file already changed
+ok 67 - a mid-write failure restores every file already changed
+  ---
+  duration_ms: 2.672916
+  type: 'test'
+  ...
+# Switched to a new branch 'feature/pr'
+# Subtest: git snapshot shows branches, changes, diffs and persisted test evidence
+ok 68 - git snapshot shows branches, changes, diffs and persisted test evidence
+  ---
+  duration_ms: 135.957083
+  type: 'test'
+  ...
+# Subtest: commit drafts require review of the unchanged exact staged snapshot
+ok 69 - commit drafts require review of the unchanged exact staged snapshot
+  ---
+  duration_ms: 140.640792
+  type: 'test'
+  ...
+# Subtest: reviewed exact staged files can produce one recorded commit
+ok 70 - reviewed exact staged files can produce one recorded commit
+  ---
+  duration_ms: 150.092542
+  type: 'test'
+  ...
+# Subtest: clean repositories support branch creation, switching, and bounded history
+ok 71 - clean repositories support branch creation, switching, and bounded history
+  ---
+  duration_ms: 199.899
+  type: 'test'
+  ...
+# Subtest: branch changes require a clean tree and conflicts are reported
+ok 72 - branch changes require a clean tree and conflicts are reported
+  ---
+  duration_ms: 65.375959
+  type: 'test'
+  ...
+# Subtest: pull request and push drafts bind reviewed repository state
+ok 73 - pull request and push drafts bind reviewed repository state
+  ---
+  duration_ms: 146.57425
+  type: 'test'
+  ...
+# Subtest: conversation request creates and reuses a visible read-only scan plan
+ok 74 - conversation request creates and reuses a visible read-only scan plan
+  ---
+  duration_ms: 5.301167
+  type: 'test'
+  ...
+# Subtest: ambiguous folders require selection before a conversation plan can run
+ok 75 - ambiguous folders require selection before a conversation plan can run
+  ---
+  duration_ms: 1.544459
+  type: 'test'
+  ...
+# Subtest: ordinary conversation does not create a workspace plan
+ok 76 - ordinary conversation does not create a workspace plan
+  ---
+  duration_ms: 0.07175
+  type: 'test'
+  ...
+# Subtest: controlled commands require a repository allowlist and persist bounded output
+ok 77 - controlled commands require a repository allowlist and persist bounded output
+  ---
+  duration_ms: 172.163667
+  type: 'test'
+  ...
+# Subtest: one active command is enforced per workspace
+ok 78 - one active command is enforced per workspace
+  ---
+  duration_ms: 18.134583
+  type: 'test'
+  ...
+# Subtest: restart recovery marks orphaned commands interrupted
+ok 79 - restart recovery marks orphaned commands interrupted
+  ---
+  duration_ms: 0.116167
+  type: 'test'
+  ...
+# Subtest: command capture enforces timeout and records termination
+ok 80 - command capture enforces timeout and records termination
+  ---
+  duration_ms: 83.401833
+  type: 'test'
+  ...
+# Subtest: command capture truncates output at the declared byte ceiling
+ok 81 - command capture truncates output at the declared byte ceiling
+  ---
+  duration_ms: 25.411
+  type: 'test'
+  ...
+# Subtest: an active command can be cancelled and leaves the workspace copy isolated
+ok 82 - an active command can be cancelled and leaves the workspace copy isolated
+  ---
+  duration_ms: 19.300042
+  type: 'test'
+  ...
+# Subtest: finished and unknown commands cannot be cancelled
+ok 83 - finished and unknown commands cannot be cancelled
+  ---
+  duration_ms: 0.138417
+  type: 'test'
+  ...
+# Subtest: approved workspace scan reports languages, dependencies, files and citations
+ok 84 - approved workspace scan reports languages, dependencies, files and citations
+  ---
+  duration_ms: 31.506667
+  type: 'test'
+  ...
+# Subtest: workspace scanner rejects unapproved roots and does not follow symlinks
+ok 85 - workspace scanner rejects unapproved roots and does not follow symlinks
+  ---
+  duration_ms: 10.766125
+  type: 'test'
+  ...
+# Subtest: structured report runs reusable profiles with timestamp, scope and redacted citations
+ok 86 - structured report runs reusable profiles with timestamp, scope and redacted citations
+  ---
+  duration_ms: 13.469958
+  type: 'test'
+  ...
+1..86
+# tests 86
+# suites 0
+# pass 86
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1270.854333

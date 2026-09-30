@@ -1,0 +1,24 @@
+npm notice run nova-runtime@0.1.0 test:browser
+npm notice run playwright test --config=playwright.browser.config.js --reporter=line
+
+Running 12 tests using 1 worker
+
+(node:51707) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/12] test/browser.spec.js:11:1 › 1 opens an allowed local page and persists evidence
+test/browser.spec.js:11:1 › 1 opens an allowed local page and persists evidence
+(node:51708) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[2/12] test/browser.spec.js:12:1 › 2 denies unallowlisted egress and records it
+[3/12] test/browser.spec.js:13:1 › 3 allows explicitly granted domain
+[4/12] test/browser.spec.js:14:1 › 4 reads visible page text
+[5/12] test/browser.spec.js:15:1 › 5 clicks a local navigation
+[6/12] test/browser.spec.js:16:1 › 6 types non-secret input
+[7/12] test/browser.spec.js:17:1 › 7 rejects password input without secret grant
+[8/12] test/browser.spec.js:18:1 › 8 profiles are isolated
+[9/12] test/browser.spec.js:19:1 › 9 screenshot has a content hash
+[10/12] test/browser.spec.js:20:1 › 10 download requires approval and writes requested file
+[11/12] test/browser.spec.js:21:1 › 11 upload requires approval
+[12/12] test/browser.spec.js:22:1 › 12 global halt prevents partial screenshots
+  12 passed (3.0s)
