@@ -13,6 +13,7 @@
     "test:ui": "playwright test",
     "test:e2e": "playwright test",
     "test:browser": "playwright test --config=playwright.browser.config.js --reporter=line",
+    "test:jobs": "node --test tests/jobs.test.js",
     "test:rust": "cargo test --manifest-path packaging/tauri/Cargo.toml",
     "test:ollama-planner": "node --no-warnings scripts/validate-real-code-planner.js",
     "test:all": "npm test && npm run test:ui && npm run test:rust"

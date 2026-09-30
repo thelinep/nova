@@ -74,6 +74,21 @@ function openDb(dataDir) {
     key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL
   );`);
   db.prepare(`INSERT OR IGNORE INTO global_state (key,value,updated_at) VALUES ('global_halt','0',?)`).run(new Date().toISOString());
+  db.exec(`CREATE TABLE IF NOT EXISTS jobs (
+    id TEXT PRIMARY KEY, kind TEXT NOT NULL, state TEXT NOT NULL,
+    payload_json TEXT NOT NULL, result_json TEXT,
+    created_at TEXT NOT NULL, started_at TEXT, heartbeat_at TEXT, timeout_at TEXT,
+    run_at TEXT NOT NULL, timeout_ms INTEGER NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL DEFAULT 1,
+    parent_id TEXT, error TEXT, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_jobs_state_run_at ON jobs(state, run_at);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS job_events (
+    id TEXT PRIMARY KEY, job_id TEXT NOT NULL, kind TEXT NOT NULL,
+    payload_json TEXT, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_job_events_job ON job_events(job_id);`);
+
 
   return { db, dbPath };
 }
@@ -165,6 +180,16 @@ class Store {
   egressAllowed(domain) { return Boolean(this._stmt('SELECT 1 FROM egress_allowlist WHERE domain=?').get(String(domain).toLowerCase())); }
   getGlobalHalt() { const row=this._stmt("SELECT value FROM global_state WHERE key='global_halt'").get(); return row ? row.value : '0'; }
   setGlobalHalt(value) { this._stmt("UPDATE global_state SET value=?,updated_at=? WHERE key='global_halt'").run(String(value),new Date().toISOString()); }
+  jobsInsert(row) { this._stmt('INSERT INTO jobs (id,kind,state,payload_json,result_json,created_at,started_at,heartbeat_at,timeout_at,run_at,timeout_ms,attempts,max_attempts,parent_id,error,ended_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.kind,row.state,row.payload_json,row.result_json||null,row.created_at,row.started_at||null,row.heartbeat_at||null,row.timeout_at||null,row.run_at,row.timeout_ms,row.attempts,row.max_attempts,row.parent_id||null,row.error||null,row.ended_at||null); return this.jobsGet(row.id); }
+  jobsGet(id) { return this._stmt('SELECT * FROM jobs WHERE id=?').get(id) || null; }
+  jobsUpdate(id, patch) { const cur=this.jobsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE jobs SET kind=?,state=?,payload_json=?,result_json=?,started_at=?,heartbeat_at=?,timeout_at=?,run_at=?,timeout_ms=?,attempts=?,max_attempts=?,parent_id=?,error=?,ended_at=? WHERE id=?').run(n.kind,n.state,n.payload_json,n.result_json,n.started_at,n.heartbeat_at,n.timeout_at,n.run_at,n.timeout_ms,n.attempts,n.max_attempts,n.parent_id,n.error,n.ended_at,id); return this.jobsGet(id); }
+  jobsListByState(state) { return this._stmt('SELECT * FROM jobs WHERE state=? ORDER BY created_at ASC').all(state); }
+  jobsClaimNext(n) { const nowStr=new Date().toISOString(); const candidates=this._stmt('SELECT id FROM jobs WHERE state=? AND run_at<=? ORDER BY run_at ASC LIMIT ?').all('queued',nowStr,n); const claimed=[]; for (const c of candidates) { const info=this._stmt('UPDATE jobs SET state=?, started_at=? WHERE id=? AND state=?').run('running',nowStr,c.id,'queued'); if (info.changes===1) claimed.push(this.jobsGet(c.id)); } return claimed; }
+  jobsFindTimedOut() { const nowStr=new Date().toISOString(); return this._stmt('SELECT * FROM jobs WHERE state=? AND timeout_at IS NOT NULL AND timeout_at < ?').all('running',nowStr); }
+  jobsInsertEvent(row) { this._stmt('INSERT INTO job_events (id,job_id,kind,payload_json,timestamp) VALUES (?,?,?,?,?)').run(row.id,row.job_id,row.kind,row.payload_json||null,row.timestamp); return row; }
+  jobsListEvents(jobId) { return this._stmt('SELECT * FROM job_events WHERE job_id=? ORDER BY timestamp ASC').all(jobId); }
+
+
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
