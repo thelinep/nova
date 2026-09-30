@@ -3,3 +3,4 @@ data/
 .DS_Store
 packaging/tauri/target/
 packaging/tauri/gen/
+packaging/runtime/
