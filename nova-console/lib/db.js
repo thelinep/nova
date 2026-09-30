@@ -124,6 +124,26 @@ function openDb(dataDir) {
     outcome TEXT NOT NULL, error TEXT, timestamp TEXT NOT NULL
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rollback_events_domain_ts ON rollback_events(domain, timestamp);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS budgets (
+    id TEXT PRIMARY KEY, subject_type TEXT NOT NULL, subject_id TEXT NOT NULL,
+    window TEXT NOT NULL, limits_json TEXT NOT NULL,
+    created_at TEXT NOT NULL, created_by TEXT NOT NULL, revoked_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_budgets_subject ON budgets(subject_type, subject_id);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS budget_consumption (
+    id TEXT PRIMARY KEY, budget_id TEXT,
+    subject_type TEXT NOT NULL, subject_id TEXT NOT NULL,
+    kind TEXT NOT NULL, amount REAL NOT NULL, ref_id TEXT,
+    timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_budget_consumption_subject ON budget_consumption(subject_type, subject_id, timestamp);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_budget_consumption_budget ON budget_consumption(budget_id, timestamp);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS kill_switch_events (
+    id TEXT PRIMARY KEY, action TEXT NOT NULL, operator TEXT NOT NULL,
+    reason TEXT NOT NULL, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_kill_switch_events_ts ON kill_switch_events(timestamp);`);
+
 
   return { db, dbPath };
 }
@@ -240,6 +260,17 @@ class Store {
   quarantinesList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.domain){c.push('domain=?');a.push(filter.domain);} if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM quarantines'+w+' ORDER BY created_at ASC').all(...a); }
   rollbackEventsInsert(row) { this._stmt('INSERT INTO rollback_events (id,domain,reason,from_sha,to_sha,task_id,quarantine_id,outcome,error,timestamp) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.domain,row.reason,row.from_sha||null,row.to_sha||null,row.task_id||null,row.quarantine_id||null,row.outcome,row.error||null,row.timestamp); return row; }
   rollbackEventsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.domain){c.push('domain=?');a.push(filter.domain);} if(filter.outcome){c.push('outcome=?');a.push(filter.outcome);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM rollback_events'+w+' ORDER BY timestamp ASC').all(...a); }
+  budgetsInsert(row) { this._stmt('INSERT INTO budgets (id,subject_type,subject_id,window,limits_json,created_at,created_by,revoked_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.subject_type,row.subject_id,row.window,row.limits_json,row.created_at,row.created_by,row.revoked_at||null); return this.budgetsGet(row.id); }
+  budgetsGet(id) { return this._stmt('SELECT * FROM budgets WHERE id=?').get(id) || null; }
+  budgetsUpdate(id, patch) { const cur=this.budgetsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE budgets SET limits_json=?, revoked_at=? WHERE id=?').run(n.limits_json,n.revoked_at,id); return this.budgetsGet(id); }
+  budgetsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.subject_type){c.push('subject_type=?');a.push(filter.subject_type);} if(filter.subject_id){c.push('subject_id=?');a.push(filter.subject_id);} if(filter.active){c.push('revoked_at IS NULL');} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM budgets'+w+' ORDER BY created_at ASC').all(...a); }
+  budgetsRevoke(id) { return this.budgetsUpdate(id, { revoked_at: new Date().toISOString() }); }
+  budgetConsumptionInsert(row) { this._stmt('INSERT INTO budget_consumption (id,budget_id,subject_type,subject_id,kind,amount,ref_id,timestamp) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.budget_id||null,row.subject_type,row.subject_id,row.kind,row.amount,row.ref_id||null,row.timestamp); return row; }
+  budgetConsumptionSum(subjectType, subjectId, kind, sinceIso) { const r=this._stmt('SELECT COALESCE(SUM(amount),0) AS total FROM budget_consumption WHERE subject_type=? AND subject_id=? AND kind=? AND timestamp>=?').get(subjectType,subjectId,kind,sinceIso); return r?r.total:0; }
+  budgetConsumptionList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.subject_type){c.push('subject_type=?');a.push(filter.subject_type);} if(filter.subject_id){c.push('subject_id=?');a.push(filter.subject_id);} if(filter.budget_id){c.push('budget_id=?');a.push(filter.budget_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM budget_consumption'+w+' ORDER BY timestamp ASC').all(...a); }
+  killSwitchEventsInsert(row) { this._stmt('INSERT INTO kill_switch_events (id,action,operator,reason,timestamp) VALUES (?,?,?,?,?)').run(row.id,row.action,row.operator,row.reason,row.timestamp); return row; }
+  killSwitchEventsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.action){c.push('action=?');a.push(filter.action);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM kill_switch_events'+w+' ORDER BY timestamp ASC').all(...a); }
+
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
