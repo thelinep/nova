@@ -14,6 +14,7 @@
     "test:e2e": "npx --no-install playwright test",
     "test:rust": "cargo test --manifest-path packaging/tauri/Cargo.toml",
     "test:ollama-planner": "node --no-warnings scripts/validate-real-code-planner.js",
+    "release:check": "node --no-warnings scripts/release-check.js",
     "test:all": "npm test && npm run test:ui && npm run test:rust"
   },
   "engines": {

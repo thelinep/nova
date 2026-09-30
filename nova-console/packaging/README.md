@@ -32,6 +32,9 @@ Recording a file after it changes invalidates that evidence. This gate does
 not perform signing or notarization; those actions require the release
 operator's Apple credentials and explicit submission.
 
+Run `npm run release:check` from `nova-console` to inspect the current
+gate. It exits non-zero until all required evidence is current.
+
 ## What was actually checked, and where
 
 | Check | Cloud build sandbox | User's linked device |
