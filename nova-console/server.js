@@ -35,6 +35,7 @@ const collectorWorkflows = require('./lib/collector-workflows');
 const codePlanner = require('./lib/code-planner');
 const modelQualifications = require('./lib/model-qualifications');
 const workspaceScanner = require('./lib/workspace-scanner');
+const browserService = require('./lib/browser-service');
 const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
 const workspaceRunner = require('./lib/workspace-runner');
@@ -58,6 +59,7 @@ function gitSnapshot() {
 
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
+const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
 const ollama = new OllamaClient(process.env.OLLAMA_HOST);
 const telemetry = new TelemetryReader();
 
@@ -86,7 +88,35 @@ function sendJson(res, statusCode, body) {
 function sendError(res, err) {
   const statusCode = err.statusCode || 500;
   if (statusCode >= 500) console.error('[nova-runtime] error:', err);
-  sendJson(res, statusCode, { error: err.message || 'Internal error' });
+  sendJson(res, statusCode, err.browser ? { ok:false, error:err.message || 'Internal error', ...(err.policyId ? { policy_id:err.policyId } : {}) } : { error: err.message || 'Internal error' });
+}
+
+function requireFields(body, fields) {
+  for (const f of fields) {
+    const v = body[f];
+    if (v === undefined || v === null || v === '') {
+      const e = new Error(`field_required:${f}`);
+      e.statusCode = 400;
+      throw e;
+    }
+  }
+}
+
+function requireUrl(value, field) {
+  try { new URL(String(value)); }
+  catch {
+    const e = new Error(`field_invalid:${field}`);
+    e.statusCode = 400;
+    throw e;
+  }
+}
+
+function requireApprovalTrue(value) {
+  if (value !== true) {
+    const e = new Error('field_required:approve');
+    e.statusCode = 400;
+    throw e;
+  }
 }
 
 // uid()/logExecution() now live in lib/exec-log.js — lib/scheduler.js needs
@@ -220,6 +250,17 @@ async function syncModelsFromOllama() {
 /* --------------------------------- routes -------------------------------- */
 
 const routes = [
+  { method:'POST',pattern:/^\/browser\/open$/,handler:async(req,res)=>{const b=await readJsonBody(req);requireFields(b,['agentId','url']);requireUrl(b.url,'url');sendJson(res,201,await browser.open(b.url,b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/click$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['selector']);sendJson(res,200,await browser.click(decodeURIComponent(id),b.selector));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/type$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['selector','text']);sendJson(res,200,await browser.type(decodeURIComponent(id),b.selector,b.text));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/read$/,handler:async(req,res,[id])=>sendJson(res,200,await browser.read(decodeURIComponent(id),await readJsonBody(req))) },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/wait$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);if(!b.selector&&!b.ms){const e=new Error('field_required:selector_or_ms');e.statusCode=400;throw e;}sendJson(res,200,await browser.wait(decodeURIComponent(id),b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/screenshot$/,handler:async(req,res,[id])=>sendJson(res,200,await browser.screenshot(decodeURIComponent(id),await readJsonBody(req))) },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/download$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['approve','selector','path']);requireApprovalTrue(b.approve);sendJson(res,200,await browser.download(decodeURIComponent(id),b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/upload$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['approve','selector','path']);requireApprovalTrue(b.approve);sendJson(res,200,await browser.upload(decodeURIComponent(id),b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/close$/,handler:async(_q,res,[id])=>sendJson(res,200,await browser.close(decodeURIComponent(id))) },
+  { method:'POST',pattern:/^\/browser\/halt$/,handler:async(_q,res)=>sendJson(res,200,await browser.halt()) },
+  { method:'GET',pattern:/^\/browser\/pages$/,handler:async(req,res)=>{const agentId=new URL(req.url,'http://localhost').searchParams.get('agentId');requireFields({agentId},['agentId']);sendJson(res,200,browser.list(agentId));} },
   { method: 'GET', pattern: /^\/api\/workspace\/roots$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRoots')) },
   { method: 'POST', pattern: /^\/api\/workspace\/roots$/, handler: async (req, res) => {const root=workspaceScanner.approveRoot(store,await readJsonBody(req));const permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:['filesystem:read'],source:'explicit-root-approval'});desktopSecurity.appendAudit(DATA_DIR,{action:'permission.granted',rootId:root.id,permissionId:permission.id,exactPath:root.path});sendJson(res,201,root);} },
   { method: 'DELETE', pattern: /^\/api\/workspace\/roots\/([^/]+)$/, handler: async (_req, res, [id]) => {const rootId=decodeURIComponent(id);store.delete('workspaceRoots',rootId);for(const permission of store.all('workspacePermissions').filter(x=>x.rootId===rootId)){permission.status='revoked';permission.revokedAt=new Date().toISOString();store.put('workspacePermissions',permission);}desktopSecurity.appendAudit(DATA_DIR,{action:'permission.revoked',rootId});sendJson(res, 200, { ok:true });} },
@@ -646,7 +687,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api/') || pathname.startsWith('/browser/')) {
     for (const route of routes) {
       if (route.method !== req.method) continue;
       const match = pathname.match(route.pattern);

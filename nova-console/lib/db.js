@@ -53,6 +53,28 @@ function openDb(dataDir) {
        );`
     );
   }
+  db.exec(`CREATE TABLE IF NOT EXISTS browser_pages (
+    id TEXT PRIMARY KEY, agent_id TEXT NOT NULL, url TEXT NOT NULL,
+    final_url TEXT NOT NULL, screenshot_path TEXT, sha256 TEXT,
+    policy_id TEXT NOT NULL, opened_at TEXT NOT NULL, closed_at TEXT, status TEXT NOT NULL
+  );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS browser_actions (
+    id TEXT PRIMARY KEY, page_id TEXT, kind TEXT NOT NULL,
+    selector_hash TEXT, payload_hash TEXT, result TEXT NOT NULL,
+    policy_id TEXT, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS browser_egress (
+    id TEXT PRIMARY KEY, page_id TEXT, domain TEXT NOT NULL,
+    allowed INTEGER NOT NULL, reason TEXT NOT NULL, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS egress_allowlist (
+    domain TEXT PRIMARY KEY, added_at TEXT NOT NULL, added_by TEXT NOT NULL
+  );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS global_state (
+    key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL
+  );`);
+  db.prepare(`INSERT OR IGNORE INTO global_state (key,value,updated_at) VALUES ('global_halt','0',?)`).run(new Date().toISOString());
+
   return { db, dbPath };
 }
 
@@ -133,6 +155,16 @@ class Store {
   clearAll() {
     for (const name of STORE_NAMES) this.clear(name);
   }
+
+  browserInsertPage(row) { this._stmt('INSERT INTO browser_pages (id,agent_id,url,final_url,screenshot_path,sha256,policy_id,opened_at,closed_at,status) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.agentId,row.url,row.finalUrl,row.screenshotPath || null,row.sha256 || null,row.policyId,row.openedAt,null,row.status); }
+  browserUpdatePage(id, fields) { const old=this._stmt('SELECT * FROM browser_pages WHERE id=?').get(id); if (!old) return null; const row={...old,...fields}; this._stmt('UPDATE browser_pages SET final_url=?,screenshot_path=?,sha256=?,closed_at=?,status=? WHERE id=?').run(row.final_url,row.screenshot_path,row.sha256,row.closed_at,row.status,id); return row; }
+  browserPages(agentId) { return this._stmt('SELECT * FROM browser_pages WHERE agent_id=? ORDER BY opened_at ASC').all(agentId); }
+  browserAction(row) { this._stmt('INSERT INTO browser_actions (id,page_id,kind,selector_hash,payload_hash,result,policy_id,timestamp) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.pageId || null,row.kind,row.selectorHash || null,row.payloadHash || null,row.result,row.policyId || null,row.timestamp); }
+  browserEgress(row) { this._stmt('INSERT INTO browser_egress (id,page_id,domain,allowed,reason,timestamp) VALUES (?,?,?,?,?,?)').run(row.id,row.pageId || null,row.domain,row.allowed ? 1 : 0,row.reason,row.timestamp); }
+  allowEgress(domain, addedBy='system') { this._stmt('INSERT OR REPLACE INTO egress_allowlist (domain,added_at,added_by) VALUES (?,?,?)').run(String(domain).toLowerCase(),new Date().toISOString(),addedBy); }
+  egressAllowed(domain) { return Boolean(this._stmt('SELECT 1 FROM egress_allowlist WHERE domain=?').get(String(domain).toLowerCase())); }
+  getGlobalHalt() { const row=this._stmt("SELECT value FROM global_state WHERE key='global_halt'").get(); return row ? row.value : '0'; }
+  setGlobalHalt(value) { this._stmt("UPDATE global_state SET value=?,updated_at=? WHERE key='global_halt'").run(String(value),new Date().toISOString()); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
