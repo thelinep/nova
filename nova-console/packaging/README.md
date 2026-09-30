@@ -22,6 +22,16 @@ The app is ad-hoc/unsigned and has not been notarized. A distributable DMG
 still requires a working macOS disk-image environment; the local helper could
 not mount one here and its partial output was removed.
 
+## Release gate
+
+The runtime now has a fail-closed local release-evidence gate. It cannot
+report a public release ready until current, checksum-bound evidence exists
+for all of: tests, artifact manifest, Developer ID code signing, Apple
+notarization, clean-machine installation, and a signed update manifest.
+Recording a file after it changes invalidates that evidence. This gate does
+not perform signing or notarization; those actions require the release
+operator's Apple credentials and explicit submission.
+
 ## What was actually checked, and where
 
 | Check | Cloud build sandbox | User's linked device |

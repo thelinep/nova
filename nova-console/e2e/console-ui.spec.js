@@ -188,7 +188,7 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.getByText('Rollback', {exact:true})).toBeVisible();
   });
 
-  test('creates and trains a truthful purpose-specific tensor in Neuron Factory', async ({ page }) => {
+  test('queues, evaluates, and approves a truthful purpose-specific tensor in Neuron Factory', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-view="neurons"]').click();
     await expect(page.getByRole('heading', { name: 'Neuron Factory' })).toBeVisible();
@@ -197,8 +197,13 @@ test.describe('NOVA Console interactions', () => {
     await page.getByLabel('Neuron purpose').fill('Detect when both bounded input signals are active.');
     await page.getByRole('button', { name: 'Create blueprint' }).click();
     await expect(page.getByText('AND purpose tensor')).toBeVisible();
-    await page.getByRole('button', { name: 'Train artifact' }).click();
+    await page.getByRole('button', { name: 'Queue training' }).click();
+    await expect(page.getByText(/Background job (queued|running)/)).toBeVisible();
+    await expect(page.getByText('awaiting-evaluation')).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Evaluate quality' }).click();
+    await expect(page.getByText('awaiting-approval')).toBeVisible();
+    await page.getByRole('button', { name: 'Approve artifact' }).click();
     await expect(page.getByText('dense-tensor-backprop-v1')).toBeVisible();
-    await expect(page.getByText('trained tensor')).toBeVisible();
+    await expect(page.getByText('approved')).toBeVisible();
   });
 });
