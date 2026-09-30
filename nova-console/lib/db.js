@@ -158,6 +158,26 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_workspace_patches_run ON workspace_patches(run_id);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS constellation_runs (
+    id TEXT PRIMARY KEY, problem_hash TEXT NOT NULL,
+    provider_count INTEGER NOT NULL, candidate_count INTEGER NOT NULL,
+    winner_id TEXT, status TEXT NOT NULL,
+    started_at TEXT NOT NULL, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_constellation_runs_started ON constellation_runs(started_at);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS constellation_candidates (
+    id TEXT PRIMARY KEY, run_id TEXT NOT NULL, provider_id TEXT NOT NULL,
+    code TEXT, error TEXT, created_at TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_constellation_candidates_run ON constellation_candidates(run_id);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS constellation_rounds (
+    id TEXT PRIMARY KEY, run_id TEXT NOT NULL, round INTEGER NOT NULL,
+    group_index INTEGER NOT NULL, entrants_json TEXT NOT NULL,
+    winner_id TEXT NOT NULL, votes_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_constellation_rounds_run ON constellation_rounds(run_id);`);
+
   return { db, dbPath };
 }
 
@@ -290,6 +310,15 @@ class Store {
   workspacePatchesUpdate(id, patch) { const cur=this.workspacePatchesGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE workspace_patches SET status=?,branch=?,files_json=?,diff_hash=?,sandbox_path=?,test_summary_json=?,reason=?,error=?,ended_at=? WHERE id=?').run(n.status,n.branch,n.files_json,n.diff_hash,n.sandbox_path,n.test_summary_json,n.reason,n.error,n.ended_at,id); return this.workspacePatchesGet(id); }
   workspacePatchesList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.run_id){c.push('run_id=?');a.push(filter.run_id);} if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM workspace_patches'+w+' ORDER BY created_at ASC').all(...a); }
 
+
+  constellationRunsInsert(row) { this._stmt('INSERT INTO constellation_runs (id,problem_hash,provider_count,candidate_count,winner_id,status,started_at,ended_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.problem_hash,row.provider_count,row.candidate_count,row.winner_id||null,row.status,row.started_at,row.ended_at||null); return this.constellationRunsGet(row.id); }
+  constellationRunsGet(id) { return this._stmt('SELECT * FROM constellation_runs WHERE id=?').get(id) || null; }
+  constellationRunsUpdate(id, patch) { const cur=this.constellationRunsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE constellation_runs SET candidate_count=?, winner_id=?, status=?, ended_at=? WHERE id=?').run(n.candidate_count,n.winner_id,n.status,n.ended_at,id); return this.constellationRunsGet(id); }
+  constellationRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM constellation_runs'+w+' ORDER BY started_at ASC').all(...a); }
+  constellationCandidatesInsert(row) { this._stmt('INSERT INTO constellation_candidates (id,run_id,provider_id,code,error,created_at) VALUES (?,?,?,?,?,?)').run(row.id,row.run_id,row.provider_id,row.code||null,row.error||null,row.created_at); return row; }
+  constellationCandidatesList(runId) { return this._stmt('SELECT * FROM constellation_candidates WHERE run_id=? ORDER BY created_at ASC').all(runId); }
+  constellationRoundsInsert(row) { this._stmt('INSERT INTO constellation_rounds (id,run_id,round,group_index,entrants_json,winner_id,votes_json,created_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.run_id,row.round,row.group_index,row.entrants_json,row.winner_id,row.votes_json,row.created_at); return row; }
+  constellationRoundsList(runId) { return this._stmt('SELECT * FROM constellation_rounds WHERE run_id=? ORDER BY round ASC, group_index ASC').all(runId); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
