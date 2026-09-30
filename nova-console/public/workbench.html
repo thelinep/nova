@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOVA Workbench</title>
+<style>
+:root {
+  --bg: #0b0d10; --panel: #14171c; --panel-2: #1a1e24;
+  --border: #222831; --border-2: #2d333d;
+  --fg: #e6e9ec; --muted: #8b95a4; --dim: #5b6472;
+  --ok: #6ee7b7; --warn: #fbbf24; --danger: #f87171; --accent: #93c5fd;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans);
+  font-size: 14px; line-height: 1.5; min-height: 100vh; }
+.topbar { display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg); z-index: 10; }
+.brand { font-family: var(--mono); font-size: 14px; letter-spacing: 0.02em; }
+.brand .dot { display: inline-block; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--ok); margin-right: 8px;
+  vertical-align: middle; }
+.pills { display: flex; gap: 8px; }
+.pill { padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border-2); font-family: var(--mono);
+  font-size: 12px; color: var(--muted); }
+.pill.ok     { color: var(--ok);     border-color: rgba(110,231,183,0.35); }
+.pill.warn   { color: var(--warn);   border-color: rgba(251,191,36,0.35); }
+.pill.danger { color: var(--danger); border-color: rgba(248,113,113,0.35); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px; padding: 16px 20px 40px; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; min-height: 180px; }
+.panel h2 { margin: 0 0 12px; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  font-family: var(--mono); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px; margin-bottom: 12px; }
+.stat { padding: 8px 10px; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 6px; }
+.stat-label { font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--dim); font-family: var(--mono); }
+.stat-value { font-size: 20px; font-family: var(--mono); margin-top: 2px; }
+.list { display: flex; flex-direction: column; gap: 4px; }
+.row { display: flex; justify-content: space-between; align-items: baseline;
+  padding: 6px 10px; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 5px;
+  font-size: 13px; gap: 12px; }
+.row-k { font-family: var(--mono); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; }
+.row-v { color: var(--muted); font-family: var(--mono); font-size: 12px;
+  white-space: nowrap; }
+.empty { color: var(--dim); font-size: 13px; font-style: italic; padding: 6px 0; }
+.budget { padding: 8px 10px; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+.budget-head { font-family: var(--mono); font-size: 12px; margin-bottom: 6px; }
+.budget-kind { display: grid; grid-template-columns: 80px 1fr 120px;
+  align-items: center; gap: 8px; font-size: 12px; font-family: var(--mono);
+  color: var(--muted); padding: 2px 0; }
+.bar { height: 6px; background: #0a0c0f; border-radius: 3px;
+  overflow: hidden; border: 1px solid var(--border); }
+.bar-fill { height: 100%; background: var(--ok); transition: width 0.3s ease; }
+.bar-fill.warn   { background: var(--warn); }
+.bar-fill.danger { background: var(--danger); }
+.check { display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 5px;
+  margin-bottom: 4px; font-size: 13px; }
+.check-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.check-dot.ok  { background: var(--ok); }
+.check-dot.err { background: var(--danger); }
+.check-label { font-family: var(--mono); }
+.error-banner { margin: 0 20px; padding: 10px 14px;
+  background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.3); border-radius: 6px;
+  color: var(--danger); font-family: var(--mono); font-size: 12px;
+  display: none; }
+.error-banner.show { display: block; }
+.footer { text-align: center; padding: 20px; color: var(--dim);
+  font-size: 11px; font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="dot"></span>NOVA Workbench</div>
+  <div class="pills">
+    <span id="pill-system" class="pill">system: …</span>
+    <span id="pill-kill" class="pill">kill: …</span>
+    <span id="pill-refresh" class="pill">—</span>
+  </div>
+</header>
+
+<div id="error-banner" class="error-banner"></div>
+
+<main class="grid">
+  <section class="panel"><h2>Now — what is running?</h2><div id="p-now"></div></section>
+  <section class="panel"><h2>Allowed — what may act?</h2><div id="p-allowed"></div></section>
+  <section class="panel"><h2>Waiting — what needs a decision?</h2><div id="p-waiting"></div></section>
+  <section class="panel"><h2>Failed — what broke?</h2><div id="p-failed"></div></section>
+  <section class="panel"><h2>Created — what value was produced?</h2><div id="p-created"></div></section>
+  <section class="panel"><h2>System — readiness</h2><div id="p-system"></div></section>
+</main>
+
+<div class="footer">read-only · polls /api/workbench/snapshot every 3s</div>
+
+<script>
+(function () {
+  'use strict';
+  var REFRESH_MS = 3000;
+  var lastOkAt = 0;
+
+    function appendChild(parent, child) {
+    if (child == null || child === false) return;
+    if (Array.isArray(child)) {
+      for (var i = 0; i < child.length; i++) appendChild(parent, child[i]);
+      return;
+    }
+    if (typeof child === 'string' || typeof child === 'number') {
+      parent.appendChild(document.createTextNode(String(child)));
+      return;
+    }
+    if (child instanceof Node) {
+      parent.appendChild(child);
+    }
+  }
+
+  function el(tag, props) {
+    var node = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach(function (k) {
+        var v = props[k];
+        if (v == null || v === false) return;
+        if (k === 'class') node.className = v;
+        else if (k === 'text') node.textContent = String(v);
+        else if (k === 'style') node.setAttribute('style', v);
+        else node.setAttribute(k, v);
+      });
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      appendChild(node, arguments[i]);
+    }
+    return node;
+  }
+
+  function replace(id) {
+    var target = document.getElementById(id);
+    target.replaceChildren.apply(target, Array.prototype.slice.call(arguments, 1));
+  }
+
+  function stat(label, value) {
+    return el('div', { class: 'stat' },
+      el('div', { class: 'stat-label', text: label }),
+      el('div', { class: 'stat-value', text: value }));
+  }
+
+  function row(k, v) {
+    return el('div', { class: 'row' },
+      el('span', { class: 'row-k', text: k }),
+      el('span', { class: 'row-v', text: v }));
+  }
+
+  function emptyState(text) {
+    return el('div', { class: 'empty', text: text });
+  }
+
+  function relTime(iso) {
+    if (!iso) return '—';
+    var t = Date.now() - new Date(iso).getTime();
+    if (!Number.isFinite(t) || t < 0) return '—';
+    if (t < 1000) return 'now';
+    if (t < 60000) return Math.round(t / 1000) + 's ago';
+    if (t < 3600000) return Math.round(t / 60000) + 'm ago';
+    return Math.round(t / 3600000) + 'h ago';
+  }
+
+  function shortSha(sha) {
+    if (!sha || typeof sha !== 'string') return '—';
+    return sha.slice(0, 8);
+  }
+
+  function budgetBar(kind, used, limit) {
+    var pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+    var cls = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+    return el('div', { class: 'budget-kind' },
+      el('span', { text: kind }),
+      el('div', { class: 'bar' },
+        el('div', { class: 'bar-fill ' + cls, style: 'width:' + pct + '%' })),
+      el('span', { text: used + ' / ' + limit }));
+  }
+
+  function renderNow(s) {
+    var now = s.now || {};
+    var jobs = now.running_jobs || [];
+    var stats = el('div', { class: 'stats' },
+      stat('queued', now.queued || 0),
+      stat('running', now.running || 0),
+      stat('next run', now.next_run_in_ms != null
+        ? Math.round(now.next_run_in_ms / 1000) + 's' : '—'));
+    var list = jobs.length
+      ? el('div', { class: 'list' }, jobs.map(function (j) {
+          return row(j.kind, 'started ' + relTime(j.started_at));
+        }))
+      : emptyState('No running jobs');
+    replace('p-now', stats, list);
+  }
+
+  function renderAllowed(s) {
+    var a = s.allowed || {};
+    var ks = a.kill_switch || {};
+    var p = a.policies || {};
+    var budgets = a.budgets || [];
+    var ksRow = row('kill switch', ks.halted
+      ? 'HALTED · ' + (ks.operator || '?') + ' · ' + (ks.reason || '?')
+      : 'clear');
+    var policyRow = row('policies',
+      (p.active || 0) + ' active · ' + (p.revoked || 0) + ' revoked · '
+      + (p.expired || 0) + ' expired');
+    var budgetBlocks = budgets.length
+      ? budgets.map(function (b) {
+          var kinds = Object.keys(b.usage || {});
+          var head = (b.subject && b.subject.type) + ':' + (b.subject && b.subject.id)
+            + ' (' + (b.window || 'day') + ')';
+          var children = [el('div', { class: 'budget-head', text: head })];
+          kinds.forEach(function (kind) {
+            var u = b.usage[kind];
+            children.push(budgetBar(kind, u.used, u.limit));
+          });
+          return el.apply(null, ['div', { class: 'budget' }].concat(children));
+        })
+      : [emptyState('No budgets defined')];
+    replace('p-allowed',
+      el('div', { class: 'list' }, ksRow, policyRow),
+      el.apply(null, ['div', { style: 'margin-top:10px' }].concat(budgetBlocks)));
+  }
+
+  function renderWaiting(s) {
+    var w = s.waiting || {};
+    var quarantines = w.quarantines || [];
+    var denials = w.recent_denials || [];
+    var qList = quarantines.length
+      ? el('div', { class: 'list' }, quarantines.slice(0, 6).map(function (q) {
+          return row(q.domain + ':' + (q.task_id || q.id.slice(0, 8)), q.reason);
+        }))
+      : emptyState('No pending quarantines');
+    var dList = denials.length
+      ? el('div', { class: 'list' }, denials.slice(0, 6).map(function (d) {
+          var s = (d.subject && d.subject.type) + ':' + (d.subject && d.subject.id);
+          var r = (d.resource && d.resource.type) + ':' + (d.resource && d.resource.id);
+          return row(s + ' → ' + r, d.reason);
+        }))
+      : emptyState('No recent denials');
+    replace('p-waiting',
+      el('div', { class: 'stat-label', text: 'quarantines: ' + (w.pending_quarantines || 0) }),
+      qList,
+      el('div', { class: 'stat-label',
+        style: 'margin-top:12px',
+        text: 'denials (1h): ' + (w.recent_policy_denials_1h || 0) }),
+      dList);
+  }
+
+  function renderFailed(s) {
+    var f = s.failed || {};
+    var rollbacks = f.recent_rollbacks || [];
+    var stats = el('div', { class: 'stats' },
+      stat('failed jobs', f.failed_jobs || 0),
+      stat('timed out', f.timed_out_jobs || 0),
+      stat('rollbacks', rollbacks.length));
+    var rbList = rollbacks.length
+      ? el('div', { class: 'list' }, rollbacks.slice(0, 5).map(function (r) {
+          return row(r.domain + ': ' + r.reason,
+            shortSha(r.from_sha) + ' → ' + shortSha(r.to_sha));
+        }))
+      : emptyState('No recent rollbacks');
+    replace('p-failed', stats, rbList);
+  }
+
+  function renderCreated(s) {
+    var c = s.created || {};
+    var green = c.green_commits || [];
+    var stats = el('div', { class: 'stats' },
+      stat('completed jobs', c.completed_jobs || 0),
+      stat('autonomy runs', c.autonomy_runs_approved || 0),
+      stat('green commits', green.length));
+    var gcList = green.length
+      ? el('div', { class: 'list' }, green.slice(0, 5).map(function (g) {
+          return row(g.domain, shortSha(g.sha));
+        }))
+      : emptyState('No green commits yet');
+    replace('p-created', stats, gcList);
+  }
+
+  function renderSystem(s) {
+    var sys = s.system || {};
+    var checks = sys.checks || [];
+    replace('p-system',
+      el('div', { class: 'list' }, checks.map(function (c) {
+        return el('div', { class: 'check' },
+          el('div', { class: 'check-dot ' + (c.ok ? 'ok' : 'err') }),
+          el('span', { class: 'check-label', text: c.label }));
+      })));
+  }
+
+  function setPills(s) {
+    var sysOk = !(s.system && s.system.ok === false);
+    var sysPill = document.getElementById('pill-system');
+    sysPill.textContent = sysOk ? 'system: ready' : 'system: failing';
+    sysPill.className = 'pill ' + (sysOk ? 'ok' : 'danger');
+    var halted = !!(s.allowed && s.allowed.kill_switch && s.allowed.kill_switch.halted);
+    var kPill = document.getElementById('pill-kill');
+    kPill.textContent = halted ? 'kill: HALTED' : 'kill: clear';
+    kPill.className = 'pill ' + (halted ? 'danger' : 'ok');
+  }
+
+  function render(s) {
+    renderNow(s);
+    renderAllowed(s);
+    renderWaiting(s);
+    renderFailed(s);
+    renderCreated(s);
+    renderSystem(s);
+    setPills(s);
+  }
+
+  function setError(msg) {
+    var b = document.getElementById('error-banner');
+    if (msg) { b.textContent = msg; b.classList.add('show'); }
+    else { b.classList.remove('show'); }
+  }
+
+  async function refresh() {
+    try {
+      var r = await fetch('/api/workbench/snapshot', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var s = await r.json();
+      lastOkAt = Date.now();
+      render(s);
+      setError(null);
+    } catch (e) {
+      setError('snapshot unavailable: ' + (e.message || e));
+    }
+    document.getElementById('pill-refresh').textContent =
+      lastOkAt ? 'updated ' + relTime(new Date(lastOkAt).toISOString()) : '—';
+  }
+
+  refresh();
+  setInterval(refresh, REFRESH_MS);
+})();
+</script>
+</body>
+</html>
