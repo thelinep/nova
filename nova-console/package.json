@@ -26,7 +26,9 @@
     "test:rust": "cargo test --manifest-path packaging/tauri/Cargo.toml",
     "test:ollama-planner": "node --no-warnings scripts/validate-real-code-planner.js",
     "test:all": "npm test && npm run test:ui && npm run test:rust",
-    "test:constellation": "node --test tests/constellation.test.js"
+    "test:constellation": "node --test tests/constellation.test.js",
+    "test:test-synthesis": "node --test tests/test-synthesis.test.js",
+    "test:semantic-vote": "node --test tests/semantic-vote.test.js"
   },
   "engines": {
     "node": ">=22.5.0"

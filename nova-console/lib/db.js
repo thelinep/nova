@@ -178,6 +178,22 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_constellation_rounds_run ON constellation_rounds(run_id);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS test_synthesis_runs (
+    id TEXT PRIMARY KEY, problem_hash TEXT NOT NULL,
+    candidate_hash TEXT NOT NULL, status TEXT NOT NULL,
+    iterations INTEGER NOT NULL DEFAULT 0, passed INTEGER, failed INTEGER,
+    test_code TEXT, run_json TEXT,
+    started_at TEXT NOT NULL, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_test_synthesis_started ON test_synthesis_runs(started_at);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS semantic_vote_runs (
+    id TEXT PRIMARY KEY, candidate_count INTEGER NOT NULL,
+    input_count INTEGER NOT NULL, winner_id TEXT,
+    cluster_count INTEGER NOT NULL, clusters_json TEXT NOT NULL,
+    started_at TEXT NOT NULL, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_semantic_vote_started ON semantic_vote_runs(started_at);`);
+
   return { db, dbPath };
 }
 
@@ -319,6 +335,14 @@ class Store {
   constellationCandidatesList(runId) { return this._stmt('SELECT * FROM constellation_candidates WHERE run_id=? ORDER BY created_at ASC').all(runId); }
   constellationRoundsInsert(row) { this._stmt('INSERT INTO constellation_rounds (id,run_id,round,group_index,entrants_json,winner_id,votes_json,created_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.run_id,row.round,row.group_index,row.entrants_json,row.winner_id,row.votes_json,row.created_at); return row; }
   constellationRoundsList(runId) { return this._stmt('SELECT * FROM constellation_rounds WHERE run_id=? ORDER BY round ASC, group_index ASC').all(runId); }
+
+  testSynthesisRunsInsert(row) { this._stmt('INSERT INTO test_synthesis_runs (id,problem_hash,candidate_hash,status,iterations,passed,failed,test_code,run_json,started_at,ended_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.problem_hash,row.candidate_hash,row.status,row.iterations||0,row.passed==null?null:row.passed,row.failed==null?null:row.failed,row.test_code||null,row.run_json||null,row.started_at,row.ended_at||null); return this.testSynthesisRunsGet(row.id); }
+  testSynthesisRunsGet(id) { return this._stmt('SELECT * FROM test_synthesis_runs WHERE id=?').get(id) || null; }
+  testSynthesisRunsUpdate(id, patch) { const cur=this.testSynthesisRunsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE test_synthesis_runs SET status=?,iterations=?,passed=?,failed=?,test_code=?,run_json=?,ended_at=? WHERE id=?').run(n.status,n.iterations,n.passed,n.failed,n.test_code,n.run_json,n.ended_at,id); return this.testSynthesisRunsGet(id); }
+  testSynthesisRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM test_synthesis_runs'+w+' ORDER BY started_at ASC').all(...a); }
+  semanticVoteRunsInsert(row) { this._stmt('INSERT INTO semantic_vote_runs (id,candidate_count,input_count,winner_id,cluster_count,clusters_json,started_at,ended_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.candidate_count,row.input_count,row.winner_id||null,row.cluster_count,row.clusters_json,row.started_at,row.ended_at||null); return this.semanticVoteRunsGet(row.id); }
+  semanticVoteRunsGet(id) { return this._stmt('SELECT * FROM semantic_vote_runs WHERE id=?').get(id) || null; }
+  semanticVoteRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.winner_id){c.push('winner_id=?');a.push(filter.winner_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM semantic_vote_runs'+w+' ORDER BY started_at ASC').all(...a); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
