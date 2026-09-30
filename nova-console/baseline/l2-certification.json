@@ -1,0 +1,94 @@
+{
+  "kind": "nova-l2-certification",
+  "version": "1.0",
+  "generated_at": "2026-09-30T19:43:29.554Z",
+  "ok": true,
+  "passed": 10,
+  "total": 10,
+  "commit": "8d98ebb52cfe107f362a9d065c2696e31a91e739",
+  "tree": "654f003cb8be17eab5c7a31b5e1ac4da342f4929",
+  "node_version": "v22.22.3",
+  "requirements": [
+    {
+      "id": "R1-durable-jobs",
+      "title": "P1 durable job engine present with tests",
+      "required": true,
+      "passed": true,
+      "detail": "lib/jobs.js=true tests=10",
+      "evidence_hash": "72d11f8681bb8980e2d4d097d9d9e34a6454d460dcbc72ecef2f9ac5586de463"
+    },
+    {
+      "id": "R2-policy-engine",
+      "title": "P2 policy engine present with tests",
+      "required": true,
+      "passed": true,
+      "detail": "lib/policy.js=true tests=10",
+      "evidence_hash": "75d516615284ed05dc1ccf8d43e3b5d675d4fadb7bc76ef6ff006494bd3db7e1"
+    },
+    {
+      "id": "R3-rollback",
+      "title": "P3 auto-rollback present with tests",
+      "required": true,
+      "passed": true,
+      "detail": "lib/rollback.js=true tests=10",
+      "evidence_hash": "173c3217bfb235fea63264097c0dce57966e6a36964cb47fd9aff4825e2ffb0e"
+    },
+    {
+      "id": "R4-budgets-killswitch",
+      "title": "P4 budgets and kill switch present with tests",
+      "required": true,
+      "passed": true,
+      "detail": "budgets=11 killswitch=12 total=23",
+      "evidence_hash": "9d1163e91f30c57f2a900a39dee2485aba9621124c50051de03597ec83f33462"
+    },
+    {
+      "id": "R5-neuron-autonomy",
+      "title": "P5 neuron-factory autonomy present with tests",
+      "required": true,
+      "passed": true,
+      "detail": "lib/autonomy.js=true tests=12",
+      "evidence_hash": "33159317c0afda64967d99e552fccbe08af8fb29bdf9226ce39891126e9e1607"
+    },
+    {
+      "id": "R6-workspace-autonomy",
+      "title": "P6 workspace-patch autonomy present with tests",
+      "required": true,
+      "passed": true,
+      "detail": "lib/workspace-autonomy.js=true tests=12",
+      "evidence_hash": "3e585f83213e236ccbed0e63c4f69ba441e81154b7ad9cd0fbfa7b09d463bcac"
+    },
+    {
+      "id": "R7-browser",
+      "title": "Browser service present with 12 playwright tests",
+      "required": true,
+      "passed": true,
+      "detail": "lib=true spec=true tests=12",
+      "evidence_hash": "9b2281f4e7ccc7c653631de2e15cc10bc1362d5acf31b917762b1ba2b44bef17"
+    },
+    {
+      "id": "R8-audit-chain",
+      "title": "Audit chain present and merkle-rooted",
+      "required": true,
+      "passed": true,
+      "detail": "empty chain (fresh install)",
+      "evidence_hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+    },
+    {
+      "id": "R9-killswitch-audit",
+      "title": "Kill switch audit table reachable",
+      "required": true,
+      "passed": true,
+      "detail": "0 events recorded",
+      "evidence_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "R10-default-deny",
+      "title": "Policy default-deny verified",
+      "required": true,
+      "passed": true,
+      "detail": "decision=deny reason=policy_denied",
+      "evidence_hash": "07eea2bdaf43256ae76fe1bc20523ae1ce0c5d5a0df8102ca866d5b2464ae364"
+    }
+  ],
+  "bundle_hash": "09fa27cb06a3c4907cd7fa71758750d1711754fd8a65adfeb872cb06a89af7fe"
+}
