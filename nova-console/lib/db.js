@@ -106,6 +106,24 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_policy_decisions_policy ON policy_decisions(policy_id);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_policy_decisions_ts ON policy_decisions(timestamp);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS green_commits (
+    domain TEXT PRIMARY KEY, sha TEXT NOT NULL, meta_json TEXT,
+    set_at TEXT NOT NULL, set_by TEXT NOT NULL
+  );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS quarantines (
+    id TEXT PRIMARY KEY, domain TEXT NOT NULL, reason TEXT NOT NULL,
+    diff TEXT, files_json TEXT, task_id TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL, resolved_at TEXT, resolved_by TEXT,
+    resolution_note TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_quarantines_domain_status ON quarantines(domain, status);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS rollback_events (
+    id TEXT PRIMARY KEY, domain TEXT NOT NULL, reason TEXT NOT NULL,
+    from_sha TEXT, to_sha TEXT, task_id TEXT, quarantine_id TEXT,
+    outcome TEXT NOT NULL, error TEXT, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rollback_events_domain_ts ON rollback_events(domain, timestamp);`);
 
   return { db, dbPath };
 }
@@ -212,7 +230,16 @@ class Store {
   policyDecisionsInsert(row) { this._stmt('INSERT INTO policy_decisions (id,policy_id,subject_type,subject_id,resource_type,resource_id,decision,reason,inputs_hash,timestamp) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.policy_id||null,row.subject_type,row.subject_id,row.resource_type,row.resource_id,row.decision,row.reason,row.inputs_hash,row.timestamp); return row; }
   policyDecisionsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.policy_id){c.push('policy_id=?');a.push(filter.policy_id);} if(filter.subject_id){c.push('subject_id=?');a.push(filter.subject_id);} if(filter.decision){c.push('decision=?');a.push(filter.decision);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM policy_decisions'+w+' ORDER BY timestamp ASC').all(...a); }
   policyDecisionsCountSince(policyId, sinceIso) { const r=this._stmt('SELECT COUNT(*) AS n FROM policy_decisions WHERE policy_id=? AND decision=? AND timestamp>=?').get(policyId,'allow',sinceIso); return r?r.n:0; }
-
+  greenCommitsSet(row) { this._stmt('INSERT INTO green_commits (domain,sha,meta_json,set_at,set_by) VALUES (?,?,?,?,?) ON CONFLICT(domain) DO UPDATE SET sha=excluded.sha, meta_json=excluded.meta_json, set_at=excluded.set_at, set_by=excluded.set_by').run(row.domain,row.sha,row.meta_json||null,row.set_at,row.set_by); return this.greenCommitsGet(row.domain); }
+  greenCommitsGet(domain) { return this._stmt('SELECT * FROM green_commits WHERE domain=?').get(domain) || null; }
+  greenCommitsList() { return this._stmt('SELECT * FROM green_commits ORDER BY domain ASC').all(); }
+  greenCommitsClear(domain) { this._stmt('DELETE FROM green_commits WHERE domain=?').run(domain); return { ok: true }; }
+  quarantinesInsert(row) { this._stmt('INSERT INTO quarantines (id,domain,reason,diff,files_json,task_id,status,created_at,resolved_at,resolved_by,resolution_note) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.domain,row.reason,row.diff||null,row.files_json||null,row.task_id||null,row.status,row.created_at,row.resolved_at||null,row.resolved_by||null,row.resolution_note||null); return this.quarantinesGet(row.id); }
+  quarantinesGet(id) { return this._stmt('SELECT * FROM quarantines WHERE id=?').get(id) || null; }
+  quarantinesUpdate(id, patch) { const cur=this.quarantinesGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE quarantines SET status=?, resolved_at=?, resolved_by=?, resolution_note=? WHERE id=?').run(n.status,n.resolved_at,n.resolved_by,n.resolution_note,id); return this.quarantinesGet(id); }
+  quarantinesList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.domain){c.push('domain=?');a.push(filter.domain);} if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM quarantines'+w+' ORDER BY created_at ASC').all(...a); }
+  rollbackEventsInsert(row) { this._stmt('INSERT INTO rollback_events (id,domain,reason,from_sha,to_sha,task_id,quarantine_id,outcome,error,timestamp) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.domain,row.reason,row.from_sha||null,row.to_sha||null,row.task_id||null,row.quarantine_id||null,row.outcome,row.error||null,row.timestamp); return row; }
+  rollbackEventsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.domain){c.push('domain=?');a.push(filter.domain);} if(filter.outcome){c.push('outcome=?');a.push(filter.outcome);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM rollback_events'+w+' ORDER BY timestamp ASC').all(...a); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
