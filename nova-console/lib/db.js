@@ -194,6 +194,27 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_semantic_vote_started ON semantic_vote_runs(started_at);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS clover_verifications (
+    id TEXT PRIMARY KEY, problem_hash TEXT NOT NULL,
+    candidate_hash TEXT NOT NULL, status TEXT NOT NULL,
+    phase TEXT, consistency_ok INTEGER, proof_ok INTEGER,
+    proof_attempts INTEGER, detail TEXT,
+    started_at TEXT NOT NULL, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_clover_started ON clover_verifications(started_at);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS dafny_pro_runs (
+    id TEXT PRIMARY KEY, status TEXT NOT NULL, attempts INTEGER NOT NULL,
+    error TEXT, spec_hash TEXT NOT NULL,
+    started_at TEXT NOT NULL, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_dafny_pro_started ON dafny_pro_runs(started_at);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS dafny_pro_attempts (
+    id TEXT PRIMARY KEY, run_id TEXT NOT NULL, attempt INTEGER NOT NULL,
+    verified INTEGER NOT NULL, error_count INTEGER NOT NULL,
+    annotations_json TEXT, rejected_reason TEXT, created_at TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_dafny_pro_attempts_run ON dafny_pro_attempts(run_id);`);
+
   return { db, dbPath };
 }
 
@@ -343,6 +364,16 @@ class Store {
   semanticVoteRunsInsert(row) { this._stmt('INSERT INTO semantic_vote_runs (id,candidate_count,input_count,winner_id,cluster_count,clusters_json,started_at,ended_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.candidate_count,row.input_count,row.winner_id||null,row.cluster_count,row.clusters_json,row.started_at,row.ended_at||null); return this.semanticVoteRunsGet(row.id); }
   semanticVoteRunsGet(id) { return this._stmt('SELECT * FROM semantic_vote_runs WHERE id=?').get(id) || null; }
   semanticVoteRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.winner_id){c.push('winner_id=?');a.push(filter.winner_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM semantic_vote_runs'+w+' ORDER BY started_at ASC').all(...a); }
+
+  cloverVerificationsInsert(row) { this._stmt('INSERT INTO clover_verifications (id,problem_hash,candidate_hash,status,phase,consistency_ok,proof_ok,proof_attempts,detail,started_at,ended_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.problem_hash,row.candidate_hash,row.status,row.phase||null,row.consistency_ok==null?null:row.consistency_ok,row.proof_ok==null?null:row.proof_ok,row.proof_attempts==null?null:row.proof_attempts,row.detail||null,row.started_at,row.ended_at||null); return this.cloverVerificationsGet(row.id); }
+  cloverVerificationsGet(id) { return this._stmt('SELECT * FROM clover_verifications WHERE id=?').get(id) || null; }
+  cloverVerificationsUpdate(id, patch) { const cur=this.cloverVerificationsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE clover_verifications SET status=?,phase=?,consistency_ok=?,proof_ok=?,proof_attempts=?,detail=?,ended_at=? WHERE id=?').run(n.status,n.phase,n.consistency_ok,n.proof_ok,n.proof_attempts,n.detail,n.ended_at,id); return this.cloverVerificationsGet(id); }
+  cloverVerificationsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM clover_verifications'+w+' ORDER BY started_at ASC').all(...a); }
+  dafnyProRunsInsert(row) { this._stmt('INSERT INTO dafny_pro_runs (id,status,attempts,error,spec_hash,started_at,ended_at) VALUES (?,?,?,?,?,?,?)').run(row.id,row.status,row.attempts||0,row.error||null,row.spec_hash,row.started_at,row.ended_at||null); return this.dafnyProRunsGet(row.id); }
+  dafnyProRunsGet(id) { return this._stmt('SELECT * FROM dafny_pro_runs WHERE id=?').get(id) || null; }
+  dafnyProRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM dafny_pro_runs'+w+' ORDER BY started_at ASC').all(...a); }
+  dafnyProAttemptsInsert(row) { this._stmt('INSERT INTO dafny_pro_attempts (id,run_id,attempt,verified,error_count,annotations_json,rejected_reason,created_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.run_id,row.attempt,row.verified?1:0,row.error_count||0,row.annotations_json||null,row.rejected_reason||null,row.created_at); return row; }
+  dafnyProAttemptsList(runId) { return this._stmt('SELECT * FROM dafny_pro_attempts WHERE run_id=? ORDER BY attempt ASC').all(runId); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
