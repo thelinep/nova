@@ -143,6 +143,13 @@ function openDb(dataDir) {
     reason TEXT NOT NULL, timestamp TEXT NOT NULL
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_kill_switch_events_ts ON kill_switch_events(timestamp);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS autonomy_lineage (
+    id TEXT PRIMARY KEY, run_id TEXT NOT NULL, domain TEXT NOT NULL,
+    agent_id TEXT NOT NULL, status TEXT NOT NULL, reason TEXT,
+    payload_json TEXT NOT NULL, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_autonomy_lineage_run ON autonomy_lineage(run_id);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_autonomy_lineage_ts ON autonomy_lineage(timestamp);`);
 
 
   return { db, dbPath };
@@ -270,7 +277,8 @@ class Store {
   budgetConsumptionList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.subject_type){c.push('subject_type=?');a.push(filter.subject_type);} if(filter.subject_id){c.push('subject_id=?');a.push(filter.subject_id);} if(filter.budget_id){c.push('budget_id=?');a.push(filter.budget_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM budget_consumption'+w+' ORDER BY timestamp ASC').all(...a); }
   killSwitchEventsInsert(row) { this._stmt('INSERT INTO kill_switch_events (id,action,operator,reason,timestamp) VALUES (?,?,?,?,?)').run(row.id,row.action,row.operator,row.reason,row.timestamp); return row; }
   killSwitchEventsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.action){c.push('action=?');a.push(filter.action);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM kill_switch_events'+w+' ORDER BY timestamp ASC').all(...a); }
-
+  auditAppend(row) { const { id, action, timestamp, ...rest } = row; this._stmt('INSERT INTO autonomy_lineage (id,run_id,domain,agent_id,status,reason,payload_json,timestamp) VALUES (?,?,?,?,?,?,?,?)').run(id, (rest.run_id)||'unknown', (rest.domain)||'unknown', (rest.agent_id)||'system', (rest.status)||action||'event', (rest.reason)||null, JSON.stringify(rest), timestamp||new Date().toISOString()); return id; }
+  autonomyLineageList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.run_id){c.push('run_id=?');a.push(filter.run_id);} if(filter.domain){c.push('domain=?');a.push(filter.domain);} if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM autonomy_lineage'+w+' ORDER BY timestamp ASC').all(...a); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
