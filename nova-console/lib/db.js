@@ -150,7 +150,13 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_autonomy_lineage_run ON autonomy_lineage(run_id);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_autonomy_lineage_ts ON autonomy_lineage(timestamp);`);
-
+  db.exec(`CREATE TABLE IF NOT EXISTS workspace_patches (
+    id TEXT PRIMARY KEY, run_id TEXT NOT NULL, domain TEXT NOT NULL,
+    status TEXT NOT NULL, branch TEXT, files_json TEXT,
+    diff_hash TEXT, sandbox_path TEXT, test_summary_json TEXT,
+    reason TEXT, error TEXT, created_at TEXT NOT NULL, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_workspace_patches_run ON workspace_patches(run_id);`);
 
   return { db, dbPath };
 }
@@ -279,6 +285,11 @@ class Store {
   killSwitchEventsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.action){c.push('action=?');a.push(filter.action);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM kill_switch_events'+w+' ORDER BY timestamp ASC').all(...a); }
   auditAppend(row) { const { id, action, timestamp, ...rest } = row; this._stmt('INSERT INTO autonomy_lineage (id,run_id,domain,agent_id,status,reason,payload_json,timestamp) VALUES (?,?,?,?,?,?,?,?)').run(id, (rest.run_id)||'unknown', (rest.domain)||'unknown', (rest.agent_id)||'system', (rest.status)||action||'event', (rest.reason)||null, JSON.stringify(rest), timestamp||new Date().toISOString()); return id; }
   autonomyLineageList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.run_id){c.push('run_id=?');a.push(filter.run_id);} if(filter.domain){c.push('domain=?');a.push(filter.domain);} if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM autonomy_lineage'+w+' ORDER BY timestamp ASC').all(...a); }
+  workspacePatchesInsert(row) { this._stmt('INSERT INTO workspace_patches (id,run_id,domain,status,branch,files_json,diff_hash,sandbox_path,test_summary_json,reason,error,created_at,ended_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.run_id,row.domain,row.status,row.branch||null,row.files_json||null,row.diff_hash||null,row.sandbox_path||null,row.test_summary_json||null,row.reason||null,row.error||null,row.created_at,row.ended_at||null); return this.workspacePatchesGet(row.id); }
+  workspacePatchesGet(id) { return this._stmt('SELECT * FROM workspace_patches WHERE id=?').get(id) || null; }
+  workspacePatchesUpdate(id, patch) { const cur=this.workspacePatchesGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE workspace_patches SET status=?,branch=?,files_json=?,diff_hash=?,sandbox_path=?,test_summary_json=?,reason=?,error=?,ended_at=? WHERE id=?').run(n.status,n.branch,n.files_json,n.diff_hash,n.sandbox_path,n.test_summary_json,n.reason,n.error,n.ended_at,id); return this.workspacePatchesGet(id); }
+  workspacePatchesList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.run_id){c.push('run_id=?');a.push(filter.run_id);} if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM workspace_patches'+w+' ORDER BY created_at ASC').all(...a); }
+
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
