@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "importedAt": "2026-09-09",
+  "sourceWorkspace": "/Users/vesahe/Documents/tlpbtl",
+  "sourceRootCommit": null,
+  "sourceNestedHead": "4a282e76",
+  "sourceHasUncommittedChanges": true,
+  "campaignRecords": 55731,
+  "globalRecords": 708222,
+  "totalRecords": 763953,
+  "releaseState": "CONTROLLED_PREVIEW",
+  "truthStatement": "Imported source records and planning anchors are not verified operational venues. No availability, permission, safety, pricing, survey or execution-readiness is inferred. Cross-source duplicates are retained with namespaced IDs.",
+  "files": [
+    {
+      "path": "campaign/index.html.gz",
+      "source": "index.html",
+      "sha256": "28a6f28f0cd79cfd50ad36da650090fd0b5791e2fadce1bab57395373be3ef3a",
+      "sourceSha256": "1cc313e8dd87194c8288d090f5e599559357a60fa03feb0c109fbe63a5f44353",
+      "bytes": 225062
+    },
+    {
+      "path": "campaign/README.md.gz",
+      "source": "README.md",
+      "sha256": "6683cd1948d8514ed79603e45b61119b92e3b3c8c77e4b7271c7de495e386bf5",
+      "sourceSha256": "4828bb3d25da6955d618a8e13ade3b71732bfc7f69984bf313bee3de248e2b3c",
+      "bytes": 5343
+    },
+    {
+      "path": "campaign/district-context.json.gz",
+      "source": "data/district-context.json",
+      "sha256": "ac4298d706df83bb6a3373823aabf3adac0faacbfdfbaafe6f5bb463d42104ad",
+      "sourceSha256": "c1d1e6984eea30175d9d38e440f71b62c94d3c52eb7143d5b411060b242a36b0",
+      "bytes": 42451
+    },
+    {
+      "path": "campaign/district-headquarters.json.gz",
+      "source": "data/district-headquarters.json",
+      "sha256": "61d22ad0c42cc5e3877c277b299c8e0760f1068d49613f5a27c6636926f32852",
+      "sourceSha256": "c2b5baf7348349961bcf99fad7c79d5352a51b7b080aeb9c88db910c79a7b5aa",
+      "bytes": 13790
+    },
+    {
+      "path": "campaign/iocl-outlets.json.gz",
+      "source": "data/iocl-outlets.json",
+      "sha256": "ea0054ce4a39f4649ab69fe696760af8755a67b7959fabad3f00b44b5f6ac1ba",
+      "sourceSha256": "538831f0eb6e4fb15520ee0835059075a890b9bd49fa2addf675c452a7015856",
+      "bytes": 1941715
+    },
+    {
+      "path": "campaign/jiobp-outlets.json.gz",
+      "source": "data/jiobp-outlets.json",
+      "sha256": "348f5f8b99f03510473ba9fd5cbc946e579d8e56c93aa125443711fcddfef73c",
+      "sourceSha256": "7cefbcfc6d09132c553b40f0f13ade8b830b1295cdce430780bac90d86c4c45f",
+      "bytes": 56633
+    },
+    {
+      "path": "campaign/media-ant-inventory.json.gz",
+      "source": "data/media-ant-inventory.json",
+      "sha256": "dc715c8a78b87b0c1db96f2235630098fb2d37b0622a772daaaec66d4192979f",
+      "sourceSha256": "36e9c27b348688952678b345697ddeefa13f6f14d14c8dc06505d3529084294e",
+      "bytes": 1040710
+    },
+    {
+      "path": "campaign/transport-inventory.json.gz",
+      "source": "data/transport-inventory.json",
+      "sha256": "fd53d4d934eaab3137cb0fe3340f5ebff7da53951b8efb3baf878991f5539731",
+      "sourceSha256": "3f3624044c2a2a503c7a207fd189d2a00fcc0e38e841fcb5b67a789233ef5572",
+      "bytes": 1068953
+    },
+    {
+      "path": "campaign/world-capitals-currencies.json.gz",
+      "source": "data/world-capitals-currencies.json",
+      "sha256": "00b5eab99aeedba21914a9ce5e81764fdac2f516cf1c3a9c31e335867139a9d6",
+      "sourceSha256": "d8e4f8058e0cf89148f446871043055dfdf473163a88dc60611016bb159e092e",
+      "bytes": 31433
+    },
+    {
+      "path": "campaign/world-film-locations.json.gz",
+      "source": "data/world-film-locations.json",
+      "sha256": "3578d02707dd446febe2bf75e1984f20f67766b4cef37ccc89020356ea788cf8",
+      "sourceSha256": "6850f3e661a57ad55dc28c82a2120d20df9e3d4bf098dc1b779c3e848968e3b7",
+      "bytes": 12692
+    },
+    {
+      "path": "global/README.md",
+      "source": "mom-location-os/data/location-os/seeds/v2/README.md",
+      "sha256": "fde124e77bbd2f6d427675f4a482f4cd1e6ce0a6856c1718c6be22c4e765d5b6",
+      "bytes": 2439
+    },
+    {
+      "path": "global/administration.ndjson.gz",
+      "source": "mom-location-os/data/location-os/seeds/v2/administration.ndjson.gz",
+      "sha256": "6921dacf3fdcf7fdb3b3b42a14e19e1a5a239823c9d93c68801727480fed1457",
+      "bytes": 4334904
+    },
+    {
+      "path": "global/campaign.ndjson.gz",
+      "source": "mom-location-os/data/location-os/seeds/v2/campaign.ndjson.gz",
+      "sha256": "1332545b9195f96b773966274297068bec951270b67e761e848308dec7179a34",
+      "bytes": 1570409
+    },
+    {
+      "path": "global/country-profiles.json",
+      "source": "mom-location-os/data/location-os/seeds/v2/country-profiles.json",
+      "sha256": "5945cb2d87bc10667793c1defed5b292de5e4e6a76430774fe1f0b7254d18e74",
+      "bytes": 80108
+    },
+    {
+      "path": "global/landmark.ndjson.gz",
+      "source": "mom-location-os/data/location-os/seeds/v2/landmark.ndjson.gz",
+      "sha256": "e89962dcd8cedf39b4f48b72a2db37362555e24f4808ee1ec209f1cf4fc990cb",
+      "bytes": 15411006
+    },
+    {
+      "path": "global/manifest.json",
+      "source": "mom-location-os/data/location-os/seeds/v2/manifest.json",
+      "sha256": "6d223e1f62b3fdce22f0e0cf46d38689c618d04ef39a13fc044afe93b46958b7",
+      "bytes": 3398
+    },
+    {
+      "path": "global/nature.ndjson.gz",
+      "source": "mom-location-os/data/location-os/seeds/v2/nature.ndjson.gz",
+      "sha256": "d6c5a03ffc9344f3c03c27526fb73ab69ccc964a0ac9f49e680ed37e1d747e68",
+      "bytes": 5039630
+    },
+    {
+      "path": "global/transport.ndjson.gz",
+      "source": "mom-location-os/data/location-os/seeds/v2/transport.ndjson.gz",
+      "sha256": "b516042e7f6b581c4073a0a95372eb9813950ff37aefdc5d93de848dc7d94370",
+      "bytes": 5885649
+    },
+    {
+      "path": "global/world-clusters.json",
+      "source": "mom-location-os/data/location-os/seeds/v2/world-clusters.json",
+      "sha256": "91202e8a19affedcfbbff7fb549279c6bde8316715833323c7cb49e1524ed3bc",
+      "bytes": 2494219
+    }
+  ]
+}

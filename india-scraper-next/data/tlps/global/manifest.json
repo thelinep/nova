@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "2.0.0",
+  "generatedAt": "2026-07-23T00:00:00.000Z",
+  "releaseState": "DEV",
+  "truthStatement": "Coordinate-backed public gazetteer records. Source listing is not operational, access, permission, commercial, availability, safety or field-survey verification.",
+  "source": {
+    "authority": "GeoNames",
+    "url": "https://download.geonames.org/export/dump/",
+    "license": "CC BY 4.0",
+    "attribution": "GeoNames (www.geonames.org)",
+    "accessedAt": "2026-07-23T00:00:00.000Z"
+  },
+  "overwritePolicy": "NEVER_OVERWRITE_VERIFIED_DATA",
+  "totalRecords": 708222,
+  "groups": {
+    "administration": 84920,
+    "transport": 122038,
+    "campaign": 31226,
+    "landmark": 357020,
+    "nature": 113018
+  },
+  "categories": {
+    "Church": 259860,
+    "Park": 90175,
+    "Railway Station": 66813,
+    "Third-order Administrative Headquarters": 30522,
+    "Shrine": 28377,
+    "Fourth-order Administrative Headquarters": 27339,
+    "Airport": 23569,
+    "District Headquarters": 23317,
+    "Ruins": 18826,
+    "Mall": 18140,
+    "Forest Reserve": 15334,
+    "Airfield": 13467,
+    "Mosque": 11723,
+    "Museum": 11145,
+    "Railway Stop": 9830,
+    "Temple": 8915,
+    "Historical Site": 6276,
+    "Castle": 5675,
+    "Heliport": 5003,
+    "Monument": 4119,
+    "College": 3633,
+    "State / Province Headquarters": 3462,
+    "Stadium": 3325,
+    "Nature Reserve": 3016,
+    "Market": 2832,
+    "Garden / Botanical Site": 2543,
+    "Palace": 2104,
+    "Metro Station": 1897,
+    "University": 1530,
+    "Theatre": 1509,
+    "Observation Point": 775,
+    "Wildlife Reserve": 687,
+    "Airbase": 654,
+    "Bus Station": 582,
+    "Zoo / Zoological Garden": 488,
+    "Amphitheatre": 257,
+    "World Capital": 241,
+    "Seaplane Landing Area": 223,
+    "Fifth-order Administrative Headquarters": 39
+  },
+  "files": {
+    "administration": {
+      "file": "administration.ndjson.gz",
+      "encoding": "gzip",
+      "records": 84920,
+      "bytes": 4334904,
+      "sha256": "6921dacf3fdcf7fdb3b3b42a14e19e1a5a239823c9d93c68801727480fed1457"
+    },
+    "transport": {
+      "file": "transport.ndjson.gz",
+      "encoding": "gzip",
+      "records": 122038,
+      "bytes": 5885649,
+      "sha256": "b516042e7f6b581c4073a0a95372eb9813950ff37aefdc5d93de848dc7d94370"
+    },
+    "campaign": {
+      "file": "campaign.ndjson.gz",
+      "encoding": "gzip",
+      "records": 31226,
+      "bytes": 1570409,
+      "sha256": "1332545b9195f96b773966274297068bec951270b67e761e848308dec7179a34"
+    },
+    "landmark": {
+      "file": "landmark.ndjson.gz",
+      "encoding": "gzip",
+      "records": 357020,
+      "bytes": 15411006,
+      "sha256": "e89962dcd8cedf39b4f48b72a2db37362555e24f4808ee1ec209f1cf4fc990cb"
+    },
+    "nature": {
+      "file": "nature.ndjson.gz",
+      "encoding": "gzip",
+      "records": 113018,
+      "bytes": 5039630,
+      "sha256": "d6c5a03ffc9344f3c03c27526fb73ab69ccc964a0ac9f49e680ed37e1d747e68"
+    }
+  },
+  "exclusions": {
+    "petrolPumps": "GeoNames has no petrol-retail feature code; requires an authorized IOCL/OMC or OSM import.",
+    "oohInventory": "Provider inventory requires licensed Media Ant/vendor export.",
+    "rwa": "No authoritative global RWA registry in this source.",
+    "soilBotanyZoologyMetadata": "Not location pins; attach separately from authoritative scientific datasets. Garden, reserve and zoo place records are included."
+  }
+}
