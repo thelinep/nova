@@ -428,6 +428,7 @@
       <button class="nav-item" data-view="mcp"><span data-lucide="plug-zap"></span><span class="rail-text">MCP Registry</span></button>
       <button class="nav-item" data-view="agents"><span data-lucide="bot"></span><span class="rail-text">Agents</span></button>
       <button class="nav-item" data-view="workflows"><span data-lucide="git-branch"></span><span class="rail-text">Workflows</span></button>
+      <button class="nav-item" data-view="neurons"><span data-lucide="atom"></span><span class="rail-text">Neuron Factory</span></button>
       <button class="nav-item" data-view="collector"><span data-lucide="map-pinned"></span><span class="rail-text">Collector</span></button>
       <button class="nav-item" data-view="graph"><span data-lucide="share-2"></span><span class="rail-text">Capability Graph</span></button>
       <button class="nav-item" data-view="browser"><span data-lucide="globe-2"></span><span class="rail-text">Provider Browser</span></button>
@@ -551,6 +552,7 @@
       <section id="agentsView" class="view"><div class="view-pad"><!-- VIEW:agents --></div></section>
       <!-- ===================== WORKFLOWS ===================== -->
       <section id="workflowsView" class="view"><div class="view-pad"><!-- VIEW:workflows --></div></section>
+      <section id="neuronsView" class="view"><div class="view-pad"><!-- VIEW:neurons --></div></section>
       <section id="collectorView" class="view"><div class="view-pad"><!-- VIEW:collector --></div></section>
       <section id="gitView" class="view"><div class="view-pad"><!-- VIEW:git --></div></section>
       <!-- ===================== CAPABILITY GRAPH ===================== -->
@@ -634,7 +636,7 @@ function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
    rewriting them to await a promise was explicitly out of scope for making
    the seam swap invisible. */
 const STORE_NAMES = ['sessions','models','modelProfiles','modelQualifications','knowledgeCollections','knowledgeDocuments','knowledgeChunks','automations','automationRuns','evaluations','preferences','runtimeEvents','collectionRuns',
-  'skills','mcpServers','agents','workflows','workflowRuns','executions','workspaceRoots','workspaceReports','workspacePlans','workspacePlanningAttempts','workspaceChanges','workspaceChangeBatches','workspaceRuns','workspaceGitDrafts','collectorEvidence','venueObservations'];
+  'skills','mcpServers','agents','workflows','workflowRuns','executions','neuronBlueprints','neuronRuns','neuronArtifacts','workspaceRoots','workspaceReports','workspacePlans','workspacePlanningAttempts','workspaceChanges','workspaceChangeBatches','workspaceRuns','workspaceGitDrafts','collectorEvidence','venueObservations'];
 const DB = {}; STORE_NAMES.forEach(n => DB[n] = []);
 let backendHealthy = true;
 function apiUrl(p){ return p; } // same-origin — NOVA Runtime serves this file and the API from one port
@@ -722,8 +724,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स'},
 };
 function applyAppearance(){
   const p = getPrefs();
@@ -1129,7 +1131,7 @@ const PIPELINE = {
 
 const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
-  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
+  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
@@ -1171,7 +1173,7 @@ function showView(name){
   const renderers = {
     sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
-    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
+    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView,
   };
   if (renderers[name]) renderers[name]();
@@ -3381,6 +3383,26 @@ async function renderCollectorView(){
   $$('.collector-execute').forEach(b=>b.onclick=async()=>{const r=await fetch(apiUrl('/api/collector/runs/'+b.dataset.id+'/execute'),{method:'POST'});const d=await r.json();toast(r.ok?'Collection started.':d.error);renderCollectorView();});
   $$('.collector-cancel').forEach(b=>b.onclick=async()=>{const r=await fetch(apiUrl('/api/collector/runs/'+b.dataset.id+'/cancel'),{method:'POST'});const d=await r.json();toast(r.ok?'Cancellation requested.':d.error);renderCollectorView();});
   if (window.lucide) lucide.createIcons();
+}
+
+function neuronTemplate(kind){
+  return kind==='qubit'
+    ? {config:{qubits:2,layers:2,epochs:80,learningRate:0.3,seed:11},targetDistribution:[0,0,0,1]}
+    : {config:{inputSize:2,hiddenSize:4,outputSize:1,epochs:250,learningRate:0.08,seed:7},examples:[{input:[0,0],target:[0]},{input:[0,1],target:[0]},{input:[1,0],target:[0]},{input:[1,1],target:[1]}]};
+}
+
+async function renderNeuronFactoryView(){
+  const pad=$('neuronsView').querySelector('.view-pad');
+  try{const [blueprints,artifacts]=await Promise.all([idbAll('neuronBlueprints'),idbAll('neuronArtifacts')]);DB.neuronBlueprints=blueprints;DB.neuronArtifacts=artifacts;}catch(_){}
+  const artifactById=new Map(DB.neuronArtifacts.map(x=>[x.id,x]));
+  const card=blueprint=>{const artifact=artifactById.get(blueprint.artifactId);return `<article class="panel" style="padding:15px;margin-top:10px"><div style="display:flex;justify-content:space-between;gap:10px"><strong>${escapeHtml(blueprint.name)}</strong><span class="badge ${blueprint.status==='trained'?'badge-green':blueprint.status==='awaiting-approval'?'badge-amber':'badge-blue'}">${escapeHtml(blueprint.status)}</span></div><p style="font-size:12px;color:var(--muted);margin:8px 0">${escapeHtml(blueprint.purpose)}</p><div class="mono" style="font-size:10.5px">${escapeHtml(blueprint.kind)} · ${escapeHtml(blueprint.scale)}<br>${escapeHtml(blueprint.truth)}</div>${artifact?`<div class="runtime-inline" style="margin-top:10px">Engine: ${escapeHtml(artifact.engine)} · final loss ${Number(artifact.metrics.finalLoss).toPrecision(4)} · ${escapeHtml(artifact.kind==='qubit'?'simulated circuit':'trained tensor')}</div>`:''}<div style="display:flex;gap:7px;margin-top:10px">${blueprint.status==='awaiting-approval'?`<button class="btn btn-amber neuron-approve" data-id="${blueprint.id}">Approve macro job</button>`:''}${blueprint.status==='ready'?`<button class="btn btn-amber neuron-train" data-id="${blueprint.id}">Train artifact</button>`:''}</div></article>`};
+  const initial=neuronTemplate('tensor');
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">Local intelligence</span><h1 class="view-title">Neuron Factory</h1><p class="view-desc">Create purpose-bound dense tensors or train parameterized quantum-circuit simulations. Macro jobs require approval. Qubit artifacts are simulations; NOVA does not claim to create physical qubits.</p></div></div><div class="card-grid cols-3"><div class="panel" style="padding:14px"><strong>${DB.neuronBlueprints.length}</strong><div class="empty-hint">blueprints</div></div><div class="panel" style="padding:14px"><strong>${DB.neuronArtifacts.filter(x=>x.kind==='tensor').length}</strong><div class="empty-hint">tensor artifacts</div></div><div class="panel" style="padding:14px"><strong>${DB.neuronArtifacts.filter(x=>x.kind==='qubit').length}</strong><div class="empty-hint">simulated circuits</div></div></div><div class="panel" style="padding:16px;margin-top:12px"><div class="card-grid cols-2"><label>Name<input id="neuronName" aria-label="Neuron name" value="Purpose neuron" style="display:block;width:100%;margin-top:6px"></label><label>Purpose<input id="neuronPurpose" aria-label="Neuron purpose" value="Detect when both bounded input signals are active." style="display:block;width:100%;margin-top:6px"></label><label>Artifact kind<select id="neuronKind" aria-label="Artifact kind" style="display:block;width:100%;margin-top:6px"><option value="tensor">Tensor network</option><option value="qubit">Qubit circuit simulation</option></select></label><label>Scale<select id="neuronScale" aria-label="Training scale" style="display:block;width:100%;margin-top:6px"><option value="micro">Micro</option><option value="macro">Macro · approval required</option></select></label></div><label style="display:block;margin-top:12px">Training specification<textarea id="neuronSpec" aria-label="Training specification" class="mono" style="display:block;width:100%;min-height:180px;margin-top:6px">${escapeHtml(JSON.stringify(initial,null,2))}</textarea></label><button class="btn btn-amber" id="neuronCreate" style="margin-top:10px">Create blueprint</button></div><div class="cap-section-label">Factory jobs</div>${DB.neuronBlueprints.length?DB.neuronBlueprints.slice().reverse().map(card).join(''):'<p class="empty-hint">No neuron blueprints yet.</p>'}`;
+  $('neuronKind').onchange=event=>{$('neuronSpec').value=JSON.stringify(neuronTemplate(event.target.value),null,2);};
+  $('neuronCreate').onclick=async()=>{try{const spec=JSON.parse($('neuronSpec').value),body={name:$('neuronName').value,purpose:$('neuronPurpose').value,kind:$('neuronKind').value,scale:$('neuronScale').value,...spec};const response=await fetch(apiUrl('/api/neuron-factory/blueprints'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await response.json();if(!response.ok)throw new Error(data.error);toast(data.status==='awaiting-approval'?'Macro blueprint created for review.':'Micro blueprint ready to train.');renderNeuronFactoryView();}catch(error){toast('Neuron Factory: '+error.message);}};
+  $$('.neuron-approve').forEach(button=>button.onclick=async()=>{const response=await fetch(apiUrl('/api/neuron-factory/blueprints/'+encodeURIComponent(button.dataset.id)+'/approve'),{method:'POST'}),data=await response.json();toast(response.ok?'Macro training approved.':data.error);renderNeuronFactoryView();});
+  $$('.neuron-train').forEach(button=>button.onclick=async()=>{button.disabled=true;button.textContent='Training…';const response=await fetch(apiUrl('/api/neuron-factory/blueprints/'+encodeURIComponent(button.dataset.id)+'/train'),{method:'POST'}),data=await response.json();toast(response.ok?'Purpose artifact trained and persisted.':data.error);renderNeuronFactoryView();});
+  if(window.lucide)lucide.createIcons();
 }
 
 function renderBrowserView(){

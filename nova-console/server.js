@@ -34,6 +34,7 @@ const { checkLocalAccess } = require('./lib/local-access');
 const collectorWorkflows = require('./lib/collector-workflows');
 const codePlanner = require('./lib/code-planner');
 const modelQualifications = require('./lib/model-qualifications');
+const neuronFactory = require('./lib/neuron-factory');
 const workspaceScanner = require('./lib/workspace-scanner');
 const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
@@ -282,6 +283,11 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/collector\/runs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, collectorWorkflows.cancelRun(store, decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/collector\/evidence$/, handler: async (_req, res) => sendJson(res, 200, store.all('collectorEvidence').reverse()) },
   { method: 'GET', pattern: /^\/api\/collector\/venues$/, handler: async (_req, res) => sendJson(res, 200, store.all('venueObservations').reverse()) },
+  { method: 'GET', pattern: /^\/api\/neuron-factory\/blueprints$/, handler: async (_req,res)=>sendJson(res,200,store.all('neuronBlueprints').reverse()) },
+  { method: 'GET', pattern: /^\/api\/neuron-factory\/artifacts$/, handler: async (_req,res)=>sendJson(res,200,store.all('neuronArtifacts').reverse()) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints$/, handler: async (req,res)=>sendJson(res,201,neuronFactory.createBlueprint(store,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints\/([^/]+)\/approve$/, handler: async (_req,res,[id])=>sendJson(res,200,neuronFactory.approveBlueprint(store,decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints\/([^/]+)\/train$/, handler: async (_req,res,[id])=>sendJson(res,200,neuronFactory.trainBlueprint(store,decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/health$/, handler: async (req, res) => sendJson(res, 200, { ok: true, pid: process.pid, dataDir: DATA_DIR }) },
 
   { method: 'GET', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => sendJson(res, 200, store.all(decodeURIComponent(name))) },
@@ -296,8 +302,8 @@ const routes = [
       sendJson(res, 200, store.page(decodeURIComponent(name), { limit, beforeUpdatedAt: before }));
     },
   },
-  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req); if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are written only by the local validation runner.'}); sendJson(res, 200, store.put(decodeURIComponent(name), body)); } },
-  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are read-only.'}); store.delete(decodeURIComponent(name), decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req),storeName=decodeURIComponent(name); if (['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts'].includes(storeName)) return sendJson(res,403,{error:'This store is written only by its validated runtime.'}); sendJson(res, 200, store.put(storeName, body)); } },
+  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { const storeName=decodeURIComponent(name);if(['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts'].includes(storeName)) return sendJson(res,403,{error:'This store is runtime-managed and read-only.'}); store.delete(storeName, decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
   { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); sendJson(res, 200, { ok: true }); } },
 
   { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
