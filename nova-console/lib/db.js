@@ -316,6 +316,27 @@ function openDb(dataDir) {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tool_agent ON agent_tool_bindings(agent_id, enabled, revoked_at);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tool_lookup ON agent_tool_bindings(kind, tool_id, revoked_at);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS agent_escalations (
+    id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+    escalator_id TEXT NOT NULL, reviewer_id TEXT NOT NULL,
+    state TEXT NOT NULL, summary TEXT NOT NULL,
+    detail_json TEXT,
+    tool_kind TEXT, tool_id TEXT, tool_operation TEXT,
+    parent_escalation_id TEXT,
+    created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+    decided_at TEXT, expires_at TEXT, decision_note TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_esc_reviewer ON agent_escalations(reviewer_id, state, created_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_esc_escalator ON agent_escalations(escalator_id, created_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_esc_parent ON agent_escalations(parent_escalation_id);`);
+
+  db.exec(`CREATE TABLE IF NOT EXISTS agent_escalation_events (
+    id TEXT PRIMARY KEY, escalation_id TEXT NOT NULL,
+    kind TEXT NOT NULL, actor_id TEXT,
+    reason TEXT, payload_json TEXT, timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_esc_events ON agent_escalation_events(escalation_id, timestamp);`);
+
   return { db, dbPath };
 }
 
@@ -522,6 +543,13 @@ class Store {
   agentToolBindingsUpdate(id, patch) { const cur=this.agentToolBindingsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE agent_tool_bindings SET operations_json=?, enabled=?, expires_at=?, revoked_at=? WHERE id=?').run(n.operations_json,n.enabled?1:0,n.expires_at,n.revoked_at,id); return this.agentToolBindingsGet(id); }
   agentToolBindingsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.agent_id){c.push('agent_id=?');a.push(filter.agent_id);} if(filter.kind){c.push('kind=?');a.push(filter.kind);} if(filter.tool_id){c.push('tool_id=?');a.push(filter.tool_id);} if(filter.enabled!=null){c.push('enabled=?');a.push(filter.enabled?1:0);} if(filter.active){c.push('revoked_at IS NULL');} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_tool_bindings'+w+' ORDER BY created_at ASC').all(...a); }
   agentToolBindingsFind(agentId, kind, toolId) { return this._stmt('SELECT * FROM agent_tool_bindings WHERE agent_id=? AND kind=? AND tool_id=? AND revoked_at IS NULL').get(agentId,kind,toolId) || null; }
+
+  agentEscalationsInsert(row) { this._stmt('INSERT INTO agent_escalations (id,kind,escalator_id,reviewer_id,state,summary,detail_json,tool_kind,tool_id,tool_operation,parent_escalation_id,created_at,updated_at,decided_at,expires_at,decision_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.kind,row.escalator_id,row.reviewer_id,row.state,row.summary,row.detail_json||null,row.tool_kind||null,row.tool_id||null,row.tool_operation||null,row.parent_escalation_id||null,row.created_at,row.updated_at,row.decided_at||null,row.expires_at||null,row.decision_note||null); return this.agentEscalationsGet(row.id); }
+  agentEscalationsGet(id) { return this._stmt('SELECT * FROM agent_escalations WHERE id=?').get(id) || null; }
+  agentEscalationsUpdate(id, patch) { const cur=this.agentEscalationsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE agent_escalations SET state=?, reviewer_id=?, decided_at=?, decision_note=?, updated_at=? WHERE id=?').run(n.state,n.reviewer_id,n.decided_at,n.decision_note,n.updated_at,id); return this.agentEscalationsGet(id); }
+  agentEscalationsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.reviewer_id){c.push('reviewer_id=?');a.push(filter.reviewer_id);} if(filter.escalator_id){c.push('escalator_id=?');a.push(filter.escalator_id);} if(filter.state){c.push('state=?');a.push(filter.state);} if(filter.kind){c.push('kind=?');a.push(filter.kind);} if(filter.parent_escalation_id){c.push('parent_escalation_id=?');a.push(filter.parent_escalation_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_escalations'+w+' ORDER BY created_at DESC').all(...a); }
+  agentEscalationEventsInsert(row) { this._stmt('INSERT INTO agent_escalation_events (id,escalation_id,kind,actor_id,reason,payload_json,timestamp) VALUES (?,?,?,?,?,?,?)').run(row.id,row.escalation_id,row.kind,row.actor_id||null,row.reason||null,row.payload_json||null,row.timestamp); return row; }
+  agentEscalationEventsList(escalationId) { return this._stmt('SELECT * FROM agent_escalation_events WHERE escalation_id=? ORDER BY timestamp ASC').all(escalationId); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };

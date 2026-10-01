@@ -44,7 +44,8 @@
     "test:agent-memory": "node --test tests/agent-memory.test.js",
     "test:agent-tasks": "node --test tests/agent-tasks.test.js",
     "test:agent-budgets": "node --test tests/agent-budgets.test.js",
-    "test:agent-tools": "node --test tests/agent-tools.test.js"
+    "test:agent-tools": "node --test tests/agent-tools.test.js",
+    "test:agent-supervisor": "node --test tests/agent-supervisor.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
