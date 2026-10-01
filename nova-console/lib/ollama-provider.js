@@ -111,4 +111,30 @@ function multiOllamaProviders(options) {
   }));
 }
 
-module.exports = { ollamaProvider, multiOllamaProviders, extractContent, OllamaProviderError };
+
+/**
+ * Build a chat(params) adapter from an OllamaClient instance.
+ * Uses chatFull(modelName, messages, opts) when available,
+ * otherwise falls back to chat(modelName, messages, opts).
+ */
+function fromOllamaClient(client) {
+  if (!client || typeof client !== 'object') {
+    throw new OllamaProviderError('client required', 'bad_client');
+  }
+  const method = typeof client.chatFull === 'function' ? client.chatFull
+               : typeof client.chat === 'function' ? client.chat
+               : null;
+  if (!method) {
+    throw new OllamaProviderError('client must expose chatFull or chat', 'bad_client_method');
+  }
+  return async function chatAdapter(params) {
+    const opts = {};
+    if (params.temperature != null) opts.temperature = params.temperature;
+    if (params.max_tokens != null) opts.num_predict = params.max_tokens;
+    if (params.system != null) opts.system = params.system;
+    return method.call(client, params.model, params.messages, opts);
+  };
+}
+
+module.exports = { ollamaProvider, multiOllamaProviders, fromOllamaClient, extractContent, OllamaProviderError };
+

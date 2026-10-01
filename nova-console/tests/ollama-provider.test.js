@@ -6,6 +6,7 @@ const assert = require('node:assert');
 const {
   ollamaProvider,
   multiOllamaProviders,
+  fromOllamaClient,
   extractContent,
   OllamaProviderError,
 } = require('../lib/ollama-provider');
@@ -130,3 +131,58 @@ test('10 constructor validation', () => {
   assert.throws(() => multiOllamaProviders({ chat: () => {} }),
     (e) => e instanceof OllamaProviderError && e.code === 'bad_models');
 });
+
+test('11 fromOllamaClient builds a chat adapter', async () => {
+  const calls = [];
+  const client = {
+    async chatFull(model, messages, opts) {
+      calls.push({ model, messages, opts });
+      return { message: { content: 'from-client' } };
+    },
+  };
+  const adapter = fromOllamaClient(client);
+  const out = await adapter({
+    model: 'llama3.1:8b',
+    messages: [{ role: 'user', content: 'hi' }],
+    temperature: 0.3,
+    max_tokens: 128,
+  });
+  assert.equal(out.message.content, 'from-client');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].model, 'llama3.1:8b');
+  assert.equal(calls[0].opts.temperature, 0.3);
+  assert.equal(calls[0].opts.num_predict, 128);
+});
+
+test('12 fromOllamaClient prefers chatFull over chat', async () => {
+  const used = [];
+  const client = {
+    async chatFull() { used.push('chatFull'); return 'a'; },
+    async chat()     { used.push('chat');     return 'b'; },
+  };
+  const adapter = fromOllamaClient(client);
+  await adapter({ model: 'm', messages: [] });
+  assert.deepEqual(used, ['chatFull']);
+});
+
+test('13 fromOllamaClient falls back to chat', async () => {
+  const used = [];
+  const client = {
+    async chat(model, messages, opts) {
+      used.push('chat');
+      return 'ok';
+    },
+  };
+  const adapter = fromOllamaClient(client);
+  const out = await adapter({ model: 'm', messages: [] });
+  assert.equal(out, 'ok');
+  assert.deepEqual(used, ['chat']);
+});
+
+test('14 fromOllamaClient validates client', () => {
+  assert.throws(() => fromOllamaClient(null),
+    (e) => e instanceof OllamaProviderError && e.code === 'bad_client');
+  assert.throws(() => fromOllamaClient({}),
+    (e) => e instanceof OllamaProviderError && e.code === 'bad_client_method');
+});
+
