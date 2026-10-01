@@ -16,7 +16,9 @@ These parts of NOVA are complete and covered by tests. They report into [Workben
 - Every action goes through a policy. Actions that need a person wait in Workbench → **Waiting** for **approve** or **deny**.
 - Tokens are kept in the **secrets vault**, encrypted with AES-256-GCM. The key is a file in NOVA's data folder that only your user account can read (`.secret-master-key`). Secrets can be rotated and revoked, and are never shown again after saving.
 
-Try it: `node scripts/connector-demo.js`. It uses a pretend GitHub unless you set `GITHUB_TOKEN`, `GITHUB_OWNER` and `GITHUB_REPO`.
+Try it: `node scripts/connector-demo.js`.
+
+There is also a second, simpler GitHub path for Local Workspace. Prepare a pull request draft under **Git delivery** and review it there. NOVA can then open the pull request with the `gh` command-line tool and check its CI results, using a token saved through NOVA's local `/api/secrets` service. The console has no button for that last step yet. The two connector designs will be combined into one. It uses a pretend GitHub unless you set `GITHUB_TOKEN`, `GITHUB_OWNER` and `GITHUB_REPO`.
 
 ## The multi-agent system
 
@@ -55,6 +57,12 @@ Bounded loops that improve something on their own and keep the result only if it
 - **Small trained models:** train, evaluate, and keep the model only if it beats the acceptance threshold.
 
 Before every step a loop checks the kill switch, its policy and its budget. A failure is quarantined and rolled back. Escalations wait for you in Workbench.
+
+## Release gates
+
+A release counts as ready only when each of these has current evidence on file: test results, the list of built files, code signing, Apple notarisation, a clean install, and the update manifest. Evidence is recorded with a fingerprint of the file. If a file changes or goes missing after it was recorded, the gate fails again.
+
+Check with `npm run release:check` (it exits with an error until every gate passes), or in the app at `/api/release/check`.
 
 ## Release evidence
 

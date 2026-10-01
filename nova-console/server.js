@@ -36,6 +36,12 @@ const { checkLocalAccess } = require('./lib/local-access');
 const collectorWorkflows = require('./lib/collector-workflows');
 const codePlanner = require('./lib/code-planner');
 const modelQualifications = require('./lib/model-qualifications');
+const neuronFactory = require('./lib/neuron-factory');
+const backgroundJobs = require('./lib/background-jobs');
+const artifactGovernance = require('./lib/artifact-governance');
+const prConnectors = require('./lib/pr-connectors');
+const releaseGates = require('./lib/release-gates');
+const githubPr = require('./lib/github-pr');
 const workspaceScanner = require('./lib/workspace-scanner');
 const browserService = require('./lib/browser-service');
 const workspacePlanner = require('./lib/workspace-planner');
@@ -608,6 +614,9 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/workspace\/git\/conflicts$/, handler: async (req,res)=>sendJson(res,200,workspaceGit.conflicts(store,workspaceScanner,new URL(req.url,'http://localhost').searchParams.get('rootId'))) },
   { method: 'POST', pattern: /^\/api\/workspace\/git\/branch$/, handler: async (req,res)=>sendJson(res,200,workspaceGit.branch(store,workspaceScanner,await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/git\/pull-request-drafts$/, handler: async (req,res)=>sendJson(res,201,workspaceGit.preparePullRequest(store,workspaceScanner,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/git\/pull-request-drafts\/([^/]+)\/review$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceGit.reviewPullRequest(store,workspaceScanner,decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/workspace\/git\/pull-request-drafts\/([^/]+)\/execute$/, handler: async (req,res,[id])=>{const body=await readJsonBody(req);const result=githubPr.executePullRequest(store,workspaceScanner,desktopSecurity,DATA_DIR,decodeURIComponent(id),body.connectorId);desktopSecurity.appendAudit(DATA_DIR,{action:'github.pull-request.created',actionId:result.id,url:result.delivery.url,reviewedHeadSha:result.review.headSha});sendJson(res,201,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/git\/pull-request-drafts\/([^/]+)\/checks$/, handler: async (req,res,[id])=>{const body=await readJsonBody(req);const result=githubPr.refreshChecks(store,desktopSecurity,DATA_DIR,decodeURIComponent(id),body.connectorId);desktopSecurity.appendAudit(DATA_DIR,{action:'github.pull-request.ci-checked',actionId:result.id,status:result.ci.status});sendJson(res,200,result);} },
   { method: 'POST', pattern: /^\/api\/workspace\/git\/push-requests$/, handler: async (req,res)=>sendJson(res,201,workspaceGit.preparePush(store,workspaceScanner,await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/git\/push-requests\/([^/]+)\/review$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceGit.reviewPush(store,workspaceScanner,decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/workspace\/git\/push-requests\/([^/]+)\/execute$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceGit.executePush(store,workspaceScanner,decodeURIComponent(id))) },
@@ -743,6 +752,22 @@ const routes = [
     const file = supportReport.saveReport(report, lib && lib.enabled && lib.dir ? lib.dir : DATA_DIR);
     sendJson(res, 200, { ok: true, file: supportReport.redact(file) });
   } },
+  { method: 'GET', pattern: /^\/api\/neuron-factory\/blueprints$/, handler: async (_req,res)=>sendJson(res,200,store.all('neuronBlueprints').reverse()) },
+  { method: 'GET', pattern: /^\/api\/neuron-factory\/artifacts$/, handler: async (_req,res)=>sendJson(res,200,store.all('neuronArtifacts').reverse()) },
+  { method: 'GET', pattern: /^\/api\/background-jobs$/, handler: async (_req,res)=>sendJson(res,200,store.all('backgroundJobs').reverse()) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints$/, handler: async (req,res)=>sendJson(res,201,neuronFactory.createBlueprint(store,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints\/([^/]+)\/approve$/, handler: async (_req,res,[id])=>sendJson(res,200,neuronFactory.approveBlueprint(store,decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints\/([^/]+)\/train$/, handler: async (_req,res,[id])=>{const job=backgroundJobs.enqueueNeuronTraining(store,decodeURIComponent(id));setImmediate(()=>backgroundJobs.startNeuronWorker(store,job.id));sendJson(res,202,job);} },
+  { method: 'POST', pattern: /^\/api\/background-jobs\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,backgroundJobs.cancel(store,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/neuron-factory\/evaluations$/, handler: async (_req,res)=>sendJson(res,200,store.all('artifactEvaluations').reverse()) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/artifacts\/([^/]+)\/evaluate$/, handler: async (req,res,[id])=>sendJson(res,200,artifactGovernance.evaluate(store,decodeURIComponent(id),await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/artifacts\/([^/]+)\/approve$/, handler: async (_req,res,[id])=>sendJson(res,200,artifactGovernance.approve(store,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/connectors$/, handler: async (_req,res)=>sendJson(res,200,prConnectors.listProfiles(store)) },
+  { method: 'POST', pattern: /^\/api\/connectors$/, handler: async (req,res)=>sendJson(res,201,prConnectors.saveProfile(store,await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/secrets$/, handler: async (_req,res)=>sendJson(res,200,desktopSecurity.secretMetadata(store)) },
+  { method: 'POST', pattern: /^\/api\/secrets$/, handler: async (req,res)=>{const result=desktopSecurity.putSecret(store,DATA_DIR,await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'secret.stored',secretId:result.id,connectorId:result.connectorId});sendJson(res,201,result);} },
+  { method: 'GET', pattern: /^\/api\/release\/check$/, handler: async (_req,res)=>sendJson(res,200,releaseGates.check(store)) },
+  { method: 'POST', pattern: /^\/api\/release\/evidence$/, handler: async (req,res)=>sendJson(res,201,releaseGates.record(store,await readJsonBody(req))) },
   { method: 'GET', pattern: /^\/api\/health$/, handler: async (req, res) => sendJson(res, 200, { ok: true, pid: process.pid, dataDir: DATA_DIR }) },
 
   { method: 'GET', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => sendJson(res, 200, store.all(decodeURIComponent(name))) },
@@ -757,8 +782,8 @@ const routes = [
       sendJson(res, 200, store.page(decodeURIComponent(name), { limit, beforeUpdatedAt: before }));
     },
   },
-  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req); if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are written only by the local validation runner.'}); sendJson(res, 200, store.put(decodeURIComponent(name), body)); } },
-  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are read-only.'}); store.delete(decodeURIComponent(name), decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req),storeName=decodeURIComponent(name); if (['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts'].includes(storeName)) return sendJson(res,403,{error:'This store is written only by its validated runtime.'}); sendJson(res, 200, store.put(storeName, body)); } },
+  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { const storeName=decodeURIComponent(name);if(['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts'].includes(storeName)) return sendJson(res,403,{error:'This store is runtime-managed and read-only.'}); store.delete(storeName, decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
   { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); sendJson(res, 200, { ok: true }); } },
 
   { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
@@ -1265,6 +1290,8 @@ server.listen(PORT, '127.0.0.1', () => {
   if(interruptedLoops)console.log(`  recovered:   ${interruptedLoops} interrupted development loop(s)`);
   const interruptedCollectors=collectorWorkflows.recoverInterrupted(store);
   if(interruptedCollectors)console.log(`  recovered:   ${interruptedCollectors} interrupted collector run(s)`);
+  const interruptedJobs=backgroundJobs.recoverInterrupted(store);
+  if(interruptedJobs)console.log(`  recovered:   ${interruptedJobs} interrupted background job(s)`);
   // A real child MCP server process never survives a restart — reconcile
   // any stale 'connected' status in the DB to 'disconnected' before
   // anything tries to resume work that might depend on one (below).

@@ -156,6 +156,10 @@ Quit NOVA fully. In NOVA's data folder (see [Settings, privacy and your data](he
 
 The desktop app does not include the agent browser. Use NOVA from its source folder after `npm install` in `nova-console`. Nothing else in NOVA needs it.
 
+### Neuron Factory says training is refused
+
+**Macro** blueprints need **Approve macro job** first, and nothing trains while NOVA is halted (resume it in Workbench). An error about the training specification names the value that is out of range; the limits are in [Neuron Factory](help:neuron-factory#scale).
+
 ### The setup checklist will not reach 5 / 5
 
 Step 2 needs a model that passed **Qualify for coding**. Step 5 needs a code change applied after its checks passed in Local Workspace, or an improve-and-test loop that ended with passing tests. See [The setup checklist](help:getting-started-checklist).

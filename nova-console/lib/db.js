@@ -20,6 +20,8 @@ const { DatabaseSync } = require('node:sqlite');
 const STORE_NAMES = [
   'sessions', 'models', 'modelProfiles', 'modelQualifications', 'knowledgeCollections', 'knowledgeDocuments',
   'knowledgeChunks', 'automations', 'automationRuns', 'evaluations', 'preferences',
+  'neuronBlueprints', 'neuronRuns', 'neuronArtifacts',
+  'backgroundJobs', 'artifactEvaluations', 'connectorProfiles', 'secretRecords', 'releaseEvidence',
   'runtimeEvents', 'skills', 'mcpServers', 'agents', 'workflows', 'workflowRuns', 'executions', 'collectionRuns', 'collectorEvidence', 'venueObservations',
   'workspaceRoots', 'workspaceReports', 'workspacePlans', 'workspacePlanningAttempts', 'workspaceChanges', 'workspaceChangeBatches', 'workspaceProjects', 'workspaceLoops', 'workspaceRuns', 'media', 'generationJobs', 'skillOutputs', 'boards', 'timelines', 'workspaceGitDrafts', 'workspaceGitActions', 'workspacePermissions', 'securityBackups', 'chatSources', 'chatJobs', 'userMemory',
 ];

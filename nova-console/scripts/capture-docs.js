@@ -187,6 +187,7 @@ async function main() {
     await page.keyboard.press('Escape');
     for (const v of ['sessions', 'knowledge', 'retrieval', 'automations', 'evaluations', 'boards', 'timeline', 'skills', 'mcp', 'agents', 'workflows', 'collector', 'graph', 'browser', 'workspace', 'git', 'runtime', 'trace', 'history', 'diagnostics', 'settings']) await shot(v, view(v));
     await shot('models', async () => { await page.evaluate(() => showView('models')); await sleep(800); await page.locator('.model-qualify').first().scrollIntoViewIfNeeded(); await page.evaluate(() => { const c = [...document.querySelectorAll('.model-card')].find(x => /qwen2\.5-coder:7b/.test(x.textContent)); if (c) c.scrollIntoView({ block: 'center' }); }); }, { wait: 900 });
+    await shot('neuron-factory', view('neurons'), { wait: 1200 });
     await shot('media-image', () => page.locator('.nav-item[data-media-tab="image"]').click());
     await shot('media-video', () => page.locator('.nav-item[data-media-tab="video"]').click());
     await shot('media-audio', () => page.locator('.nav-item[data-media-tab="audio"]').click());

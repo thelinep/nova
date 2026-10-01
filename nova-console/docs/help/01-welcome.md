@@ -21,7 +21,7 @@ The sidebar groups every screen by what you do there:
 | Workspace | Console, Sessions, Local Workspace | Chatting with models, and changing code in approved folders |
 | Intelligence | Models, Knowledge, Retrieval Lab | The models you have, your documents, and testing search over them |
 | Operations | Automations, Evaluations, Workbench | Scheduled runs, model comparisons, and oversight of background work |
-| Capabilities | Skills, MCP Registry, Agents, Workflows, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
+| Capabilities | Skills, MCP Registry, Agents, Workflows, Neuron Factory, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
 | System | Runtime, Trace, Git Updates, Execution History, Diagnostics, Settings, Help & Support | Seeing what happened and keeping NOVA healthy |
 
 Read [A tour of the interface](help:interface) for the top bar, the command palette and the status bar.

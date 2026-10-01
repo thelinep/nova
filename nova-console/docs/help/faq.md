@@ -148,6 +148,10 @@ A GitHub connector is built. It can read repositories, issues, pull requests and
 
 Connector tokens are stored encrypted (AES-256-GCM) in the secrets vault. The key is a file in NOVA's data folder that only your user account can read, and a token is never shown again after you save it.
 
+### What is the Neuron Factory?
+
+A screen for training very small, single-purpose models on your Mac: a tiny neural network from your examples, or a simulated quantum circuit. You check each result's quality and approve it. It does not change your Ollama models. See [Neuron Factory](help:neuron-factory).
+
 ### What is the agent browser?
 
 A separate, locked-down browser that agents use, limited to allowed websites, with every action recorded. It does not use your own browser or your sign-ins. See [The agent browser](help:agent-browser).

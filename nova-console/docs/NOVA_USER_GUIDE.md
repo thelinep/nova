@@ -24,6 +24,7 @@ NOVA Runtime is a local AI workspace: chat with local models, search your docume
 - [Tools and approvals (MCP Registry)](#tools-and-approvals-mcp-registry)
 - [Agents](#agents)
 - [Workflows](#workflows)
+- [Neuron Factory](#neuron-factory)
 - [Collector, Capability Graph and Provider Browser](#collector-capability-graph-and-provider-browser)
 - [Workbench](#workbench)
 - [Policies, budgets and rollback](#policies-budgets-and-rollback)
@@ -54,7 +55,7 @@ The sidebar groups every screen by what you do there:
 | Workspace | Console, Sessions, Local Workspace | Chatting with models, and changing code in approved folders |
 | Intelligence | Models, Knowledge, Retrieval Lab | The models you have, your documents, and testing search over them |
 | Operations | Automations, Evaluations, Workbench | Scheduled runs, model comparisons, and oversight of background work |
-| Capabilities | Skills, MCP Registry, Agents, Workflows, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
+| Capabilities | Skills, MCP Registry, Agents, Workflows, Neuron Factory, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
 | System | Runtime, Trace, Git Updates, Execution History, Diagnostics, Settings, Help & Support | Seeing what happened and keeping NOVA healthy |
 
 Read [A tour of the interface](#a-tour-of-the-interface) for the top bar, the command palette and the status bar.
@@ -805,6 +806,51 @@ Press **Run now**. The server steps through the workflow and saves progress afte
 - A restart cannot fix an unavailable model, a disconnected tool server or a rejected approval.
 - Treat any step that publishes, deletes or changes files as a place for a sign-off step.
 
+## Neuron Factory
+
+*Train very small, single-purpose models on this computer — a tiny neural network from examples, or a simulated quantum circuit — then check their quality and approve them.*
+
+**Neuron Factory** (Capabilities) trains very small models that do one job each, entirely on this computer. It does not train or change your Ollama models.
+
+![Neuron Factory: describe the purpose, pick a kind and scale, and give the training data.](../public/help/media/neuron-factory.jpg)
+### Two kinds
+
+| Kind | What it is | What you give it |
+| --- | --- | --- |
+| Tensor network | A tiny neural network (one hidden layer) trained on your examples | Input size, output size, and pairs of input and target numbers |
+| Qubit circuit simulation | A simulated quantum circuit trained to produce a pattern of outcomes | The number of qubits and layers, and the target probability of each outcome |
+
+> **Important** Qubit circuits are simulations on your Mac's processor. No real quantum hardware is used, and each result says so.
+
+### Make one
+
+1. Give it a **Name** and a **Purpose** (8 to 500 characters, saying what it is for).
+2. Choose the **Artifact kind** and the **Scale**.
+3. Edit the **Training specification**. Changing the kind fills in a working example (for a tensor network, it learns "both inputs on").
+4. Press **Create blueprint**, then **Queue training** on its card.
+
+Training runs in the background, so you can keep using NOVA. The card shows the job's progress, then the result, including its **final loss** (how far the outputs are from the targets: lower is better).
+
+### Scale
+
+| Scale | Limits | Approval |
+| --- | --- | --- |
+| Micro | up to 256 examples, 300 training rounds, 16 values wide, 4 qubits | Not needed |
+| Macro | up to 2,048 examples, 1,200 rounds, 64 values wide, 8 qubits | **Approve macro job** before it can train |
+
+### Check and approve the result
+
+1. **Evaluate quality** checks the result against a bar: final loss at most 0.08 for a tensor network, or 0.05 for a qubit circuit.
+2. If it passes, **Approve artifact** marks it ready to use. Approved results cannot be changed; train a new one instead.
+
+A result that fails the check stays unapproved, and you can change the specification and train again.
+
+### Good to know
+
+- If NOVA restarts while a job is training, the job is marked **interrupted** and the blueprint can be queued again.
+- While NOVA is halted with the kill switch in [Workbench](#workbench), new training is refused.
+- Blueprints, results and evaluations can only be changed by NOVA itself, not through the general data interface.
+
 ## Collector, Capability Graph and Provider Browser
 
 *See the Brahmini collector's runs inside NOVA, map how everything connects, and open hosted AI providers in a separate window.*
@@ -1000,7 +1046,9 @@ These parts of NOVA are complete and covered by tests. They report into [Workben
 - Every action goes through a policy. Actions that need a person wait in Workbench → **Waiting** for **approve** or **deny**.
 - Tokens are kept in the **secrets vault**, encrypted with AES-256-GCM. The key is a file in NOVA's data folder that only your user account can read (`.secret-master-key`). Secrets can be rotated and revoked, and are never shown again after saving.
 
-Try it: `node scripts/connector-demo.js`. It uses a pretend GitHub unless you set `GITHUB_TOKEN`, `GITHUB_OWNER` and `GITHUB_REPO`.
+Try it: `node scripts/connector-demo.js`.
+
+There is also a second, simpler GitHub path for Local Workspace. Prepare a pull request draft under **Git delivery** and review it there. NOVA can then open the pull request with the `gh` command-line tool and check its CI results, using a token saved through NOVA's local `/api/secrets` service. The console has no button for that last step yet. The two connector designs will be combined into one. It uses a pretend GitHub unless you set `GITHUB_TOKEN`, `GITHUB_OWNER` and `GITHUB_REPO`.
 
 ### The multi-agent system
 
@@ -1039,6 +1087,12 @@ Bounded loops that improve something on their own and keep the result only if it
 - **Small trained models:** train, evaluate, and keep the model only if it beats the acceptance threshold.
 
 Before every step a loop checks the kill switch, its policy and its budget. A failure is quarantined and rolled back. Escalations wait for you in Workbench.
+
+### Release gates
+
+A release counts as ready only when each of these has current evidence on file: test results, the list of built files, code signing, Apple notarisation, a clean install, and the update manifest. Evidence is recorded with a fingerprint of the file. If a file changes or goes missing after it was recorded, the gate fails again.
+
+Check with `npm run release:check` (it exits with an error until every gate passes), or in the app at `/api/release/check`.
 
 ### Release evidence
 
@@ -1464,6 +1518,10 @@ Quit NOVA fully. In NOVA's data folder (see [Settings, privacy and your data](se
 
 The desktop app does not include the agent browser. Use NOVA from its source folder after `npm install` in `nova-console`. Nothing else in NOVA needs it.
 
+#### Neuron Factory says training is refused
+
+**Macro** blueprints need **Approve macro job** first, and nothing trains while NOVA is halted (resume it in Workbench). An error about the training specification names the value that is out of range; the limits are in [Neuron Factory](neuron-factory.html#scale).
+
 #### The setup checklist will not reach 5 / 5
 
 Step 2 needs a model that passed **Qualify for coding**. Step 5 needs a code change applied after its checks passed in Local Workspace, or an improve-and-test loop that ended with passing tests. See [The setup checklist](getting-started-checklist.html).
@@ -1639,6 +1697,10 @@ A GitHub connector is built. It can read repositories, issues, pull requests and
 #### Are tokens I give NOVA safe?
 
 Connector tokens are stored encrypted (AES-256-GCM) in the secrets vault. The key is a file in NOVA's data folder that only your user account can read, and a token is never shown again after you save it.
+
+#### What is the Neuron Factory?
+
+A screen for training very small, single-purpose models on your Mac: a tiny neural network from your examples, or a simulated quantum circuit. You check each result's quality and approve it. It does not change your Ollama models. See [Neuron Factory](neuron-factory.html).
 
 #### What is the agent browser?
 
