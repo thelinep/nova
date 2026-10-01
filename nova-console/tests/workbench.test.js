@@ -170,3 +170,67 @@ test('11 recent_denials_surface', () => {
 test('12 workbench_requires_store', () => {
   assert.throws(() => new Workbench(null), (e) => e instanceof WorkbenchError && e.code === 'bad_store');
 });
+
+test('13 approvals_unified_queue_shape', () => {
+  const env = fresh();
+  const wb = new Workbench(env.store);
+  const s = wb.snapshot();
+  assert.ok(s.approvals);
+  assert.equal(typeof s.approvals.total, 'number');
+  assert.ok(Array.isArray(s.approvals.items));
+  cleanup(env);
+});
+
+test('14 approvals_includes_quarantine_with_actions', () => {
+  const env = fresh();
+  const rb = new RollbackManager(env.store, { domains: ['workspace'] });
+  rb.quarantine('workspace', { reason: 'compile failed', taskId: 't-1' });
+  const wb = new Workbench(env.store);
+  const s = wb.snapshot();
+  assert.ok(s.approvals.total >= 1);
+  const q = s.approvals.items.find((i) => i.kind === 'quarantine');
+  assert.ok(q, 'quarantine item should be present');
+  assert.equal(q.subject, 'workspace');
+  assert.equal(q.title, 'compile failed');
+  assert.deepEqual(q.actions, ['apply', 'discard']);
+  assert.equal(q.ref.task_id, 't-1');
+  cleanup(env);
+});
+
+test('15 pipeline_section_shape', () => {
+  const env = fresh();
+  const wb = new Workbench(env.store);
+  const s = wb.snapshot();
+  assert.ok(s.pipeline);
+  assert.ok(Array.isArray(s.pipeline.recent_correctness));
+  assert.ok(Array.isArray(s.pipeline.recent_constellations));
+  assert.ok(Array.isArray(s.pipeline.recent_clover));
+  cleanup(env);
+});
+
+test('16 pipeline_reflects_correctness_runs', () => {
+  const env = fresh();
+  env.store.correctnessPipelineRunsInsert({
+    id: 'cpp_1',
+    problem_hash: 'x',
+    status: 'verified',
+    stage: 'done',
+    constellation_run_id: 'cnr_1',
+    constellation_winner_id: 'cand_1',
+    clover_run_id: 'clv_1',
+    consistency_ok: 1,
+    proof_ok: 1,
+    started_at: '2026-10-01T00:00:00Z',
+    ended_at: '2026-10-01T00:00:01Z',
+  });
+  const wb = new Workbench(env.store);
+  const s = wb.snapshot();
+  assert.equal(s.pipeline.recent_correctness.length, 1);
+  const r = s.pipeline.recent_correctness[0];
+  assert.equal(r.id, 'cpp_1');
+  assert.equal(r.status, 'verified');
+  assert.equal(r.winner_id, 'cand_1');
+  assert.equal(r.consistency_ok, true);
+  assert.equal(r.proof_ok, true);
+  cleanup(env);
+});

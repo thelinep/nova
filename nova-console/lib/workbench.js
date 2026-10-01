@@ -33,6 +33,8 @@ class Workbench {
       failed:   this._failed(),
       created:  this._created(),
       system:   this._system(),
+      approvals: this._approvals(),
+      pipeline:  this._pipeline(),
     };
   }
 
@@ -124,6 +126,101 @@ class Workbench {
       completed_jobs: completedJobs.length,
       autonomy_runs_approved: approvedRuns.length,
       recent_completions: completedJobs.slice(-this.recentOutcomesLimit).reverse().map((j) => ({ id: j.id, kind: j.kind, ended_at: j.ended_at })),
+    };
+  }
+
+
+  // ---- Unified approval queue ----
+  _approvals() {
+    const quarantines = safe(
+      () => this.store.quarantinesList({ status: 'pending' }),
+      []
+    );
+    const oneHourAgo = new Date(Date.now() - 3600 * 1000).toISOString();
+    const denials = safe(
+      () => this.store.policyDecisionsList({}).filter(
+        (d) => d.decision === 'deny' && d.timestamp >= oneHourAgo
+      ),
+      []
+    );
+
+    const items = [];
+    for (const q of quarantines) {
+      items.push({
+        kind: 'quarantine',
+        id: q.id,
+        subject: q.domain,
+        title: q.reason || '(no reason)',
+        created_at: q.created_at,
+        actions: ['apply', 'discard'],
+        ref: { quarantine_id: q.id, task_id: q.task_id || null },
+      });
+    }
+    for (const d of denials) {
+      items.push({
+        kind: 'policy_denial',
+        id: d.id,
+        subject: d.subject_type + ':' + d.subject_id,
+        title: 'denied → ' + d.resource_type + ':' + d.resource_id,
+        created_at: d.timestamp,
+        actions: ['review'],
+        ref: { decision_id: d.id, reason: d.reason },
+      });
+    }
+    items.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+
+    return {
+      total: items.length,
+      items: items.slice(0, 50),
+    };
+  }
+
+  // ---- Recent pipeline runs ----
+  _pipeline() {
+    const cap = 5;
+    const correctness = safe(
+      () => this.store.correctnessPipelineRunsList({})
+        .slice(-cap).reverse().map((r) => ({
+          id: r.id,
+          status: r.status,
+          stage: r.stage,
+          winner_id: r.constellation_winner_id,
+          consistency_ok: r.consistency_ok == null ? null : !!r.consistency_ok,
+          proof_ok: r.proof_ok == null ? null : !!r.proof_ok,
+          started_at: r.started_at,
+          ended_at: r.ended_at,
+        })),
+      []
+    );
+    const constellations = safe(
+      () => this.store.constellationRunsList({})
+        .slice(-cap).reverse().map((r) => ({
+          id: r.id,
+          status: r.status,
+          candidate_count: r.candidate_count,
+          winner_id: r.winner_id,
+          started_at: r.started_at,
+          ended_at: r.ended_at,
+        })),
+      []
+    );
+    const clover = safe(
+      () => this.store.cloverVerificationsList({})
+        .slice(-cap).reverse().map((r) => ({
+          id: r.id,
+          status: r.status,
+          consistency_ok: r.consistency_ok == null ? null : !!r.consistency_ok,
+          proof_ok: r.proof_ok == null ? null : !!r.proof_ok,
+          proof_attempts: r.proof_attempts,
+          started_at: r.started_at,
+          ended_at: r.ended_at,
+        })),
+      []
+    );
+    return {
+      recent_correctness: correctness,
+      recent_constellations: constellations,
+      recent_clover: clover,
     };
   }
 
