@@ -51,11 +51,13 @@ echo "   Node $("$BUNDLED" -v), self-contained"
 
 # The agent browser needs Playwright's driver (playwright-core, no browsers):
 # it drives the Chrome already installed on the Mac. Kept in packaging/runtime.
-PWV=$(node -p "(require('./package.json').devDependencies||{})['@playwright/test'].replace(/^[^0-9]*/,'')" 2>/dev/null)
 PWCORE="$NOVA/packaging/runtime/playwright-core"
+# Use the copy npm already installed for the tests when there is one; otherwise download the version package.json names.
+if [ -f node_modules/playwright-core/package.json ]; then PWV=$(node -p "require('./node_modules/playwright-core/package.json').version")
+else PWV=$(node -p "(require('./package.json').devDependencies||{})['@playwright/test'].replace(/^[^0-9]*/,'')" 2>/dev/null); fi
 if [ ! -f "$PWCORE/package.json" ] || [ "$(node -p "require('$PWCORE/package.json').version" 2>/dev/null)" != "$PWV" ]; then
   rm -rf "$PWCORE"; mkdir -p "$(dirname "$PWCORE")"
-  if [ -f node_modules/playwright-core/package.json ] && [ "$(node -p "require('./node_modules/playwright-core/package.json').version")" = "$PWV" ]; then
+  if [ -f node_modules/playwright-core/package.json ]; then
     cp -R node_modules/playwright-core "$PWCORE"
   else
     echo "   Downloading the agent browser driver (playwright-core $PWV)…"
