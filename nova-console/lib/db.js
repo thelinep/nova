@@ -243,6 +243,18 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_secret_records_name ON secret_records(name, revoked_at);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS connector_action_requests (
+    id TEXT PRIMARY KEY, profile_id TEXT NOT NULL, connector_kind TEXT NOT NULL,
+    operation TEXT NOT NULL, args_json TEXT NOT NULL,
+    status TEXT NOT NULL, policy_id TEXT,
+    requested_at TEXT NOT NULL, requested_by TEXT NOT NULL,
+    resolved_at TEXT, resolved_by TEXT, resolution_note TEXT,
+    executed_at TEXT, result_json TEXT, error TEXT,
+    expires_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_conn_action_status ON connector_action_requests(status, requested_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_conn_action_profile ON connector_action_requests(profile_id);`);
+
   return { db, dbPath };
 }
 
@@ -418,6 +430,11 @@ class Store {
   secretRecordsGet(id) { return this._stmt('SELECT * FROM secret_records WHERE id=?').get(id) || null; }
   secretRecordsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.kind){c.push('kind=?');a.push(filter.kind);} if(filter.active){c.push('revoked_at IS NULL');} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM secret_records'+w+' ORDER BY created_at ASC').all(...a); }
   secretRecordsUpdate(id, patch) { const cur=this.secretRecordsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE secret_records SET name=?, ciphertext_b64=?, iv_b64=?, tag_b64=?, metadata_json=?, rotated_at=?, revoked_at=? WHERE id=?').run(n.name,n.ciphertext_b64,n.iv_b64,n.tag_b64,n.metadata_json,n.rotated_at,n.revoked_at,id); return this.secretRecordsGet(id); }
+
+  connectorActionRequestsInsert(row) { this._stmt('INSERT INTO connector_action_requests (id,profile_id,connector_kind,operation,args_json,status,policy_id,requested_at,requested_by,resolved_at,resolved_by,resolution_note,executed_at,result_json,error,expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.profile_id,row.connector_kind,row.operation,row.args_json,row.status,row.policy_id||null,row.requested_at,row.requested_by,row.resolved_at||null,row.resolved_by||null,row.resolution_note||null,row.executed_at||null,row.result_json||null,row.error||null,row.expires_at||null); return this.connectorActionRequestsGet(row.id); }
+  connectorActionRequestsGet(id) { return this._stmt('SELECT * FROM connector_action_requests WHERE id=?').get(id) || null; }
+  connectorActionRequestsUpdate(id, patch) { const cur=this.connectorActionRequestsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE connector_action_requests SET status=?, policy_id=?, resolved_at=?, resolved_by=?, resolution_note=?, executed_at=?, result_json=?, error=?, expires_at=? WHERE id=?').run(n.status,n.policy_id,n.resolved_at,n.resolved_by,n.resolution_note,n.executed_at,n.result_json,n.error,n.expires_at,id); return this.connectorActionRequestsGet(id); }
+  connectorActionRequestsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} if(filter.profile_id){c.push('profile_id=?');a.push(filter.profile_id);} if(filter.operation){c.push('operation=?');a.push(filter.operation);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM connector_action_requests'+w+' ORDER BY requested_at ASC').all(...a); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
