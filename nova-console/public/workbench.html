@@ -24,7 +24,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
 .brand .dot { display: inline-block; width: 7px; height: 7px;
   border-radius: 50%; background: var(--ok); margin-right: 8px;
   vertical-align: middle; }
-.pills { display: flex; gap: 8px; }
+.pills { display: flex; gap: 8px; align-items: center; }
 .pill { padding: 4px 10px; border-radius: 999px;
   border: 1px solid var(--border-2); font-family: var(--mono);
   font-size: 12px; color: var(--muted); }
@@ -47,15 +47,43 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
   letter-spacing: 0.1em; color: var(--dim); font-family: var(--mono); }
 .stat-value { font-size: 20px; font-family: var(--mono); margin-top: 2px; }
 .list { display: flex; flex-direction: column; gap: 4px; }
-.row { display: flex; justify-content: space-between; align-items: baseline;
+.row { display: flex; justify-content: space-between; align-items: center;
   padding: 6px 10px; background: var(--panel-2);
   border: 1px solid var(--border); border-radius: 5px;
   font-size: 13px; gap: 12px; }
 .row-k { font-family: var(--mono); white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; }
+  text-overflow: ellipsis; min-width: 0; }
 .row-v { color: var(--muted); font-family: var(--mono); font-size: 12px;
   white-space: nowrap; }
+.row-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .empty { color: var(--dim); font-size: 13px; font-style: italic; padding: 6px 0; }
+.btn { padding: 3px 10px; border-radius: 5px; font-size: 11px;
+  font-family: var(--mono); border: 1px solid var(--border-2);
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease; }
+.btn:hover { color: var(--fg); border-color: var(--muted); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-apply    { color: var(--ok);     border-color: rgba(110,231,183,0.35); }
+.btn-discard  { color: var(--dim);    border-color: rgba(139,149,164,0.35); }
+.btn-cancel   { color: var(--warn);   border-color: rgba(251,191,36,0.35); }
+.btn-halt     { color: var(--danger); border-color: rgba(248,113,113,0.35); }
+.btn-resume   { color: var(--ok);     border-color: rgba(110,231,183,0.35); }
+.btn-revoke   { color: var(--danger); border-color: rgba(248,113,113,0.35); }
+.btn-review   { color: var(--accent); border-color: rgba(147,197,253,0.35); }
+.approval { display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 5px;
+  gap: 12px; margin-bottom: 4px; }
+.approval-info { display: flex; flex-direction: column; gap: 2px;
+  min-width: 0; flex: 1; }
+.approval-title { font-family: var(--mono); font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.approval-meta { font-size: 11px; color: var(--dim); font-family: var(--mono); }
+.kind-badge { font-size: 10px; padding: 1px 6px; border-radius: 3px;
+  background: rgba(147,197,253,0.15); color: var(--accent);
+  font-family: var(--mono); margin-right: 6px; text-transform: uppercase; }
+.kind-quarantine { background: rgba(251,191,36,0.15); color: var(--warn); }
+.kind-policy_denial { background: rgba(248,113,113,0.15); color: var(--danger); }
 .budget { padding: 8px 10px; background: var(--panel-2);
   border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
 .budget-head { font-family: var(--mono); font-size: 12px; margin-bottom: 6px; }
@@ -75,14 +103,34 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
 .check-dot.ok  { background: var(--ok); }
 .check-dot.err { background: var(--danger); }
 .check-label { font-family: var(--mono); }
+.pipe { display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 5px;
+  font-size: 12px; font-family: var(--mono); gap: 8px; margin-bottom: 3px; }
+.pipe-id { color: var(--dim); font-size: 11px; }
+.pipe-status { color: var(--muted); }
+.pipe-status.ok { color: var(--ok); }
+.pipe-status.fail { color: var(--danger); }
+.pipe-status.warn { color: var(--warn); }
 .error-banner { margin: 0 20px; padding: 10px 14px;
   background: rgba(248,113,113,0.08);
   border: 1px solid rgba(248,113,113,0.3); border-radius: 6px;
   color: var(--danger); font-family: var(--mono); font-size: 12px;
   display: none; }
 .error-banner.show { display: block; }
+.toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 16px;
+  background: var(--panel); border: 1px solid var(--border-2);
+  border-radius: 6px; font-family: var(--mono); font-size: 12px;
+  color: var(--ok); opacity: 0; transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.err { color: var(--danger); }
 .footer { text-align: center; padding: 20px; color: var(--dim);
   font-size: 11px; font-family: var(--mono); }
+.subsection { margin-top: 10px; }
+.subsection-title { font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--dim); font-family: var(--mono);
+  margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -92,6 +140,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
   <div class="pills">
     <span id="pill-system" class="pill">system: …</span>
     <span id="pill-kill" class="pill">kill: …</span>
+    <span id="pill-operator" class="pill">operator: not set</span>
     <span id="pill-refresh" class="pill">—</span>
   </div>
 </header>
@@ -100,36 +149,44 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
 
 <main class="grid">
   <section class="panel"><h2>Now — what is running?</h2><div id="p-now"></div></section>
-  <section class="panel"><h2>Allowed — what may act?</h2><div id="p-allowed"></div></section>
   <section class="panel"><h2>Waiting — what needs a decision?</h2><div id="p-waiting"></div></section>
+  <section class="panel"><h2>Allowed — what may act?</h2><div id="p-allowed"></div></section>
   <section class="panel"><h2>Failed — what broke?</h2><div id="p-failed"></div></section>
   <section class="panel"><h2>Created — what value was produced?</h2><div id="p-created"></div></section>
-  <section class="panel"><h2>System — readiness</h2><div id="p-system"></div></section>
+  <section class="panel"><h2>Pipeline — recent verification runs</h2><div id="p-pipeline"></div></section>
+  <section class="panel" style="grid-column: 1 / -1;"><h2>System — readiness</h2><div id="p-system"></div></section>
 </main>
 
-<div class="footer">read-only · polls /api/workbench/snapshot every 3s</div>
+<div class="toast" id="toast"></div>
+<div class="footer">read-only snapshot · actions post to /api/workbench/actions/* · polls every 3s</div>
 
 <script>
 (function () {
   'use strict';
   var REFRESH_MS = 3000;
   var lastOkAt = 0;
+  var refreshing = false;
 
-    function appendChild(parent, child) {
-    if (child == null || child === false) return;
-    if (Array.isArray(child)) {
-      for (var i = 0; i < child.length; i++) appendChild(parent, child[i]);
-      return;
-    }
-    if (typeof child === 'string' || typeof child === 'number') {
-      parent.appendChild(document.createTextNode(String(child)));
-      return;
-    }
-    if (child instanceof Node) {
-      parent.appendChild(child);
-    }
+  // ---------- operator identity ----------
+  function getOperator() {
+    try { return localStorage.getItem('nova.operator') || null; } catch { return null; }
+  }
+  function setOperator(op) {
+    try { localStorage.setItem('nova.operator', op); } catch {}
+    var pill = document.getElementById('pill-operator');
+    if (pill) pill.textContent = 'operator: ' + op;
+  }
+  function ensureOperator() {
+    var op = getOperator();
+    if (op) return op;
+    op = window.prompt('Operator identity (for audit trail):', '');
+    if (!op || !op.trim()) return null;
+    op = op.trim();
+    setOperator(op);
+    return op;
   }
 
+  // ---------- DOM helpers ----------
   function el(tag, props) {
     var node = document.createElement(tag);
     if (props) {
@@ -142,33 +199,36 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
         else node.setAttribute(k, v);
       });
     }
-    for (var i = 2; i < arguments.length; i++) {
-      appendChild(node, arguments[i]);
-    }
+    for (var i = 2; i < arguments.length; i++) appendChild(node, arguments[i]);
     return node;
   }
-
-  function replace(id) {
-    var target = document.getElementById(id);
-    target.replaceChildren.apply(target, Array.prototype.slice.call(arguments, 1));
+  function appendChild(parent, child) {
+    if (child == null || child === false) return;
+    if (Array.isArray(child)) {
+      for (var i = 0; i < child.length; i++) appendChild(parent, child[i]);
+      return;
+    }
+    if (typeof child === 'string' || typeof child === 'number') {
+      parent.appendChild(document.createTextNode(String(child)));
+      return;
+    }
+    if (child instanceof Node) parent.appendChild(child);
   }
-
+  function replace(id) {
+    var t = document.getElementById(id);
+    t.replaceChildren.apply(t, Array.prototype.slice.call(arguments, 1));
+  }
   function stat(label, value) {
     return el('div', { class: 'stat' },
       el('div', { class: 'stat-label', text: label }),
       el('div', { class: 'stat-value', text: value }));
   }
-
   function row(k, v) {
     return el('div', { class: 'row' },
       el('span', { class: 'row-k', text: k }),
       el('span', { class: 'row-v', text: v }));
   }
-
-  function emptyState(text) {
-    return el('div', { class: 'empty', text: text });
-  }
-
+  function emptyState(text) { return el('div', { class: 'empty', text: text }); }
   function relTime(iso) {
     if (!iso) return '—';
     var t = Date.now() - new Date(iso).getTime();
@@ -178,49 +238,157 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
     if (t < 3600000) return Math.round(t / 60000) + 'm ago';
     return Math.round(t / 3600000) + 'h ago';
   }
+  function shortSha(s) { return s ? String(s).slice(0, 8) : '—'; }
 
-  function shortSha(sha) {
-    if (!sha || typeof sha !== 'string') return '—';
-    return sha.slice(0, 8);
+  // ---------- notifications ----------
+  var toastTimer = null;
+  function toast(msg, isError) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' err' : '');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = 'toast'; }, 2400);
+  }
+  function setError(msg) {
+    var b = document.getElementById('error-banner');
+    if (msg) { b.textContent = msg; b.classList.add('show'); }
+    else { b.classList.remove('show'); }
   }
 
-  function budgetBar(kind, used, limit) {
-    var pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
-    var cls = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
-    return el('div', { class: 'budget-kind' },
-      el('span', { text: kind }),
-      el('div', { class: 'bar' },
-        el('div', { class: 'bar-fill ' + cls, style: 'width:' + pct + '%' })),
-      el('span', { text: used + ' / ' + limit }));
+  // ---------- actions ----------
+  async function postAction(path, body) {
+    var op = ensureOperator();
+    if (!op) { toast('operator required', true); return null; }
+    var payload = Object.assign({ operator: op }, body || {});
+    try {
+      var r = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Origin': window.location.origin },
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+      });
+      var data = null;
+      try { data = await r.json(); } catch { data = null; }
+      if (!r.ok) {
+        var msg = (data && data.error) || ('HTTP ' + r.status);
+        toast('action failed: ' + msg, true);
+        return null;
+      }
+      toast('ok');
+      refresh(true);
+      return data;
+    } catch (e) {
+      toast('network: ' + (e.message || e), true);
+      return null;
+    }
   }
 
+  function confirmAction(message) {
+    return window.confirm(message);
+  }
+
+  // ---------- renders ----------
   function renderNow(s) {
     var now = s.now || {};
     var jobs = now.running_jobs || [];
     var stats = el('div', { class: 'stats' },
       stat('queued', now.queued || 0),
       stat('running', now.running || 0),
-      stat('next run', now.next_run_in_ms != null
-        ? Math.round(now.next_run_in_ms / 1000) + 's' : '—'));
+      stat('next run', now.next_run_in_ms != null ? Math.round(now.next_run_in_ms / 1000) + 's' : '—'));
     var list = jobs.length
       ? el('div', { class: 'list' }, jobs.map(function (j) {
-          return row(j.kind, 'started ' + relTime(j.started_at));
+          var btn = el('button', { class: 'btn btn-cancel', text: 'cancel' });
+          btn.addEventListener('click', function () {
+            if (!confirmAction('Cancel job ' + j.id + '?')) return;
+            postAction('/api/workbench/actions/job/cancel', { id: j.id });
+          });
+          return el('div', { class: 'row' },
+            el('span', { class: 'row-k', text: j.kind + '  ' + shortSha(j.id) }),
+            el('span', { class: 'row-v', text: 'started ' + relTime(j.started_at) }),
+            el('span', { class: 'row-actions' }, btn));
         }))
       : emptyState('No running jobs');
     replace('p-now', stats, list);
   }
 
+  function renderWaiting(s) {
+    var a = s.approvals || { total: 0, items: [] };
+    var items = a.items || [];
+    if (items.length === 0) {
+      replace('p-waiting', emptyState('No pending approvals'));
+      return;
+    }
+    var list = el('div', { class: 'list' }, items.map(function (item) {
+      var actions = [];
+      if (item.kind === 'quarantine') {
+        var applyBtn = el('button', { class: 'btn btn-apply', text: 'apply' });
+        applyBtn.addEventListener('click', function () {
+          if (!confirmAction('Apply quarantine ' + item.id + '?')) return;
+          postAction('/api/workbench/actions/quarantine/resolve',
+            { id: item.id, decision: 'applied' });
+        });
+        var discardBtn = el('button', { class: 'btn btn-discard', text: 'discard' });
+        discardBtn.addEventListener('click', function () {
+          if (!confirmAction('Discard quarantine ' + item.id + '?')) return;
+          postAction('/api/workbench/actions/quarantine/resolve',
+            { id: item.id, decision: 'discarded' });
+        });
+        actions.push(applyBtn, discardBtn);
+      } else if (item.kind === 'policy_denial') {
+        actions.push(el('span', { class: 'btn btn-review', style: 'cursor:default', text: 'review' }));
+      }
+      return el('div', { class: 'approval' },
+        el('div', { class: 'approval-info' },
+          el('div', { class: 'approval-title' },
+            el('span', { class: 'kind-badge kind-' + item.kind, text: item.kind }),
+            item.subject + ' · ' + item.title),
+          el('div', { class: 'approval-meta', text: relTime(item.created_at) + ' · ' + item.id })),
+        el('div', { class: 'row-actions' }, actions));
+    }));
+    replace('p-waiting',
+      el('div', { class: 'stat-label', text: 'approvals: ' + a.total }),
+      list);
+  }
+
   function renderAllowed(s) {
-    var a = s.allowed || {};
-    var ks = a.kill_switch || {};
-    var p = a.policies || {};
-    var budgets = a.budgets || [];
-    var ksRow = row('kill switch', ks.halted
-      ? 'HALTED · ' + (ks.operator || '?') + ' · ' + (ks.reason || '?')
-      : 'clear');
+    var allowed = s.allowed || {};
+    var ks = allowed.kill_switch || {};
+    var p = allowed.policies || {};
+    var budgets = allowed.budgets || [];
+
+    var ksRow = el('div', { class: 'row' },
+      el('span', { class: 'row-k', text: 'kill switch' }),
+      el('span', { class: 'row-v', text: ks.halted
+        ? 'HALTED · ' + (ks.operator || '?') + ' · ' + (ks.reason || '?')
+        : 'clear' }),
+      el('span', { class: 'row-actions' }, (function () {
+        if (ks.halted) {
+          var b = el('button', { class: 'btn btn-resume', text: 'resume' });
+          b.addEventListener('click', function () {
+            var cred = window.prompt('Re-auth credential to resume.\n' +
+              'The server must have NOVA_RESUME_CREDENTIAL set and it must match.\n\nCredential:');
+            if (cred == null) return;
+            var reason = window.prompt('Reason for resume:');
+            if (!reason) return;
+            postAction('/api/workbench/actions/runtime/resume',
+              { reason: reason, credential: cred });
+          });
+          return b;
+        }
+        var h = el('button', { class: 'btn btn-halt', text: 'halt' });
+        h.addEventListener('click', function () {
+          if (!confirmAction('HALT the runtime? All workers stop at next boundary.')) return;
+          var reason = window.prompt('Reason for halt:');
+          if (!reason) return;
+          postAction('/api/workbench/actions/runtime/halt', { reason: reason });
+        });
+        return h;
+      })()));
+
     var policyRow = row('policies',
       (p.active || 0) + ' active · ' + (p.revoked || 0) + ' revoked · '
       + (p.expired || 0) + ' expired');
+
     var budgetBlocks = budgets.length
       ? budgets.map(function (b) {
           var kinds = Object.keys(b.usage || {});
@@ -229,39 +397,21 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
           var children = [el('div', { class: 'budget-head', text: head })];
           kinds.forEach(function (kind) {
             var u = b.usage[kind];
-            children.push(budgetBar(kind, u.used, u.limit));
+            var pct = u.limit > 0 ? Math.min(100, (u.used / u.limit) * 100) : 0;
+            var cls = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+            children.push(el('div', { class: 'budget-kind' },
+              el('span', { text: kind }),
+              el('div', { class: 'bar' },
+                el('div', { class: 'bar-fill ' + cls, style: 'width:' + pct + '%' })),
+              el('span', { text: u.used + ' / ' + u.limit })));
           });
           return el.apply(null, ['div', { class: 'budget' }].concat(children));
         })
       : [emptyState('No budgets defined')];
+
     replace('p-allowed',
       el('div', { class: 'list' }, ksRow, policyRow),
-      el.apply(null, ['div', { style: 'margin-top:10px' }].concat(budgetBlocks)));
-  }
-
-  function renderWaiting(s) {
-    var w = s.waiting || {};
-    var quarantines = w.quarantines || [];
-    var denials = w.recent_denials || [];
-    var qList = quarantines.length
-      ? el('div', { class: 'list' }, quarantines.slice(0, 6).map(function (q) {
-          return row(q.domain + ':' + (q.task_id || q.id.slice(0, 8)), q.reason);
-        }))
-      : emptyState('No pending quarantines');
-    var dList = denials.length
-      ? el('div', { class: 'list' }, denials.slice(0, 6).map(function (d) {
-          var s = (d.subject && d.subject.type) + ':' + (d.subject && d.subject.id);
-          var r = (d.resource && d.resource.type) + ':' + (d.resource && d.resource.id);
-          return row(s + ' → ' + r, d.reason);
-        }))
-      : emptyState('No recent denials');
-    replace('p-waiting',
-      el('div', { class: 'stat-label', text: 'quarantines: ' + (w.pending_quarantines || 0) }),
-      qList,
-      el('div', { class: 'stat-label',
-        style: 'margin-top:12px',
-        text: 'denials (1h): ' + (w.recent_policy_denials_1h || 0) }),
-      dList);
+      el.apply(null, ['div', { class: 'subsection' }].concat(budgetBlocks)));
   }
 
   function renderFailed(s) {
@@ -295,6 +445,65 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
     replace('p-created', stats, gcList);
   }
 
+  function statusClass(status) {
+    if (!status) return 'warn';
+    if (status === 'verified') return 'ok';
+    if (status === 'selected') return 'ok';
+    if (/failed|error|escalated|exhausted/.test(status)) return 'fail';
+    return 'warn';
+  }
+
+  function renderPipeline(s) {
+    var p = s.pipeline || {};
+    var correctness = p.recent_correctness || [];
+    var constellations = p.recent_constellations || [];
+    var clover = p.recent_clover || [];
+
+    var corrList = correctness.length
+      ? el('div', { class: 'list' }, correctness.map(function (r) {
+          return el('div', { class: 'pipe' },
+            el('span', { class: 'pipe-id', text: shortSha(r.id) }),
+            el('span', { class: 'pipe-status ' + statusClass(r.status), text: r.status }),
+            el('span', { class: 'pipe-id', text:
+              'consistency=' + (r.consistency_ok == null ? '?' : (r.consistency_ok ? 'ok' : 'fail'))
+              + ' proof=' + (r.proof_ok == null ? '?' : (r.proof_ok ? 'ok' : 'fail')) }),
+            el('span', { class: 'pipe-id', text: relTime(r.ended_at || r.started_at) }));
+        }))
+      : emptyState('No correctness pipeline runs');
+
+    var constList = constellations.length
+      ? el('div', { class: 'list' }, constellations.map(function (r) {
+          return el('div', { class: 'pipe' },
+            el('span', { class: 'pipe-id', text: shortSha(r.id) }),
+            el('span', { class: 'pipe-status ' + statusClass(r.status), text: r.status }),
+            el('span', { class: 'pipe-id', text: r.candidate_count + ' candidates' }),
+            el('span', { class: 'pipe-id', text: relTime(r.ended_at || r.started_at) }));
+        }))
+      : emptyState('No constellation runs');
+
+    var cloverList = clover.length
+      ? el('div', { class: 'list' }, clover.map(function (r) {
+          return el('div', { class: 'pipe' },
+            el('span', { class: 'pipe-id', text: shortSha(r.id) }),
+            el('span', { class: 'pipe-status ' + statusClass(r.status), text: r.status }),
+            el('span', { class: 'pipe-id', text:
+              'attempts=' + (r.proof_attempts == null ? '?' : r.proof_attempts) }),
+            el('span', { class: 'pipe-id', text: relTime(r.ended_at || r.started_at) }));
+        }))
+      : emptyState('No clover verification runs');
+
+    replace('p-pipeline',
+      el('div', { class: 'subsection' },
+        el('div', { class: 'subsection-title', text: 'correctness pipeline' }),
+        corrList),
+      el('div', { class: 'subsection' },
+        el('div', { class: 'subsection-title', text: 'constellation runs' }),
+        constList),
+      el('div', { class: 'subsection' },
+        el('div', { class: 'subsection-title', text: 'clover verifications' }),
+        cloverList));
+  }
+
   function renderSystem(s) {
     var sys = s.system || {};
     var checks = sys.checks || [];
@@ -315,25 +524,24 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
     var kPill = document.getElementById('pill-kill');
     kPill.textContent = halted ? 'kill: HALTED' : 'kill: clear';
     kPill.className = 'pill ' + (halted ? 'danger' : 'ok');
+    document.getElementById('pill-refresh').textContent =
+      lastOkAt ? 'updated ' + relTime(new Date(lastOkAt).toISOString()) : '—';
   }
 
   function render(s) {
     renderNow(s);
-    renderAllowed(s);
     renderWaiting(s);
+    renderAllowed(s);
     renderFailed(s);
     renderCreated(s);
+    renderPipeline(s);
     renderSystem(s);
     setPills(s);
   }
 
-  function setError(msg) {
-    var b = document.getElementById('error-banner');
-    if (msg) { b.textContent = msg; b.classList.add('show'); }
-    else { b.classList.remove('show'); }
-  }
-
-  async function refresh() {
+  async function refresh(force) {
+    if (refreshing && !force) return;
+    refreshing = true;
     try {
       var r = await fetch('/api/workbench/snapshot', { cache: 'no-store' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -343,11 +551,14 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
       setError(null);
     } catch (e) {
       setError('snapshot unavailable: ' + (e.message || e));
+    } finally {
+      refreshing = false;
     }
-    document.getElementById('pill-refresh').textContent =
-      lastOkAt ? 'updated ' + relTime(new Date(lastOkAt).toISOString()) : '—';
   }
 
+  // ---------- boot ----------
+  var op = getOperator();
+  if (op) setOperator(op);
   refresh();
   setInterval(refresh, REFRESH_MS);
 })();
