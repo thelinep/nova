@@ -37,6 +37,7 @@ const collectorWorkflows = require('./lib/collector-workflows');
 const codePlanner = require('./lib/code-planner');
 const modelQualifications = require('./lib/model-qualifications');
 const workspaceScanner = require('./lib/workspace-scanner');
+const browserService = require('./lib/browser-service');
 const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
 const workspaceProjects = require('./lib/workspace-projects');
@@ -70,6 +71,18 @@ const userMemory = require('./lib/user-memory');
 const voiceChat = require('./lib/voice-chat');
 const imageToCode = require('./lib/image-to-code');
 const ocr = require('./lib/ocr');
+const { Workbench } = require('./lib/workbench');
+const { WorkbenchActions } = require('./lib/workbench-actions');
+const { ActivationLadder } = require('./lib/activation');
+const { SecretVault } = require('./lib/secrets');
+const { ConnectorRegistry } = require('./lib/connectors');
+const { GitHubConnector } = require('./lib/github-connector');
+const { ConnectorActions } = require('./lib/connector-actions');
+const { RollbackManager } = require('./lib/rollback');
+const { KillSwitch } = require('./lib/killswitch');
+const { PolicyEngine } = require('./lib/policy');
+const { JobEngine } = require('./lib/jobs');
+
 
 const PORT = process.env.PORT === undefined ? 8787 : Number(process.env.PORT);
 if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) throw new Error('PORT must be an integer from 0 to 65535');
@@ -89,6 +102,49 @@ function gitSnapshot() {
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
 activity.configure(store);
+const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
+const jobEngine = new JobEngine(store, { pollMs: 500 });
+
+const workbenchRollback = new RollbackManager(store, { domains: ['workspace', 'neuron-factory', 'browser-tools', 'release'] });
+const workbenchKillSwitch = new KillSwitch(store, {
+  authFn: (credential, operator) => {
+    if (typeof credential !== 'string') return false;
+    const expected = process.env.NOVA_RESUME_CREDENTIAL;
+    if (!expected) return false;
+    return credential === expected;
+  },
+});
+const workbenchPolicy = new PolicyEngine(store);
+const workbenchActions = new WorkbenchActions(store, {
+  rollback: workbenchRollback,
+  killSwitch: workbenchKillSwitch,
+  policy: workbenchPolicy,
+  jobs: jobEngine,
+});
+
+
+let secretVault = null;
+let connectorRegistry = null;
+let githubConnector = null;
+let connectorActions = null;
+try {
+  secretVault = new SecretVault(store, { dataDir: DATA_DIR });
+  connectorRegistry = new ConnectorRegistry(store);
+  githubConnector = new GitHubConnector({
+    registry: connectorRegistry,
+    vault: secretVault,
+  });
+  connectorActions = new ConnectorActions({
+    store,
+    registry: connectorRegistry,
+    connector: githubConnector,
+    policy: workbenchPolicy,
+  });
+} catch (e) {
+  console.warn('[nova-runtime] connector stack unavailable:', e.message);
+}
+if (workbenchActions) workbenchActions.connectorActions = connectorActions;
+
 const ollama = new OllamaClient(process.env.OLLAMA_HOST);
 const telemetry = new TelemetryReader();
 
@@ -123,9 +179,52 @@ function sendJson(res, statusCode, body) {
 }
 
 function sendError(res, err) {
-  const statusCode = err.statusCode || 500;
+  const codeMap = {
+    not_found: 404,
+    not_cancellable: 409,
+    bad_operator: 400,
+    bad_reason: 400,
+    bad_id: 400,
+    bad_decision: 400,
+    auth_failed: 403,
+    already_halted: 409,
+    not_halted: 409,
+    no_rollback: 503,
+    no_jobs: 503,
+    no_killswitch: 503,
+    no_policy: 503,
+  };
+  const statusCode = err.statusCode || codeMap[err.code] || 500;
   if (statusCode >= 500) console.error('[nova-runtime] error:', err);
-  sendJson(res, statusCode, { error: err.message || 'Internal error' });
+  sendJson(res, statusCode, err.browser ? { ok:false, error:err.message || 'Internal error', ...(err.policyId ? { policy_id:err.policyId } : {}) } : { error: err.message || 'Internal error' });
+}
+
+function requireFields(body, fields) {
+  for (const f of fields) {
+    const v = body[f];
+    if (v === undefined || v === null || v === '') {
+      const e = new Error(`field_required:${f}`);
+      e.statusCode = 400;
+      throw e;
+    }
+  }
+}
+
+function requireUrl(value, field) {
+  try { new URL(String(value)); }
+  catch {
+    const e = new Error(`field_invalid:${field}`);
+    e.statusCode = 400;
+    throw e;
+  }
+}
+
+function requireApprovalTrue(value) {
+  if (value !== true) {
+    const e = new Error('field_required:approve');
+    e.statusCode = 400;
+    throw e;
+  }
 }
 
 // uid()/logExecution() now live in lib/exec-log.js — lib/scheduler.js needs
@@ -436,6 +535,17 @@ const routes = [
       sendJson(res, 202, job);
     } },
   { method: 'POST', pattern: /^\/api\/images\/jobs\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, imageGen.cancel(store, decodeURIComponent(id))) },
+  { method:'POST',pattern:/^\/browser\/open$/,handler:async(req,res)=>{const b=await readJsonBody(req);requireFields(b,['agentId','url']);requireUrl(b.url,'url');sendJson(res,201,await browser.open(b.url,b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/click$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['selector']);sendJson(res,200,await browser.click(decodeURIComponent(id),b.selector));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/type$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['selector','text']);sendJson(res,200,await browser.type(decodeURIComponent(id),b.selector,b.text));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/read$/,handler:async(req,res,[id])=>sendJson(res,200,await browser.read(decodeURIComponent(id),await readJsonBody(req))) },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/wait$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);if(!b.selector&&!b.ms){const e=new Error('field_required:selector_or_ms');e.statusCode=400;throw e;}sendJson(res,200,await browser.wait(decodeURIComponent(id),b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/screenshot$/,handler:async(req,res,[id])=>sendJson(res,200,await browser.screenshot(decodeURIComponent(id),await readJsonBody(req))) },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/download$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['approve','selector','path']);requireApprovalTrue(b.approve);sendJson(res,200,await browser.download(decodeURIComponent(id),b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/upload$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['approve','selector','path']);requireApprovalTrue(b.approve);sendJson(res,200,await browser.upload(decodeURIComponent(id),b));} },
+  { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/close$/,handler:async(_q,res,[id])=>sendJson(res,200,await browser.close(decodeURIComponent(id))) },
+  { method:'POST',pattern:/^\/browser\/halt$/,handler:async(_q,res)=>sendJson(res,200,await browser.halt()) },
+  { method:'GET',pattern:/^\/browser\/pages$/,handler:async(req,res)=>{const agentId=new URL(req.url,'http://localhost').searchParams.get('agentId');requireFields({agentId},['agentId']);sendJson(res,200,browser.list(agentId));} },
   { method: 'GET', pattern: /^\/api\/workspace\/roots$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRoots')) },
   { method: 'POST', pattern: /^\/api\/workspace\/roots$/, handler: async (req, res) => {const root=workspaceScanner.approveRoot(store,await readJsonBody(req));const permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:['filesystem:read'],source:'explicit-root-approval'});desktopSecurity.appendAudit(DATA_DIR,{action:'permission.granted',rootId:root.id,permissionId:permission.id,exactPath:root.path});sendJson(res,201,root);} },
   { method: 'DELETE', pattern: /^\/api\/workspace\/roots\/([^/]+)$/, handler: async (_req, res, [id]) => {const rootId=decodeURIComponent(id);store.delete('workspaceRoots',rootId);for(const permission of store.all('workspacePermissions').filter(x=>x.rootId===rootId)){permission.status='revoked';permission.revokedAt=new Date().toISOString();store.put('workspacePermissions',permission);}desktopSecurity.appendAudit(DATA_DIR,{action:'permission.revoked',rootId});sendJson(res, 200, { ok:true });} },
@@ -641,8 +751,8 @@ const routes = [
       sendJson(res, 200, store.page(decodeURIComponent(name), { limit, beforeUpdatedAt: before }));
     },
   },
-  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req); sendJson(res, 200, store.put(decodeURIComponent(name), body)); } },
-  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { store.delete(decodeURIComponent(name), decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req); if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are written only by the local validation runner.'}); sendJson(res, 200, store.put(decodeURIComponent(name), body)); } },
+  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { if (decodeURIComponent(name) === 'modelQualifications') return sendJson(res,403,{error:'Qualification records are read-only.'}); store.delete(decodeURIComponent(name), decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
   { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); sendJson(res, 200, { ok: true }); } },
 
   { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
@@ -975,6 +1085,53 @@ const routes = [
   },
   { method: 'GET', pattern: /^\/api\/scheduler\/status$/, handler: async (req, res) => sendJson(res, 200, scheduler.getSchedulerStatus(store)) },
 
+{ method: 'GET', pattern: /^\/api\/workbench\/snapshot$/, handler: async (_req, res) => sendJson(res, 200, new Workbench(store).snapshot())},
+
+   { method: 'GET', pattern: /^\/api\/activation$/, handler: async (_req, res) => sendJson(res, 200, new ActivationLadder(store).snapshot()) },
+
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/quarantine\/resolve$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'decision', 'operator']);
+       sendJson(res, 200, workbenchActions.resolveQuarantine(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/job\/cancel$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, workbenchActions.cancelJob(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/runtime\/halt$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['operator', 'reason']);
+       sendJson(res, 200, workbenchActions.haltRuntime(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/runtime\/resume$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['operator', 'reason']);
+       sendJson(res, 200, workbenchActions.resumeRuntime(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/policy\/revoke$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, workbenchActions.revokePolicy(b));
+     }
+   },
+
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/connector\/approve$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, await workbenchActions.approveConnectorAction(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/connector\/deny$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, workbenchActions.denyConnectorAction(b));
+     }
+   },
   /* ---- Phase 5: real fixed-benchmark evaluation runs ---- */
   {
     method: 'POST', pattern: /^\/api\/evaluations\/run$/, handler: async (req, res) => {
@@ -1059,7 +1216,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api/') || pathname.startsWith('/browser/')) {
     for (const route of routes) {
       if (route.method !== req.method) continue;
       const match = pathname.match(route.pattern);

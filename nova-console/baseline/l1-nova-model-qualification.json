@@ -1,0 +1,23 @@
+{
+  "tag": "l1-nova-model-qualification",
+  "branch": "codex/nova-model-qualification",
+  "commit": "3c387a93be5f3b15d6e9a697156e150110b0c86e",
+  "tree_sha256": "0ead3bb30ef63a7272557b6bf2a1cccbf454c38bd54e4370362f58c4aaf1078c",
+  "tagged_at": "2026-09-30T18:14:26Z",
+  "node_version": "v22.22.3",
+  "npm_version": "12.0.2",
+  "test_results": {
+    "main_suite": {
+      "command": "npm test",
+      "pass": 86,
+      "fail": 0,
+      "note": "86 main tests on this branch; 80 on browser-service-readable (which adds browser tables/routes without hardening tests)"
+    }
+  },
+  "notes": [
+    "Browser tables/routes/tests are NOT integrated on this branch.",
+    "Browser service file exists but is not wired to /browser/* routes.",
+    "Hardening slice (jobs, artifact governance, connectors, release gates) is complete here."
+  ],
+  "rollback": "git checkout l1-nova-model-qualification"
+}

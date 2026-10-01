@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const planner = require('../lib/code-planner');
+const productionPlanner = require('../lib/code-planner');
+const planner = { ...productionPlanner, plan: (...args) => productionPlanner.plan(...args.slice(0, 5), { ...args[5], qualificationBypass: true }) };
 const scanner = require('../lib/workspace-scanner');
 const changes = require('../lib/workspace-changes');
 
@@ -67,7 +68,7 @@ test('planner rejects demo models, unavailable models, unsafe paths, and malform
   const root = scanner.approveRoot(db, { path: dir });
   const ollama = { status: async () => ({ reachable: true, models: [] }) };
   db.put('models', { id: 'demo', runtime: 'llama.cpp' });
-  await assert.rejects(() => planner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'demo' }), /Demo models cannot/);
+  await assert.rejects(() => planner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'demo', request: 'Change x in a.js to y' }), /Demo models cannot/);
   assert.throws(() => planner.validate({ changes: [{ relativePath: '../x', find: 'a', replacement: 'b' }] }), /unsafe path/);
   assert.throws(() => planner.extractJson('not json'), /did not return/);
 });

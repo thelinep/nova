@@ -3,6 +3,6 @@ data/
 .DS_Store
 packaging/tauri/target/
 packaging/tauri/gen/
-packaging/runtime/node/
+packaging/runtime/
 __pycache__/
 packaging/dist/

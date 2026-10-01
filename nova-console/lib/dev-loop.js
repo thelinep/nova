@@ -157,7 +157,7 @@ async function execute(store, deps, loop, controller) {
       loop.attempts.push(attempt); loop.phase = `attempt ${number}: planning`; save(store, loop);
       let planned;
       try {
-        planned = await planner.plan(store, scanner, changes, ollama, { rootId: loop.rootId, modelId: loop.modelId, request: loop.request }, { planRoot: copyRoot, draftOnly: true, feedback, signal, timeoutMs: deps.planTimeoutMs });
+        planned = await planner.plan(store, scanner, changes, ollama, { rootId: loop.rootId, modelId: loop.modelId, request: loop.request }, { ...(deps.planOptions || {}), planRoot: copyRoot, draftOnly: true, feedback, signal, timeoutMs: deps.planTimeoutMs });
       } catch (cause) {
         stopIfCancelled();
         if (cause.statusCode === 422 || cause.statusCode === 400 || cause.statusCode === 503 || cause.statusCode === 412) throw cause;

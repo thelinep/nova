@@ -122,7 +122,7 @@ test('planner accepts new-file requests and turns a create into a checked batch'
   assert.deepEqual(analysis.newTargets,['src/date.js']);
   const reply={summary:'Add date helper',acceptanceCriteria:[{description:'src/date.js exports formatDate'}],changes:[{operation:'create',relativePath:'src/date.js',content:'exports.formatDate = d => d.toISOString().slice(0, 10);\n'}]};
   const ollama={status:async()=>({reachable:true,models:[{name:'qwen:test'}]}),show:async()=>({capabilities:['completion'],template:'x',details:{},model_info:{'llama.context_length':8192}}),chatFull:async()=>({message:{content:JSON.stringify(reply)}})};
-  const result=await planner.plan(w.store,scanner,changes,ollama,{rootId:w.root.id,modelId:'qwen:test',request:'Create src/date.js that exports formatDate so dates render as YYYY-MM-DD'});
+  const result=await planner.plan(w.store,scanner,changes,ollama,{rootId:w.root.id,modelId:'qwen:test',request:'Create src/date.js that exports formatDate so dates render as YYYY-MM-DD'},{qualificationBypass:true});
   assert.equal(result.type,'workspace-change-batch');
   assert.equal(result.changes[0].operation,'create');
   assert.ok(result.acceptanceChecks.some(c=>c.type==='file-exists'&&c.relativePath==='src/date.js'));

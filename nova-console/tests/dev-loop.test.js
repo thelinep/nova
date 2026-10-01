@@ -34,7 +34,7 @@ function fakeOllama(replies,prompts){
   };
 }
 const plan=(summary,changesList)=>({summary,acceptanceCriteria:[{description:'tests pass'}],changes:changesList});
-function deps(p,ollama){return {scanner,changes,runner,planner,ollama,dataDir:p.dataDir};}
+function deps(p,ollama){return {scanner,changes,runner,planner,ollama,dataDir:p.dataDir,planOptions:{qualificationBypass:true}};}
 const REQUEST='Fix src/math.js so add returns the sum of both numbers';
 
 test('retries with test failures as feedback, then prepares a checked batch without touching the project', async () => {

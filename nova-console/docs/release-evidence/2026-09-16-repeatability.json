@@ -1,0 +1,1736 @@
+{
+  "complete": true,
+  "checkedAt": "2026-09-16T05:54:44.664Z",
+  "host": "http://127.0.0.1:11434",
+  "results": [
+    {
+      "trial": 1,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:48:24.850Z",
+      "completedAt": "2026-09-16T05:48:43.263Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"The greeting in sample.js is updated to 'hello nova'\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"const greeting = \\\"hello\\\";\",\"replacement\":\"const greeting = \\\"hello nova\\\";\",\"dependsOn\":[],\"impact\":\"Minor\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 138,
+          "outputTokens": 68
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 2,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:48:43.267Z",
+      "completedAt": "2026-09-16T05:49:20.856Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"The greeting in sample.js is updated to 'hello nova'\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"const greeting = \\\"hello\\\";\",\"replacement\":\"const greeting = \\\"hello nova\\\";\",\"dependsOn\":[],\"impact\":\"Minor\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 138,
+          "outputTokens": 68
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 3,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:49:20.857Z",
+      "completedAt": "2026-09-16T05:49:36.826Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"The greeting in sample.js is updated to 'hello nova'\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"const greeting = \\\"hello\\\";\",\"replacement\":\"const greeting = \\\"hello nova\\\";\",\"dependsOn\":[],\"impact\":\"Minor\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 138,
+          "outputTokens": 68
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 1,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:49:36.835Z",
+      "completedAt": "2026-09-16T05:49:54.367Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Enable the feature\",\n\"acceptanceCriteria\": [\n{\n\"description\": \"The 'enabled' property is set to true in both config.json and main.js\"\n}\n],\n\"changes\": [\n{\n\"relativePath\": \"config.json\",\n\"find\": \"false\",\n\"replacement\": \"true\",\n\"dependsOn\": [],\n\"impact\": \"Enabled the feature\"\n},\n{\n\"relativePath\": \"main.js\",\n\"find\": \"const enabled = false;\",\n\"replacement\": \"const enabled = true;\",\n\"dependsOn\": [\"config.json\"],\n\"impact\": \"Updated main.js to reflect the new config value\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 162,
+          "outputTokens": 130
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 2,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 2,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:49:54.367Z",
+      "completedAt": "2026-09-16T05:50:05.437Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Enable the feature\",\n\"acceptanceCriteria\": [\n{\n\"description\": \"The 'enabled' property is set to true in both config.json and main.js\"\n}\n],\n\"changes\": [\n{\n\"relativePath\": \"config.json\",\n\"find\": \"false\",\n\"replacement\": \"true\",\n\"dependsOn\": [],\n\"impact\": \"Enabled the feature\"\n},\n{\n\"relativePath\": \"main.js\",\n\"find\": \"const enabled = false;\",\n\"replacement\": \"const enabled = true;\",\n\"dependsOn\": [\"config.json\"],\n\"impact\": \"Updated main.js to reflect the new config value\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 162,
+          "outputTokens": 130
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 2,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 3,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:50:05.437Z",
+      "completedAt": "2026-09-16T05:50:18.048Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Enable the feature\",\n\"acceptanceCriteria\": [\n{\n\"description\": \"The 'enabled' property is set to true in both config.json and main.js\"\n}\n],\n\"changes\": [\n{\n\"relativePath\": \"config.json\",\n\"find\": \"false\",\n\"replacement\": \"true\",\n\"dependsOn\": [],\n\"impact\": \"Enabled the feature\"\n},\n{\n\"relativePath\": \"main.js\",\n\"find\": \"const enabled = false;\",\n\"replacement\": \"const enabled = true;\",\n\"dependsOn\": [\"config.json\"],\n\"impact\": \"Updated main.js to reflect the new config value\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 162,
+          "outputTokens": 130
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 2,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 1,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:50:18.051Z",
+      "completedAt": "2026-09-16T05:50:18.056Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:50:18.058Z",
+      "completedAt": "2026-09-16T05:50:18.062Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:50:18.077Z",
+      "completedAt": "2026-09-16T05:50:18.079Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:50:18.099Z",
+      "completedAt": "2026-09-16T05:50:30.910Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Update limit in target.js\",\n\"acceptanceCriteria\": [\n{\"description\": \"The value of the `limit` variable is updated to 3\"}\n],\n\"changes\": [\n{\n\"relativePath\": \"target.js\",\n\"find\": \"const limit = 2;\",\n\"replacement\": \"const limit = 3;\",\n\"dependsOn\": [],\n\"impact\": \"Updated the value of the `limit` variable\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 140,
+          "outputTokens": 92
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 2,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:50:30.911Z",
+      "completedAt": "2026-09-16T05:50:39.667Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Update limit in target.js\",\n\"acceptanceCriteria\": [\n{\"description\": \"The value of the `limit` variable is updated to 3\"}\n],\n\"changes\": [\n{\n\"relativePath\": \"target.js\",\n\"find\": \"const limit = 2;\",\n\"replacement\": \"const limit = 3;\",\n\"dependsOn\": [],\n\"impact\": \"Updated the value of the `limit` variable\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 140,
+          "outputTokens": 92
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 3,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:50:39.668Z",
+      "completedAt": "2026-09-16T05:51:00.996Z",
+      "generationEvidence": [
+        {
+          "content": "{\n\"summary\": \"Update limit in target.js\",\n\"acceptanceCriteria\": [\n{\"description\": \"The value of the `limit` variable is updated to 3\"}\n],\n\"changes\": [\n{\n\"relativePath\": \"target.js\",\n\"find\": \"const limit = 2;\",\n\"replacement\": \"const limit = 3;\",\n\"dependsOn\": [],\n\"impact\": \"Updated the value of the `limit` variable\"\n}\n]\n}",
+          "doneReason": "stop",
+          "promptTokens": 140,
+          "outputTokens": 92
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion"
+        ],
+        "contextLength": 8192,
+        "family": "llama",
+        "parameterSize": "8.0B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 1,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:51:00.997Z",
+      "completedAt": "2026-09-16T05:51:01.207Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:51:01.208Z",
+      "completedAt": "2026-09-16T05:51:01.360Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:51:01.360Z",
+      "completedAt": "2026-09-16T05:51:01.529Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:51:01.530Z",
+      "completedAt": "2026-09-16T05:51:01.671Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:51:01.671Z",
+      "completedAt": "2026-09-16T05:51:01.790Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:51:01.790Z",
+      "completedAt": "2026-09-16T05:51:01.957Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:51:01.957Z",
+      "completedAt": "2026-09-16T05:51:16.778Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Change greeting in sample.js to \\\"hello nova\\\"\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 56
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3.2:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 2,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:51:16.779Z",
+      "completedAt": "2026-09-16T05:51:24.161Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 50
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3.2:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 3,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:51:24.164Z",
+      "completedAt": "2026-09-16T05:51:39.210Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 50
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "llama3.2:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 1,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:51:39.222Z",
+      "completedAt": "2026-09-16T05:51:59.851Z",
+      "generationEvidence": [
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    \"The value of 'enabled' in config.json is now true\"\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 172,
+          "outputTokens": 152
+        },
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    {\n      \"description\": \"The value of 'enabled' in config.json is now true\"\n    },\n    {\n      \"description\": \"The value of 'enabled' in main.js is now true\"\n    }\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 311,
+          "outputTokens": 181
+        }
+      ],
+      "status": "failed",
+      "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once."
+    },
+    {
+      "trial": 2,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:51:59.854Z",
+      "completedAt": "2026-09-16T05:52:22.687Z",
+      "generationEvidence": [
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    \"The value of 'enabled' in config.json is now true\"\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 172,
+          "outputTokens": 152
+        },
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    {\n      \"description\": \"The value of 'enabled' in config.json is now true\"\n    },\n    {\n      \"description\": \"The value of 'enabled' in main.js is now true\"\n    }\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 311,
+          "outputTokens": 181
+        }
+      ],
+      "status": "failed",
+      "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once."
+    },
+    {
+      "trial": 3,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:52:22.688Z",
+      "completedAt": "2026-09-16T05:52:48.076Z",
+      "generationEvidence": [
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    \"The value of 'enabled' in config.json is now true\"\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 172,
+          "outputTokens": 152
+        },
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    {\n      \"description\": \"The value of 'enabled' in config.json is now true\"\n    },\n    {\n      \"description\": \"The value of 'enabled' in main.js is now true\"\n    }\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 311,
+          "outputTokens": 181
+        }
+      ],
+      "status": "failed",
+      "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once."
+    },
+    {
+      "trial": 1,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:52:48.079Z",
+      "completedAt": "2026-09-16T05:52:48.081Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:52:48.082Z",
+      "completedAt": "2026-09-16T05:52:48.083Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:52:48.086Z",
+      "completedAt": "2026-09-16T05:52:48.087Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:52:48.088Z",
+      "completedAt": "2026-09-16T05:52:55.199Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "trial": 2,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:52:55.199Z",
+      "completedAt": "2026-09-16T05:53:05.338Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "trial": 3,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:53:05.339Z",
+      "completedAt": "2026-09-16T05:53:14.375Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "trial": 1,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:53:14.376Z",
+      "completedAt": "2026-09-16T05:53:14.535Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:53:14.536Z",
+      "completedAt": "2026-09-16T05:53:14.693Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:53:14.694Z",
+      "completedAt": "2026-09-16T05:53:14.861Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:53:14.861Z",
+      "completedAt": "2026-09-16T05:53:14.980Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:53:14.981Z",
+      "completedAt": "2026-09-16T05:53:15.092Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:53:15.093Z",
+      "completedAt": "2026-09-16T05:53:15.204Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:53:15.205Z",
+      "completedAt": "2026-09-16T05:53:18.672Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Change greeting in sample.js to \\\"hello nova\\\"\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 56
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "maataa:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 2,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:53:18.673Z",
+      "completedAt": "2026-09-16T05:53:21.421Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 50
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "maataa:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 3,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "single-file",
+      "startedAt": "2026-09-16T05:53:21.421Z",
+      "completedAt": "2026-09-16T05:53:24.088Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update greeting in sample.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"sample.js\",\"find\":\"hello\",\"replacement\":\"hello nova\",\"dependsOn\":[],\"impact\":\"Preserve all other contents\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 148,
+          "outputTokens": 50
+        }
+      ],
+      "status": "passed",
+      "filesPresented": 1,
+      "capabilityCheck": {
+        "modelName": "maataa:latest",
+        "compatible": true,
+        "capabilities": [
+          "completion",
+          "tools"
+        ],
+        "contextLength": 131072,
+        "family": "llama",
+        "parameterSize": "3.2B",
+        "hasChatTemplate": true,
+        "reasons": []
+      }
+    },
+    {
+      "trial": 1,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:53:24.088Z",
+      "completedAt": "2026-09-16T05:53:44.764Z",
+      "generationEvidence": [
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    \"The value of 'enabled' in config.json is now true\"\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 172,
+          "outputTokens": 152
+        },
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    {\n      \"description\": \"The value of 'enabled' in config.json is now true\"\n    },\n    {\n      \"description\": \"The value of 'enabled' in main.js is now true\"\n    }\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 311,
+          "outputTokens": 181
+        }
+      ],
+      "status": "failed",
+      "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once."
+    },
+    {
+      "trial": 2,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:53:44.765Z",
+      "completedAt": "2026-09-16T05:54:06.723Z",
+      "generationEvidence": [
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    \"The value of 'enabled' in config.json is now true\"\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 172,
+          "outputTokens": 152
+        },
+        {
+          "content": "{\n  \"summary\": \"Enable feature by changing false to true in config.json and main.js\",\n  \"acceptanceCriteria\": [\n    {\n      \"description\": \"The value of 'enabled' in config.json is now true\"\n    },\n    {\n      \"description\": \"The value of 'enabled' in main.js is now true\"\n    }\n  ],\n  \"changes\": [\n    {\n      \"relativePath\": \"config.json\",\n      \"find\": \"enabled:false\",\n      \"replacement\": \"enabled:true\",\n      \"dependsOn\": [\"main.js\"],\n      \"impact\": \"Preserves all other contents\"\n    },\n    {\n      \"relativePath\": \"main.js\",\n      \"find\": \"const enabled = false;\",\n      \"replacement\": \"const enabled = true;\",\n      \"dependsOn\": [],\n      \"impact\": \"Preserves all other contents\"\n    }\n  ]\n}",
+          "doneReason": "stop",
+          "promptTokens": 311,
+          "outputTokens": 181
+        }
+      ],
+      "status": "failed",
+      "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once."
+    },
+    {
+      "trial": 3,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "multi-file",
+      "startedAt": "2026-09-16T05:54:06.744Z",
+      "completedAt": "2026-09-16T05:54:12.286Z",
+      "generationEvidence": [],
+      "status": "failed",
+      "error": "Ollama is not currently available."
+    },
+    {
+      "trial": 1,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:54:12.304Z",
+      "completedAt": "2026-09-16T05:54:12.454Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:54:12.479Z",
+      "completedAt": "2026-09-16T05:54:12.493Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "ambiguous",
+      "startedAt": "2026-09-16T05:54:12.506Z",
+      "completedAt": "2026-09-16T05:54:12.516Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:54:12.517Z",
+      "completedAt": "2026-09-16T05:54:22.902Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "trial": 2,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:54:22.903Z",
+      "completedAt": "2026-09-16T05:54:31.417Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "trial": 3,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "large-repository",
+      "startedAt": "2026-09-16T05:54:31.420Z",
+      "completedAt": "2026-09-16T05:54:43.041Z",
+      "generationEvidence": [
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"exact existing text\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 150,
+          "outputTokens": 57
+        },
+        {
+          "content": "{\"summary\":\"Update limit in target.js\",\"acceptanceCriteria\":[{\"description\":\"observable result\"}],\"changes\":[{\"relativePath\":\"target.js\",\"find\":\"limit = 2;\",\"replacement\":\"const limit = 3;\",\"dependsOn\":[],\"impact\":\"Preserve all other contents.\"}]}",
+          "doneReason": "stop",
+          "promptTokens": 196,
+          "outputTokens": 59
+        }
+      ],
+      "status": "failed",
+      "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n"
+    },
+    {
+      "trial": 1,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:54:43.042Z",
+      "completedAt": "2026-09-16T05:54:43.355Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:54:43.356Z",
+      "completedAt": "2026-09-16T05:54:43.597Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "timeout",
+      "startedAt": "2026-09-16T05:54:43.598Z",
+      "completedAt": "2026-09-16T05:54:43.821Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 1,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:54:43.822Z",
+      "completedAt": "2026-09-16T05:54:44.402Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 2,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:54:44.403Z",
+      "completedAt": "2026-09-16T05:54:44.531Z",
+      "generationEvidence": [],
+      "status": "passed"
+    },
+    {
+      "trial": 3,
+      "model": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "fixture": "cancellation",
+      "startedAt": "2026-09-16T05:54:44.532Z",
+      "completedAt": "2026-09-16T05:54:44.663Z",
+      "generationEvidence": [],
+      "status": "passed"
+    }
+  ],
+  "qualifications": [
+    {
+      "id": "model_qualification_bde48249588ff8047cdc",
+      "type": "model-qualification",
+      "modelId": "llama3:latest",
+      "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+      "modelCapabilities": [],
+      "requiredTrials": 3,
+      "createdAt": "2026-09-16T05:48:43.263Z",
+      "updatedAt": "2026-09-16T05:51:01.957Z",
+      "capabilities": {
+        "single-file": {
+          "capability": "single-file",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:49:36.826Z"
+        },
+        "multi-file": {
+          "capability": "multi-file",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:50:18.048Z"
+        },
+        "clarification": {
+          "capability": "clarification",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:50:18.079Z"
+        },
+        "large-context": {
+          "capability": "large-context",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:51:00.996Z"
+        },
+        "timeout": {
+          "capability": "timeout",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:51:01.529Z"
+        },
+        "cancellation": {
+          "capability": "cancellation",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:51:01.957Z"
+        }
+      },
+      "runs": [
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:single-file:1",
+          "capability": "single-file",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:48:24.850Z",
+          "completedAt": "2026-09-16T05:48:43.263Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:single-file:2",
+          "capability": "single-file",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:48:43.267Z",
+          "completedAt": "2026-09-16T05:49:20.856Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:single-file:3",
+          "capability": "single-file",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:49:20.857Z",
+          "completedAt": "2026-09-16T05:49:36.826Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:multi-file:1",
+          "capability": "multi-file",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:49:36.835Z",
+          "completedAt": "2026-09-16T05:49:54.367Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:multi-file:2",
+          "capability": "multi-file",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:49:54.367Z",
+          "completedAt": "2026-09-16T05:50:05.437Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:multi-file:3",
+          "capability": "multi-file",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:50:05.437Z",
+          "completedAt": "2026-09-16T05:50:18.048Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:ambiguous:1",
+          "capability": "clarification",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:50:18.051Z",
+          "completedAt": "2026-09-16T05:50:18.056Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:ambiguous:2",
+          "capability": "clarification",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:50:18.058Z",
+          "completedAt": "2026-09-16T05:50:18.062Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:ambiguous:3",
+          "capability": "clarification",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:50:18.077Z",
+          "completedAt": "2026-09-16T05:50:18.079Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:large-repository:1",
+          "capability": "large-context",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:50:18.099Z",
+          "completedAt": "2026-09-16T05:50:30.910Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:large-repository:2",
+          "capability": "large-context",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:50:30.911Z",
+          "completedAt": "2026-09-16T05:50:39.667Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:large-repository:3",
+          "capability": "large-context",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:50:39.668Z",
+          "completedAt": "2026-09-16T05:51:00.996Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:timeout:1",
+          "capability": "timeout",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:00.997Z",
+          "completedAt": "2026-09-16T05:51:01.207Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:timeout:2",
+          "capability": "timeout",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:01.208Z",
+          "completedAt": "2026-09-16T05:51:01.360Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:timeout:3",
+          "capability": "timeout",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:01.360Z",
+          "completedAt": "2026-09-16T05:51:01.529Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:cancellation:1",
+          "capability": "cancellation",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:01.530Z",
+          "completedAt": "2026-09-16T05:51:01.671Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:cancellation:2",
+          "capability": "cancellation",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:01.671Z",
+          "completedAt": "2026-09-16T05:51:01.790Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1:cancellation:3",
+          "capability": "cancellation",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:01.790Z",
+          "completedAt": "2026-09-16T05:51:01.957Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        }
+      ]
+    },
+    {
+      "id": "model_qualification_1067a3b1028a7c17ff0b",
+      "type": "model-qualification",
+      "modelId": "llama3.2:latest",
+      "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+      "modelCapabilities": [],
+      "requiredTrials": 3,
+      "createdAt": "2026-09-16T05:51:16.778Z",
+      "updatedAt": "2026-09-16T05:53:15.204Z",
+      "capabilities": {
+        "single-file": {
+          "capability": "single-file",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:51:39.210Z"
+        },
+        "multi-file": {
+          "capability": "multi-file",
+          "trials": 3,
+          "passes": 0,
+          "failures": 3,
+          "qualified": false,
+          "lastCheckedAt": "2026-09-16T05:52:48.076Z"
+        },
+        "clarification": {
+          "capability": "clarification",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:52:48.087Z"
+        },
+        "large-context": {
+          "capability": "large-context",
+          "trials": 3,
+          "passes": 0,
+          "failures": 3,
+          "qualified": false,
+          "lastCheckedAt": "2026-09-16T05:53:14.375Z"
+        },
+        "timeout": {
+          "capability": "timeout",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:53:14.861Z"
+        },
+        "cancellation": {
+          "capability": "cancellation",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:53:15.204Z"
+        }
+      },
+      "runs": [
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:single-file:1",
+          "capability": "single-file",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:01.957Z",
+          "completedAt": "2026-09-16T05:51:16.778Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:single-file:2",
+          "capability": "single-file",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:16.779Z",
+          "completedAt": "2026-09-16T05:51:24.161Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:single-file:3",
+          "capability": "single-file",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:51:24.164Z",
+          "completedAt": "2026-09-16T05:51:39.210Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:multi-file:1",
+          "capability": "multi-file",
+          "trial": 1,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:51:39.222Z",
+          "completedAt": "2026-09-16T05:51:59.851Z",
+          "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once.",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:multi-file:2",
+          "capability": "multi-file",
+          "trial": 2,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:51:59.854Z",
+          "completedAt": "2026-09-16T05:52:22.687Z",
+          "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once.",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:multi-file:3",
+          "capability": "multi-file",
+          "trial": 3,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:52:22.688Z",
+          "completedAt": "2026-09-16T05:52:48.076Z",
+          "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once.",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:ambiguous:1",
+          "capability": "clarification",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:52:48.079Z",
+          "completedAt": "2026-09-16T05:52:48.081Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:ambiguous:2",
+          "capability": "clarification",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:52:48.082Z",
+          "completedAt": "2026-09-16T05:52:48.083Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:ambiguous:3",
+          "capability": "clarification",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:52:48.086Z",
+          "completedAt": "2026-09-16T05:52:48.087Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:large-repository:1",
+          "capability": "large-context",
+          "trial": 1,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:52:48.088Z",
+          "completedAt": "2026-09-16T05:52:55.199Z",
+          "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:large-repository:2",
+          "capability": "large-context",
+          "trial": 2,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:52:55.199Z",
+          "completedAt": "2026-09-16T05:53:05.338Z",
+          "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:large-repository:3",
+          "capability": "large-context",
+          "trial": 3,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:53:05.339Z",
+          "completedAt": "2026-09-16T05:53:14.375Z",
+          "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:timeout:1",
+          "capability": "timeout",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:14.376Z",
+          "completedAt": "2026-09-16T05:53:14.535Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:timeout:2",
+          "capability": "timeout",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:14.536Z",
+          "completedAt": "2026-09-16T05:53:14.693Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:timeout:3",
+          "capability": "timeout",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:14.694Z",
+          "completedAt": "2026-09-16T05:53:14.861Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:cancellation:1",
+          "capability": "cancellation",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:14.861Z",
+          "completedAt": "2026-09-16T05:53:14.980Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:cancellation:2",
+          "capability": "cancellation",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:14.981Z",
+          "completedAt": "2026-09-16T05:53:15.092Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72:cancellation:3",
+          "capability": "cancellation",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:15.093Z",
+          "completedAt": "2026-09-16T05:53:15.204Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        }
+      ]
+    },
+    {
+      "id": "model_qualification_f37d42097aca3557aefa",
+      "type": "model-qualification",
+      "modelId": "maataa:latest",
+      "digest": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e",
+      "modelCapabilities": [],
+      "requiredTrials": 3,
+      "createdAt": "2026-09-16T05:53:18.672Z",
+      "updatedAt": "2026-09-16T05:54:44.663Z",
+      "capabilities": {
+        "single-file": {
+          "capability": "single-file",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:53:24.088Z"
+        },
+        "multi-file": {
+          "capability": "multi-file",
+          "trials": 3,
+          "passes": 0,
+          "failures": 3,
+          "qualified": false,
+          "lastCheckedAt": "2026-09-16T05:54:12.286Z"
+        },
+        "clarification": {
+          "capability": "clarification",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:54:12.516Z"
+        },
+        "large-context": {
+          "capability": "large-context",
+          "trials": 3,
+          "passes": 0,
+          "failures": 3,
+          "qualified": false,
+          "lastCheckedAt": "2026-09-16T05:54:43.041Z"
+        },
+        "timeout": {
+          "capability": "timeout",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:54:43.821Z"
+        },
+        "cancellation": {
+          "capability": "cancellation",
+          "trials": 3,
+          "passes": 3,
+          "failures": 0,
+          "qualified": true,
+          "lastCheckedAt": "2026-09-16T05:54:44.663Z"
+        }
+      },
+      "runs": [
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:single-file:1",
+          "capability": "single-file",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:15.205Z",
+          "completedAt": "2026-09-16T05:53:18.672Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:single-file:2",
+          "capability": "single-file",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:18.673Z",
+          "completedAt": "2026-09-16T05:53:21.421Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:single-file:3",
+          "capability": "single-file",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:53:21.421Z",
+          "completedAt": "2026-09-16T05:53:24.088Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:multi-file:1",
+          "capability": "multi-file",
+          "trial": 1,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:53:24.088Z",
+          "completedAt": "2026-09-16T05:53:44.764Z",
+          "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once.",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:multi-file:2",
+          "capability": "multi-file",
+          "trial": 2,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:53:44.765Z",
+          "completedAt": "2026-09-16T05:54:06.723Z",
+          "error": "The model plan remained invalid after one repair attempt: The model find text must match exactly once.",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:multi-file:3",
+          "capability": "multi-file",
+          "trial": 3,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:54:06.744Z",
+          "completedAt": "2026-09-16T05:54:12.286Z",
+          "error": "Ollama is not currently available.",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:ambiguous:1",
+          "capability": "clarification",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:12.304Z",
+          "completedAt": "2026-09-16T05:54:12.454Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:ambiguous:2",
+          "capability": "clarification",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:12.479Z",
+          "completedAt": "2026-09-16T05:54:12.493Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:ambiguous:3",
+          "capability": "clarification",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:12.506Z",
+          "completedAt": "2026-09-16T05:54:12.516Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:large-repository:1",
+          "capability": "large-context",
+          "trial": 1,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:54:12.517Z",
+          "completedAt": "2026-09-16T05:54:22.902Z",
+          "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:large-repository:2",
+          "capability": "large-context",
+          "trial": 2,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:54:22.903Z",
+          "completedAt": "2026-09-16T05:54:31.417Z",
+          "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:large-repository:3",
+          "capability": "large-context",
+          "trial": 3,
+          "status": "failed",
+          "startedAt": "2026-09-16T05:54:31.420Z",
+          "completedAt": "2026-09-16T05:54:43.041Z",
+          "error": "requested final content: target.js\n+ actual - expected\n\n+ 'const const limit = 3;\\n'\n- 'const limit = 3;\\n'\n         ^\n",
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:timeout:1",
+          "capability": "timeout",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:43.042Z",
+          "completedAt": "2026-09-16T05:54:43.355Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:timeout:2",
+          "capability": "timeout",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:43.356Z",
+          "completedAt": "2026-09-16T05:54:43.597Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:timeout:3",
+          "capability": "timeout",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:43.598Z",
+          "completedAt": "2026-09-16T05:54:43.821Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:cancellation:1",
+          "capability": "cancellation",
+          "trial": 1,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:43.822Z",
+          "completedAt": "2026-09-16T05:54:44.402Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:cancellation:2",
+          "capability": "cancellation",
+          "trial": 2,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:44.403Z",
+          "completedAt": "2026-09-16T05:54:44.531Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        },
+        {
+          "id": "7bf239f863732b7f0aaa6ea9c0750d30337be29acb59df0560f376b9619e9a7e:cancellation:3",
+          "capability": "cancellation",
+          "trial": 3,
+          "status": "passed",
+          "startedAt": "2026-09-16T05:54:44.532Z",
+          "completedAt": "2026-09-16T05:54:44.663Z",
+          "error": null,
+          "evidencePath": "docs/release-evidence/2026-09-16-repeatability.json"
+        }
+      ]
+    }
+  ]
+}

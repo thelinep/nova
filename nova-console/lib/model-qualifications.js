@@ -21,7 +21,7 @@ function capabilityForFixture(fixture) { return FIXTURE_CAPABILITY[fixture] || f
 function recordResult(store, input) {
   const digest = String(input.digest || '').trim();
   const capability = capabilityForFixture(input.capability || input.fixture);
-  if (!digest) throw error('A model digest is required.', 400);
+  if (!/^(sha256:)?[a-f0-9]{64}$/i.test(digest)) throw error('A model digest is required.', 400);
   if (!CAPABILITIES.includes(capability)) throw error('Unknown model qualification capability: ' + capability, 400);
   const id = idFor(digest);
   const now = input.completedAt || new Date().toISOString();
@@ -33,12 +33,12 @@ function recordResult(store, input) {
   record.modelId = input.modelId || input.model || record.modelId;
   record.modelCapabilities = input.modelCapabilities || record.modelCapabilities;
   record.updatedAt = now;
+  if (input.runId && record.runs.some(run => run.id === input.runId)) return record;
   record.runs.push({
     id: input.runId || crypto.randomUUID(), capability, trial: Number(input.trial) || null,
     status: input.status === 'passed' ? 'passed' : 'failed', startedAt: input.startedAt || null,
     completedAt: now, error: input.error || null, evidencePath: input.evidencePath || null,
   });
-  record.runs = record.runs.slice(-300);
   const relevant = record.runs.filter(run => run.capability === capability);
   const passes = relevant.filter(run => run.status === 'passed').length;
   const failures = relevant.length - passes;
@@ -64,8 +64,13 @@ function assertQualified(store, digest, capability) {
   return result;
 }
 
+function restrictedSmallModel(model) {
+  const size = String(model.details?.parameter_size || model.parameterSize || '');
+  return (/B$/i.test(size) && parseFloat(size) <= 3.2) || /llama3\.2|3\.2b/i.test(model.name || model.id || '');
+}
+
 function selectModel(store, models, capability, preferredName = 'llama3:latest') {
-  const qualified = models.filter(model => model.digest && isQualified(store, model.digest, capability));
+  const qualified = models.filter(model => model.digest && (capability === 'single-file' || !restrictedSmallModel(model)) && ['clarification', 'timeout', 'cancellation'].every(control => isQualified(store, model.digest, control)) && isQualified(store, model.digest, capability));
   const selected = qualified.find(model => model.id === preferredName || model.name === preferredName) || qualified[0];
   if (!selected) throw error(`No installed model is qualified for ${capability}. Run the repeatability qualification suite.`);
   return { model: selected, qualification: getByDigest(store, selected.digest)?.capabilities?.[capability] };
@@ -81,4 +86,4 @@ function summary(store, digest) {
   };
 }
 
-module.exports = { MIN_TRIALS, CAPABILITIES, capabilityForFixture, recordResult, getByDigest, isQualified, assertQualified, selectModel, summary };
+module.exports = { MIN_TRIALS, CAPABILITIES, restrictedSmallModel, capabilityForFixture, recordResult, getByDigest, isQualified, assertQualified, selectModel, summary };

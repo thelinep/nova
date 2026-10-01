@@ -770,6 +770,14 @@ pre.st-detail{white-space:pre-wrap;max-height:220px;overflow:auto;background:var
 .build-stats b{color:var(--ink)}
 .build-btns{display:flex;gap:6px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.typing span,.caret,.spin-dot,.st-running .st-ico,.mic-btn.recording,.activity-badge.attn,.msg-steps.running .steps-dot{animation:none}}
+#wb-strip { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:11px; color:#8b95a4; text-decoration:none; transition:color .15s ease,border-color .15s ease; }
+#wb-strip:hover { color:#e6e9ec; border-color:rgba(255,255,255,.16); }
+#wb-strip .wb-dot { font-size:9px; line-height:1; }
+a.nav-item { color: inherit; text-decoration: none; }
+  #act-pill { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); font-family: ui-monospace,"SF Mono",Menlo,monospace; font-size: 11px; color: #8b95a4; text-decoration: none; transition: color .15s ease,border-color .15s ease; }
+  #act-pill:hover { color: #e6e9ec; border-color: rgba(255,255,255,.16); }
+  #act-pill .act-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #fbbf24; }
+  #act-pill.done .act-dot { background: #6ee7b7; }
 </style>
 <div id="shell" class="shell">
   <aside id="rail" class="rail">
@@ -808,6 +816,7 @@ pre.st-detail{white-space:pre-wrap;max-height:220px;overflow:auto;background:var
       <div class="nav-label rail-text">Operations</div>
       <button class="nav-item" data-view="automations"><span data-lucide="workflow"></span><span class="rail-text">Automations</span></button>
       <button class="nav-item" data-view="evaluations"><span data-lucide="gauge"></span><span class="rail-text">Evaluations</span></button>
+      <a class="nav-item" href="/workbench.html"><span data-lucide="layout-dashboard"></span><span class="rail-text">Workbench</span></a>
     </div>
     <div class="nav-group">
       <div class="nav-label rail-text">Capabilities</div>
@@ -847,6 +856,8 @@ pre.st-detail{white-space:pre-wrap;max-height:220px;overflow:auto;background:var
       <button id="cmdkBtn" class="cmdk-btn"><span data-lucide="command" style="width:14px;height:14px"></span><span>Command</span><kbd>⌘K</kbd></button>
       <div class="topbar-right">
         <span class="pill mono" id="modelStatusPill">—</span>
+        <a id="act-pill" href="/activate.html" title="Getting started"><span class="act-dot"></span><span id="act-text">setup: …</span></a>
+        <a id="wb-strip" href="/workbench.html" title="Open Workbench"><span class="wb-dot" id="wb-strip-dot">●</span><span id="wb-strip-text">loading…</span></a>
         <span class="pill mono" id="privacyPillTop">—</span>
         <div class="top-sep"></div>
         <button id="mobileSessions" class="icon-btn" style="display:none" aria-label="Open sessions"><span data-lucide="panel-left"></span></button>
@@ -2031,7 +2042,7 @@ async function sendMessage(){
   await startReply(s, text);
 }
 
-async function draftCodePlanFromConversation(session,text){
+async function draftCodePlanFromConversation(session,text,generate=false){
   if(!/\b(fix|change|edit|patch|refactor|implement|update)\b/i.test(text)||!/\b(code|file|project|repo|repository|bug|feature)\b/i.test(text))return false;
   const model=modelById(session.modelId);if(!workspaceSelectedRootId||!model||model.runtime!=='ollama'||!ollamaStatus.reachable)return false;
   const controller = new AbortController(); PIPELINE.abortController = controller;
@@ -6455,4 +6466,43 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   window.novaTensorView = { refresh: tick, open(){ minimized = false; closedPid = null; store.set('min', false); store.set('closed', null); render(); } };
   tick();
 })();
+(function () {
+  var strip = document.getElementById('wb-strip'); if (!strip) return;
+  var dot = document.getElementById('wb-strip-dot'); var text = document.getElementById('wb-strip-text'); var backoffUntil = 0;
+  async function refresh() {
+    if (Date.now() < backoffUntil) return;
+    try {
+      var r = await fetch('/api/workbench/snapshot', { cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status);
+      var s = await r.json(); var queued = (s.now && s.now.queued) || 0; var running = (s.now && s.now.running) || 0;
+      var approvals = (s.waiting && s.waiting.pending_quarantines) || 0; var completed = (s.created && s.created.completed_jobs) || 0;
+      var halted = !!(s.allowed && s.allowed.kill_switch && s.allowed.kill_switch.halted); var sysOk = !(s.system && s.system.ok === false); var ok = sysOk && !halted;
+      dot.style.color = ok ? '#6ee7b7' : '#f87171'; text.textContent = queued + ' · ' + running + ' · ' + approvals + ' · kill: ' + (halted ? 'HALTED' : 'clear') + ' · ' + completed;
+    } catch (e) { text.textContent = '—'; dot.style.color = '#5b6472'; backoffUntil = Date.now() + 30000; }
+  }
+  refresh(); setInterval(refresh, 5000);
+})();
 </script>
+
+<script>
+(function () {
+  var pill = document.getElementById('act-pill');
+  if (!pill) return;
+  var text = document.getElementById('act-text');
+  if (!text) return;
+  async function refresh() {
+    try {
+      var r = await fetch('/api/activation', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var s = await r.json();
+      text.textContent = 'setup: ' + s.completed + ' / ' + s.total;
+      pill.classList.toggle('done', s.done === true);
+    } catch {
+      text.textContent = 'setup: —';
+    }
+  }
+  refresh();
+  setInterval(refresh, 10000);
+})();
+</script>
+</body>
+</html>

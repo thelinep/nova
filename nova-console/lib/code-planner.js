@@ -183,7 +183,7 @@ async function generatePlan(store, scanner, changes, ollama, input, signal, opti
   if (!status.reachable) throw error('Ollama is not currently available.', 503);
   let model;
   let qualification = null;
-  if (options.qualificationBypass || !status.models.some(tag => tag.digest)) {
+  if (options.qualificationBypass === true) {
     model = store.get('models', String(input.modelId || ''));
     if (!model || model.runtime !== 'ollama') throw error('Select an installed Ollama model. Demo models cannot create code plans.', 400);
     if (!status.models.some(x => x.name === model.id || x.name === model.name)) throw error('The selected Ollama model is not currently available.', 503);
@@ -196,6 +196,7 @@ async function generatePlan(store, scanner, changes, ollama, input, signal, opti
   const capabilities = capabilityReport(model.id, await ollama.show(model.id, signal));
   signal.throwIfAborted();
   if (!capabilities.compatible) throw error(`The selected Ollama model cannot create production code plans: ${capabilities.reasons.join('; ')}.`, 422);
+  if (!options.qualificationBypass && workflow !== 'single-file' && qualifications.restrictedSmallModel(capabilities)) throw error('Models at or below 3.2B are restricted to qualified single-file workflows.');
 
   const maxOutputTokens = planOutputTokens(options);
   const characterBudget = repositoryCharacterBudget(capabilities.contextLength, request.length, maxOutputTokens);
@@ -310,18 +311,36 @@ async function preview(store, scanner, ollama, input) {
   const walked = scanner.walkFiles(root.path, {});
   const analysis = analyzeRequest(request, walked.files.map(file => file.relativePath), Array.isArray(input.acceptanceCriteria) ? input.acceptanceCriteria : []);
   if (!analysis.sufficientlySpecific) {
-    return { ready: false, clarification: `Please provide ${analysis.missing.join(' and ')}.`, missing: analysis.missing, plannedFiles: analysis.targets };
+    return { ready: false, clarification: `Please provide ${analysis.missing.join(' and ')}.`, missing: analysis.missing, clarificationQuestions: analysis.missing.map(item => 'What is ' + item + '?'), plannedFiles: analysis.targets };
   }
   const workflow = requiredWorkflow(analysis, walked);
   const status = await ollama.status();
   if (!status.reachable) throw error('Ollama is not currently available.', 503);
-  const selected = qualifications.selectModel(store, status.models.map(tag => ({ ...tag, id: tag.name })), workflow, 'llama3:latest');
+  let selected;
+  try { selected = qualifications.selectModel(store, status.models.map(tag => ({ ...tag, id: tag.name })), workflow, 'llama3:latest'); }
+  catch (error) { return { ready: false, blocker: error.message, requiredWorkflow: workflow, plannedFiles: analysis.targets, qualification: null, qualificationMatrix: status.models.map(model => ({ model: model.name, ...qualifications.summary(store, model.digest) })), expectedChecks: ['Digest qualification with three passing trials per capability', 'Clarification, timeout and cancellation controls'] }; }
+  const capability = capabilityReport(selected.model.name, await ollama.show(selected.model.name));
+  if (!capability.compatible) return { ready: false, blocker: capability.reasons.join('; '), plannedFiles: analysis.targets, qualification: selected.qualification };
+  if (workflow !== 'single-file' && qualifications.restrictedSmallModel(capability)) return { ready: false, blocker: 'Models at or below 3.2B are restricted to single-file workflows.', plannedFiles: analysis.targets };
+  const budget = repositoryCharacterBudget(capability.contextLength, request.length);
+  let used = 0;
+  const presented = [];
+  const omitted = [];
+  for (const file of [...walked.files].sort((a,b) => Number(request.includes(b.relativePath)) - Number(request.includes(a.relativePath)))) {
+    try {
+      const content = fs.readFileSync(file.path);
+      const length = ('--- ' + file.relativePath + '\n' + content.toString('utf8') + '\n').length;
+      if (presented.length >= 30 || file.size > 32768 || content.includes(0) || used + length > budget) omitted.push(file.relativePath);
+      else { presented.push(file.relativePath); used += length; }
+    } catch (_) { omitted.push(file.relativePath); }
+  }
+  const missingTargets = analysis.targets.filter(target => !presented.includes(target));
   return {
-    ready: true, requiredWorkflow: workflow,
+    ready: missingTargets.length === 0, blocker: missingTargets.length ? 'Requested files omitted from context: ' + missingTargets.join(', ') : null, requiredWorkflow: workflow,
     selectedModel: { id: selected.model.name, name: selected.model.name, digest: selected.model.digest },
     qualification: selected.qualification,
     plannedFiles: analysis.targets,
-    repositoryScope: { observedFiles: walked.files.length, maximumFilesPresented: 30, omittedAtLeast: Math.max(0, walked.files.length - 30), truncated: Boolean(walked.truncated) },
+    repositoryScope: { observedFiles: walked.files.length, presentedFiles: presented, omittedFiles: omitted, maximumFilesPresented: 30, omittedAtLeast: omitted.length, truncated: Boolean(walked.truncated) },
     expectedChecks: [
       'Every requested target appears in the proposed change set.',
       'Every exact replacement is present in the isolated workspace copy.',
