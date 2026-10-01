@@ -42,6 +42,11 @@ const workspaceRunner = require('./lib/workspace-runner');
 const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
 const { Workbench } = require('./lib/workbench');
+const { WorkbenchActions } = require('./lib/workbench-actions');
+const { RollbackManager } = require('./lib/rollback');
+const { KillSwitch } = require('./lib/killswitch');
+const { PolicyEngine } = require('./lib/policy');
+const { JobEngine } = require('./lib/jobs');
 
 
 const PORT = process.env.PORT === undefined ? 8787 : Number(process.env.PORT);
@@ -62,6 +67,25 @@ function gitSnapshot() {
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
 const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
+const jobEngine = new JobEngine(store, { pollMs: 500 });
+
+const workbenchRollback = new RollbackManager(store, { domains: ['workspace', 'neuron-factory', 'browser-tools', 'release'] });
+const workbenchKillSwitch = new KillSwitch(store, {
+  authFn: (credential, operator) => {
+    if (typeof credential !== 'string') return false;
+    const expected = process.env.NOVA_RESUME_CREDENTIAL;
+    if (!expected) return false;
+    return credential === expected;
+  },
+});
+const workbenchPolicy = new PolicyEngine(store);
+const workbenchActions = new WorkbenchActions(store, {
+  rollback: workbenchRollback,
+  killSwitch: workbenchKillSwitch,
+  policy: workbenchPolicy,
+  jobs: jobEngine,
+});
+
 const ollama = new OllamaClient(process.env.OLLAMA_HOST);
 const telemetry = new TelemetryReader();
 
@@ -88,7 +112,22 @@ function sendJson(res, statusCode, body) {
 }
 
 function sendError(res, err) {
-  const statusCode = err.statusCode || 500;
+  const codeMap = {
+    not_found: 404,
+    not_cancellable: 409,
+    bad_operator: 400,
+    bad_reason: 400,
+    bad_id: 400,
+    bad_decision: 400,
+    auth_failed: 403,
+    already_halted: 409,
+    not_halted: 409,
+    no_rollback: 503,
+    no_jobs: 503,
+    no_killswitch: 503,
+    no_policy: 503,
+  };
+  const statusCode = err.statusCode || codeMap[err.code] || 500;
   if (statusCode >= 500) console.error('[nova-runtime] error:', err);
   sendJson(res, statusCode, err.browser ? { ok:false, error:err.message || 'Internal error', ...(err.policyId ? { policy_id:err.policyId } : {}) } : { error: err.message || 'Internal error' });
 }
@@ -613,6 +652,37 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/scheduler\/status$/, handler: async (req, res) => sendJson(res, 200, scheduler.getSchedulerStatus(store)) },
 
 { method: 'GET', pattern: /^\/api\/workbench\/snapshot$/, handler: async (_req, res) => sendJson(res, 200, new Workbench(store).snapshot())},
+
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/quarantine\/resolve$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'decision', 'operator']);
+       sendJson(res, 200, workbenchActions.resolveQuarantine(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/job\/cancel$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, workbenchActions.cancelJob(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/runtime\/halt$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['operator', 'reason']);
+       sendJson(res, 200, workbenchActions.haltRuntime(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/runtime\/resume$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['operator', 'reason']);
+       sendJson(res, 200, workbenchActions.resumeRuntime(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/policy\/revoke$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, workbenchActions.revokePolicy(b));
+     }
+   },
   /* ---- Phase 5: real fixed-benchmark evaluation runs ---- */
   {
     method: 'POST', pattern: /^\/api\/evaluations\/run$/, handler: async (req, res) => {
