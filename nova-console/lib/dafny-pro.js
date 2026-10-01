@@ -33,10 +33,11 @@ function isAnnotationLine(line) {
 }
 
 function stripAnnotations(code) {
-  return String(code)
+    return String(code)
     .split('\n')
     .filter((l) => !isAnnotationLine(l))
     .map((l) => l.trimEnd())
+    .filter((l) => l.trim().length > 0)
     .join('\n')
     .trim();
 }
