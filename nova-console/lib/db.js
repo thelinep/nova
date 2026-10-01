@@ -304,6 +304,18 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_task_events_task ON agent_task_events(task_id, timestamp);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS agent_tool_bindings (
+    id TEXT PRIMARY KEY, agent_id TEXT NOT NULL,
+    kind TEXT NOT NULL, tool_id TEXT NOT NULL,
+    operations_json TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL, created_by TEXT NOT NULL,
+    expires_at TEXT, revoked_at TEXT
+  );`);
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_tool_unique ON agent_tool_bindings(agent_id, kind, tool_id) WHERE revoked_at IS NULL;`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tool_agent ON agent_tool_bindings(agent_id, enabled, revoked_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tool_lookup ON agent_tool_bindings(kind, tool_id, revoked_at);`);
+
   return { db, dbPath };
 }
 
@@ -504,6 +516,12 @@ class Store {
   agentTasksList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.state){c.push('state=?');a.push(filter.state);} if(filter.assignee_id){c.push('assignee_id=?');a.push(filter.assignee_id);} if(filter.creator_id){c.push('creator_id=?');a.push(filter.creator_id);} if(filter.parent_task_id){c.push('parent_task_id=?');a.push(filter.parent_task_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_tasks'+w+' ORDER BY created_at DESC').all(...a); }
   agentTaskEventsInsert(row) { this._stmt('INSERT INTO agent_task_events (id,task_id,kind,actor_id,from_assignee,to_assignee,reason,payload_json,timestamp) VALUES (?,?,?,?,?,?,?,?,?)').run(row.id,row.task_id,row.kind,row.actor_id||null,row.from_assignee||null,row.to_assignee||null,row.reason||null,row.payload_json||null,row.timestamp); return row; }
   agentTaskEventsList(taskId) { return this._stmt('SELECT * FROM agent_task_events WHERE task_id=? ORDER BY timestamp ASC').all(taskId); }
+
+  agentToolBindingsInsert(row) { this._stmt('INSERT INTO agent_tool_bindings (id,agent_id,kind,tool_id,operations_json,enabled,created_at,created_by,expires_at,revoked_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.agent_id,row.kind,row.tool_id,row.operations_json,row.enabled?1:0,row.created_at,row.created_by,row.expires_at||null,row.revoked_at||null); return this.agentToolBindingsGet(row.id); }
+  agentToolBindingsGet(id) { return this._stmt('SELECT * FROM agent_tool_bindings WHERE id=?').get(id) || null; }
+  agentToolBindingsUpdate(id, patch) { const cur=this.agentToolBindingsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE agent_tool_bindings SET operations_json=?, enabled=?, expires_at=?, revoked_at=? WHERE id=?').run(n.operations_json,n.enabled?1:0,n.expires_at,n.revoked_at,id); return this.agentToolBindingsGet(id); }
+  agentToolBindingsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.agent_id){c.push('agent_id=?');a.push(filter.agent_id);} if(filter.kind){c.push('kind=?');a.push(filter.kind);} if(filter.tool_id){c.push('tool_id=?');a.push(filter.tool_id);} if(filter.enabled!=null){c.push('enabled=?');a.push(filter.enabled?1:0);} if(filter.active){c.push('revoked_at IS NULL');} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_tool_bindings'+w+' ORDER BY created_at ASC').all(...a); }
+  agentToolBindingsFind(agentId, kind, toolId) { return this._stmt('SELECT * FROM agent_tool_bindings WHERE agent_id=? AND kind=? AND tool_id=? AND revoked_at IS NULL').get(agentId,kind,toolId) || null; }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
