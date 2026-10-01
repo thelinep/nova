@@ -281,6 +281,29 @@ function openDb(dataDir) {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_kind ON agent_memory(agent_id, kind);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_scope ON agent_memory(scope, created_at);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS agent_tasks (
+    id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT,
+    state TEXT NOT NULL,
+    creator_id TEXT NOT NULL, assignee_id TEXT,
+    parent_task_id TEXT, handoff_count INTEGER NOT NULL DEFAULT 0,
+    payload_json TEXT, result_json TEXT, error TEXT,
+    created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+    started_at TEXT, ended_at TEXT, expires_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_state ON agent_tasks(state, created_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_assignee ON agent_tasks(assignee_id, state);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_creator ON agent_tasks(creator_id, created_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_parent ON agent_tasks(parent_task_id);`);
+
+  db.exec(`CREATE TABLE IF NOT EXISTS agent_task_events (
+    id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
+    kind TEXT NOT NULL, actor_id TEXT,
+    from_assignee TEXT, to_assignee TEXT,
+    reason TEXT, payload_json TEXT,
+    timestamp TEXT NOT NULL
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_task_events_task ON agent_task_events(task_id, timestamp);`);
+
   return { db, dbPath };
 }
 
@@ -474,6 +497,13 @@ class Store {
   agentMemoryList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.agent_id){c.push('agent_id=?');a.push(filter.agent_id);} if(filter.kind){c.push('kind=?');a.push(filter.kind);} if(filter.scope){c.push('scope=?');a.push(filter.scope);} if(filter.not_expired){c.push('(expires_at IS NULL OR expires_at > ?)');a.push(new Date().toISOString());} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_memory'+w+' ORDER BY created_at DESC').all(...a); }
   agentMemoryDeleteByAgent(agentId, options) { options=options||{}; const c=['agent_id=?']; const a=[agentId]; if(options.kind){c.push('kind=?');a.push(options.kind);} if(options.before){c.push('created_at < ?');a.push(options.before);} const info=this._stmt('DELETE FROM agent_memory WHERE '+c.join(' AND ')).run(...a); return { deleted: info.changes || 0 }; }
   agentMemoryCountByKind(agentId) { return this._stmt('SELECT kind, COUNT(*) AS n FROM agent_memory WHERE agent_id=? GROUP BY kind').all(agentId); }
+
+  agentTasksInsert(row) { this._stmt('INSERT INTO agent_tasks (id,title,description,state,creator_id,assignee_id,parent_task_id,handoff_count,payload_json,result_json,error,created_at,updated_at,started_at,ended_at,expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.title,row.description||null,row.state,row.creator_id,row.assignee_id||null,row.parent_task_id||null,row.handoff_count||0,row.payload_json||null,row.result_json||null,row.error||null,row.created_at,row.updated_at,row.started_at||null,row.ended_at||null,row.expires_at||null); return this.agentTasksGet(row.id); }
+  agentTasksGet(id) { return this._stmt('SELECT * FROM agent_tasks WHERE id=?').get(id) || null; }
+  agentTasksUpdate(id, patch) { const cur=this.agentTasksGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE agent_tasks SET state=?, assignee_id=?, handoff_count=?, result_json=?, error=?, updated_at=?, started_at=?, ended_at=? WHERE id=?').run(n.state,n.assignee_id,n.handoff_count,n.result_json,n.error,n.updated_at,n.started_at,n.ended_at,id); return this.agentTasksGet(id); }
+  agentTasksList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.state){c.push('state=?');a.push(filter.state);} if(filter.assignee_id){c.push('assignee_id=?');a.push(filter.assignee_id);} if(filter.creator_id){c.push('creator_id=?');a.push(filter.creator_id);} if(filter.parent_task_id){c.push('parent_task_id=?');a.push(filter.parent_task_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_tasks'+w+' ORDER BY created_at DESC').all(...a); }
+  agentTaskEventsInsert(row) { this._stmt('INSERT INTO agent_task_events (id,task_id,kind,actor_id,from_assignee,to_assignee,reason,payload_json,timestamp) VALUES (?,?,?,?,?,?,?,?,?)').run(row.id,row.task_id,row.kind,row.actor_id||null,row.from_assignee||null,row.to_assignee||null,row.reason||null,row.payload_json||null,row.timestamp); return row; }
+  agentTaskEventsList(taskId) { return this._stmt('SELECT * FROM agent_task_events WHERE task_id=? ORDER BY timestamp ASC').all(taskId); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
