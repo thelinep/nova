@@ -14,6 +14,20 @@ const media = require('../lib/media');
 const { openDb, Store } = require('../lib/db');
 
 const HAS_BROWSER = Boolean(i2c.findBrowser());
+// A browser that is installed but cannot take a screenshot here (for example a
+// Chrome that needs a first-run step) skips these checks with the reason
+// instead of failing the whole build. The support report shows the same.
+let probing = null;
+function browserWorks() {
+  if (!probing) probing = (async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-probe-'));
+    try { fs.writeFileSync(path.join(dir, 'p.html'), '<!doctype html><body style="background:#fff">ok</body>'); await i2c.render(path.join(dir, 'p.html'), path.join(dir, 'p.png'), { width: 200, height: 100, timeout: 25000 }); return null; }
+    catch (e) { return 'the browser could not take a screenshot here: ' + String(e.message).split('\n')[0].slice(0, 200); }
+    finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  })();
+  return probing;
+}
+async function needBrowser(t) { const why = await browserWorks(); if (why) { t.skip(why); return false; } return true; }
 const HAS_OCR = ocr.engines().length > 0;
 const CODE_PAGE = (bg = '#ffffff', fg = '#111111') => `<!doctype html><html><body style="margin:0;background:${bg};color:${fg};font:28px/1.5 monospace;padding:30px">
 <div>function total(items) {</div><div>&nbsp;&nbsp;return items.length;</div><div>}</div><div style="margin-top:30px;background:#1e6fd9;color:#fff;padding:20px;width:300px">Book now</div></body></html>`;
@@ -42,7 +56,7 @@ test('ocr.layout keeps reading order, rows and code indentation from Vision boxe
 });
 
 test('ocr.recognize uses Apple Vision through osascript on macOS (runner stubbed)', { skip: process.platform !== 'darwin' }, async () => {
-  const prev = ocr.setRunner(async (file, args) => { assert.match(file, /osascript$/); assert.equal(args[3], 'code'); return JSON.stringify([{ t: 'const x = 1;', c: 1, x: 0, y: 0.5, w: 0.3, h: 0.05 }]); });
+  const prev = ocr.setRunner(async (file, args) => { assert.match(file, /osascript$/); assert.equal(args[4], 'code'); return JSON.stringify([{ t: 'const x = 1;', c: 1, x: 0, y: 0.5, w: 0.3, h: 0.05 }]); });
   try { const png = path.join(tmp('nova-ocr-'), 'a.png'); fs.writeFileSync(png, 'x'); const r = await ocr.recognize(png, { mode: 'code' }); assert.equal(r.engine, 'apple-vision'); assert.equal(r.text, 'const x = 1;'); }
   finally { ocr.setRunner(prev); }
 });
@@ -59,7 +73,8 @@ test('extractHtml, textRecall and wantsBuild', () => {
   assert.equal(i2c.wantsBuild('what does this error say?'), false);
 });
 
-test('render in a sandboxed browser, decode the PNG and compare images', { skip: !HAS_BROWSER, timeout: 60000 }, async () => {
+test('render in a sandboxed browser, decode the PNG and compare images', { skip: !HAS_BROWSER, timeout: 60000 }, async (t) => {
+  if (!await needBrowser(t)) return;
   const dir = tmp('nova-render-');
   try {
     fs.writeFileSync(path.join(dir, 'a.html'), CODE_PAGE());
@@ -80,7 +95,8 @@ test('render in a sandboxed browser, decode the PNG and compare images', { skip:
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('ocr.recognize reads code from a rendered screenshot (tesseract here, Apple Vision on a Mac)', { skip: !HAS_BROWSER || !HAS_OCR, timeout: 60000 }, async () => {
+test('ocr.recognize reads code from a rendered screenshot (tesseract here, Apple Vision on a Mac)', { skip: !HAS_BROWSER || !HAS_OCR, timeout: 60000 }, async (t) => {
+  if (!await needBrowser(t)) return;
   const dir = tmp('nova-ocr-real-');
   try {
     fs.writeFileSync(path.join(dir, 'a.html'), CODE_PAGE());
@@ -92,7 +108,8 @@ test('ocr.recognize reads code from a rendered screenshot (tesseract here, Apple
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('buildFromImage: writes, renders, compares, feeds back the differences and keeps the best attempt', { skip: !HAS_BROWSER, timeout: 120000 }, async () => {
+test('buildFromImage: writes, renders, compares, feeds back the differences and keeps the best attempt', { skip: !HAS_BROWSER, timeout: 120000 }, async (t) => {
+  if (!await needBrowser(t)) return;
   const dataDir = tmp('nova-build-');
   try {
     fs.writeFileSync(path.join(dataDir, 'orig.html'), CODE_PAGE());
@@ -119,7 +136,8 @@ test('buildFromImage: writes, renders, compares, feeds back the differences and 
   } finally { fs.rmSync(dataDir, { recursive: true, force: true }); }
 });
 
-test('chat turn: an attached image gives the model its exact text; a text-only model gets text, not pixels', { skip: !HAS_BROWSER || !HAS_OCR, timeout: 60000 }, async () => {
+test('chat turn: an attached image gives the model its exact text; a text-only model gets text, not pixels', { skip: !HAS_BROWSER || !HAS_OCR, timeout: 60000 }, async (t) => {
+  if (!await needBrowser(t)) return;
   activity._reset();
   const dataDir = tmp('nova-turn-img-');
   const { db } = openDb(dataDir); const store = new Store(db);

@@ -16,7 +16,7 @@ const os = require('node:os');
 const path = require('node:path');
 const zlib = require('node:zlib');
 const crypto = require('node:crypto');
-const { execFile } = require('node:child_process');
+const { execFile, spawn } = require('node:child_process');
 const ocr = require('./ocr');
 
 const MAX_ATTEMPTS = 3;
@@ -41,19 +41,53 @@ function findBrowser() {
   return candidates.find(c => c && fs.existsSync(c)) || null;
 }
 
+/**
+ * Starts the browser and waits for the screenshot file. On macOS, headless
+ * Chrome sometimes writes the picture and then keeps running, so NOVA stops
+ * it as soon as the file is complete instead of waiting for it to exit.
+ */
+function shoot(browser, args, outPng, timeout) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(browser, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '', lastSize = -1, done = false;
+    child.stderr.on('data', d => { stderr = (stderr + d).slice(-4000); });
+    const finish = (err) => {
+      if (done) return; done = true;
+      clearInterval(poll); clearTimeout(timer);
+      try { child.kill('SIGKILL'); } catch (_) {}
+      if (err) reject(err); else resolve();
+    };
+    const poll = setInterval(() => {
+      let size = -1; try { size = fs.statSync(outPng).size; } catch (_) {}
+      if (size > 0 && size === lastSize) finish(); // written and no longer growing
+      lastSize = size;
+    }, 250);
+    const timer = setTimeout(() => finish(Object.assign(new Error('The browser did not finish within ' + Math.round(timeout / 1000) + ' s. ' + stderr.trim().slice(-300)), { statusCode: 504 })), timeout);
+    child.on('error', e => finish(e));
+    child.on('exit', () => setTimeout(() => {
+      if (done) return;
+      let ok = false; try { ok = fs.statSync(outPng).size > 0; } catch (_) {}
+      finish(ok ? null : Object.assign(new Error(stderr.trim().slice(-600) || 'The browser closed without a picture.'), { statusCode: 500 }));
+    }, 100));
+  });
+}
+
 /** Renders HTML to a PNG in a headless browser: fresh profile, network blocked, no extensions. */
-async function render(htmlFile, outPng, { width = 1280, height = 800, dpr = 1 } = {}) {
+async function render(htmlFile, outPng, { width = 1280, height = 800, dpr = 1, timeout = 45000 } = {}) {
   const browser = findBrowser();
   if (!browser) throw error('Checking the page needs Google Chrome, Chromium, Edge or Brave installed.', 412);
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-render-'));
+  try { fs.rmSync(outPng, { force: true }); } catch (_) {}
   const args = ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--mute-audio', '--no-first-run', '--no-default-browser-check',
-    '--disable-extensions', '--disable-sync', `--user-data-dir=${profile}`,
+    '--disable-extensions', '--disable-sync', '--disable-background-networking', '--disable-component-update',
+    '--use-mock-keychain', '--password-store=basic', // never ask for the macOS keychain
+    `--user-data-dir=${profile}`,
     '--proxy-server=127.0.0.1:9', '--proxy-bypass-list=<-loopback>', // any request to the internet fails
     `--window-size=${Math.round(width)},${Math.round(height)}`, `--force-device-scale-factor=${dpr}`,
     '--virtual-time-budget=3000', `--screenshot=${outPng}`, 'file://' + htmlFile];
   if (process.getuid && process.getuid() === 0) args.unshift('--no-sandbox');
-  try { await run(browser, args, 60000); }
-  finally { fs.rmSync(profile, { recursive: true, force: true }); }
+  try { await shoot(browser, args, outPng, timeout); }
+  finally { setTimeout(() => fs.rmSync(profile, { recursive: true, force: true }), 500).unref(); }
   if (!fs.existsSync(outPng)) throw error('The browser did not produce a picture of the page.', 500);
   return outPng;
 }
