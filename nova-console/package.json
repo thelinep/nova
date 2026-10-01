@@ -45,7 +45,8 @@
     "test:agent-tasks": "node --test tests/agent-tasks.test.js",
     "test:agent-budgets": "node --test tests/agent-budgets.test.js",
     "test:agent-tools": "node --test tests/agent-tools.test.js",
-    "test:agent-supervisor": "node --test tests/agent-supervisor.test.js"
+    "test:agent-supervisor": "node --test tests/agent-supervisor.test.js",
+    "test:agent-job-bridge": "node --test tests/agent-job-bridge.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
