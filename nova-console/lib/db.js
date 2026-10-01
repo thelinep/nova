@@ -255,6 +255,21 @@ function openDb(dataDir) {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_conn_action_status ON connector_action_requests(status, requested_at);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_conn_action_profile ON connector_action_requests(profile_id);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS agent_registry (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL, description TEXT,
+    instructions_json TEXT NOT NULL,
+    model_preference_json TEXT,
+    allowed_tools_json TEXT NOT NULL,
+    memory_scope TEXT NOT NULL DEFAULT 'private',
+    supervisor_id TEXT,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL, created_by TEXT NOT NULL,
+    revoked_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_registry_role ON agent_registry(role, revoked_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_registry_supervisor ON agent_registry(supervisor_id);`);
+
   return { db, dbPath };
 }
 
@@ -435,6 +450,12 @@ class Store {
   connectorActionRequestsGet(id) { return this._stmt('SELECT * FROM connector_action_requests WHERE id=?').get(id) || null; }
   connectorActionRequestsUpdate(id, patch) { const cur=this.connectorActionRequestsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE connector_action_requests SET status=?, policy_id=?, resolved_at=?, resolved_by=?, resolution_note=?, executed_at=?, result_json=?, error=?, expires_at=? WHERE id=?').run(n.status,n.policy_id,n.resolved_at,n.resolved_by,n.resolution_note,n.executed_at,n.result_json,n.error,n.expires_at,id); return this.connectorActionRequestsGet(id); }
   connectorActionRequestsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} if(filter.profile_id){c.push('profile_id=?');a.push(filter.profile_id);} if(filter.operation){c.push('operation=?');a.push(filter.operation);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM connector_action_requests'+w+' ORDER BY requested_at ASC').all(...a); }
+
+  agentRegistryInsert(row) { this._stmt('INSERT INTO agent_registry (id,name,role,description,instructions_json,model_preference_json,allowed_tools_json,memory_scope,supervisor_id,enabled,created_at,created_by,revoked_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.name,row.role,row.description||null,row.instructions_json,row.model_preference_json||null,row.allowed_tools_json,row.memory_scope,row.supervisor_id||null,row.enabled?1:0,row.created_at,row.created_by,row.revoked_at||null); return this.agentRegistryGet(row.id); }
+  agentRegistryGet(id) { return this._stmt('SELECT * FROM agent_registry WHERE id=?').get(id) || null; }
+  agentRegistryFindByName(name) { return this._stmt('SELECT * FROM agent_registry WHERE name=? AND revoked_at IS NULL').get(name) || null; }
+  agentRegistryUpdate(id, patch) { const cur=this.agentRegistryGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE agent_registry SET name=?, role=?, description=?, instructions_json=?, model_preference_json=?, allowed_tools_json=?, memory_scope=?, supervisor_id=?, enabled=?, revoked_at=? WHERE id=?').run(n.name,n.role,n.description,n.instructions_json,n.model_preference_json,n.allowed_tools_json,n.memory_scope,n.supervisor_id,n.enabled?1:0,n.revoked_at,id); return this.agentRegistryGet(id); }
+  agentRegistryList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.role){c.push('role=?');a.push(filter.role);} if(filter.enabled!=null){c.push('enabled=?');a.push(filter.enabled?1:0);} if(filter.active){c.push('revoked_at IS NULL');} if(filter.supervisor_id){c.push('supervisor_id=?');a.push(filter.supervisor_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_registry'+w+' ORDER BY created_at ASC').all(...a); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
