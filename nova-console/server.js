@@ -43,6 +43,7 @@ const workspaceGit = require('./lib/workspace-git');
 const desktopSecurity = require('./lib/desktop-security');
 const { Workbench } = require('./lib/workbench');
 const { WorkbenchActions } = require('./lib/workbench-actions');
+const { ActivationLadder } = require('./lib/activation');
 const { RollbackManager } = require('./lib/rollback');
 const { KillSwitch } = require('./lib/killswitch');
 const { PolicyEngine } = require('./lib/policy');
@@ -652,6 +653,8 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/scheduler\/status$/, handler: async (req, res) => sendJson(res, 200, scheduler.getSchedulerStatus(store)) },
 
 { method: 'GET', pattern: /^\/api\/workbench\/snapshot$/, handler: async (_req, res) => sendJson(res, 200, new Workbench(store).snapshot())},
+
+   { method: 'GET', pattern: /^\/api\/activation$/, handler: async (_req, res) => sendJson(res, 200, new ActivationLadder(store).snapshot()) },
 
    { method: 'POST', pattern: /^\/api\/workbench\/actions\/quarantine\/resolve$/, handler: async (req, res) => {
        const b = await readJsonBody(req);

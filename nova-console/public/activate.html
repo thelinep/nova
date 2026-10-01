@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Get started · NOVA</title>
+<style>
+:root {
+  --bg: #0b0d10; --panel: #14171c; --panel-2: #1a1e24;
+  --border: #222831; --border-2: #2d333d;
+  --fg: #e6e9ec; --muted: #8b95a4; --dim: #5b6472;
+  --ok: #6ee7b7; --warn: #fbbf24; --accent: #93c5fd;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--sans); font-size: 14px; line-height: 1.55; }
+.topbar { display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.brand { font-family: var(--mono); font-size: 14px; }
+.brand a { color: var(--fg); text-decoration: none; }
+.progress { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.wrap { max-width: 720px; margin: 40px auto; padding: 0 20px 60px; }
+h1 { font-size: 22px; margin: 0 0 6px; font-weight: 600; }
+.sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+.steps { display: flex; flex-direction: column; gap: 12px; }
+.step { background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px 18px;
+  display: flex; gap: 14px; align-items: flex-start; }
+.step.next { border-color: rgba(147,197,253,0.35); }
+.step.done { opacity: 0.72; }
+.dot { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid var(--border-2); display: flex; align-items: center;
+  justify-content: center; font-family: var(--mono); font-size: 11px;
+  color: var(--dim); margin-top: 1px; }
+.step.done .dot { background: var(--ok); border-color: var(--ok); color: #0b0d10; }
+.step.next .dot { border-color: var(--accent); color: var(--accent); }
+.step-body { flex: 1; min-width: 0; }
+.step-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.step-desc { color: var(--muted); font-size: 13px; }
+.step-meta { color: var(--dim); font-family: var(--mono); font-size: 11px; margin-top: 6px; }
+.step-cta { align-self: center; flex-shrink: 0; }
+.btn { display: inline-block; padding: 6px 14px; border-radius: 6px;
+  font-family: var(--mono); font-size: 12px; text-decoration: none;
+  border: 1px solid var(--border-2); color: var(--muted); }
+.btn:hover { color: var(--fg); border-color: var(--muted); }
+.btn-primary { color: var(--accent); border-color: rgba(147,197,253,0.4); }
+.btn-primary:hover { color: #b9d8ff; border-color: var(--accent); }
+.done-banner { margin-top: 32px; padding: 20px;
+  background: rgba(110,231,183,0.06); border: 1px solid rgba(110,231,183,0.3);
+  border-radius: 8px; display: none; }
+.done-banner.show { display: block; }
+.done-banner h2 { margin: 0 0 6px; font-size: 15px; color: var(--ok); }
+.done-banner p { color: var(--muted); margin: 0 0 14px; font-size: 13px; }
+.footer { text-align: center; padding: 40px 20px; color: var(--dim);
+  font-family: var(--mono); font-size: 11px; }
+.footer a { color: var(--dim); text-decoration: none; margin: 0 8px; }
+.footer a:hover { color: var(--muted); }
+.error { color: #f87171; font-family: var(--mono); font-size: 12px;
+  padding: 12px 0; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><a href="/">← NOVA</a></div>
+  <div class="progress" id="progress">setup: …</div>
+</header>
+
+<main class="wrap">
+  <h1>Get started</h1>
+  <p class="sub">Five steps from a fresh install to a verified outcome. No configuration required — each step links to what it needs.</p>
+
+  <div class="error" id="error" style="display:none"></div>
+  <div class="steps" id="steps"></div>
+
+  <div class="done-banner" id="done-banner">
+    <h2>Setup complete</h2>
+    <p>You have a working local runtime, a qualified model, a real outcome, an approved capability, and a verified result.</p>
+    <a class="btn btn-primary" href="/">Open Console</a>
+    <a class="btn" href="/workbench.html" style="margin-left:8px">Open Workbench</a>
+  </div>
+</main>
+
+<div class="footer">
+  <a href="/">Console</a>
+  <a href="/workbench.html">Workbench</a>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s); }
+
+  function stepEl(step, isNext) {
+    var wrap = document.createElement('div');
+    wrap.className = 'step' + (step.done ? ' done' : '') + (isNext ? ' next' : '');
+    var dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.textContent = step.done ? '✓' : String(step._index);
+    wrap.appendChild(dot);
+    var body = document.createElement('div');
+    body.className = 'step-body';
+    var title = document.createElement('div');
+    title.className = 'step-title';
+    title.textContent = esc(step.label);
+    body.appendChild(title);
+    var desc = document.createElement('div');
+    desc.className = 'step-desc';
+    desc.textContent = esc(step.description);
+    body.appendChild(desc);
+    if (step.detail) {
+      var meta = document.createElement('div');
+      meta.className = 'step-meta';
+      meta.textContent = esc(step.detail);
+      body.appendChild(meta);
+    }
+    wrap.appendChild(body);
+    if (!step.done && step.action && step.action.href) {
+      var cta = document.createElement('div');
+      cta.className = 'step-cta';
+      var btn = document.createElement('a');
+      btn.className = 'btn btn-primary';
+      btn.href = step.action.href;
+      btn.textContent = step.action.label || 'Open';
+      cta.appendChild(btn);
+      wrap.appendChild(cta);
+    }
+    return wrap;
+  }
+
+  function render(s) {
+    $('progress').textContent = 'setup: ' + s.completed + ' / ' + s.total;
+    $('error').style.display = 'none';
+    var steps = $('steps');
+    steps.replaceChildren();
+    s.steps.forEach(function (step, i) {
+      step._index = i + 1;
+      steps.appendChild(stepEl(step, s.next_step && s.next_step.id === step.id));
+    });
+    $('done-banner').classList.toggle('show', s.done === true);
+  }
+
+  async function refresh() {
+    try {
+      var r = await fetch('/api/activation', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var s = await r.json();
+      render(s);
+    } catch (e) {
+      var err = $('error');
+      err.textContent = 'activation unavailable: ' + (e.message || e);
+      err.style.display = 'block';
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 5000);
+})();
+</script>
+</body>
+</html>
