@@ -270,6 +270,17 @@ function openDb(dataDir) {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_registry_role ON agent_registry(role, revoked_at);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_registry_supervisor ON agent_registry(supervisor_id);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS agent_memory (
+    id TEXT PRIMARY KEY, agent_id TEXT NOT NULL,
+    kind TEXT NOT NULL, scope TEXT NOT NULL,
+    content_json TEXT NOT NULL, tags_json TEXT NOT NULL,
+    source_ref TEXT, confidence REAL,
+    created_at TEXT NOT NULL, expires_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_agent ON agent_memory(agent_id, created_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_kind ON agent_memory(agent_id, kind);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_scope ON agent_memory(scope, created_at);`);
+
   return { db, dbPath };
 }
 
@@ -456,6 +467,13 @@ class Store {
   agentRegistryFindByName(name) { return this._stmt('SELECT * FROM agent_registry WHERE name=? AND revoked_at IS NULL').get(name) || null; }
   agentRegistryUpdate(id, patch) { const cur=this.agentRegistryGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE agent_registry SET name=?, role=?, description=?, instructions_json=?, model_preference_json=?, allowed_tools_json=?, memory_scope=?, supervisor_id=?, enabled=?, revoked_at=? WHERE id=?').run(n.name,n.role,n.description,n.instructions_json,n.model_preference_json,n.allowed_tools_json,n.memory_scope,n.supervisor_id,n.enabled?1:0,n.revoked_at,id); return this.agentRegistryGet(id); }
   agentRegistryList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.role){c.push('role=?');a.push(filter.role);} if(filter.enabled!=null){c.push('enabled=?');a.push(filter.enabled?1:0);} if(filter.active){c.push('revoked_at IS NULL');} if(filter.supervisor_id){c.push('supervisor_id=?');a.push(filter.supervisor_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_registry'+w+' ORDER BY created_at ASC').all(...a); }
+
+  agentMemoryInsert(row) { this._stmt('INSERT INTO agent_memory (id,agent_id,kind,scope,content_json,tags_json,source_ref,confidence,created_at,expires_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.agent_id,row.kind,row.scope,row.content_json,row.tags_json,row.source_ref||null,row.confidence==null?null:row.confidence,row.created_at,row.expires_at||null); return this.agentMemoryGet(row.id); }
+  agentMemoryGet(id) { return this._stmt('SELECT * FROM agent_memory WHERE id=?').get(id) || null; }
+  agentMemoryDelete(id) { this._stmt('DELETE FROM agent_memory WHERE id=?').run(id); return { ok: true }; }
+  agentMemoryList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.agent_id){c.push('agent_id=?');a.push(filter.agent_id);} if(filter.kind){c.push('kind=?');a.push(filter.kind);} if(filter.scope){c.push('scope=?');a.push(filter.scope);} if(filter.not_expired){c.push('(expires_at IS NULL OR expires_at > ?)');a.push(new Date().toISOString());} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM agent_memory'+w+' ORDER BY created_at DESC').all(...a); }
+  agentMemoryDeleteByAgent(agentId, options) { options=options||{}; const c=['agent_id=?']; const a=[agentId]; if(options.kind){c.push('kind=?');a.push(options.kind);} if(options.before){c.push('created_at < ?');a.push(options.before);} const info=this._stmt('DELETE FROM agent_memory WHERE '+c.join(' AND ')).run(...a); return { deleted: info.changes || 0 }; }
+  agentMemoryCountByKind(agentId) { return this._stmt('SELECT kind, COUNT(*) AS n FROM agent_memory WHERE agent_id=? GROUP BY kind').all(agentId); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };

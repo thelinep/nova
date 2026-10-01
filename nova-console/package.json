@@ -40,7 +40,8 @@
     "test:secrets": "node --test tests/secrets.test.js",
     "test:github-connector": "node --test tests/github-connector.test.js",
     "test:connector-actions": "node --test tests/connector-actions.test.js",
-    "test:agents": "node --test tests/agents.test.js"
+    "test:agents": "node --test tests/agents.test.js",
+    "test:agent-memory": "node --test tests/agent-memory.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
