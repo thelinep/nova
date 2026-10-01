@@ -220,3 +220,56 @@ test('12 constructor_and_input_validation', () => {
   cleanup(env);
   cleanup(env2);
 });
+
+function fakeConnectorActions() {
+  const calls = [];
+  return {
+    calls,
+    async approve(id, operator, note) {
+      calls.push(['approve', id, operator, note]);
+      return { id, status: 'executed', resolved_by: operator, error: null };
+    },
+    deny(id, operator, note) {
+      calls.push(['deny', id, operator, note]);
+      return { id, status: 'denied', resolved_by: operator };
+    },
+  };
+}
+
+test('17 approve_connector_action_delegates', async () => {
+  const env = fresh();
+  const fc = fakeConnectorActions();
+  const actions = new WorkbenchActions(env.store, { connectorActions: fc });
+  const r = await actions.approveConnectorAction({ id: 'car_1', operator: 'alice', note: 'ok' });
+  assert.equal(r.ok, true);
+  assert.equal(r.request.status, 'executed');
+  assert.ok(r.audit_id);
+  assert.deepEqual(fc.calls, [['approve', 'car_1', 'alice', 'ok']]);
+  cleanup(env);
+});
+
+test('18 deny_connector_action_delegates', () => {
+  const env = fresh();
+  const fc = fakeConnectorActions();
+  const actions = new WorkbenchActions(env.store, { connectorActions: fc });
+  const r = actions.denyConnectorAction({ id: 'car_2', operator: 'bob' });
+  assert.equal(r.ok, true);
+  assert.equal(r.request.status, 'denied');
+  assert.ok(r.audit_id);
+  assert.deepEqual(fc.calls, [['deny', 'car_2', 'bob', null]]);
+  cleanup(env);
+});
+
+test('19 connector_action_missing_dependency_rejected', async () => {
+  const env = fresh();
+  const actions = new WorkbenchActions(env.store, {});
+  await assert.rejects(
+    () => actions.approveConnectorAction({ id: 'x', operator: 'a' }),
+    (e) => e.code === 'no_connector_actions'
+  );
+  assert.throws(
+    () => actions.denyConnectorAction({ id: 'x', operator: 'a' }),
+    (e) => e.code === 'no_connector_actions'
+  );
+  cleanup(env);
+});

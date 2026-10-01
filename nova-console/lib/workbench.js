@@ -167,6 +167,27 @@ class Workbench {
         ref: { decision_id: d.id, reason: d.reason },
       });
     }
+    const connectorActions = safe(
+      () => this.store.connectorActionRequestsList({ status: 'pending' }),
+      []
+    );
+    for (const ca of connectorActions) {
+      items.push({
+        kind: 'connector_action',
+        id: ca.id,
+        subject: ca.connector_kind + ':' + String(ca.profile_id).slice(0, 8),
+        title: ca.operation,
+        created_at: ca.requested_at,
+        actions: ['approve', 'deny'],
+        ref: {
+          request_id: ca.id,
+          profile_id: ca.profile_id,
+          operation: ca.operation,
+          requested_by: ca.requested_by,
+          expires_at: ca.expires_at || null,
+        },
+      });
+    }
     items.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
     return {

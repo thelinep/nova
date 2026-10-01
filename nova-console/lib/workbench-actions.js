@@ -31,6 +31,7 @@ class WorkbenchActions {
     this.jobs = deps.jobs || null;
     this.killSwitch = deps.killSwitch || null;
     this.policy = deps.policy || null;
+    this.connectorActions = deps.connectorActions || null;
   }
 
   _audit(action, data, operator) {
@@ -160,6 +161,54 @@ class WorkbenchActions {
 
     return { ok: true, policy: row, audit_id: auditId };
   }
+  // ---- Connector actions ----
+
+  async approveConnectorAction(input) {
+    if (!this.connectorActions) {
+      throw new WorkbenchActionError('connector actions not configured', 'no_connector_actions');
+    }
+    input = input || {};
+    const operator = this._requireOperator(input.operator);
+    if (!input.id) throw new WorkbenchActionError('request id required', 'bad_id');
+
+    const row = await this.connectorActions.approve(
+      input.id,
+      operator,
+      input.note || null
+    );
+
+    const auditId = this._audit('connector.approve', {
+      request_id: input.id,
+      status: row.status,
+      error: row.error || null,
+    }, operator);
+
+    return { ok: row.status === 'executed', request: row, audit_id: auditId };
+  }
+
+  denyConnectorAction(input) {
+    if (!this.connectorActions) {
+      throw new WorkbenchActionError('connector actions not configured', 'no_connector_actions');
+    }
+    input = input || {};
+    const operator = this._requireOperator(input.operator);
+    if (!input.id) throw new WorkbenchActionError('request id required', 'bad_id');
+
+    const row = this.connectorActions.deny(
+      input.id,
+      operator,
+      input.note || null
+    );
+
+    const auditId = this._audit('connector.deny', {
+      request_id: input.id,
+      status: row.status,
+    }, operator);
+
+    return { ok: true, request: row, audit_id: auditId };
+  }
+
+
 }
 
 module.exports = { WorkbenchActions, WorkbenchActionError };

@@ -44,6 +44,10 @@ const desktopSecurity = require('./lib/desktop-security');
 const { Workbench } = require('./lib/workbench');
 const { WorkbenchActions } = require('./lib/workbench-actions');
 const { ActivationLadder } = require('./lib/activation');
+const { SecretVault } = require('./lib/secrets');
+const { ConnectorRegistry } = require('./lib/connectors');
+const { GitHubConnector } = require('./lib/github-connector');
+const { ConnectorActions } = require('./lib/connector-actions');
 const { RollbackManager } = require('./lib/rollback');
 const { KillSwitch } = require('./lib/killswitch');
 const { PolicyEngine } = require('./lib/policy');
@@ -86,6 +90,29 @@ const workbenchActions = new WorkbenchActions(store, {
   policy: workbenchPolicy,
   jobs: jobEngine,
 });
+
+
+let secretVault = null;
+let connectorRegistry = null;
+let githubConnector = null;
+let connectorActions = null;
+try {
+  secretVault = new SecretVault(store, { dataDir: DATA_DIR });
+  connectorRegistry = new ConnectorRegistry(store);
+  githubConnector = new GitHubConnector({
+    registry: connectorRegistry,
+    vault: secretVault,
+  });
+  connectorActions = new ConnectorActions({
+    store,
+    registry: connectorRegistry,
+    connector: githubConnector,
+    policy: workbenchPolicy,
+  });
+} catch (e) {
+  console.warn('[nova-runtime] connector stack unavailable:', e.message);
+}
+if (workbenchActions) workbenchActions.connectorActions = connectorActions;
 
 const ollama = new OllamaClient(process.env.OLLAMA_HOST);
 const telemetry = new TelemetryReader();
@@ -684,6 +711,19 @@ const routes = [
        const b = await readJsonBody(req);
        requireFields(b, ['id', 'operator']);
        sendJson(res, 200, workbenchActions.revokePolicy(b));
+     }
+   },
+
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/connector\/approve$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, await workbenchActions.approveConnectorAction(b));
+     }
+   },
+   { method: 'POST', pattern: /^\/api\/workbench\/actions\/connector\/deny$/, handler: async (req, res) => {
+       const b = await readJsonBody(req);
+       requireFields(b, ['id', 'operator']);
+       sendJson(res, 200, workbenchActions.denyConnectorAction(b));
      }
    },
   /* ---- Phase 5: real fixed-benchmark evaluation runs ---- */

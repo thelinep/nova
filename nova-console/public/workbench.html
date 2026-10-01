@@ -84,6 +84,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
   font-family: var(--mono); margin-right: 6px; text-transform: uppercase; }
 .kind-quarantine { background: rgba(251,191,36,0.15); color: var(--warn); }
 .kind-policy_denial { background: rgba(248,113,113,0.15); color: var(--danger); }
+.kind-connector_action { background: rgba(110,231,183,0.15); color: var(--ok); }
 .budget { padding: 8px 10px; background: var(--panel-2);
   border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
 .budget-head { font-family: var(--mono); font-size: 12px; margin-bottom: 6px; }
@@ -336,6 +337,18 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
         actions.push(applyBtn, discardBtn);
       } else if (item.kind === 'policy_denial') {
         actions.push(el('span', { class: 'btn btn-review', style: 'cursor:default', text: 'review' }));
+      } else if (item.kind === 'connector_action') {
+        var approveBtn = el('button', { class: 'btn btn-apply', text: 'approve' });
+        approveBtn.addEventListener('click', function () {
+          if (!confirmAction('Approve ' + item.ref.operation + ' on ' + item.subject + '?')) return;
+          postAction('/api/workbench/actions/connector/approve', { id: item.id });
+        });
+        var denyBtn = el('button', { class: 'btn btn-discard', text: 'deny' });
+        denyBtn.addEventListener('click', function () {
+          if (!confirmAction('Deny ' + item.ref.operation + '?')) return;
+          postAction('/api/workbench/actions/connector/deny', { id: item.id });
+        });
+        actions.push(approveBtn, denyBtn);
       }
       return el('div', { class: 'approval' },
         el('div', { class: 'approval-info' },

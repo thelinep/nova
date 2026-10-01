@@ -234,3 +234,27 @@ test('16 pipeline_reflects_correctness_runs', () => {
   assert.equal(r.proof_ok, true);
   cleanup(env);
 });
+
+test('17 connector_action_surfaces_in_approvals', () => {
+  const env = fresh();
+  env.store.connectorActionRequestsInsert({
+    id: 'car_1', profile_id: 'conn_profile_xyz', connector_kind: 'github',
+    operation: 'createIssue', args_json: '["o","r",{"title":"bug"}]',
+    status: 'pending', policy_id: 'pol_1',
+    requested_at: '2026-10-01T00:00:00Z', requested_by: 'alice',
+    expires_at: '2026-10-02T00:00:00Z',
+  });
+  const wb = new Workbench(env.store);
+  const s = wb.snapshot();
+  const ca = s.approvals.items.find((i) => i.kind === 'connector_action');
+  assert.ok(ca, 'connector_action item should appear');
+  assert.equal(ca.id, 'car_1');
+  assert.match(ca.subject, /^github:/);
+  assert.equal(ca.title, 'createIssue');
+  assert.deepEqual(ca.actions, ['approve', 'deny']);
+  assert.equal(ca.ref.request_id, 'car_1');
+  assert.equal(ca.ref.profile_id, 'conn_profile_xyz');
+  assert.equal(ca.ref.operation, 'createIssue');
+  assert.equal(ca.ref.requested_by, 'alice');
+  cleanup(env);
+});
