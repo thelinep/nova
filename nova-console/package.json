@@ -37,7 +37,8 @@
     "test:workbench-actions": "node --test tests/workbench-actions.test.js",
     "test:activation": "node --test tests/activation.test.js",
     "test:connectors": "node --test tests/connectors.test.js",
-    "test:secrets": "node --test tests/secrets.test.js"
+    "test:secrets": "node --test tests/secrets.test.js",
+    "test:github-connector": "node --test tests/github-connector.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
