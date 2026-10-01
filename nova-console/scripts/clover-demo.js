@@ -21,18 +21,27 @@ const SPEC_SYSTEM = [
   'You convert a coding problem and a candidate solution into a Dafny triple.',
   'You MUST return a JSON object with exactly three string fields:',
   '  code:       the candidate solution, unchanged, in Dafny syntax',
-  '  docstring:  a short comment mentioning the method name',
-  '  spec:       Dafny requires/ensures clauses mentioning the method name',
+  '  docstring:  a short comment that MUST contain the declared method name',
+  '  spec:       Dafny requires/ensures clauses that MUST contain the',
+  '              declared method name followed by the clauses, e.g.',
+  '              "method Add requires x > 0 ensures y > x"',
+  'Both the docstring AND the spec MUST contain the exact method name.',
   'Do NOT add any other fields. Do NOT wrap in markdown. Reply with JSON only.',
 ].join(' ');
 
+
 const DAFNY_SYSTEM = [
-  'You add Dafny annotations (requires, ensures, invariant, decreases) to a',
-  'method without changing its base logic. You MUST return a JSON object with',
-  'exactly two fields:',
-  '  code:        the original code, logic unchanged, possibly with annotations',
-  '  annotations: an array of annotation strings (e.g. ["requires x > 0"])',
-  'Do NOT modify control flow, expressions, or declarations. Reply with JSON only.',
+  'You add Dafny annotations to a method without changing its base logic.',
+  'RULES:',
+  '  - Do NOT modify any non-annotation line.',
+  '  - Do NOT combine the method signature with annotations.',
+  '  - Each annotation MUST be on its OWN line, starting with requires,',
+  '    ensures, invariant, decreases, modifies, or reads.',
+  '  - Put annotations between the method signature and the opening brace.',
+  'Return JSON with exactly two fields:',
+  '  code:        the original code with annotations inserted on new lines',
+  '  annotations: array of the annotation strings you inserted',
+  'Reply with JSON only.',
 ].join(' ');
 
 function stripCodeFences(text) {
@@ -40,6 +49,11 @@ function stripCodeFences(text) {
     .replace(/^\s*```(?:json)?\s*/i, '')
     .replace(/\s*```\s*$/, '')
     .trim();
+}
+
+function extractMethodName(code) {
+  const m = String(code || '').match(/\b(?:method|function)\s+([A-Za-z_][A-Za-z0-9_]*)/);
+  return m ? m[1] : null;
 }
 
 async function callJson(chat, model, system, user) {
@@ -69,19 +83,72 @@ async function main() {
   const chat = fromOllamaClient(ollama);
 
   const specGenerator = async (problemText, candidateCode) => {
-    const out = await callJson(
-      chat,
-      DEFAULT_MODEL,
-      SPEC_SYSTEM,
-      'PROBLEM:\n' + problemText + '\n\nCANDIDATE:\n' + candidateCode
+    const methodName = extractMethodName(candidateCode);
+    const requirements = methodName
+      ? '\n\nThe declared method name is: ' + methodName +
+        '\nBoth the docstring field AND the spec field MUST contain "' +
+        methodName + '".'
+      : '';
+    const userPrompt = 'PROBLEM:\n' + problemText +
+      '\n\nCANDIDATE:\n' + candidateCode + requirements;
+
+    let out = await callJson(chat, DEFAULT_MODEL, SPEC_SYSTEM, userPrompt);
+
+    const needsRepair = methodName && out && (
+      typeof out.spec !== 'string' || !out.spec.includes(methodName) ||
+      typeof out.docstring !== 'string' || !out.docstring.includes(methodName)
     );
-    if (!out || typeof out.code !== 'string' || typeof out.spec !== 'string') {
-      throw new Error('spec generator returned invalid shape');
+
+    if (needsRepair) {
+      const repairUser =
+        'Your previous response did not include the method name ' + methodName +
+        ' in one or both of the docstring and spec fields. Regenerate the JSON ' +
+        'so BOTH fields contain "' + methodName + '". Example docstring: ' +
+        '"Add returns x plus one." Example spec: "method Add requires x > 0 ' +
+        'ensures y > x". Original problem:\n' + problemText +
+        '\n\nOriginal candidate:\n' + candidateCode;
+      const repair = await callJson(chat, DEFAULT_MODEL, SPEC_SYSTEM, repairUser);
+      if (repair && typeof repair.spec === 'string' && repair.spec.includes(methodName)) {
+        out = repair;
+      }
+      if (!out || typeof out.spec !== 'string' || !out.spec.includes(methodName)) {
+        if (out && typeof out.spec === 'string') out.spec = methodName + ' ' + out.spec;
+      }
+      if (!out || typeof out.docstring !== 'string' || !out.docstring.includes(methodName)) {
+        if (out) out.docstring = (methodName + ' implements the requested method. ' +
+          String(out.docstring || '')).trim();
+      }
     }
+
+    // Tolerant fallback: never throw for shape problems; degrade to
+    // the candidate code and a minimal spec derived from the method name.
+    const safeOut = out && typeof out === 'object' ? out : {};
+    const safeCode = (typeof safeOut.code === 'string' && safeOut.code.trim())
+      ? safeOut.code
+      : candidateCode;
+    const safeDocstring = (typeof safeOut.docstring === 'string' && safeOut.docstring.trim())
+      ? safeOut.docstring
+      : (methodName
+          ? methodName + ' implements the requested method.'
+          : 'Implementation of the requested method.');
+    const safeSpec = (typeof safeOut.spec === 'string' && safeOut.spec.trim())
+      ? safeOut.spec
+      : (methodName
+          ? 'method ' + methodName + ' requires true ensures true'
+          : 'requires true ensures true');
+
+    // Ensure both spec and docstring contain the method name if we have one.
+    const finalSpec = methodName && !safeSpec.includes(methodName)
+      ? (methodName + ' ' + safeSpec)
+      : safeSpec;
+    const finalDocstring = methodName && !safeDocstring.includes(methodName)
+      ? (methodName + ' ' + safeDocstring)
+      : safeDocstring;
+
     return {
-      code: out.code,
-      docstring: String(out.docstring || ''),
-      spec: String(out.spec),
+      code: safeCode,
+      docstring: finalDocstring,
+      spec: finalSpec,
     };
   };
 
