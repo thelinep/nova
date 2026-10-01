@@ -51,9 +51,10 @@ From `nova-console`, run `npm start` and open `http://127.0.0.1:8787/`. Optional
 
 Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts; **Check NOVA on this Mac.command** reports what is missing.
 
-The app also leaves out two developer tools. Everything else works without them:
+The app includes the agent browser's driver and uses the Google Chrome already on your Mac; without Chrome (or Edge, Brave or Chromium) the agent browser says so. See [Agent Browser](help:agent-browser).
 
-- **The agent browser** needs Playwright, which comes with the source folder (`npm install` in `nova-console`). See [The agent browser](help:agent-browser).
+One developer tool is left out. Everything else works without it:
+
 - **Proof checking** in the correctness pipeline needs Dafny (`brew install dafny`). See [Built, not yet in the console](help:developer-preview).
 
 The support report shows whether each one is available.

@@ -28,7 +28,7 @@ NOVA Runtime is a local AI workspace: chat with local models, search your docume
 - [Collector, Capability Graph and Provider Browser](#collector-capability-graph-and-provider-browser)
 - [Workbench](#workbench)
 - [Policies, budgets and rollback](#policies-budgets-and-rollback)
-- [The agent browser](#the-agent-browser)
+- [Agent Browser](#agent-browser)
 - [Built, not yet in the console](#built-not-yet-in-the-console)
 - [Local Workspace and projects](#local-workspace-and-projects)
 - [Diagnostics, Runtime, Trace and History](#diagnostics-runtime-trace-and-history)
@@ -54,7 +54,7 @@ The sidebar groups every screen by what you do there:
 | Create | Image, Video, Audio, Boards, Timeline, Library | Making media on this computer, arranging it and cutting it together |
 | Workspace | Console, Sessions, Local Workspace | Chatting with models, and changing code in approved folders |
 | Intelligence | Models, Knowledge, Retrieval Lab | The models you have, your documents, and testing search over them |
-| Operations | Automations, Evaluations, Workbench | Scheduled runs, model comparisons, and oversight of background work |
+| Operations | Automations, Evaluations, Workbench, Agent Browser | Scheduled runs, model comparisons, oversight of background work, and the browser agents use |
 | Capabilities | Skills, MCP Registry, Agents, Workflows, Neuron Factory, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
 | System | Runtime, Trace, Git Updates, Execution History, Diagnostics, Settings, Help & Support | Seeing what happened and keeping NOVA healthy |
 
@@ -943,7 +943,7 @@ NOVA keeps only a scrambled (hashed) copy of the passphrase, in the data folder.
 ### Related
 
 - [Policies, budgets and rollback](#policies-budgets-and-rollback)
-- [The agent browser](#the-agent-browser)
+- [Agent Browser](#agent-browser)
 - [The setup checklist](#the-setup-checklist)
 
 ## Policies, budgets and rollback
@@ -1002,36 +1002,63 @@ Workbench decisions, policy checks, connector actions, agent browser actions and
 
 These rules are built and fully tested. In the console today they show up in Workbench, in model qualification and in the kill switch. Connectors, the multi-agent system and autonomy runs are not started from the console yet, so on most computers the policy and budget lists are still empty. See [Built, not yet in the console](#built-not-yet-in-the-console).
 
-## The agent browser
+## Agent Browser
 
-*A separate, locked-down browser that agents use to open web pages, read them and fill them in, limited to allowed websites and recorded step by step.*
+*The separate, locked-down browser NOVA's agents use — allow websites, try a page yourself, watch every action and blocked address, and close every page at once.*
 
-The agent browser is how NOVA's agents use websites. It is not your browser and it does not use your sign-ins. Each agent gets its own empty browser profile in NOVA's data folder.
+The agent browser is how NOVA's agents use websites. It is not your browser: it never sees your bookmarks, history or sign-ins, and each agent gets its own empty profile in NOVA's data folder. Open it from **Agent Browser** in the Operations group of the sidebar.
 
-It is different from two other browsers in NOVA:
+![Agent Browser: status, allowed websites, a page opened with Try it, and the activity log.](../public/help/media/agent-browser.jpg)
+It is different from the two other browsers in NOVA:
 
 - **Provider Browser** (Capabilities) is a window *you* use to sign in to AI providers.
 - **Build a page from an image** checks pages in a browser with no network at all.
 
-### What it can do
+### The status line
 
-Open a page, click, type, read text, wait for something to appear, take a screenshot, download a file, upload a file, and close the page.
+| Card | What it tells you |
+| --- | --- |
+| Engine | **Ready** shows which browser it drives (your installed Chrome, Edge, Brave or Chromium). **Not available** says what is missing. |
+| Network access | Opening internet pages needs **Settings > Privacy > Allow network access**. Pages on this computer itself (`localhost`, `127.0.0.1`) work without it. |
+| Kill switch | **Clear**, or **HALTED** with a link to resume in Workbench. Halting closes every agent page at once. |
+| Open pages | How many agent pages are open now, and how many websites are allowed. |
 
-### What keeps it safe
+### Allowed websites
 
-- **Allowed websites only.** Every address the page tries to load, including images and scripts, is checked. Anything not on the allowed list, or not granted to that agent, is blocked and recorded.
-- **Downloads and uploads need approval** every time, with the exact file named.
-- **Every action is recorded:** pages opened, clicks, typing and blocked addresses. What was typed is stored only as a fingerprint (hash), not as text.
-- **The kill switch closes it.** **halt** in Workbench closes every open agent page at once, and no new page opens until NOVA is resumed.
-- Set `NOVA_BROWSER=0` before starting NOVA to turn the agent browser off completely.
+Agents can open only websites on this list. Type a name such as `example.com` and press **Allow**; the × on a website removes it.
+
+- `example.com` also allows `www.example.com`, `shop.example.com` and other parts of the same site. It does not allow `example.net` or `myexample.com`.
+- Everything a page loads is checked: images, scripts and fonts from other websites are blocked unless their website is allowed too. A page can therefore look unstyled until you allow the websites it depends on.
+- **Blocked addresses** lists what was refused recently. **Allow** next to one adds it to the list.
+
+### Try it
+
+**Try it** opens a page under exactly the same rules, so you can see what an agent would see.
+
+1. Allow the website first.
+2. Enter a web address (and, if you like, an agent name: each name has its own profile) and press **Open**.
+3. NOVA shows the page title and a picture of the page. Then:
+   - **Read text** shows the page's text. Type an element first (for example `main` or `#price`) to read just that part.
+   - **Screenshot** takes a fresh picture.
+   - **Click** clicks the element you typed (for example `a` or `#more`), then shows the result.
+   - **Type** fills the element you typed (for example `input[name=q]`) with the text next to it.
+   - **Close** closes the page.
+
+Password fields are refused unless an agent's policy explicitly allows that website.
+
+### Open pages and activity
+
+- **Open pages** lists every agent page that is open, with **Close** for each and **Close all pages** for all of them. Closing pages does not halt the rest of NOVA.
+- **Recent activity** lists pages opened, clicks, typing, reading and screenshots, with the result. What was typed is stored only as a fingerprint (hash), never as text.
+- Downloads and uploads need an explicit approval every time, with the exact file named.
 
 ### Requirements
 
-The agent browser uses Playwright and its Chromium. They come with NOVA's source folder (`npm install` in `nova-console`), but not with the desktop app. In the app, asking for an agent page answers "The agent browser needs Playwright". Everything else in NOVA works without it. The support report shows whether it is available.
+- **The desktop app** includes the browser driver (Playwright's core, without browsers of its own) and drives the Chrome already on your Mac. If Chrome is not installed, the Engine card says so; Edge, Brave and Chromium work too.
+- **Browser mode** (`npm start`) uses the Playwright package in the source folder.
+- Set `NOVA_BROWSER=0` before starting NOVA to turn the agent browser off completely.
 
-### Where it is used today
-
-Agents in the multi-agent system and developer tools reach it through NOVA's local `/browser/…` service. The console's own agents and chat do not use it yet. See [Built, not yet in the console](#built-not-yet-in-the-console).
+The support report shows the engine it found.
 
 ## Built, not yet in the console
 
@@ -1228,7 +1255,7 @@ Turn **Retrieval**, **Citations** and **Streaming** on or off for new sessions. 
 
 - **Allow network access** is off by default. Turn it on for things that need the internet: installing packages, web-connected automations, the collector and remote models.
 - **Local telemetry** keeps usage counters on this computer only. Nothing is sent anywhere.
-- The **agent browser** reaches only websites on its allowed list, whatever this setting says. See [The agent browser](#the-agent-browser).
+- The **agent browser** opens internet pages only while this is on, and even then only websites on its allowed list. See [Agent Browser](#agent-browser).
 
 The privacy badge is worked out from these settings and the loaded model, not written in advance:
 
@@ -1310,9 +1337,10 @@ From `nova-console`, run `npm start` and open `http://127.0.0.1:8787/`. Optional
 
 Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts; **Check NOVA on this Mac.command** reports what is missing.
 
-The app also leaves out two developer tools. Everything else works without them:
+The app includes the agent browser's driver and uses the Google Chrome already on your Mac; without Chrome (or Edge, Brave or Chromium) the agent browser says so. See [Agent Browser](#agent-browser).
 
-- **The agent browser** needs Playwright, which comes with the source folder (`npm install` in `nova-console`). See [The agent browser](#the-agent-browser).
+One developer tool is left out. Everything else works without it:
+
 - **Proof checking** in the correctness pipeline needs Dafny (`brew install dafny`). See [Built, not yet in the console](#built-not-yet-in-the-console).
 
 The support report shows whether each one is available.
@@ -1516,7 +1544,19 @@ Quit NOVA fully. In NOVA's data folder (see [Settings, privacy and your data](se
 
 #### "The agent browser needs Playwright"
 
-The desktop app does not include the agent browser. Use NOVA from its source folder after `npm install` in `nova-console`. Nothing else in NOVA needs it.
+This copy of NOVA was built without the browser driver. Rebuild the app with **Build NOVA app.command** (it downloads the driver once), or in browser mode run `npm install` in `nova-console`. Nothing else in NOVA needs it.
+
+#### "The agent browser uses the Chrome on this computer"
+
+Install Google Chrome (or Edge, Brave or Chromium) in Applications, then open **Agent Browser** again. If Chrome is somewhere unusual, set `NOVA_AGENT_CHROME` to its program file before starting NOVA.
+
+#### The agent browser says it needs network access
+
+Turn on **Settings > Privacy > Allow network access**. Pages on this computer (`localhost`, `127.0.0.1`) open without it.
+
+#### An agent page is refused, or looks broken
+
+The website is not on the allowed list, or the page loads pictures, scripts or fonts from other websites. Open **Agent Browser**, look under **Blocked addresses**, and press **Allow** for the ones you trust.
 
 #### Neuron Factory says training is refused
 
@@ -1704,7 +1744,7 @@ A screen for training very small, single-purpose models on your Mac: a tiny neur
 
 #### What is the agent browser?
 
-A separate, locked-down browser that agents use, limited to allowed websites, with every action recorded. It does not use your own browser or your sign-ins. See [The agent browser](agent-browser.html).
+A separate, locked-down browser that agents use, limited to the websites you allow, with every action recorded. **Agent Browser** in the sidebar shows the allowed websites, open pages, activity and blocked addresses, and lets you try a page yourself. It does not use your own browser profile or your sign-ins. See [Agent Browser](agent-browser.html).
 
 ### Data and settings
 

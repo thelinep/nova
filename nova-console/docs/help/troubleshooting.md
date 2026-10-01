@@ -154,7 +154,19 @@ Quit NOVA fully. In NOVA's data folder (see [Settings, privacy and your data](he
 
 ### "The agent browser needs Playwright"
 
-The desktop app does not include the agent browser. Use NOVA from its source folder after `npm install` in `nova-console`. Nothing else in NOVA needs it.
+This copy of NOVA was built without the browser driver. Rebuild the app with **Build NOVA app.command** (it downloads the driver once), or in browser mode run `npm install` in `nova-console`. Nothing else in NOVA needs it.
+
+### "The agent browser uses the Chrome on this computer"
+
+Install Google Chrome (or Edge, Brave or Chromium) in Applications, then open **Agent Browser** again. If Chrome is somewhere unusual, set `NOVA_AGENT_CHROME` to its program file before starting NOVA.
+
+### The agent browser says it needs network access
+
+Turn on **Settings > Privacy > Allow network access**. Pages on this computer (`localhost`, `127.0.0.1`) open without it.
+
+### An agent page is refused, or looks broken
+
+The website is not on the allowed list, or the page loads pictures, scripts or fonts from other websites. Open **Agent Browser**, look under **Blocked addresses**, and press **Allow** for the ones you trust.
 
 ### Neuron Factory says training is refused
 

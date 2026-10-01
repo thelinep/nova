@@ -74,5 +74,5 @@ NOVA keeps only a scrambled (hashed) copy of the passphrase, in the data folder.
 ## Related
 
 - [Policies, budgets and rollback](help:safety-controls)
-- [The agent browser](help:agent-browser)
+- [Agent Browser](help:agent-browser)
 - [The setup checklist](help:getting-started-checklist)

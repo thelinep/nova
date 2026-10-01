@@ -434,6 +434,11 @@ class Store {
   browserAction(row) { this._stmt('INSERT INTO browser_actions (id,page_id,kind,selector_hash,payload_hash,result,policy_id,timestamp) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.pageId || null,row.kind,row.selectorHash || null,row.payloadHash || null,row.result,row.policyId || null,row.timestamp); }
   browserEgress(row) { this._stmt('INSERT INTO browser_egress (id,page_id,domain,allowed,reason,timestamp) VALUES (?,?,?,?,?,?)').run(row.id,row.pageId || null,row.domain,row.allowed ? 1 : 0,row.reason,row.timestamp); }
   allowEgress(domain, addedBy='system') { this._stmt('INSERT OR REPLACE INTO egress_allowlist (domain,added_at,added_by) VALUES (?,?,?)').run(String(domain).toLowerCase(),new Date().toISOString(),addedBy); }
+  egressAllowlist() { return this._stmt('SELECT * FROM egress_allowlist ORDER BY domain ASC').all(); }
+  removeEgress(domain) { this._stmt('DELETE FROM egress_allowlist WHERE domain=?').run(String(domain).toLowerCase()); }
+  browserRecentPages(limit=60) { return this._stmt('SELECT * FROM browser_pages ORDER BY opened_at DESC LIMIT ?').all(limit); }
+  browserRecentActions(limit=60) { return this._stmt('SELECT a.*, p.agent_id, p.final_url FROM browser_actions a LEFT JOIN browser_pages p ON p.id=a.page_id ORDER BY a.timestamp DESC LIMIT ?').all(limit); }
+  browserRecentEgress(limit=60, allowed=null) { return allowed==null ? this._stmt('SELECT * FROM browser_egress ORDER BY timestamp DESC LIMIT ?').all(limit) : this._stmt('SELECT * FROM browser_egress WHERE allowed=? ORDER BY timestamp DESC LIMIT ?').all(allowed?1:0, limit); }
   egressAllowed(domain) { return Boolean(this._stmt('SELECT 1 FROM egress_allowlist WHERE domain=?').get(String(domain).toLowerCase())); }
   getGlobalHalt() { const row=this._stmt("SELECT value FROM global_state WHERE key='global_halt'").get(); return row ? row.value : '0'; }
   setGlobalHalt(value) { this._stmt("UPDATE global_state SET value=?,updated_at=? WHERE key='global_halt'").run(String(value),new Date().toISOString()); }

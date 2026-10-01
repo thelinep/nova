@@ -3,16 +3,44 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-// Playwright is loaded only when a page is opened: the packaged desktop app
-// does not ship it, and NOVA must still start without it.
+// Playwright is loaded only when a page is opened, so NOVA starts without it.
+// The source folder has the full `playwright` package; the desktop app ships
+// only `playwright-core` and drives the Chrome (or Edge, Brave, Chromium)
+// already installed on this computer.
 let playwrightCache;
 function loadPlaywright() {
   if (playwrightCache === undefined) {
-    try { playwrightCache = require('playwright'); } catch (_) { playwrightCache = null; }
+    playwrightCache = null;
+    for (const name of ['playwright', 'playwright-core']) {
+      try { playwrightCache = { name, module: require(name) }; break; } catch (_) {}
+    }
   }
-  return playwrightCache;
+  return playwrightCache ? playwrightCache.module : null;
 }
-function available() { return Boolean(loadPlaywright()); }
+function systemBrowser() {
+  if (process.env.NOVA_AGENT_CHROME) return process.env.NOVA_AGENT_CHROME;
+  try { return require('./image-to-code').findBrowser(); } catch (_) { return null; }
+}
+function available() { return Boolean(loadPlaywright()) && Boolean(systemBrowser() || (playwrightCache && playwrightCache.name === 'playwright')); }
+/** What the agent browser would run with, for the status line and the support report. */
+function engine() {
+  const pw = loadPlaywright();
+  const browser = systemBrowser();
+  return {
+    available: available(),
+    disabled: process.env.NOVA_BROWSER === '0',
+    library: playwrightCache ? playwrightCache.name : null,
+    browser: browser ? path.basename(browser) : (pw && playwrightCache.name === 'playwright' ? 'Playwright Chromium' : null),
+  };
+}
+const LOOPBACK = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+function cleanDomain(value) {
+  let d = String(value || '').trim().toLowerCase();
+  try { if (/^[a-z][a-z0-9+.-]*:\/\//.test(d)) d = new URL(d).hostname; } catch (_) {}
+  d = d.replace(/^\*\./, '').replace(/\/.*$/, '').replace(/:\d+$/, '');
+  if (!/^(\[[0-9a-f:]+\]|[a-z0-9-]+(\.[a-z0-9-]+)*)$/.test(d) || d.length > 253) throw new BrowserError('That is not a website address. Use a name such as example.com.', 400);
+  return d;
+}
 
 // ---------- error classes ----------
 class BrowserError extends Error {
@@ -130,7 +158,7 @@ class BrowserService {
     } catch {
       return false;
     }
-    const allowed = this.store.egressAllowed(name) || policy.grants.has(name);
+    const allowed = this.domainAllowed(name, policy);
     this.store.browserEgress({
       id: uid('browser_egress'),
       pageId,
@@ -147,6 +175,82 @@ class BrowserService {
       reason,
     });
     return allowed;
+  }
+
+  /** example.com on the list also allows www.example.com and cdn.example.com. */
+  domainAllowed(name, policy) {
+    const has = (d) => this.store.egressAllowed(d) || Boolean(policy && policy.grants.has(d));
+    const host = String(name).toLowerCase();
+    if (/^[\d.]+$|^\[/.test(host) || !host.includes('.')) return has(host); // addresses and single names: exact only
+    const parts = host.split('.');
+    for (let i = 0; i < parts.length - 1; i++) if (has(parts.slice(i).join('.'))) return true;
+    return false;
+  }
+
+  /** Opening internet pages follows Settings > Privacy > Allow network access; this computer's own pages do not. */
+  networkCheck(url, policyId) {
+    let host; try { host = domain(url); } catch (_) { throw new BrowserError('That is not a web address.', 400, policyId); }
+    if (LOOPBACK.has(host)) return;
+    const prefs = (() => { try { return this.store.get('preferences', 'default'); } catch (_) { return null; } })();
+    if (!prefs || !prefs.webAccess) throw new BrowserError('The agent browser needs network access. Turn on Settings > Privacy > Allow network access, then try again.', 403, policyId);
+  }
+
+  allowlist() {
+    return this.store.egressAllowlist().map((r) => ({ domain: r.domain, addedAt: r.added_at, addedBy: r.added_by }));
+  }
+
+  allowDomain(value, addedBy) {
+    const d = cleanDomain(value);
+    this.store.allowEgress(d, String(addedBy || 'console').slice(0, 80));
+    this.audit('allowlist.add', { domain: d, by: addedBy || 'console' });
+    return { ok: true, domain: d, allowlist: this.allowlist() };
+  }
+
+  removeDomain(value, by) {
+    const d = cleanDomain(value);
+    this.store.removeEgress(d);
+    this.audit('allowlist.remove', { domain: d, by: by || 'console' });
+    return { ok: true, domain: d, allowlist: this.allowlist() };
+  }
+
+  /** Engine, kill switch and open pages, for the Agent Browser screen. */
+  status() {
+    return {
+      ...engine(),
+      halted: this.store.getGlobalHalt() === '1',
+      networkAccess: Boolean((() => { try { return (this.store.get('preferences', 'default') || {}).webAccess; } catch (_) { return false; } })()),
+      openPages: [...this.pages.values()].map((e) => ({ pageId: e.id, agentId: e.agentId, url: (() => { try { return e.page.url(); } catch (_) { return null; } })(), title: e.title || null })),
+    };
+  }
+
+  /** Recent pages, actions and blocked addresses, newest first. */
+  log(limit = 60) {
+    const n = Math.max(1, Math.min(500, Number(limit) || 60));
+    return {
+      pages: this.store.browserRecentPages(n),
+      actions: this.store.browserRecentActions(n),
+      blocked: this.store.browserRecentEgress(n, false),
+    };
+  }
+
+  /** Closes every agent page without halting the rest of NOVA. */
+  async closeAll() {
+    let closed = 0;
+    for (const [pageId, e] of [...this.pages]) {
+      try { await e.context.close(); } catch (_) {}
+      this.pages.delete(pageId);
+      this.store.browserUpdatePage(pageId, { closed_at: now(), status: 'closed' });
+      this.action(pageId, e.policy.id, 'close', 'ok');
+      closed++;
+    }
+    return { ok: true, closed };
+  }
+
+  shotFile(name) {
+    const base = path.resolve(this.dataDir, 'browser-evidence');
+    const file = path.resolve(base, String(name));
+    if (!file.startsWith(base + path.sep) || !file.endsWith('.png') || !fs.existsSync(file)) throw new PageNotFoundError();
+    return file;
   }
 
   entry(pageId) {
@@ -174,11 +278,12 @@ class BrowserService {
     const base = path.resolve(this.dataDir, 'browser-evidence', e.id);
     fs.mkdirSync(base, { recursive: true, mode: 0o700 });
 
+    // Screenshots are kept only in NOVA's own evidence folder.
     const target = requestedPath
-      ? path.resolve(requestedPath)
+      ? path.resolve(base, path.basename(String(requestedPath)).replace(/[^\w.-]/g, '_').replace(/(\.png)?$/i, '.png'))
       : path.join(base, `${Date.now()}.png`);
 
-    if (!requestedPath && !target.startsWith(base + path.sep)) {
+    if (!target.startsWith(base + path.sep)) {
       throw new BrowserError('Unsafe screenshot path.', 400, e.policy.id);
     }
 
@@ -194,7 +299,9 @@ class BrowserService {
       status: 'open',
     });
     this.action(e.id, e.policy.id, 'screenshot', 'ok', null, sha256);
-    return { path: target, sha256 };
+    try { e.title = await e.page.title(); } catch (_) {}
+    e.lastImage = path.relative(path.resolve(this.dataDir, 'browser-evidence'), target).split(path.sep).join('/');
+    return { path: target, sha256, url: e.page.url(), title: e.title || null, image: path.relative(path.resolve(this.dataDir, 'browser-evidence'), target).split(path.sep).join('/') };
   }
 
   async open(url, options) {
@@ -206,15 +313,20 @@ class BrowserService {
     if (!this.egress(null, url, policy, 'open')) {
       throw new PolicyDeniedError('Egress denied by policy.', policy.id);
     }
+    this.networkCheck(url, policy.id);
 
     const pw = loadPlaywright();
-    if (!pw) throw new BrowserError('The agent browser needs Playwright, which this copy of NOVA does not include. Run npm install in nova-console, or use NOVA from the source folder.', 503, policy.id);
+    if (!pw) throw new BrowserError('The agent browser needs Playwright, which this copy of NOVA does not include. Rebuild the app with Build NOVA app.command, or run npm install in nova-console.', 503, policy.id);
+    const executablePath = systemBrowser() || undefined;
+    if (!executablePath && playwrightCache.name !== 'playwright') throw new BrowserError('The agent browser uses the Chrome on this computer. Install Google Chrome (or Edge, Brave or Chromium) and try again.', 503, policy.id);
     const context = await pw.chromium.launchPersistentContext(
       this.profile(agentId),
       {
+        executablePath,
         headless: process.env.NOVA_BROWSER_HEADFUL !== '1',
         acceptDownloads: true,
         serviceWorkers: 'block',
+        args: ['--no-first-run', '--no-default-browser-check', '--disable-sync', '--use-mock-keychain', '--password-store=basic'],
       }
     );
 
@@ -258,7 +370,7 @@ class BrowserService {
       throw error;
     }
 
-    return { ok: true, pageId, url: page.url(), policy_id: policy.id };
+    return { ok: true, pageId, url: page.url(), title: e.title || null, image: e.lastImage || null, policy_id: policy.id };
   }
 
   async click(pageId, selector) {
@@ -268,7 +380,7 @@ class BrowserService {
     await e.page.waitForLoadState('domcontentloaded').catch(() => {});
     await this.capture(e);
     this.action(pageId, e.policy.id, 'click', 'ok', selector);
-    return { ok: true, url: e.page.url(), policy_id: e.policy.id };
+    return { ok: true, url: e.page.url(), title: e.title || null, image: e.lastImage || null, policy_id: e.policy.id };
   }
 
   async type(pageId, selector, text) {
@@ -414,6 +526,10 @@ class BrowserService {
     return { ok: true, pages: this.store.browserPages(agent(agentId)) };
   }
 
+  listAll() {
+    return { ok: true, pages: this.store.browserRecentPages(200) };
+  }
+
   async shutdown() {
     for (const e of this.pages.values()) {
       await e.context.close();
@@ -428,6 +544,8 @@ module.exports = {
   DisabledError,
   HaltedError,
   available,
+  engine,
+  cleanDomain,
   PolicyDeniedError,
   PageNotFoundError,
 };

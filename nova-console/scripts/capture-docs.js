@@ -188,6 +188,18 @@ async function main() {
     for (const v of ['sessions', 'knowledge', 'retrieval', 'automations', 'evaluations', 'boards', 'timeline', 'skills', 'mcp', 'agents', 'workflows', 'collector', 'graph', 'browser', 'workspace', 'git', 'runtime', 'trace', 'history', 'diagnostics', 'settings']) await shot(v, view(v));
     await shot('models', async () => { await page.evaluate(() => showView('models')); await sleep(800); await page.locator('.model-qualify').first().scrollIntoViewIfNeeded(); await page.evaluate(() => { const c = [...document.querySelectorAll('.model-card')].find(x => /qwen2\.5-coder:7b/.test(x.textContent)); if (c) c.scrollIntoView({ block: 'center' }); }); }, { wait: 900 });
     await shot('neuron-factory', view('neurons'), { wait: 1200 });
+    if (want('agent-browser')) {
+      // A small local page stands in for a website, so the capture needs no internet.
+      const site = http.createServer((q, r) => { r.setHeader('Content-Type', 'text/html; charset=utf-8'); r.end('<!doctype html><title>Marine Drive · call sheet</title><body style="margin:0;font:18px -apple-system,Helvetica,sans-serif;background:#f7f4ec;color:#1d1d1f"><div style="padding:28px 36px"><h1 style="margin:0 0 8px">Marine Drive shoot</h1><p style="margin:0 0 16px;color:#555">Friday · call 6:00 am · two actors · one drone shot</p><a id="more" href="#">Location details</a><img src="https://cdn.example.net/logo.png" alt=""></div></body>'); }).listen(0);
+      try {
+        await shot('agent-browser', async () => {
+          await page.evaluate(() => showView('agentbrowser')); await sleep(900);
+          await page.locator('#abDomain').fill('127.0.0.1'); await page.locator('#abAdd').click(); await sleep(500);
+          await page.locator('#abUrl').fill(`http://127.0.0.1:${site.address().port}/`); await page.locator('#abOpen').click();
+          await page.locator('#abTry img').waitFor({ timeout: 20000 }); await sleep(5500); // one refresh, so the log shows the blocked logo
+        }, { wait: 600 });
+      } finally { site.close(); }
+    }
     await shot('media-image', () => page.locator('.nav-item[data-media-tab="image"]').click());
     await shot('media-video', () => page.locator('.nav-item[data-media-tab="video"]').click());
     await shot('media-audio', () => page.locator('.nav-item[data-media-tab="audio"]').click());

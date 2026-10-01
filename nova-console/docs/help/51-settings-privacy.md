@@ -24,7 +24,7 @@ Turn **Retrieval**, **Citations** and **Streaming** on or off for new sessions. 
 
 - **Allow network access** is off by default. Turn it on for things that need the internet: installing packages, web-connected automations, the collector and remote models.
 - **Local telemetry** keeps usage counters on this computer only. Nothing is sent anywhere.
-- The **agent browser** reaches only websites on its allowed list, whatever this setting says. See [The agent browser](help:agent-browser).
+- The **agent browser** opens internet pages only while this is on, and even then only websites on its allowed list. See [Agent Browser](help:agent-browser).
 
 The privacy badge is worked out from these settings and the loaded model, not written in advance:
 

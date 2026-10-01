@@ -116,6 +116,8 @@ const workbenchRollback = new RollbackManager(store, { domains: ['workspace', 'n
 const workbenchKillSwitch = new KillSwitch(store, {
   authFn: (credential) => resumePassphrase.verify(DATA_DIR, credential),
 });
+// Halting NOVA also closes every agent browser page at once.
+workbenchKillSwitch.onHalt(() => { browser.closeAll().catch(() => {}); });
 const workbenchPolicy = new PolicyEngine(store);
 const workbenchActions = new WorkbenchActions(store, {
   rollback: workbenchRollback,
@@ -547,7 +549,14 @@ const routes = [
   { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/upload$/,handler:async(req,res,[id])=>{const b=await readJsonBody(req);requireFields(b,['approve','selector','path']);requireApprovalTrue(b.approve);sendJson(res,200,await browser.upload(decodeURIComponent(id),b));} },
   { method:'POST',pattern:/^\/browser\/pages\/([^/]+)\/close$/,handler:async(_q,res,[id])=>sendJson(res,200,await browser.close(decodeURIComponent(id))) },
   { method:'POST',pattern:/^\/browser\/halt$/,handler:async(_q,res)=>sendJson(res,200,await browser.halt()) },
-  { method:'GET',pattern:/^\/browser\/pages$/,handler:async(req,res)=>{const agentId=new URL(req.url,'http://localhost').searchParams.get('agentId');requireFields({agentId},['agentId']);sendJson(res,200,browser.list(agentId));} },
+  { method:'GET',pattern:/^\/browser\/pages$/,handler:async(req,res)=>{const agentId=new URL(req.url,'http://localhost').searchParams.get('agentId');sendJson(res,200,agentId?browser.list(agentId):browser.listAll());} },
+  { method:'GET',pattern:/^\/browser\/status$/,handler:async(_q,res)=>sendJson(res,200,browser.status()) },
+  { method:'GET',pattern:/^\/browser\/allowlist$/,handler:async(_q,res)=>sendJson(res,200,{ok:true,allowlist:browser.allowlist()}) },
+  { method:'POST',pattern:/^\/browser\/allowlist$/,handler:async(req,res)=>{const b=await readJsonBody(req);requireFields(b,['domain']);sendJson(res,200,browser.allowDomain(b.domain,b.operator));} },
+  { method:'DELETE',pattern:/^\/browser\/allowlist\/([^/]+)$/,handler:async(_q,res,[d])=>sendJson(res,200,browser.removeDomain(decodeURIComponent(d))) },
+  { method:'GET',pattern:/^\/browser\/log$/,handler:async(req,res)=>sendJson(res,200,{ok:true,...browser.log(new URL(req.url,'http://localhost').searchParams.get('limit'))}) },
+  { method:'POST',pattern:/^\/browser\/close-all$/,handler:async(_q,res)=>sendJson(res,200,await browser.closeAll()) },
+  { method:'GET',pattern:/^\/browser\/shots\/([\w-]+)\/([\w.-]+\.png)$/,handler:async(_q,res,[dir,name])=>{const f=browser.shotFile(dir+'/'+name);const data=fs.readFileSync(f);res.writeHead(200,{'Content-Type':'image/png','Content-Length':data.length,'Cache-Control':'private, max-age=3600'});res.end(data);} },
   { method: 'GET', pattern: /^\/api\/workspace\/roots$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRoots')) },
   { method: 'POST', pattern: /^\/api\/workspace\/roots$/, handler: async (req, res) => {const root=workspaceScanner.approveRoot(store,await readJsonBody(req));const permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:['filesystem:read'],source:'explicit-root-approval'});desktopSecurity.appendAudit(DATA_DIR,{action:'permission.granted',rootId:root.id,permissionId:permission.id,exactPath:root.path});sendJson(res,201,root);} },
   { method: 'DELETE', pattern: /^\/api\/workspace\/roots\/([^/]+)$/, handler: async (_req, res, [id]) => {const rootId=decodeURIComponent(id);store.delete('workspaceRoots',rootId);for(const permission of store.all('workspacePermissions').filter(x=>x.rootId===rootId)){permission.status='revoked';permission.revokedAt=new Date().toISOString();store.put('workspacePermissions',permission);}desktopSecurity.appendAudit(DATA_DIR,{action:'permission.revoked',rootId});sendJson(res, 200, { ok:true });} },
@@ -1313,7 +1322,9 @@ function shutdown() {
   console.log('\nShutting down NOVA Runtime...');
   mcpManager.shutdownAll(); // real child MCP server processes — close them, don't orphan
   workspaceRunner.stopAll(); // dev servers and commands run in their own process groups
-  server.close(() => process.exit(0));
+  const closing = browser.shutdown().catch(() => {}); // agent browser windows
+  const timer = setTimeout(() => process.exit(0), 3000);
+  closing.finally(() => server.close(() => { clearTimeout(timer); process.exit(0); }));
 }
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

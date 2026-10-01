@@ -156,6 +156,8 @@
   .card-grid{display:grid;gap:14px;}
   .cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
   .cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+  @media (max-width:1100px){.cols-4{grid-template-columns:repeat(2,minmax(0,1fr));}}
   @media(max-width:980px){.cols-2,.cols-3{grid-template-columns:1fr;}}
 
   .badge{display:inline-flex;align-items:center;gap:5px;font:10px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);}
@@ -818,6 +820,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item" data-view="automations"><span data-lucide="workflow"></span><span class="rail-text">Automations</span></button>
       <button class="nav-item" data-view="evaluations"><span data-lucide="gauge"></span><span class="rail-text">Evaluations</span></button>
       <a class="nav-item" href="/workbench.html"><span data-lucide="layout-dashboard"></span><span class="rail-text">Workbench</span></a>
+      <button class="nav-item" data-view="agentbrowser"><span data-lucide="globe"></span><span class="rail-text">Agent Browser</span></button>
     </div>
     <div class="nav-group">
       <div class="nav-label rail-text">Capabilities</div>
@@ -971,6 +974,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <!-- ===================== WORKFLOWS ===================== -->
       <section id="workflowsView" class="view"><div class="view-pad"><!-- VIEW:workflows --></div></section>
       <section id="neuronsView" class="view"><div class="view-pad"><!-- VIEW:neurons --></div></section>
+      <section id="agentbrowserView" class="view"><div class="view-pad"><!-- VIEW:agentbrowser --></div></section>
       <section id="collectorView" class="view"><div class="view-pad"><!-- VIEW:collector --></div></section>
       <section id="gitView" class="view"><div class="view-pad"><!-- VIEW:git --></div></section>
       <!-- ===================== CAPABILITY GRAPH ===================== -->
@@ -1152,8 +1156,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1565,7 +1569,7 @@ const PIPELINE = {
 
 const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
-  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows',neurons:'Neuron Factory', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
+  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
@@ -1626,7 +1630,7 @@ function showView(name){
   const renderers = {
     sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
-    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
+    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
   };
   if (renderers[name]) renderers[name]();
@@ -5007,6 +5011,117 @@ async function renderNeuronFactoryView(){
   if(window.lucide)lucide.createIcons();
 }
 
+/* ===================== marker: RENDER:AGENT BROWSER ===================== */
+// The agent browser: allowed websites, a try-it panel, open pages and the
+// activity log. Status and log refresh every 5 s while the screen is open;
+// the inputs are never re-rendered, so typing is not interrupted.
+let abPage = null, abTimer = null, abOut = '';
+async function abFetch(path, opts = {}){
+  const r = await fetch(apiUrl(path), { ...opts, headers: { 'Content-Type':'application/json', ...(opts.headers||{}) } });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.ok === false) throw new Error(d.error || ('HTTP ' + r.status));
+  return d;
+}
+function abWhen(t){ if (!t) return '—'; const d = new Date(t); return isNaN(d) ? '—' : d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}); }
+async function renderAgentBrowserView(){
+  const pad = $('agentbrowserView').querySelector('.view-pad');
+  pad.innerHTML = `
+    <div class="view-head"><div><span class="eyebrow">Oversight</span><h1 class="view-title">Agent Browser</h1><p class="view-desc">The separate, locked-down browser NOVA's agents use. It reaches only the websites you allow, records every step, and closes when NOVA is halted. It never uses your own browser or your sign-ins.</p></div></div>
+    <div class="card-grid cols-4" id="abStatus"><div class="panel" style="padding:14px"><span class="empty-hint">Checking…</span></div></div>
+    <div class="card-grid cols-2" style="margin-top:14px;align-items:start">
+      <div class="panel" style="padding:16px">
+        <div class="eyebrow" style="margin-bottom:8px">Allowed websites</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="abDomain" aria-label="Website to allow" placeholder="example.com" style="flex:1;min-width:160px"><button class="btn btn-amber btn-sm" id="abAdd">Allow</button></div>
+        <p class="empty-hint" style="margin:8px 0 10px">Adding example.com also allows www.example.com and other parts of that site. Anything else the page tries to load is blocked and shows up below.</p>
+        <div id="abAllow"></div>
+      </div>
+      <div class="panel" style="padding:16px">
+        <div class="eyebrow" style="margin-bottom:8px">Try it</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="abAgent" aria-label="Agent name" value="console" style="width:120px" title="Each agent gets its own empty browser profile"><input id="abUrl" aria-label="Web address" placeholder="https://example.com" style="flex:1;min-width:180px"><button class="btn btn-amber btn-sm" id="abOpen">Open</button></div>
+        <div id="abTry" style="margin-top:12px"></div>
+      </div>
+    </div>
+    <div class="panel" style="padding:16px;margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div class="eyebrow">Open pages</div><button class="btn btn-line btn-sm" id="abCloseAll">Close all pages</button></div>
+      <div id="abPages" style="margin-top:8px"></div>
+    </div>
+    <div class="card-grid cols-2" style="margin-top:14px;align-items:start">
+      <div class="panel" style="padding:16px"><div class="eyebrow" style="margin-bottom:8px">Recent activity</div><div id="abActions"></div></div>
+      <div class="panel" style="padding:16px"><div class="eyebrow" style="margin-bottom:8px">Blocked addresses</div><div id="abBlocked"></div></div>
+    </div>`;
+  $('abAdd').onclick = () => abAllow($('abDomain').value);
+  $('abDomain').onkeydown = e => { if (e.key === 'Enter') abAllow(e.currentTarget.value); };
+  $('abOpen').onclick = abOpen;
+  $('abUrl').onkeydown = e => { if (e.key === 'Enter') abOpen(); };
+  $('abCloseAll').onclick = async () => { try { const d = await abFetch('/browser/close-all', {method:'POST', body:'{}'}); abPage = null; toast(d.closed + ' page(s) closed.'); abRefresh(); renderAbTry(); } catch (e) { toast('Could not close: ' + e.message); } };
+  renderAbTry();
+  if (window.lucide) lucide.createIcons();
+  await abRefresh();
+  clearInterval(abTimer);
+  abTimer = setInterval(() => { if (currentView !== 'agentbrowser') { clearInterval(abTimer); abTimer = null; return; } abRefresh(); }, 5000);
+}
+async function abAllow(value){
+  const v = String(value || '').trim(); if (!v) return;
+  try { const d = await abFetch('/browser/allowlist', {method:'POST', body: JSON.stringify({domain:v})}); if ($('abDomain')) $('abDomain').value=''; toast(d.domain + ' allowed.'); abRefresh(); }
+  catch (e) { toast(e.message); }
+}
+async function abOpen(){
+  const url = $('abUrl').value.trim(); if (!url) return;
+  const btn = $('abOpen'); btn.disabled = true; btn.textContent = 'Opening…';
+  try {
+    const target = /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : 'https://' + url;
+    const d = await abFetch('/browser/open', {method:'POST', body: JSON.stringify({agentId: $('abAgent').value.trim() || 'console', url: target})});
+    abPage = { pageId: d.pageId, url: d.url, title: d.title, image: d.image }; abOut = '';
+  } catch (e) { abPage = null; abOut = e.message; }
+  finally { btn.disabled = false; btn.textContent = 'Open'; renderAbTry(); abRefresh(); }
+}
+function renderAbTry(){
+  const box = $('abTry'); if (!box) return;
+  if (!abPage) { box.innerHTML = abOut ? `<div class="runtime-inline" style="color:var(--red)">${escapeHtml(abOut)}</div>` : '<p class="empty-hint">Open a page from the allowed list to see what an agent sees. The site must be allowed first.</p>'; return; }
+  box.innerHTML = `<div style="font-size:13px"><strong>${escapeHtml(abPage.title || 'Untitled page')}</strong><div class="mono" style="font-size:10.5px;color:var(--muted-dim);word-break:break-all">${escapeHtml(abPage.url || '')}</div></div>
+    ${abPage.image ? `<img src="${apiUrl('/browser/shots/' + abPage.image)}" alt="What the agent sees" style="display:block;width:100%;max-height:320px;object-fit:cover;object-position:top;border:1px solid var(--line);border-radius:8px;margin:10px 0">` : ''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-line btn-sm" data-ab="read">Read text</button><button class="btn btn-line btn-sm" data-ab="screenshot">Screenshot</button><input id="abSel" aria-label="Element (CSS selector)" placeholder="element, e.g. a, #search" style="width:150px"><button class="btn btn-line btn-sm" data-ab="click">Click</button><input id="abText" aria-label="Text to type" placeholder="text to type" style="width:130px"><button class="btn btn-line btn-sm" data-ab="type">Type</button><button class="btn btn-ghost btn-sm" data-ab="close" style="color:var(--red)">Close</button></div>
+    ${abOut ? `<pre class="mono" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:11px;margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:8px">${escapeHtml(abOut)}</pre>` : ''}`;
+  box.querySelectorAll('[data-ab]').forEach(b => b.onclick = () => abAct(b.dataset.ab));
+}
+async function abAct(kind){
+  if (!abPage) return;
+  const id = encodeURIComponent(abPage.pageId), sel = ($('abSel') || {}).value || '', text = ($('abText') || {}).value || '';
+  try {
+    if (kind === 'read') { const d = await abFetch(`/browser/pages/${id}/read`, {method:'POST', body: JSON.stringify(sel ? {selector: sel} : {})}); abOut = String(d.text || '').slice(0, 6000) || '(no text)'; }
+    else if (kind === 'screenshot') { const d = await abFetch(`/browser/pages/${id}/screenshot`, {method:'POST', body:'{}'}); Object.assign(abPage, {image: d.image, url: d.url, title: d.title}); abOut = ''; }
+    else if (kind === 'click') { if (!sel) return toast('Type the element to click first, for example a or #submit.'); const d = await abFetch(`/browser/pages/${id}/click`, {method:'POST', body: JSON.stringify({selector: sel})}); Object.assign(abPage, {image: d.image, url: d.url, title: d.title}); abOut = ''; }
+    else if (kind === 'type') { if (!sel) return toast('Type the element to fill first, for example input[name=q].'); await abFetch(`/browser/pages/${id}/type`, {method:'POST', body: JSON.stringify({selector: sel, text})}); abOut = 'Typed into ' + sel + '.'; }
+    else if (kind === 'close') { await abFetch(`/browser/pages/${id}/close`, {method:'POST', body:'{}'}); abPage = null; abOut = ''; }
+  } catch (e) { abOut = e.message; }
+  renderAbTry(); abRefresh();
+}
+async function abRefresh(){
+  let st = null, allow = [], log = { actions: [], blocked: [] }, pages = [];
+  try { [st, {allowlist: allow}, log, {pages}] = await Promise.all([abFetch('/browser/status'), abFetch('/browser/allowlist'), abFetch('/browser/log?limit=40'), abFetch('/browser/pages')]); }
+  catch (e) { if ($('abStatus')) $('abStatus').innerHTML = `<div class="panel" style="padding:14px"><span style="color:var(--red)">${escapeHtml(e.message)}</span></div>`; return; }
+  if (!$('abStatus')) return;
+  const card = (label, ok, value, sub) => `<div class="panel" style="padding:14px"><div class="empty-hint">${label}</div><strong style="color:${ok ? 'var(--green)' : 'var(--amber)'}">${escapeHtml(value)}</strong><div class="empty-hint" style="font-size:11px;margin-top:4px">${sub}</div></div>`;
+  $('abStatus').innerHTML = [
+    card('Engine', st.available && !st.disabled, st.disabled ? 'Turned off' : st.available ? 'Ready' : 'Not available', st.disabled ? 'NOVA_BROWSER=0' : st.available ? escapeHtml((st.browser || '') + ' · ' + (st.library || '')) : (st.library ? 'Install Google Chrome' : 'Playwright is missing — <a href="#help/agent-browser">read more</a>')),
+    card('Network access', st.networkAccess, st.networkAccess ? 'On' : 'Off', st.networkAccess ? 'Allowed websites can be opened' : 'Only this computer\'s own pages · <a href="#" id="abToSettings">Settings</a>'),
+    card('Kill switch', !st.halted, st.halted ? 'HALTED' : 'Clear', st.halted ? '<a href="/workbench.html">Resume in Workbench</a>' : 'Halting closes every page'),
+    card('Open pages', true, String((st.openPages || []).length), (allow.length) + ' allowed website(s)'),
+  ].join('');
+  const toSettings = $('abToSettings'); if (toSettings) toSettings.onclick = e => { e.preventDefault(); showView('settings'); };
+  $('abAllow').innerHTML = allow.length ? allow.map(a => `<span class="badge" style="display:inline-flex;align-items:center;gap:6px;margin:0 6px 6px 0;padding:4px 8px">${escapeHtml(a.domain)}<button class="btn btn-ghost btn-sm ab-remove" data-d="${escapeHtml(a.domain)}" aria-label="Remove ${escapeHtml(a.domain)}" style="padding:0 4px;min-height:0">×</button></span>`).join('') : '<p class="empty-hint">No websites allowed yet, so agents cannot open any page.</p>';
+  $$('.ab-remove').forEach(b => b.onclick = async () => { try { await abFetch('/browser/allowlist/' + encodeURIComponent(b.dataset.d), {method:'DELETE'}); toast(b.dataset.d + ' removed.'); abRefresh(); } catch (e) { toast(e.message); } });
+  const open = st.openPages || [];
+  $('abPages').innerHTML = open.length ? `<table><thead><tr><th>Agent</th><th>Page</th><th></th></tr></thead><tbody>${open.map(p => `<tr><td>${escapeHtml(p.agentId)}</td><td class="mono" style="font-size:11px;word-break:break-all">${escapeHtml(p.title ? p.title + ' — ' : '')}${escapeHtml(p.url || '')}</td><td><button class="btn btn-ghost btn-sm ab-close" data-id="${escapeHtml(p.pageId)}" style="color:var(--red)">Close</button></td></tr>`).join('')}</tbody></table>` : `<p class="empty-hint">No pages open.${pages.length ? ' ' + pages.length + ' opened before.' : ''}</p>`;
+  $$('.ab-close').forEach(b => b.onclick = async () => { try { await abFetch('/browser/pages/' + encodeURIComponent(b.dataset.id) + '/close', {method:'POST', body:'{}'}); if (abPage && abPage.pageId === b.dataset.id) { abPage = null; renderAbTry(); } abRefresh(); } catch (e) { toast(e.message); } });
+  const acts = log.actions || [];
+  $('abActions').innerHTML = acts.length ? `<table><thead><tr><th>Time</th><th>Agent</th><th>Action</th><th>Result</th></tr></thead><tbody>${acts.slice(0, 25).map(a => `<tr><td class="mono" style="font-size:11px">${abWhen(a.timestamp)}</td><td>${escapeHtml(a.agent_id || '—')}</td><td>${escapeHtml(a.kind)}</td><td style="color:${a.result === 'ok' ? 'var(--green)' : 'var(--red)'}">${escapeHtml(a.result)}</td></tr>`).join('')}</tbody></table>` : '<p class="empty-hint">Nothing yet.</p>';
+  const counts = {}; for (const b of (log.blocked || [])) { counts[b.domain] = counts[b.domain] || { n: 0, at: b.timestamp }; counts[b.domain].n++; }
+  const blocked = Object.entries(counts);
+  $('abBlocked').innerHTML = blocked.length ? `<table><thead><tr><th>Website</th><th>Times</th><th>Last</th><th></th></tr></thead><tbody>${blocked.map(([d, c]) => `<tr><td class="mono" style="font-size:11px">${escapeHtml(d)}</td><td>${c.n}</td><td class="mono" style="font-size:11px">${abWhen(c.at)}</td><td><button class="btn btn-line btn-sm ab-allow" data-d="${escapeHtml(d)}">Allow</button></td></tr>`).join('')}</tbody></table>` : '<p class="empty-hint">Nothing blocked recently.</p>';
+  $$('.ab-allow').forEach(b => b.onclick = () => abAllow(b.dataset.d));
+}
+
 function renderBrowserView(){
   const root = $('browserView').querySelector('.view-pad');
   root.innerHTML = `
@@ -6260,6 +6375,8 @@ init().then(routeHelpHash);
 // search/filter/sort bar, the view and key panels get a "?" help button, and prompt boxes get
 // preset chips. List choices are remembered per view in this browser.
 const VIEW_HELP = {
+  agentbrowser:'The separate, locked-down browser NOVA\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting NOVA closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
+  neurons:'Train very small, single-purpose models on this Mac: a tiny neural network from your examples, or a simulated quantum circuit. Create a blueprint, queue training, evaluate the result, then approve it. Your Ollama models are not changed.',
   console:'Chat with a local model. + adds files, a folder, a web page or a git repo for NOVA to read. Computer lets NOVA use this Mac (it asks first), the mic lets you talk, Voice reads replies aloud. Steps above each reply show what NOVA is doing; the list icon at the top shows everything running.',
   sessions:'Every conversation you have had. Search or filter by tag, open one to continue it, or delete what you no longer need.',
   workspace:'Local app development. Approve a folder, then plan changes, run tests, create projects from templates, and let the development loop fix failing tests. Nothing is written to your project until you approve a batch.',

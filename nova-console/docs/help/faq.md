@@ -154,7 +154,7 @@ A screen for training very small, single-purpose models on your Mac: a tiny neur
 
 ### What is the agent browser?
 
-A separate, locked-down browser that agents use, limited to allowed websites, with every action recorded. It does not use your own browser or your sign-ins. See [The agent browser](help:agent-browser).
+A separate, locked-down browser that agents use, limited to the websites you allow, with every action recorded. **Agent Browser** in the sidebar shows the allowed websites, open pages, activity and blocked addresses, and lets you try a page yourself. It does not use your own browser profile or your sign-ins. See [Agent Browser](help:agent-browser).
 
 ## Data and settings
 

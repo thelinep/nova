@@ -20,7 +20,7 @@ The sidebar groups every screen by what you do there:
 | Create | Image, Video, Audio, Boards, Timeline, Library | Making media on this computer, arranging it and cutting it together |
 | Workspace | Console, Sessions, Local Workspace | Chatting with models, and changing code in approved folders |
 | Intelligence | Models, Knowledge, Retrieval Lab | The models you have, your documents, and testing search over them |
-| Operations | Automations, Evaluations, Workbench | Scheduled runs, model comparisons, and oversight of background work |
+| Operations | Automations, Evaluations, Workbench, Agent Browser | Scheduled runs, model comparisons, oversight of background work, and the browser agents use |
 | Capabilities | Skills, MCP Registry, Agents, Workflows, Neuron Factory, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
 | System | Runtime, Trace, Git Updates, Execution History, Diagnostics, Settings, Help & Support | Seeing what happened and keeping NOVA healthy |
 

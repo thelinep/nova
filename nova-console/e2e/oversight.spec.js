@@ -27,4 +27,16 @@ test.describe('Oversight', () => {
     await page.goto('/#models');
     await expect(page.locator('#modelsView')).toHaveClass(/active/);
   });
+
+  test('Agent Browser: allow a website, see it listed, remove it', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.nav-item[data-view="agentbrowser"]').click();
+    await expect(page.locator('#agentbrowserView .view-title')).toHaveText('Agent Browser');
+    await expect(page.locator('#abStatus')).toContainText('Engine');
+    await page.locator('#abDomain').fill('https://www.Example.org/page');
+    await page.locator('#abAdd').click();
+    await expect(page.locator('#abAllow')).toContainText('www.example.org');
+    await page.locator('.ab-remove[data-d="www.example.org"]').click();
+    await expect(page.locator('#abAllow')).not.toContainText('www.example.org');
+  });
 });

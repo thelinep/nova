@@ -49,6 +49,23 @@ fi
 self_contained "$BUNDLED" || fail "The bundled Node still depends on Homebrew libraries."
 echo "   Node $("$BUNDLED" -v), self-contained"
 
+# The agent browser needs Playwright's driver (playwright-core, no browsers):
+# it drives the Chrome already installed on the Mac. Kept in packaging/runtime.
+PWV=$(node -p "(require('./package.json').devDependencies||{})['@playwright/test'].replace(/^[^0-9]*/,'')" 2>/dev/null)
+PWCORE="$NOVA/packaging/runtime/playwright-core"
+if [ ! -f "$PWCORE/package.json" ] || [ "$(node -p "require('$PWCORE/package.json').version" 2>/dev/null)" != "$PWV" ]; then
+  rm -rf "$PWCORE"; mkdir -p "$(dirname "$PWCORE")"
+  if [ -f node_modules/playwright-core/package.json ] && [ "$(node -p "require('./node_modules/playwright-core/package.json').version")" = "$PWV" ]; then
+    cp -R node_modules/playwright-core "$PWCORE"
+  else
+    echo "   Downloading the agent browser driver (playwright-core $PWV)…"
+    TMPP=$(mktemp -d)
+    ( cd "$TMPP" && npm pack --silent "playwright-core@$PWV" >/dev/null 2>&1 && tar -xzf playwright-core-*.tgz && mv package "$PWCORE" ) || echo "   ! Could not get playwright-core; the agent browser will be missing from the app."
+    rm -rf "$TMPP"
+  fi
+fi
+[ -f "$PWCORE/package.json" ] && echo "   Agent browser driver: playwright-core $(node -p "require('$PWCORE/package.json').version")"
+
 echo "== 3/5 NOVA Runtime.app (Tauri)"
 APP=""
 if command -v cargo >/dev/null; then
@@ -63,6 +80,10 @@ else
   echo "   Rust (cargo) is not installed, so the .app is skipped. Install it from https://rustup.rs to build the app."
 fi
 if [ -n "$APP" ] && [ -d "$APP" ]; then
+  if [ -f "$PWCORE/package.json" ]; then
+    R="$APP/Contents/Resources/node_modules"; rm -rf "$R/playwright-core"; mkdir -p "$R" && cp -R "$PWCORE" "$R/playwright-core"
+    ( cd "$APP/Contents/Resources" && "$BUNDLED" -e "const pw=require('./node_modules/playwright-core'); if(!pw.chromium) process.exit(1); const b=require('./lib/image-to-code').findBrowser(); console.log('   Agent browser in the app: driver ok' + (b ? ', will use ' + require('path').basename(b) : '; install Google Chrome to use it'))" ) || echo "   ! The agent browser driver did not load inside the app."
+  fi
   codesign --force --deep -s - "$APP" 2>/dev/null
   rm -f "$DIST/$NAME.app.zip"; ditto -c -k --norsrc --noextattr --keepParent "$APP" "$DIST/$NAME.app.zip" && echo "   → $NAME.app.zip"
   echo "== 4/5 Disk image"
@@ -81,6 +102,7 @@ mkdir -p "$P/node/bin" "$P/scripts" "$P/docs"
 cp -X server.js package.json "$P/" && cp -RX lib skills mcp-servers public "$P/" && cp scripts/kokoro-say.py "$P/scripts/" && cp docs/NOVA_USER_GUIDE.md "$P/docs/" \
   && cp "$BUNDLED" "$P/node/bin/node" && cp "packaging/portable/Start NOVA.command" packaging/portable/README.txt "$P/" && chmod +x "$P/Start NOVA.command" "$P/node/bin/node" \
   || fail "Could not assemble the portable folder."
+[ -f "$PWCORE/package.json" ] && mkdir -p "$P/node_modules" && cp -R "$PWCORE" "$P/node_modules/playwright-core"
 find "$P" -name .DS_Store -delete
 COPYFILE_DISABLE=1 tar -C "$(dirname "$P")" -czf "$DIST/$NAME-portable.tar.gz" "NOVA Runtime" && echo "   → $NAME-portable.tar.gz"
 T=$(mktemp -d)

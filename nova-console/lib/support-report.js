@@ -105,7 +105,8 @@ async function buildReport(deps, options = {}) {
     const by = st => { try { return store.jobsListByState(st).length; } catch (_) { return null; } };
     return { queued: by('queued'), running: by('running'), failed: by('failed'), timedOut: by('timed_out') };
   })();
-  const agentBrowser = (() => { try { return process.env.NOVA_BROWSER === '0' ? 'off' : require('./browser-service').available() ? 'ready' : 'missing'; } catch (_) { return 'missing'; } })();
+  const agentEngine = (() => { try { return require('./browser-service').engine(); } catch (_) { return { available: false }; } })();
+  const agentBrowser = process.env.NOVA_BROWSER === '0' ? 'off' : agentEngine.available ? 'ready' : 'missing';
   const dafny = (() => {
     const bin = process.env.NOVA_DAFNY_BIN || 'dafny';
     if (bin.includes('/')) return fs.existsSync(bin);
@@ -126,7 +127,7 @@ async function buildReport(deps, options = {}) {
     { id: 'qualified', label: 'Models qualified for coding', ok: qualified.some(q => q.installed), detail: qualified.filter(q => q.installed).length ? qualified.filter(q => q.installed).map(q => q.model + (q.full ? '' : ' (single-file only)')).join(', ') : 'None yet. Code plans need one: Models → Qualify for coding.', help: 'models' },
     { id: 'killswitch', label: 'Kill switch', ok: !halted, detail: halted ? 'NOVA is HALTED. Resume it in Workbench' + (resume.set ? '.' : ' (you will be asked to choose a resume passphrase).') : 'Clear' + (resume.set ? ', resume passphrase set' : ''), help: 'workbench' },
     { id: 'jobs', label: 'Background jobs', ok: !(jobs.failed || jobs.timedOut), detail: [jobs.queued + ' queued', jobs.running + ' running', jobs.failed + ' failed', jobs.timedOut + ' timed out'].join(', '), help: 'workbench' },
-    { id: 'agentBrowser', label: 'Agent browser (optional)', ok: agentBrowser === 'ready', optional: true, detail: agentBrowser === 'ready' ? 'Playwright available' : agentBrowser === 'off' ? 'Turned off (NOVA_BROWSER=0)' : 'Not included in this copy of NOVA; only agents need it', help: 'agent-browser' },
+    { id: 'agentBrowser', label: 'Agent browser (optional)', ok: agentBrowser === 'ready', optional: true, detail: agentBrowser === 'ready' ? `Ready (${agentEngine.browser}, ${agentEngine.library})` : agentBrowser === 'off' ? 'Turned off (NOVA_BROWSER=0)' : agentEngine.library ? 'Driver included; install Google Chrome to use it' : 'Driver not included in this copy of NOVA; rebuild with Build NOVA app.command', help: 'agent-browser' },
     { id: 'dafny', label: 'Proof checker (optional)', ok: dafny, optional: true, detail: dafny ? 'Dafny installed' : 'Dafny not installed; only the correctness pipeline needs it', help: 'developer-preview' },
     (() => { const e = require('./ocr').engines(); return { id: 'ocr', label: 'Text in images', ok: e.length > 0, detail: e.length ? (e[0] === 'apple-vision' ? 'macOS text recognition' : e[0]) : 'Needs macOS or tesseract', help: 'conversation' }; })(),
     (() => { const b = require('./image-to-code').findBrowser(); return { id: 'browser', label: 'Page checking browser', ok: Boolean(b), detail: b ? require('node:path').basename(b) : 'Install Google Chrome to check pages built from images', help: 'conversation' }; })(),
