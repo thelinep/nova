@@ -130,9 +130,21 @@ async function main() {
     registry,
     connector: github,
     policy,
-    audit: (e) => console.log('  audit: ' + e.action + ' ' + JSON.stringify(
-      Object.fromEntries(Object.entries(e).filter(([k]) => k !== 'action'))
-    )),
+        audit: (e) => {
+      console.log('  audit: ' + e.action + ' ' + JSON.stringify(
+        Object.fromEntries(Object.entries(e).filter(([k]) => k !== 'action'))
+      ));
+      try {
+        store.auditAppend({
+          id: 'lin_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+          action: e.action,
+          status: 'ok',
+          operator: e.operator || 'system',
+          timestamp: new Date().toISOString(),
+          ...e,
+        });
+      } catch { /* best-effort */ }
+    },
   });
 
   // Request a PR — should queue, not execute
