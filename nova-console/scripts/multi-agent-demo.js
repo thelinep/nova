@@ -25,20 +25,28 @@ function sub(text) {
 }
 
 function cleanPreviousRun(store) {
-  // Wipe only the demo-run rows to keep the output deterministic.
-  const prefix = 'demo8-';
-  for (const a of store.agentRegistryList({ active: true })) {
-    if (a.name.startsWith(prefix)) {
-      // detach supervisors first
-      try { store.agentRegistryUpdate(a.id, { supervisor_id: null }); } catch {}
-    }
-  }
-  // Now revoke in dependency order (leaf → root)
-  const agents = store.agentRegistryList({ active: true }).filter((a) => a.name.startsWith(prefix));
-  for (const a of agents) {
-    try { store.agentRegistryUpdate(a.id, { revoked_at: new Date().toISOString(), enabled: 0 }); }
-    catch { /* ignore */ }
-  }
+  // Hard delete any prior demo-run rows so the UNIQUE name constraint
+  // does not block re-runs. Also removes dependent records for the
+  // demo agents so the Workbench does not show orphans.
+  const prefix = 'demo8-%';
+  const db = store.db;
+
+  const ids = db.prepare(
+    "SELECT id FROM agent_registry WHERE name LIKE ?"
+  ).all(prefix).map((r) => r.id);
+
+  if (ids.length === 0) return;
+
+  const placeholders = ids.map(() => '?').join(',');
+
+  // Order matters: dependent tables first
+  db.prepare('DELETE FROM agent_task_events WHERE task_id IN (SELECT id FROM agent_tasks WHERE creator_id IN (' + placeholders + ') OR assignee_id IN (' + placeholders + '))').run(...ids, ...ids);
+  db.prepare('DELETE FROM agent_tasks WHERE creator_id IN (' + placeholders + ') OR assignee_id IN (' + placeholders + ')').run(...ids, ...ids);
+  db.prepare('DELETE FROM agent_escalation_events WHERE escalation_id IN (SELECT id FROM agent_escalations WHERE escalator_id IN (' + placeholders + ') OR reviewer_id IN (' + placeholders + '))').run(...ids, ...ids);
+  db.prepare('DELETE FROM agent_escalations WHERE escalator_id IN (' + placeholders + ') OR reviewer_id IN (' + placeholders + ')').run(...ids, ...ids);
+  db.prepare('DELETE FROM agent_tool_bindings WHERE agent_id IN (' + placeholders + ')').run(...ids);
+  db.prepare('DELETE FROM agent_memory WHERE agent_id IN (' + placeholders + ')').run(...ids);
+  db.prepare('DELETE FROM agent_registry WHERE id IN (' + placeholders + ')').run(...ids);
 }
 
 async function main() {
