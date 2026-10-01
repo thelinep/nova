@@ -226,6 +226,15 @@ function openDb(dataDir) {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_correctness_pipeline_started ON correctness_pipeline_runs(started_at);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_correctness_pipeline_constellation ON correctness_pipeline_runs(constellation_run_id);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS connector_profiles (
+    id TEXT PRIMARY KEY, kind TEXT NOT NULL, name TEXT NOT NULL,
+    config_json TEXT NOT NULL, secret_refs_json TEXT,
+    scopes_json TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL, created_by TEXT NOT NULL, revoked_at TEXT
+  );`);
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_connector_profiles_kind_name ON connector_profiles(kind, name) WHERE revoked_at IS NULL;`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_connector_profiles_kind ON connector_profiles(kind, revoked_at);`);
+
   return { db, dbPath };
 }
 
@@ -390,6 +399,12 @@ class Store {
   correctnessPipelineRunsGet(id) { return this._stmt('SELECT * FROM correctness_pipeline_runs WHERE id=?').get(id) || null; }
   correctnessPipelineRunsUpdate(id, patch) { const cur=this.correctnessPipelineRunsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE correctness_pipeline_runs SET status=?,stage=?,detail=?,constellation_run_id=?,constellation_winner_id=?,clover_run_id=?,consistency_ok=?,proof_ok=?,ended_at=? WHERE id=?').run(n.status,n.stage,n.detail,n.constellation_run_id,n.constellation_winner_id,n.clover_run_id,n.consistency_ok,n.proof_ok,n.ended_at,id); return this.correctnessPipelineRunsGet(id); }
   correctnessPipelineRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} if(filter.constellation_run_id){c.push('constellation_run_id=?');a.push(filter.constellation_run_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM correctness_pipeline_runs'+w+' ORDER BY started_at ASC').all(...a); }
+
+  connectorProfilesInsert(row) { this._stmt('INSERT INTO connector_profiles (id,kind,name,config_json,secret_refs_json,scopes_json,enabled,created_at,created_by,revoked_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(row.id,row.kind,row.name,row.config_json,row.secret_refs_json||null,row.scopes_json,row.enabled?1:0,row.created_at,row.created_by,row.revoked_at||null); return this.connectorProfilesGet(row.id); }
+  connectorProfilesGet(id) { return this._stmt('SELECT * FROM connector_profiles WHERE id=?').get(id) || null; }
+  connectorProfilesUpdate(id, patch) { const cur=this.connectorProfilesGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE connector_profiles SET name=?, config_json=?, secret_refs_json=?, scopes_json=?, enabled=?, revoked_at=? WHERE id=?').run(n.name,n.config_json,n.secret_refs_json,n.scopes_json,n.enabled?1:0,n.revoked_at,id); return this.connectorProfilesGet(id); }
+  connectorProfilesList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.kind){c.push('kind=?');a.push(filter.kind);} if(filter.enabled!=null){c.push('enabled=?');a.push(filter.enabled?1:0);} if(filter.active){c.push('revoked_at IS NULL');} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM connector_profiles'+w+' ORDER BY created_at ASC').all(...a); }
+  connectorProfilesFindByName(kind,name) { return this._stmt('SELECT * FROM connector_profiles WHERE kind=? AND name=? AND revoked_at IS NULL').get(kind,name) || null; }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };
