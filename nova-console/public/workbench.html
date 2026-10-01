@@ -155,6 +155,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
   <section class="panel"><h2>Failed — what broke?</h2><div id="p-failed"></div></section>
   <section class="panel"><h2>Created — what value was produced?</h2><div id="p-created"></div></section>
   <section class="panel"><h2>Pipeline — recent verification runs</h2><div id="p-pipeline"></div></section>
+  <section class="panel"><h2>Agents — active work</h2><div id="p-agents"></div></section>
   <section class="panel" style="grid-column: 1 / -1;"><h2>System — readiness</h2><div id="p-system"></div></section>
 </main>
 
@@ -517,6 +518,54 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
         cloverList));
   }
 
+  function renderAgents(s) {
+    var a = s.agents || {};
+    var reg = a.registry || { total: 0, by_role: {} };
+    var tasks = a.tasks || { by_state: {}, recent: [] };
+    var esc = a.escalations || { pending_total: 0, by_kind: {}, recent: [] };
+
+    var stats = el('div', { class: 'stats' },
+      stat('agents', reg.total || 0),
+      stat('tasks', Object.values(tasks.by_state || {}).reduce(function (acc, n) { return acc + n; }, 0)),
+      stat('escalations', esc.pending_total || 0));
+
+    var roles = Object.keys(reg.by_role || {});
+    var roleList = roles.length
+      ? el('div', { class: 'list' }, roles.map(function (r) {
+          return row(r, reg.by_role[r]);
+        }))
+      : emptyState('No agents registered');
+
+    var states = Object.keys(tasks.by_state || {});
+    var stateList = states.length
+      ? el('div', { class: 'subsection' },
+          el('div', { class: 'subsection-title', text: 'task states' }),
+          el('div', { class: 'list' }, states.map(function (st) {
+            return row(st, tasks.by_state[st]);
+          })))
+      : emptyState('No tasks yet');
+
+    var escList = esc.recent.length
+      ? el('div', { class: 'subsection' },
+          el('div', { class: 'subsection-title', text: 'pending escalations' }),
+          el('div', { class: 'list' }, esc.recent.map(function (e) {
+            var subj = e.escalator_id.slice(0, 8) + ' → ' + e.reviewer_id.slice(0, 8);
+            return el('div', { class: 'pipe' },
+              el('span', { class: 'pipe-id', text: e.kind }),
+              el('span', { class: 'pipe-status warn', text: subj }),
+              el('span', { class: 'pipe-id', text: e.summary.slice(0, 60) }));
+          })))
+      : emptyState('No pending escalations');
+
+    replace('p-agents',
+      stats,
+      el('div', { class: 'subsection' },
+        el('div', { class: 'subsection-title', text: 'by role' }),
+        roleList),
+      stateList,
+      escList);
+  }
+
   function renderSystem(s) {
     var sys = s.system || {};
     var checks = sys.checks || [];
@@ -548,6 +597,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
     renderFailed(s);
     renderCreated(s);
     renderPipeline(s);
+    renderAgents(s);
     renderSystem(s);
     setPills(s);
   }

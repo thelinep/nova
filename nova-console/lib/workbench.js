@@ -35,6 +35,7 @@ class Workbench {
       system:   this._system(),
       approvals: this._approvals(),
       pipeline:  this._pipeline(),
+      agents:    this._agents(),
     };
   }
 
@@ -242,6 +243,102 @@ class Workbench {
       recent_correctness: correctness,
       recent_constellations: constellations,
       recent_clover: clover,
+    };
+  }
+
+
+  // ---- Agents ----
+  _agents() {
+    const cap = 6;
+
+    const registry = safe(
+      () => this.store.agentRegistryList({ active: true }),
+      []
+    );
+    const byRole = {};
+    for (const a of registry) byRole[a.role] = (byRole[a.role] || 0) + 1;
+
+    const tasksByState = safe(() => {
+      const rows = this.store.agentTasksList({});
+      const out = {};
+      for (const r of rows) out[r.state] = (out[r.state] || 0) + 1;
+      return out;
+    }, {});
+
+    const recentTasks = safe(
+      () => this.store.agentTasksList({})
+        .slice(0, cap).map((r) => ({
+          id: r.id,
+          title: r.title,
+          state: r.state,
+          creator_id: r.creator_id,
+          assignee_id: r.assignee_id,
+          parent_task_id: r.parent_task_id,
+          handoff_count: r.handoff_count,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+        })),
+      []
+    );
+
+    const pendingEscalations = safe(
+      () => this.store.agentEscalationsList({ state: 'pending' }),
+      []
+    );
+    const escalationsByKind = {};
+    for (const e of pendingEscalations) {
+      escalationsByKind[e.kind] = (escalationsByKind[e.kind] || 0) + 1;
+    }
+
+    const recentEscalations = safe(
+      () => this.store.agentEscalationsList({ state: 'pending' })
+        .slice(0, cap).map((r) => ({
+          id: r.id,
+          kind: r.kind,
+          summary: r.summary,
+          escalator_id: r.escalator_id,
+          reviewer_id: r.reviewer_id,
+          tool_kind: r.tool_kind || null,
+          tool_id: r.tool_id || null,
+          tool_operation: r.tool_operation || null,
+          created_at: r.created_at,
+          expires_at: r.expires_at || null,
+          parent_escalation_id: r.parent_escalation_id || null,
+        })),
+      []
+    );
+
+    const recentMemory = safe(
+      () => this.store.agentMemoryList({ not_expired: true })
+        .slice(0, cap).map((r) => ({
+          id: r.id,
+          agent_id: r.agent_id,
+          kind: r.kind,
+          scope: r.scope,
+          created_at: r.created_at,
+        })),
+      []
+    );
+
+    return {
+      registry: {
+        total: registry.length,
+        enabled: registry.filter((a) => a.enabled === 1).length,
+        with_supervisor: registry.filter((a) => a.supervisor_id).length,
+        by_role: byRole,
+      },
+      tasks: {
+        by_state: tasksByState,
+        recent: recentTasks,
+      },
+      escalations: {
+        pending_total: pendingEscalations.length,
+        by_kind: escalationsByKind,
+        recent: recentEscalations,
+      },
+      memory: {
+        recent: recentMemory,
+      },
     };
   }
 

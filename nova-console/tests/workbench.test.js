@@ -12,6 +12,9 @@ const { PolicyEngine } = require('../lib/policy');
 const { BudgetEngine } = require('../lib/budgets');
 const { KillSwitch } = require('../lib/killswitch');
 const { RollbackManager } = require('../lib/rollback');
+const { AgentRegistry } = require('../lib/agents');
+const { AgentTasks } = require('../lib/agent-tasks');
+const { AgentSupervisor } = require('../lib/agent-supervisor');
 
 function fresh() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-workbench-'));
@@ -256,5 +259,63 @@ test('17 connector_action_surfaces_in_approvals', () => {
   assert.equal(ca.ref.profile_id, 'conn_profile_xyz');
   assert.equal(ca.ref.operation, 'createIssue');
   assert.equal(ca.ref.requested_by, 'alice');
+  cleanup(env);
+});
+
+test('18 agents_section_shape', () => {
+  const env = fresh();
+  const wb = new Workbench(env.store);
+  const s = wb.snapshot();
+  assert.ok(s.agents);
+  assert.equal(typeof s.agents.registry.total, 'number');
+  assert.ok(s.agents.registry.by_role);
+  assert.ok(s.agents.tasks.by_state);
+  assert.ok(Array.isArray(s.agents.tasks.recent));
+  assert.equal(typeof s.agents.escalations.pending_total, 'number');
+  assert.ok(Array.isArray(s.agents.escalations.recent));
+  assert.ok(Array.isArray(s.agents.memory.recent));
+  cleanup(env);
+});
+
+test('19 agents_section_reflects_registry_tasks_escalations', () => {
+  const env = fresh();
+  const registry = new AgentRegistry(env.store);
+  const tasks = new AgentTasks(env.store, { registry });
+  const supervisor = new AgentSupervisor(env.store, { registry });
+
+  const top = registry.create({ name: 'top', role: 'supervisor' });
+  const mid = registry.create({ name: 'mid', role: 'supervisor', supervisorId: top.id });
+  const w = registry.create({ name: 'w', role: 'worker', supervisorId: mid.id });
+
+  tasks.create({ title: 'task-one', creatorId: mid.id, assigneeId: w.id });
+  tasks.create({ title: 'task-two', creatorId: mid.id });
+
+  supervisor.escalate({
+    escalatorId: w.id,
+    kind: 'tool_request',
+    summary: 'need github',
+    toolQuery: { kind: 'connector', toolId: 'gh1', operation: 'pr:create' },
+  });
+
+  const wb = new Workbench(env.store);
+  const s = wb.snapshot();
+
+  assert.equal(s.agents.registry.total, 3);
+  assert.equal(s.agents.registry.by_role.supervisor, 2);
+  assert.equal(s.agents.registry.by_role.worker, 1);
+  assert.equal(s.agents.registry.with_supervisor, 2);
+
+  assert.equal(s.agents.tasks.by_state.assigned, 1);
+  assert.equal(s.agents.tasks.by_state.queued, 1);
+  assert.equal(s.agents.tasks.recent.length, 2);
+
+  assert.equal(s.agents.escalations.pending_total, 1);
+  assert.equal(s.agents.escalations.by_kind.tool_request, 1);
+  const e = s.agents.escalations.recent[0];
+  assert.equal(e.escalator_id, w.id);
+  assert.equal(e.reviewer_id, mid.id);
+  assert.equal(e.tool_kind, 'connector');
+  assert.equal(e.tool_operation, 'pr:create');
+
   cleanup(env);
 });
