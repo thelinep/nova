@@ -215,6 +215,17 @@ function openDb(dataDir) {
   );`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_dafny_pro_attempts_run ON dafny_pro_attempts(run_id);`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS correctness_pipeline_runs (
+    id TEXT PRIMARY KEY, problem_hash TEXT NOT NULL,
+    status TEXT NOT NULL, stage TEXT, detail TEXT,
+    constellation_run_id TEXT, constellation_winner_id TEXT,
+    clover_run_id TEXT,
+    consistency_ok INTEGER, proof_ok INTEGER,
+    started_at TEXT NOT NULL, ended_at TEXT
+  );`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_correctness_pipeline_started ON correctness_pipeline_runs(started_at);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_correctness_pipeline_constellation ON correctness_pipeline_runs(constellation_run_id);`);
+
   return { db, dbPath };
 }
 
@@ -374,6 +385,11 @@ class Store {
   dafnyProRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM dafny_pro_runs'+w+' ORDER BY started_at ASC').all(...a); }
   dafnyProAttemptsInsert(row) { this._stmt('INSERT INTO dafny_pro_attempts (id,run_id,attempt,verified,error_count,annotations_json,rejected_reason,created_at) VALUES (?,?,?,?,?,?,?,?)').run(row.id,row.run_id,row.attempt,row.verified?1:0,row.error_count||0,row.annotations_json||null,row.rejected_reason||null,row.created_at); return row; }
   dafnyProAttemptsList(runId) { return this._stmt('SELECT * FROM dafny_pro_attempts WHERE run_id=? ORDER BY attempt ASC').all(runId); }
+
+  correctnessPipelineRunsInsert(row) { this._stmt('INSERT INTO correctness_pipeline_runs (id,problem_hash,status,stage,detail,constellation_run_id,constellation_winner_id,clover_run_id,consistency_ok,proof_ok,started_at,ended_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.problem_hash,row.status,row.stage||null,row.detail||null,row.constellation_run_id||null,row.constellation_winner_id||null,row.clover_run_id||null,row.consistency_ok==null?null:row.consistency_ok,row.proof_ok==null?null:row.proof_ok,row.started_at,row.ended_at||null); return this.correctnessPipelineRunsGet(row.id); }
+  correctnessPipelineRunsGet(id) { return this._stmt('SELECT * FROM correctness_pipeline_runs WHERE id=?').get(id) || null; }
+  correctnessPipelineRunsUpdate(id, patch) { const cur=this.correctnessPipelineRunsGet(id); if(!cur) return null; const n={...cur,...patch}; this._stmt('UPDATE correctness_pipeline_runs SET status=?,stage=?,detail=?,constellation_run_id=?,constellation_winner_id=?,clover_run_id=?,consistency_ok=?,proof_ok=?,ended_at=? WHERE id=?').run(n.status,n.stage,n.detail,n.constellation_run_id,n.constellation_winner_id,n.clover_run_id,n.consistency_ok,n.proof_ok,n.ended_at,id); return this.correctnessPipelineRunsGet(id); }
+  correctnessPipelineRunsList(filter) { filter=filter||{}; const c=[]; const a=[]; if(filter.status){c.push('status=?');a.push(filter.status);} if(filter.constellation_run_id){c.push('constellation_run_id=?');a.push(filter.constellation_run_id);} const w=c.length?' WHERE '+c.join(' AND '):''; return this._stmt('SELECT * FROM correctness_pipeline_runs'+w+' ORDER BY started_at ASC').all(...a); }
 }
 
 module.exports = { STORE_NAMES, openDb, Store };

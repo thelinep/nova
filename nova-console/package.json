@@ -32,7 +32,8 @@
     "test:dafny-pro": "node --test tests/dafny-pro.test.js",
     "test:clover": "node --test tests/clover.test.js",
     "test:ollama-provider": "node --test tests/ollama-provider.test.js",
-    "test:dafny-cli": "node --test tests/dafny-cli.test.js"
+    "test:dafny-cli": "node --test tests/dafny-cli.test.js",
+    "test:correctness-pipeline": "node --test tests/correctness-pipeline.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
