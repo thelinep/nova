@@ -116,7 +116,41 @@ Yes. Automations run on a timer while NOVA is open. Workflow schedules are not w
 
 ### Can NOVA change my code?
 
-Only in folders you approve in Local Workspace, and only after you review and apply each change batch. Every batch can be rolled back. See [Local Workspace and projects](help:workspace).
+Only in folders you approve in Local Workspace, and only after you review and apply each change batch. Every batch can be rolled back. Planning code needs a model that passed **Qualify for coding** in Models. See [Local Workspace and projects](help:workspace).
+
+## Oversight
+
+### What is Workbench?
+
+One page that shows NOVA's background work: what is running, what waits for your decision, what it may do, what broke and what it produced. It has the kill switch. See [Workbench](help:workbench).
+
+### Why are most Workbench panels empty?
+
+They fill as background work runs: jobs, connectors, agents of the multi-agent system and autonomy runs. Several of these are not started from the console yet, so on a new install Workbench is mostly quiet. See [Built, not yet in the console](help:developer-preview).
+
+### What does the kill switch stop?
+
+Background jobs, autonomy runs, multi-agent agents, the agent browser and computer actions from chat. Chat keeps working. Resuming needs the resume passphrase you choose the first time. See [Workbench](help:workbench#the-kill-switch).
+
+### Why does NOVA say my model is not qualified to plan code?
+
+Code plans and the improve-and-test loop only use models that passed NOVA's coding checks. Open **Models** and press **Qualify for coding** on the model, then wait for the 18 trials to finish. See [Models](help:models#qualify-for-coding).
+
+### What does "setup: 3 / 5" mean?
+
+How many of five setup steps this computer has done. Click it to see the rest. See [The setup checklist](help:getting-started-checklist).
+
+### Can NOVA work with GitHub?
+
+A GitHub connector is built. It can read repositories, issues, pull requests and checks, and open or merge a pull request, each one checked by a policy and approved in Workbench. It is not started from the console yet. See [Built, not yet in the console](help:developer-preview).
+
+### Are tokens I give NOVA safe?
+
+Connector tokens are stored encrypted (AES-256-GCM) in the secrets vault. The key is a file in NOVA's data folder that only your user account can read, and a token is never shown again after you save it.
+
+### What is the agent browser?
+
+A separate, locked-down browser that agents use, limited to allowed websites, with every action recorded. It does not use your own browser or your sign-ins. See [The agent browser](help:agent-browser).
 
 ## Data and settings
 

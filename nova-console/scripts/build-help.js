@@ -29,7 +29,7 @@ const JSON_OUT = path.join(ROOT, 'public', 'help', 'help.json');
 const SITE = path.join(ROOT, 'docs', 'site');
 const GUIDE = path.join(ROOT, 'docs', 'NOVA_USER_GUIDE.md');
 
-const SECTIONS = ['Getting started', 'Chat and knowledge', 'Create', 'Capabilities', 'Local Workspace', 'Operations', 'Desktop app', 'Help and support'];
+const SECTIONS = ['Getting started', 'Chat and knowledge', 'Create', 'Capabilities', 'Oversight', 'Local Workspace', 'Operations', 'Desktop app', 'Help and support'];
 
 /* ------------------------------------------------------------------ markdown */
 

@@ -50,3 +50,10 @@ From `nova-console`, run `npm start` and open `http://127.0.0.1:8787/`. Optional
 ## What the app does not include
 
 Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts; **Check NOVA on this Mac.command** reports what is missing.
+
+The app also leaves out two developer tools. Everything else works without them:
+
+- **The agent browser** needs Playwright, which comes with the source folder (`npm install` in `nova-console`). See [The agent browser](help:agent-browser).
+- **Proof checking** in the correctness pipeline needs Dafny (`brew install dafny`). See [Built, not yet in the console](help:developer-preview).
+
+The support report shows whether each one is available.

@@ -60,6 +60,8 @@ Before every action NOVA shows exactly what it wants to do and waits:
 
 Some things are always refused: administrator (`sudo`) commands, erasing disks, deleting your home folder, shutting down, and downloading and running a script in one step.
 
+While NOVA is **halted** with the kill switch in [Workbench](help:workbench), it does not act on your computer at all. It says so in the chat, and you can still talk to it.
+
 @screen media/computer-approval.jpg "NOVA asks before running a command."
 
 @video media/conversation.mp4 "Adding a folder, asking about it, and approving a command."

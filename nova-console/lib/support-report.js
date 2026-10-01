@@ -90,6 +90,29 @@ async function buildReport(deps, options = {}) {
       .map(e => ({ type: e.type || 'run', label: redact(String(e.label || '').slice(0, 80)), status: e.status, at: e.finishedAt || e.startedAt || null, error: redact(String(e.detail || '').slice(0, 300)) }));
   } catch (_) {}
 
+  // Oversight: kill switch, coding qualification, background jobs, optional developer tools.
+  const halted = (() => { try { return typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1'; } catch (_) { return false; } })();
+  const resume = (() => { try { return require('./resume-passphrase').status(dataDir); } catch (_) { return { set: false }; } })();
+  const qualified = (() => {
+    try {
+      const recs = store.all('modelQualifications');
+      const installed = new Map((ollama.models || []).filter(m => m && m.digest).map(m => [m.digest, m.name || m.model]));
+      return recs.filter(r => r.capabilities && Object.values(r.capabilities).length && ['single-file', 'clarification', 'timeout', 'cancellation'].every(c => r.capabilities[c] && r.capabilities[c].qualified))
+        .map(r => ({ model: installed.get(r.digest) || r.modelId || 'model no longer installed', installed: installed.has(r.digest), full: Object.keys(r.capabilities).filter(c => r.capabilities[c].qualified).length === 6 }));
+    } catch (_) { return []; }
+  })();
+  const jobs = (() => {
+    const by = st => { try { return store.jobsListByState(st).length; } catch (_) { return null; } };
+    return { queued: by('queued'), running: by('running'), failed: by('failed'), timedOut: by('timed_out') };
+  })();
+  const agentBrowser = (() => { try { return process.env.NOVA_BROWSER === '0' ? 'off' : require('./browser-service').available() ? 'ready' : 'missing'; } catch (_) { return 'missing'; } })();
+  const dafny = (() => {
+    const bin = process.env.NOVA_DAFNY_BIN || 'dafny';
+    if (bin.includes('/')) return fs.existsSync(bin);
+    for (const dir of (process.env.PATH || '').split(':').concat(['/opt/homebrew/bin', '/usr/local/bin'])) { try { fs.accessSync(path.join(dir, bin), fs.constants.X_OK); return true; } catch (_) {} }
+    return false;
+  })();
+
   const library = (() => { try { return deps.libraryInfo ? deps.libraryInfo() : null; } catch (_) { return null; } })();
   const dbBytes = fileSize(path.join(dataDir, 'nova.db'));
 
@@ -100,6 +123,11 @@ async function buildReport(deps, options = {}) {
     { id: 'voice', label: 'Voice', ok: Boolean(audio.voice && audio.voice.ready), detail: audio.voice ? (audio.voice.kokoro && audio.voice.kokoro.ready ? 'Kokoro voices' : audio.voice.ready ? 'macOS voices' : 'No voice engine') : (audio.error || 'Unknown'), help: 'media-audio' },
     { id: 'transcribe', label: 'Transcription', ok: Boolean(transcribe.ready), detail: transcribe.ready ? (transcribe.modelName || 'Ready') : ((transcribe.missing || []).join('; ') || transcribe.error || 'Not set up'), help: 'media-audio' },
     { id: 'tools', label: 'Tool servers', ok: mcp.some(s => s.status === 'connected'), detail: mcp.length ? mcp.filter(s => s.status === 'connected').length + ' of ' + mcp.length + ' connected' : 'None configured', help: 'tools-approvals' },
+    { id: 'qualified', label: 'Models qualified for coding', ok: qualified.some(q => q.installed), detail: qualified.filter(q => q.installed).length ? qualified.filter(q => q.installed).map(q => q.model + (q.full ? '' : ' (single-file only)')).join(', ') : 'None yet. Code plans need one: Models → Qualify for coding.', help: 'models' },
+    { id: 'killswitch', label: 'Kill switch', ok: !halted, detail: halted ? 'NOVA is HALTED. Resume it in Workbench' + (resume.set ? '.' : ' (you will be asked to choose a resume passphrase).') : 'Clear' + (resume.set ? ', resume passphrase set' : ''), help: 'workbench' },
+    { id: 'jobs', label: 'Background jobs', ok: !(jobs.failed || jobs.timedOut), detail: [jobs.queued + ' queued', jobs.running + ' running', jobs.failed + ' failed', jobs.timedOut + ' timed out'].join(', '), help: 'workbench' },
+    { id: 'agentBrowser', label: 'Agent browser (optional)', ok: agentBrowser === 'ready', optional: true, detail: agentBrowser === 'ready' ? 'Playwright available' : agentBrowser === 'off' ? 'Turned off (NOVA_BROWSER=0)' : 'Not included in this copy of NOVA; only agents need it', help: 'agent-browser' },
+    { id: 'dafny', label: 'Proof checker (optional)', ok: dafny, optional: true, detail: dafny ? 'Dafny installed' : 'Dafny not installed; only the correctness pipeline needs it', help: 'developer-preview' },
     (() => { const e = require('./ocr').engines(); return { id: 'ocr', label: 'Text in images', ok: e.length > 0, detail: e.length ? (e[0] === 'apple-vision' ? 'macOS text recognition' : e[0]) : 'Needs macOS or tesseract', help: 'conversation' }; })(),
     (() => { const b = require('./image-to-code').findBrowser(); return { id: 'browser', label: 'Page checking browser', ok: Boolean(b), detail: b ? require('node:path').basename(b) : 'Install Google Chrome to check pages built from images', help: 'conversation' }; })(),
   ].map(c => ({ ...c, detail: redact(c.detail) }));
@@ -116,6 +144,7 @@ async function buildReport(deps, options = {}) {
       transcription: { ready: Boolean(transcribe.ready), model: transcribe.modelName || null, multilingual: Boolean(transcribe.multilingual), ffmpeg: Boolean(transcribe.ffmpeg), missing: (transcribe.missing || []).map(redact) },
       toolServers: mcp,
     },
+    oversight: { halted, resumePassphraseSet: Boolean(resume.set), qualifiedModels: qualified, jobs, agentBrowser, dafny },
     checks,
     recentFailures: failures,
     logTail: options.includeLog ? logTail(dataDir) : null,
@@ -131,7 +160,7 @@ function toText(r) {
   L.push(`${r.system.macOS ? 'macOS ' + r.system.macOS : r.system.platform} ${r.system.arch}, Node ${r.system.node}, ${r.system.cpus} CPUs, ${r.system.memoryGB} GB memory (${r.system.freeMemoryGB} GB free)`);
   L.push(`Data: ${r.data.dataDir} (database ${r.data.databaseSize})${r.data.libraryDir ? ', library ' + r.data.libraryDir : ''}`, '');
   L.push('Checks');
-  for (const c of r.checks) L.push(`  ${c.ok ? '[ok]  ' : '[fail]'} ${c.label}: ${c.detail}`);
+  for (const c of r.checks) L.push(`  ${c.ok ? '[ok]  ' : c.optional ? '[--]  ' : '[fail]'} ${c.label}: ${c.detail}`);
   L.push('', 'Engines');
   L.push(`  Ollama models: ${r.engines.ollama.models.join(', ') || 'none'}`);
   L.push(`  ComfyUI: ${r.engines.comfyui.reachable ? `version ${r.engines.comfyui.version || '?'}, ${r.engines.comfyui.imageModels} image models` : 'not running'}`);

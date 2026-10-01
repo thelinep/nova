@@ -74,7 +74,7 @@ class ActivationLadder {
     const done = qualified.length > 0;
     let detail = 'no qualified model yet';
     if (done) {
-      const name = qualified[0].model || qualified[0].modelName || qualified[0].id || '?';
+      const name = qualified[0].model || qualified[0].modelName || qualified[0].modelId || qualified[0].id || '?';
       detail = qualified.length + ' qualified · ' + name;
     }
     return {
@@ -154,7 +154,12 @@ class ActivationLadder {
       []
     );
     const green = safe(() => this.store.greenCommitsList(), []);
-    const total = correctness.length + clover.length + green.length;
+    // Changes NOVA applied to a project only after their checks passed, and
+    // improve-and-test loops whose tests passed, count as verified too: they
+    // are the verified outcomes most people reach from the console.
+    const applied = safe(() => this.store.all('workspaceChanges').concat(this.store.all('workspaceChangeBatches')).filter((c) => c.status === 'applied'), []);
+    const loops = safe(() => this.store.all('workspaceLoops').filter((l) => Array.isArray(l.attempts) && l.attempts.some((a) => a.status === 'passed')), []);
+    const total = correctness.length + clover.length + green.length + applied.length + loops.length;
     const done = total > 0;
     let detail = 'no verified outcome yet';
     if (done) {
@@ -162,15 +167,17 @@ class ActivationLadder {
       if (correctness.length > 0) parts.push(correctness.length + ' pipeline runs');
       if (clover.length > 0) parts.push(clover.length + ' clover proofs');
       if (green.length > 0) parts.push(green.length + ' green commits');
+      if (applied.length > 0) parts.push(applied.length + ' checked changes applied');
+      if (loops.length > 0) parts.push(loops.length + ' loops with passing tests');
       detail = parts.join(' · ');
     }
     return {
       id: 'verified',
       label: 'One verified outcome',
-      description: 'Run the correctness pipeline or advance a green commit.',
+      description: 'Apply a code change after its checks pass, finish an improve-and-test loop with passing tests, or run the correctness pipeline.',
       done,
       detail,
-      action: done ? null : { label: 'Open Workbench', href: '/workbench.html' },
+      action: done ? null : { label: 'Open Local Workspace', href: '/#workspace' },
     };
   }
 }
@@ -178,6 +185,11 @@ class ActivationLadder {
 function isQualified(q) {
   if (!q) return false;
   if (q.passed === true) return true;
+  // Records written by the coding qualification suite: qualified for at
+  // least one-file changes plus the three control checks, as the planner
+  // requires before it will use the model.
+  const caps = q.capabilities;
+  if (caps && typeof caps === 'object' && ['single-file', 'clarification', 'timeout', 'cancellation'].every((c) => caps[c] && caps[c].qualified)) return true;
   const s = String(q.status || q.result || q.outcome || '').toLowerCase();
   return s === 'qualified' || s === 'pass' || s === 'passed';
 }

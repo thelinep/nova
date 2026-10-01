@@ -3,7 +3,16 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { chromium } = require('playwright');
+// Playwright is loaded only when a page is opened: the packaged desktop app
+// does not ship it, and NOVA must still start without it.
+let playwrightCache;
+function loadPlaywright() {
+  if (playwrightCache === undefined) {
+    try { playwrightCache = require('playwright'); } catch (_) { playwrightCache = null; }
+  }
+  return playwrightCache;
+}
+function available() { return Boolean(loadPlaywright()); }
 
 // ---------- error classes ----------
 class BrowserError extends Error {
@@ -198,7 +207,9 @@ class BrowserService {
       throw new PolicyDeniedError('Egress denied by policy.', policy.id);
     }
 
-    const context = await chromium.launchPersistentContext(
+    const pw = loadPlaywright();
+    if (!pw) throw new BrowserError('The agent browser needs Playwright, which this copy of NOVA does not include. Run npm install in nova-console, or use NOVA from the source folder.', 503, policy.id);
+    const context = await pw.chromium.launchPersistentContext(
       this.profile(agentId),
       {
         headless: process.env.NOVA_BROWSER_HEADFUL !== '1',
@@ -416,6 +427,7 @@ module.exports = {
   BrowserError,
   DisabledError,
   HaltedError,
+  available,
   PolicyDeniedError,
   PageNotFoundError,
 };

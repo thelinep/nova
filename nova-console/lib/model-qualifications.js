@@ -72,7 +72,7 @@ function restrictedSmallModel(model) {
 function selectModel(store, models, capability, preferredName = 'llama3:latest') {
   const qualified = models.filter(model => model.digest && (capability === 'single-file' || !restrictedSmallModel(model)) && ['clarification', 'timeout', 'cancellation'].every(control => isQualified(store, model.digest, control)) && isQualified(store, model.digest, capability));
   const selected = qualified.find(model => model.id === preferredName || model.name === preferredName) || qualified[0];
-  if (!selected) throw error(`No installed model is qualified for ${capability}. Run the repeatability qualification suite.`);
+  if (!selected) throw error(`No installed model is qualified for ${capability}. Open Models and press "Qualify for coding" on a model (about 10–30 minutes).`);
   return { model: selected, qualification: getByDigest(store, selected.digest)?.capabilities?.[capability] };
 }
 

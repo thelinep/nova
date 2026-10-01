@@ -32,8 +32,8 @@ catch (_) { try { ({ chromium } = require('playwright')); } catch (e) { console.
 
 /* ---------------------------------------------------------- stand-in Ollama */
 const MODELS = [
-  { name: 'llama3.2:latest', model: 'llama3.2:latest', size: 2019393189, details: { family: 'llama', parameter_size: '3.2B', quantization_level: 'Q4_K_M' } },
-  { name: 'qwen2.5-coder:7b', model: 'qwen2.5-coder:7b', size: 4683087332, details: { family: 'qwen2', parameter_size: '7.6B', quantization_level: 'Q4_K_M' } },
+  { name: 'llama3.2:latest', model: 'llama3.2:latest', digest: '1'.repeat(64), size: 2019393189, details: { family: 'llama', parameter_size: '3.2B', quantization_level: 'Q4_K_M' } },
+  { name: 'qwen2.5-coder:7b', model: 'qwen2.5-coder:7b', digest: '2'.repeat(64), size: 4683087332, details: { family: 'qwen2', parameter_size: '7.6B', quantization_level: 'Q4_K_M' } },
   { name: 'nomic-embed-text:latest', model: 'nomic-embed-text:latest', size: 274302450, details: { family: 'nomic-bert', parameter_size: '137M', quantization_level: 'F16' } },
 ];
 const REPLY = 'Here is a short plan for the shoot:\n\n1. **Location** – Marine Drive at dusk, with the city lights starting to show.\n2. **Look** – warm, soft light and a slow push-in on the lead.\n3. **Sound** – waves, distant traffic and a single sustained piano note.\n\nWant me to turn this into a shot list?';
@@ -92,6 +92,20 @@ function startOllama() {
 }
 
 /* ---------------------------------------------------------------- NOVA */
+// Example coding-check results (one model fully qualified, one partly) and one
+// policy grant, so Models, Workbench and the setup checklist show their states.
+function seedOversight(dataDir) {
+  const { openDb, Store } = require('../lib/db');
+  const q = require('../lib/model-qualifications');
+  const { PolicyEngine } = require('../lib/policy');
+  const { db } = openDb(dataDir); const store = new Store(db);
+  const at = '2026-10-01T10:00:00.000Z';
+  for (const cap of q.CAPABILITIES) for (let t = 1; t <= 3; t++) q.recordResult(store, { digest: '2'.repeat(64), model: 'qwen2.5-coder:7b', fixture: cap, trial: t, status: 'passed', completedAt: at, runId: 'docs-q-' + cap + t });
+  for (const cap of q.CAPABILITIES) for (let t = 1; t <= 3; t++) q.recordResult(store, { digest: '1'.repeat(64), model: 'llama3.2:latest', fixture: cap, trial: t, status: ['multi-file', 'large-context'].includes(cap) && t === 2 ? 'failed' : 'passed', completedAt: at, runId: 'docs-l-' + cap + t });
+  new PolicyEngine(store).grant({ subject: { type: 'agent', id: 'shoot-planner' }, resource: { type: 'skill', id: 'skl_shotlist' }, createdBy: 'docs' });
+  db.close();
+}
+
 async function startNova(ollamaPort, dataDir) {
   const port = 8900 + Math.floor(Math.random() * 90);
   const child = spawn(process.execPath, ['--no-warnings', 'server.js'], {
@@ -134,6 +148,7 @@ const park = page => page.mouse.move(2, 790);
 async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-docs-'));
+  seedOversight(dataDir);
   const ollama = await startOllama();
   const { child, base } = await startNova(ollama.address().port, dataDir);
   const browser = await chromium.launch();
@@ -170,7 +185,8 @@ async function main() {
     await shot('console', view('console'));
     await shot('command', async () => { await page.evaluate(() => showView('console')); await page.keyboard.press('Control+k'); await page.locator('#cmdkInput').fill('go to'); }, { wait: 400 });
     await page.keyboard.press('Escape');
-    for (const v of ['sessions', 'models', 'knowledge', 'retrieval', 'automations', 'evaluations', 'boards', 'timeline', 'skills', 'mcp', 'agents', 'workflows', 'collector', 'graph', 'browser', 'workspace', 'git', 'runtime', 'trace', 'history', 'diagnostics', 'settings']) await shot(v, view(v));
+    for (const v of ['sessions', 'knowledge', 'retrieval', 'automations', 'evaluations', 'boards', 'timeline', 'skills', 'mcp', 'agents', 'workflows', 'collector', 'graph', 'browser', 'workspace', 'git', 'runtime', 'trace', 'history', 'diagnostics', 'settings']) await shot(v, view(v));
+    await shot('models', async () => { await page.evaluate(() => showView('models')); await sleep(800); await page.locator('.model-qualify').first().scrollIntoViewIfNeeded(); await page.evaluate(() => { const c = [...document.querySelectorAll('.model-card')].find(x => /qwen2\.5-coder:7b/.test(x.textContent)); if (c) c.scrollIntoView({ block: 'center' }); }); }, { wait: 900 });
     await shot('media-image', () => page.locator('.nav-item[data-media-tab="image"]').click());
     await shot('media-video', () => page.locator('.nav-item[data-media-tab="video"]').click());
     await shot('media-audio', () => page.locator('.nav-item[data-media-tab="audio"]').click());
@@ -219,6 +235,10 @@ async function main() {
         await shot('image-build', () => page.evaluate(() => { const m = activeSession().messages.filter(x => x.role === 'assistant').pop(); stepsOpen.set(m.id, true); renderConvo(); const el = document.querySelector('.build-card'); if (el) el.scrollIntoView({ block: 'center' }); }), { wait: 900 });
       } catch (e) { console.warn('  ! image-build: ' + e.message.split('\n')[0]); }
     }
+    await shot('workbench', async () => { await page.goto(base + '/workbench.html'); await page.waitForLoadState('networkidle'); }, { wait: 1500 });
+    await shot('workbench-halt', async () => { await page.locator('.btn-halt').click(); }, { wait: 500 });
+    await shot('setup-checklist', async () => { await page.goto(base + '/activate.html'); await page.waitForLoadState('networkidle'); }, { wait: 1200 });
+    await page.goto(base + '/'); await page.waitForLoadState('networkidle'); await sleep(1200);
     await shot('help', () => page.evaluate(() => openHelp()));
     await shot('help-support', () => page.evaluate(() => openHelp('support-report')), { wait: 2500 });
     await shot('help-drawer', async () => { await page.evaluate(() => showView('agents')); await page.locator('#agentsView .help-btn').first().click(); }, { wait: 900 });

@@ -17,6 +17,8 @@ Press **Choose folder…**, pick a project folder and press **Approve root**. NO
 
 ## Code changes
 
+NOVA plans changes only with a model that passed its coding checks: open **Models** and press **Qualify for coding** first ([Models](help:models#qualify-for-coding)). Models of 3.2B parameters or smaller can only plan changes to a single file.
+
 NOVA drafts changes from a chat request ("Create src/date.js that exports formatDate") or from JSON you enter. A **change batch** holds up to 50 operations:
 
 | Operation | What it does |
@@ -53,7 +55,9 @@ Commands only run after you approve an allowlist for the project.
 
 ## Development loop
 
-Describe a change, pick a local model and up to 5 attempts, and press **Start loop**. NOVA works on a private copy: it runs the tests, asks the model for a plan, applies it, runs the tests again, and feeds failures back until they pass. The result becomes a normal change batch for you to review; nothing changes in your folder until you apply it. **Cancel loop** stops it at any time. The project's `test` command must be allowlisted.
+Describe a change, pick a local model and up to 5 attempts, and press **Start loop**. NOVA works on a private copy: it runs the tests, asks the model for a plan, applies it, runs the tests again, and feeds failures back until they pass. The result becomes a normal change batch for you to review; nothing changes in your folder until you apply it. **Cancel loop** stops it at any time. The project's `test` command must be allowlisted, and the model must have passed **Qualify for coding**.
+
+A change applied after its checks passed, or a loop that ends with passing tests, completes step 5 of [the setup checklist](help:getting-started-checklist).
 
 ## Git Updates
 

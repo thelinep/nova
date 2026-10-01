@@ -631,6 +631,7 @@
 .help-check{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
 .help-check [data-lucide],.help-check svg{width:16px;height:16px;margin-top:2px}
 .help-check.ok svg{color:var(--green,#4ade80)}
+.help-check.optional svg{color:var(--muted,#8b95a4)}
 .help-check.bad svg{color:var(--amber)}
 .help-check small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;overflow-wrap:anywhere}
 .help-check a{font-size:11.5px;color:var(--amber);white-space:nowrap}
@@ -2445,6 +2446,7 @@ function renderModelsView(){
       <tbody id="modelProfileRows"></tbody></table>
     </div>`;
   $('modelCardGrid').innerHTML = DB.models.map(modelCardHtml).join('');
+  loadModelQualifications();
   $('modelProfileRows').innerHTML = DB.modelProfiles.map(modelProfileRowHtml).join('') || '<tr><td colspan="7" class="empty-hint">No saved profiles yet.</td></tr>';
   if (window.lucide) lucide.createIcons();
   bindModelsViewEvents();
@@ -2466,7 +2468,9 @@ function modelCardHtml(m){
       <span>Decode tok/s</span><span>${m.genTps ?? '—'}</span>
       <span>TTFT</span><span>${m.ttft!=null?m.ttft+' ms':'—'}</span>
     </div>
+    <div class="model-qual" data-digest="${escapeHtml(m.digest||'')}" style="font-size:11.5px;color:var(--muted);margin:8px 0 2px">${isRemote?'':'Coding checks: '+(m.digest?'loading…':'sync from Ollama first')}</div>
     <div class="model-actions">
+      ${isRemote||!m.digest?'':`<button class="btn btn-line btn-sm model-qualify" data-name="${escapeHtml(m.name)}">Qualify for coding</button>`}
       ${m.loaded ? `<button class="btn btn-line btn-sm model-unload" data-id="${m.id}">Unload</button>` : `<button class="btn btn-amber btn-sm model-load" data-id="${m.id}">Load</button>`}
       <button class="btn btn-line btn-sm model-duplicate" data-id="${m.id}">Duplicate profile</button>
       <button class="btn btn-line btn-sm model-benchmark" data-id="${m.id}">Benchmark</button>
@@ -2474,6 +2478,38 @@ function modelCardHtml(m){
       <button class="btn btn-ghost btn-sm model-delete" data-id="${m.id}" style="color:var(--red)">Delete</button>
     </div>
   </div>`;
+}
+// Coding qualification: code plans and the improve-and-test loop only use
+// models that passed every check three times in a row.
+const QUAL_LABELS = {'single-file':'one file','multi-file':'several files','large-context':'large folder','clarification':'asks when unclear','timeout':'stops on timeout','cancellation':'stops on cancel'};
+async function loadModelQualifications(){
+  let recs = [];
+  try { const r = await fetch(apiUrl('/api/model-qualifications')); if (r.ok) recs = await r.json(); } catch(_) {}
+  const byDigest = {}; for (const q of recs) byDigest[q.digest] = q;
+  $$('.model-qual').forEach(el => {
+    const d = el.dataset.digest; if (!d) return;
+    const rec = byDigest[d];
+    if (!rec) { el.textContent = 'Coding checks: not run yet — needed before NOVA plans code with this model.'; return; }
+    const caps = rec.capabilities || {};
+    const ok = Object.keys(QUAL_LABELS).filter(k => caps[k] && caps[k].qualified);
+    const bad = Object.keys(QUAL_LABELS).filter(k => caps[k] && !caps[k].qualified);
+    el.innerHTML = 'Coding checks: <strong style="color:'+(ok.length===6?'var(--green)':'var(--fg)')+'">'+ok.length+' of 6 passed</strong>'
+      + (bad.length ? ' · failed: '+bad.map(k=>escapeHtml(QUAL_LABELS[k])).join(', ') : '')
+      + (ok.length===6 ? ' · ready for code plans' : '');
+    const btn = el.parentElement.querySelector('.model-qualify'); if (btn) btn.textContent = 'Run coding checks again';
+  });
+  $$('.model-qualify').forEach(b => b.onclick = async () => {
+    const name = b.dataset.name;
+    b.disabled = true;
+    try {
+      const r = await fetch(apiUrl('/api/models/qualify'), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({model:name})});
+      const d = await r.json().catch(()=>({}));
+      if (!r.ok) throw new Error(d.error || ('HTTP '+r.status));
+      toast('Coding checks started for '+name+'. 18 short trials in a temporary folder — follow them in Activity.');
+      if (typeof toggleActivityDrawer === 'function') toggleActivityDrawer(true);
+    } catch(e) { toast('Could not start the checks: '+e.message); }
+    finally { b.disabled = false; }
+  });
 }
 function modelProfileRowHtml(p){
   const m = modelById(p.modelId);
@@ -5365,7 +5401,12 @@ function openHelp(target, anchor){
 }
 function routeHelpHash(){
   const m = /^#help(?:\/([\w-]+))?(?:\/([\w-]+))?$/.exec(location.hash || '');
-  if (!m) return;
+  if (!m) {
+    // Links such as /#models or /#workspace (from the setup and Workbench pages) open that view.
+    const v = /^#([a-z][\w-]*)$/i.exec(location.hash || '');
+    if (v && document.getElementById(v[1] + 'View')) { showView(v[1]); history.replaceState(null, '', location.pathname + location.search); }
+    return;
+  }
   openHelp(m[1] || null, m[2] || null);
 }
 window.addEventListener('hashchange', routeHelpHash);
@@ -5451,7 +5492,7 @@ async function drawHelpSupport(body, data){
   const intro = data.articles.find(a => a.id === 'support');
   const draw = () => {
     const r = helpReport;
-    const checks = r && r.checks ? `<div class="help-checks">${r.checks.map(c => `<div class="help-check ${c.ok ? 'ok' : 'bad'}"><span data-lucide="${c.ok ? 'check-circle-2' : 'alert-triangle'}"></span><div><strong>${escapeHtml(c.label)}</strong><small>${escapeHtml(c.detail)}</small></div>${c.ok ? '' : `<a href="#help/${c.help}">How to fix</a>`}</div>`).join('')}</div>` : '';
+    const checks = r && r.checks ? `<div class="help-checks">${r.checks.map(c => `<div class="help-check ${c.ok ? 'ok' : c.optional ? 'optional' : 'bad'}"><span data-lucide="${c.ok ? 'check-circle-2' : c.optional ? 'info' : 'alert-triangle'}"></span><div><strong>${escapeHtml(c.label)}</strong><small>${escapeHtml(c.detail)}</small></div>${c.ok ? '' : `<a href="#help/${c.help}">${c.optional ? 'Read more' : 'How to fix'}</a>`}</div>`).join('')}</div>` : '';
     body.innerHTML = `<div class="panel" style="padding:16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><span class="eyebrow">Support report</span><h2 style="font-size:16px;margin:5px 0">Check each part, then copy or save a report</h2></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="tag-chip" style="font-size:11px"><input type="checkbox" id="helpIncludeLog" ${helpIncludeLog ? 'checked' : ''}> Include log tail</label><button class="btn btn-line btn-sm" id="helpRecheck">${helpReportBusy ? 'Checking…' : 'Check again'}</button><button class="btn btn-line btn-sm" id="helpCopyReport" ${r && r.text ? '' : 'disabled'}>Copy report</button><button class="btn btn-amber btn-sm" id="helpSaveReport" ${r && r.text ? '' : 'disabled'}>Save report</button></div></div>
       ${!r ? '<p class="empty-hint">Checking…</p>' : r.error ? `<p class="empty-hint">Could not make a report: ${escapeHtml(r.error)}. Is the NOVA server running?</p>` : checks}
@@ -6198,7 +6239,7 @@ const VIEW_HELP = {
   console:'Chat with a local model. + adds files, a folder, a web page or a git repo for NOVA to read. Computer lets NOVA use this Mac (it asks first), the mic lets you talk, Voice reads replies aloud. Steps above each reply show what NOVA is doing; the list icon at the top shows everything running.',
   sessions:'Every conversation you have had. Search or filter by tag, open one to continue it, or delete what you no longer need.',
   workspace:'Local app development. Approve a folder, then plan changes, run tests, create projects from templates, and let the development loop fix failing tests. Nothing is written to your project until you approve a batch.',
-  models:'Models NOVA can use. Sync from Ollama to see what you have pulled (ollama pull <name>). Qualification shows which models passed the coding checks.',
+  models:'Models NOVA can use. Sync from Ollama to see what you have pulled (ollama pull <name>). Qualify for coding runs 18 short trials in a temporary folder; code plans only use models that pass all six checks.',
   knowledge:'Collections of your documents. Add files or text; NOVA splits and indexes them so chats and skills can cite them. Transcripts from Media can land here too.',
   media:'Generate and edit images, video and audio on this Mac, transcribe recordings, and keep everything with its recipe. Items are also saved to your library folder. Actions on each item: edit an area, remove an object, expand, upscale, enhance speech, translate, add to a board or timeline.',
   boards:'Mood boards, look books and character sheets. Drop in library images and clips, notes and colour swatches; drag to arrange, drag the corner to resize. Save the board as an image into the library.',
@@ -6474,9 +6515,10 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
     try {
       var r = await fetch('/api/workbench/snapshot', { cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status);
       var s = await r.json(); var queued = (s.now && s.now.queued) || 0; var running = (s.now && s.now.running) || 0;
-      var approvals = (s.waiting && s.waiting.pending_quarantines) || 0; var completed = (s.created && s.created.completed_jobs) || 0;
+      var approvals = (s.approvals || []).filter(function (x) { return x.kind !== 'policy_denial'; }).length; var completed = (s.created && s.created.completed_jobs) || 0;
       var halted = !!(s.allowed && s.allowed.kill_switch && s.allowed.kill_switch.halted); var sysOk = !(s.system && s.system.ok === false); var ok = sysOk && !halted;
       dot.style.color = ok ? '#6ee7b7' : '#f87171'; text.textContent = queued + ' · ' + running + ' · ' + approvals + ' · kill: ' + (halted ? 'HALTED' : 'clear') + ' · ' + completed;
+      strip.title = 'Workbench — ' + queued + ' queued, ' + running + ' running, ' + approvals + ' waiting for your decision, kill switch ' + (halted ? 'HALTED (open Workbench to resume)' : 'clear') + ', ' + completed + ' jobs done. Click to open.';
     } catch (e) { text.textContent = '—'; dot.style.color = '#5b6472'; backoffUntil = Date.now() + 30000; }
   }
   refresh(); setInterval(refresh, 5000);

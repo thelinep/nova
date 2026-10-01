@@ -10,6 +10,7 @@ NOVA Runtime is a local AI workspace: chat with local models, search your docume
 - [Install and start NOVA](#install-and-start-nova)
 - [First steps](#first-steps)
 - [A tour of the interface](#a-tour-of-the-interface)
+- [The setup checklist](#the-setup-checklist)
 - [Chat and sessions](#chat-and-sessions)
 - [Models](#models)
 - [Knowledge and Retrieval Lab](#knowledge-and-retrieval-lab)
@@ -24,6 +25,10 @@ NOVA Runtime is a local AI workspace: chat with local models, search your docume
 - [Agents](#agents)
 - [Workflows](#workflows)
 - [Collector, Capability Graph and Provider Browser](#collector-capability-graph-and-provider-browser)
+- [Workbench](#workbench)
+- [Policies, budgets and rollback](#policies-budgets-and-rollback)
+- [The agent browser](#the-agent-browser)
+- [Built, not yet in the console](#built-not-yet-in-the-console)
 - [Local Workspace and projects](#local-workspace-and-projects)
 - [Diagnostics, Runtime, Trace and History](#diagnostics-runtime-trace-and-history)
 - [Settings, privacy and your data](#settings-privacy-and-your-data)
@@ -48,11 +53,15 @@ The sidebar groups every screen by what you do there:
 | Create | Image, Video, Audio, Boards, Timeline, Library | Making media on this computer, arranging it and cutting it together |
 | Workspace | Console, Sessions, Local Workspace | Chatting with models, and changing code in approved folders |
 | Intelligence | Models, Knowledge, Retrieval Lab | The models you have, your documents, and testing search over them |
-| Operations | Automations, Evaluations | Scheduled runs and model comparisons |
+| Operations | Automations, Evaluations, Workbench | Scheduled runs, model comparisons, and oversight of background work |
 | Capabilities | Skills, MCP Registry, Agents, Workflows, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
 | System | Runtime, Trace, Git Updates, Execution History, Diagnostics, Settings, Help & Support | Seeing what happened and keeping NOVA healthy |
 
 Read [A tour of the interface](#a-tour-of-the-interface) for the top bar, the command palette and the status bar.
+
+### Oversight
+
+[Workbench](#workbench) shows what NOVA is running in the background, what waits for your decision and what broke, and has the **kill switch** that stops it all. The **setup** pill in the top bar counts [five steps](#the-setup-checklist) from a fresh install to work NOVA has checked.
 
 ### What stays on your computer
 
@@ -60,6 +69,7 @@ Read [A tour of the interface](#a-tour-of-the-interface) for the top bar, the co
 - Models run through Ollama on this computer. Image, video and audio models run in ComfyUI or local tools on this computer.
 - NOVA uses the network only when you turn on **Settings > Privacy > Allow network access**, for example to install packages or let the browser tool open a web page. The pill in the top bar says **LOCAL ONLY** while that is off.
 - Tools that can change things (files, git, the browser) ask for your approval, and agents and workflows follow the same rules.
+- Background work follows [policies and budgets](#policies-budgets-and-rollback), and **halt** in Workbench stops it at once.
 
 > **Tip** Some records in a new install are examples that show how a screen works (a few sessions, agents and workflows). A model synced from Ollama, an indexed document, a connected tool server and a finished run in Execution History are the signs that something is really working.
 
@@ -67,7 +77,8 @@ Read [A tour of the interface](#a-tour-of-the-interface) for the top bar, the co
 
 1. [Install and start NOVA](#install-and-start-nova)
 2. [First steps](#first-steps): check everything works, sync your models and send a first message
-3. [Chat and sessions](#chat-and-sessions)
+3. [The setup checklist](#the-setup-checklist)
+4. [Chat and sessions](#chat-and-sessions)
 
 ## Install and start NOVA
 
@@ -174,6 +185,8 @@ The sidebar on the left lists every screen, grouped by purpose. The button at th
 - **Command** (⌘K) opens the command palette: type part of a screen or action ("agents", "diagnostics", "new session") and press Enter.
 - The **model pill** shows the model new messages use. Click it to change model.
 - The **privacy pill** reads **LOCAL ONLY** while network access is off and the model runs locally, and changes when that is no longer true.
+- The **setup** pill (for example **setup: 3 / 5**) shows how many of the [five setup steps](#the-setup-checklist) are done. Click it to see what is left.
+- The **Workbench strip** (for example **0 · 0 · 0 · kill: clear · 0**) counts queued jobs, running jobs, items waiting for you, the kill switch and finished jobs. Hover for the words, click to open [Workbench](#workbench).
 - The last button opens or closes the **inspector** on the right of the Console.
 
 ![The command palette jumps to any screen or action.](../public/help/media/command.jpg)
@@ -204,6 +217,31 @@ NOVA adapts to the window:
 
 ![At phone width the sidebar opens from the ☰ button.](../public/help/media/phone-menu.jpg)
 > **Important** NOVA listens only on this computer. Do not expose port 8787 to other devices without adding your own authentication; NOVA has no login by design.
+
+## The setup checklist
+
+*The "setup" pill in the top bar counts five steps from a fresh install to work NOVA has checked. Click it to see what is left and where to do it.*
+
+The **setup** pill in the top bar (for example **setup: 3 / 5**) shows how far this computer has come. Click it to open **Get started**, which lists the five steps. Each step that is not done yet has a button that takes you to the screen where you do it.
+
+![Get started: five steps, each with a link to what it needs.](../public/help/media/setup-checklist.jpg)
+### The five steps
+
+| Step | Done when | Where to do it |
+| --- | --- | --- |
+| 1. Local runtime ready | NOVA's server is running and its database opens. This is always done once you can see the page. | — |
+| 2. One qualified model | At least one Ollama model has passed NOVA's coding checks | **Models** → **Qualify for coding** ([Models](#models)) |
+| 3. One safe outcome | You have had a conversation, indexed a document or finished a background job | **Console**, or **Knowledge** |
+| 4. One approved capability | A skill is enabled, a tool server is connected, or a policy grant exists | **Skills**, or **MCP Registry** |
+| 5. One verified outcome | A code change was applied after its checks passed, or an improve-and-test loop ended with passing tests | **Local Workspace** ([Local Workspace](#local-workspace-and-projects)) |
+
+When all five are done, the page says **Setup complete** and links to the Console and Workbench.
+
+### Things to know
+
+- The checklist only reads what is already in NOVA. It never changes anything, and you can ignore it: every screen works whether or not the steps are done.
+- Step 2 matters if you want NOVA to plan code. Code plans and the improve-and-test loop only use models that passed the coding checks.
+- A step counts things that really happened on this computer. The example records some screens start with do not count.
 
 ## Chat and sessions
 
@@ -268,16 +306,37 @@ Then press **Sync from Ollama** in **Models**. NOVA adds or updates a card for e
 - **Benchmark** runs a real generation and records time to first token and tokens per second.
 - Values Ollama does not report (for example some GPU figures) show as unavailable rather than estimated.
 
-### Qualifications
+### Qualify for coding
 
-Some jobs need a model that has passed NOVA's checks first. Code planning in Local Workspace uses only models that passed its coding trials, so a small model cannot quietly produce broken edits. A model's card shows which checks it passed.
+Code plans (in chat and Local Workspace) and the improve-and-test loop only use models that passed NOVA's coding checks, so a model cannot quietly produce broken edits.
+
+1. Press **Sync from Ollama** so the card knows the model's exact version (its digest).
+2. Press **Qualify for coding** on the model's card.
+3. Follow the trials in **Activity**. Each card shows **Coding checks: N of 6 passed**, and which failed.
+
+There are six checks, and each runs three times. All 18 trials must pass:
+
+| Check | Passes when the model… |
+| --- | --- |
+| one file | makes the exact edit asked for in one file |
+| several files | edits two files in the right order |
+| large folder | finds the right file among many large ones |
+| asks when unclear | asks a question instead of guessing on a vague request ("Improve this") |
+| stops on timeout | stops cleanly when time runs out, leaving nothing half-done |
+| stops on cancel | stops cleanly when cancelled |
+
+- The trials use temporary folders. Your projects are never touched.
+- A run takes about 10–30 minutes, depending on the model and your Mac. **Cancel** in Activity stops it.
+- Results belong to that exact model version. If you pull a newer version, qualify it again.
+- Models of **3.2B parameters or smaller** (for example `llama3.2`) can only plan single-file changes, even when qualified.
+- The results count towards step 2 of [the setup checklist](#the-setup-checklist).
 
 ### Choosing a model
 
 | For | Try |
 | --- | --- |
 | Everyday chat | `llama3.2`, `qwen2.5:7b` |
-| Code changes, Build with NOVA | 7B or larger, for example `qwen2.5-coder:7b` |
+| Code changes, Build with NOVA | 7B or larger, for example `qwen2.5-coder:7b`, after **Qualify for coding** |
 | Images in chat | `llama3.2-vision`, `llava` |
 | Knowledge indexing | an embedding model such as `nomic-embed-text` |
 
@@ -386,6 +445,8 @@ Before every action NOVA shows exactly what it wants to do and waits:
 - **Deny** tells NOVA not to, and it asks what you would prefer instead.
 
 Some things are always refused: administrator (`sudo`) commands, erasing disks, deleting your home folder, shutting down, and downloading and running a script in one step.
+
+While NOVA is **halted** with the kill switch in [Workbench](#workbench), it does not act on your computer at all. It says so in the chat, and you can still talk to it.
 
 ![NOVA asks before running a command.](../public/help/media/computer-approval.jpg)
 [Video: Adding a folder, asking about it, and approving a command.](../public/help/media/conversation.mp4)
@@ -708,6 +769,10 @@ Agents listed under **Can hand work to** appear to the model as tools. When it u
 
 **Execution details** on a card shows the last instruction, the answer, how many rounds it took and every tool call with its result, plus the agent's instructions.
 
+### Agents that work on their own
+
+The agents on this screen run when you ask them. NOVA also has a **multi-agent system** for agents that keep working over time, with their own memory, a shared task list, budgets, tool permissions and a supervisor to escalate to. Its agents appear in Workbench → **Agents**. It is built and tested, but not started from this screen yet. See [Built, not yet in the console](#built-not-yet-in-the-console).
+
 ## Workflows
 
 *Chain agents, skills, tool calls and sign-off steps into a repeatable process that survives restarts. Build one from a goal, test it and approve it.*
@@ -763,6 +828,227 @@ Press **Run now**. The server steps through the workflow and saves progress afte
 - Sign in directly on the provider's page. NOVA does not see or store that password, session or key.
 - The provider page stays apart from your NOVA sessions, knowledge, tools, agents and automations. Copy material across deliberately when you want to.
 
+## Workbench
+
+*One page that shows what NOVA is running, what is waiting for your decision, what it may do, what broke and what it produced, with the kill switch.*
+
+**Workbench** is the oversight page for NOVA's background work: jobs, agents, connectors and automatic fixes. Open it from **Workbench** in the sidebar, or click the status strip in the top bar. It refreshes every 3 seconds.
+
+![Workbench: seven panels, each answering one question.](../public/help/media/workbench.jpg)
+### The status strip
+
+The strip next to the setup pill reads like **0 · 0 · 0 · kill: clear · 0**. In order:
+
+1. jobs queued
+2. jobs running
+3. items waiting for your decision
+4. the kill switch: **clear**, or **HALTED** in red
+5. jobs finished
+
+Hover over it for the same numbers in words, and click it to open Workbench. The dot turns red when NOVA is halted or something needs attention.
+
+### The panels
+
+| Panel | Question it answers | What you can do |
+| --- | --- | --- |
+| Now | What is running? Queued and running jobs, and when the next one starts. | **cancel** a running job |
+| Waiting | What needs a decision? | **apply** or **discard** a quarantined change; **approve** or **deny** a connector action; review a policy refusal |
+| Allowed | What may act? The kill switch, policies (active, revoked, expired) and budget use. | **halt** or **resume** NOVA |
+| Failed | What broke? Failed and timed-out jobs, and recent automatic rollbacks. | — |
+| Created | What was produced? Finished jobs, known-good versions and approved autonomy runs. | — |
+| Pipeline | Recent verification runs and their result. | — |
+| Agents | Agents from the multi-agent system, their tasks, budgets and escalations. | — |
+
+A panel that has nothing to show says so. On a new install most panels are empty until background work runs. See [Built, not yet in the console](#built-not-yet-in-the-console) for which parts of NOVA put work here today.
+
+### Your name in the audit trail
+
+The first time you act in Workbench, NOVA asks for your name. It is written next to every decision (who cancelled, approved or halted, and why) and remembered on this computer. The **operator** pill shows it.
+
+### Approvals
+
+- A **quarantine** is a change NOVA set aside instead of keeping, for example after an automatic fix failed its checks. **apply** keeps it; **discard** drops it.
+- A **connector action** is something a connector wants to do outside NOVA, such as opening a pull request on GitHub, that its policy says needs a person. **approve** runs it once; **deny** refuses it.
+- A **policy denial** is a record that a policy refused something in the last hour. It is there to read; nothing needs doing.
+
+Every decision asks you to confirm, and is written to the audit log.
+
+### The kill switch
+
+**halt** stops NOVA's background work at its next safe point:
+
+- background jobs and autonomy runs
+- agents in the multi-agent system
+- the agent browser (it closes every open page)
+- computer actions from chat (running commands, clicking, typing, changing files)
+
+Chat itself keeps working, so you can still ask questions while NOVA is halted.
+
+![Halting asks why, and the first time, for a resume passphrase.](../public/help/media/workbench-halt.jpg)
+**resume** needs the **resume passphrase**, so something that halted NOVA cannot quietly undo it:
+
+1. The first time you halt (or resume), NOVA asks you to choose a passphrase of at least 6 characters.
+2. After that, **resume** asks for that passphrase and a reason.
+
+NOVA keeps only a scrambled (hashed) copy of the passphrase, in the data folder. On a server you can set `NOVA_RESUME_CREDENTIAL` instead, before starting NOVA.
+
+> **Important** Write the passphrase down. If you lose it, see "I lost the resume passphrase" in [Troubleshooting](#troubleshooting).
+
+### Related
+
+- [Policies, budgets and rollback](#policies-budgets-and-rollback)
+- [The agent browser](#the-agent-browser)
+- [The setup checklist](#the-setup-checklist)
+
+## Policies, budgets and rollback
+
+*The rules that decide what NOVA's background work may do — policies, budgets, automatic rollback, quarantine and the kill switch — and the audit trail behind them.*
+
+NOVA's background work (jobs, agents, connectors and autonomy runs) goes through the same set of guard rails. You see their state in [Workbench](#workbench).
+
+### Policies
+
+A policy says who may do what. Every action by an agent, a connector or an autonomy run is checked first.
+
+- **Default is no.** Nothing is allowed unless a policy grants it.
+- **A refusal beats a grant.** If one policy allows something and another refuses it, it is refused.
+- Policies can expire, and can be **revoked** at any time.
+- A policy can say **approval required**. The action then waits in Workbench → **Waiting** until a person approves or denies it.
+- Every decision (allowed or refused, and why) is recorded, so you can check later what happened.
+
+Workbench → **Allowed** shows how many policies are active, revoked and expired. Workbench → **Waiting** lists refusals from the last hour.
+
+### Budgets
+
+A budget limits how much something may use per **hour** or per **day**:
+
+| Limit | Counts |
+| --- | --- |
+| tokens | model tokens generated |
+| jobs | background jobs started |
+| wall-clock time | how long work runs |
+| pull requests | PRs opened through connectors |
+| cost | money spent on remote services, if any are used |
+
+When a limit is reached the work stops and waits for the next window. Agents have their own budgets, and a sub-agent's use also counts against its parent. Workbench → **Allowed** shows use against each limit.
+
+### Automatic rollback and quarantine
+
+For areas that change over time (code in the workspace, small trained models, browser tools, releases) NOVA remembers the last version known to be good (the **green** version). When an automatic run fails its checks:
+
+1. NOVA saves what the failed run produced as a **quarantine**, with the reason and the differences.
+2. It goes back to the green version.
+3. It records the rollback.
+
+You decide later, in Workbench → **Waiting**, whether to **apply** the quarantined change after all or **discard** it. Rollbacks are listed under **Failed**.
+
+This is separate from the rollback you use by hand in Local Workspace (**Roll back batch**), which puts back the files of a change batch you applied yourself.
+
+### The kill switch
+
+**halt** in Workbench stops all of the above at the next safe point, closes the agent browser and stops computer actions from chat. **resume** needs your resume passphrase. See [Workbench](#workbench).
+
+### The audit trail
+
+Workbench decisions, policy checks, connector actions, agent browser actions and kill switch events are written to the audit log in NOVA's data folder, with the operator's name and the reason.
+
+### Where these apply today
+
+These rules are built and fully tested. In the console today they show up in Workbench, in model qualification and in the kill switch. Connectors, the multi-agent system and autonomy runs are not started from the console yet, so on most computers the policy and budget lists are still empty. See [Built, not yet in the console](#built-not-yet-in-the-console).
+
+## The agent browser
+
+*A separate, locked-down browser that agents use to open web pages, read them and fill them in, limited to allowed websites and recorded step by step.*
+
+The agent browser is how NOVA's agents use websites. It is not your browser and it does not use your sign-ins. Each agent gets its own empty browser profile in NOVA's data folder.
+
+It is different from two other browsers in NOVA:
+
+- **Provider Browser** (Capabilities) is a window *you* use to sign in to AI providers.
+- **Build a page from an image** checks pages in a browser with no network at all.
+
+### What it can do
+
+Open a page, click, type, read text, wait for something to appear, take a screenshot, download a file, upload a file, and close the page.
+
+### What keeps it safe
+
+- **Allowed websites only.** Every address the page tries to load, including images and scripts, is checked. Anything not on the allowed list, or not granted to that agent, is blocked and recorded.
+- **Downloads and uploads need approval** every time, with the exact file named.
+- **Every action is recorded:** pages opened, clicks, typing and blocked addresses. What was typed is stored only as a fingerprint (hash), not as text.
+- **The kill switch closes it.** **halt** in Workbench closes every open agent page at once, and no new page opens until NOVA is resumed.
+- Set `NOVA_BROWSER=0` before starting NOVA to turn the agent browser off completely.
+
+### Requirements
+
+The agent browser uses Playwright and its Chromium. They come with NOVA's source folder (`npm install` in `nova-console`), but not with the desktop app. In the app, asking for an agent page answers "The agent browser needs Playwright". Everything else in NOVA works without it. The support report shows whether it is available.
+
+### Where it is used today
+
+Agents in the multi-agent system and developer tools reach it through NOVA's local `/browser/…` service. The console's own agents and chat do not use it yet. See [Built, not yet in the console](#built-not-yet-in-the-console).
+
+## Built, not yet in the console
+
+*Parts of NOVA that are built and tested but not started from the console yet — connectors and the secrets vault, the multi-agent system, the correctness pipeline, autonomy runs and release evidence — and how developers can try them.*
+
+These parts of NOVA are complete and covered by tests. They report into [Workbench](#workbench) and follow the [policies, budgets and kill switch](#policies-budgets-and-rollback). There is no button for them in the console yet. Until there is, developers can run them from NOVA's source folder with the demo scripts below.
+
+### Connectors and the secrets vault
+
+- **Connectors** let NOVA act on outside services. The first one is **GitHub**: check who you are signed in as, read a repository, list and create issues, read and open pull requests, read check results, and merge a pull request.
+- Each connector has a profile with **scopes** (what it may do), and can be enabled, disabled or revoked.
+- Every action goes through a policy. Actions that need a person wait in Workbench → **Waiting** for **approve** or **deny**.
+- Tokens are kept in the **secrets vault**, encrypted with AES-256-GCM. The key is a file in NOVA's data folder that only your user account can read (`.secret-master-key`). Secrets can be rotated and revoked, and are never shown again after saving.
+
+Try it: `node scripts/connector-demo.js`. It uses a pretend GitHub unless you set `GITHUB_TOKEN`, `GITHUB_OWNER` and `GITHUB_REPO`.
+
+### The multi-agent system
+
+This is a deeper system than the Agents screen ([Agents](#agents)), built for agents that work on their own over time:
+
+| Part | What it does |
+| --- | --- |
+| Agent registry | Named roles with instructions, a preferred model, allowed tools and a supervisor |
+| Memory | Each agent remembers across runs: private, shared, or visible to its supervisor |
+| Tasks | Shared task list; agents hand work to each other |
+| Budgets | Limits for each agent; sub-agents count against their parent |
+| Tool permissions | Each agent may use only the tools it is given |
+| Supervisor | Agents escalate to a supervisor, which approves, denies or forwards the question further up |
+| Job bridge | Agent tasks run as background jobs on your Ollama models |
+
+Try it: `node scripts/multi-agent-demo.js`.
+
+### The correctness pipeline
+
+A way to get code that is checked, not just generated:
+
+1. **Several models answer** the same problem.
+2. **Tests are written** for it automatically, and answers that agree in behaviour are grouped (semantic voting).
+3. The best answer is chosen.
+4. Optionally, it is **proved** correct with the Dafny verifier (Clover checks that the code, its description and its proof agree).
+
+Verified results appear in Workbench → **Pipeline**, and count towards step 5 of [the setup checklist](#the-setup-checklist). Proofs need Dafny installed (`brew install dafny`); set `NOVA_DAFNY_BIN` if it is somewhere unusual.
+
+Try it: `node scripts/constellation-demo.js` and `node scripts/clover-demo.js`.
+
+### Autonomy runs
+
+Bounded loops that improve something on their own and keep the result only if it passes:
+
+- **Workspace patches:** apply a patch on a separate branch (`nova/auto`), run the tests, commit if they pass. It never pushes.
+- **Small trained models:** train, evaluate, and keep the model only if it beats the acceptance threshold.
+
+Before every step a loop checks the kill switch, its policy and its budget. A failure is quarantined and rolled back. Escalations wait for you in Workbench.
+
+### Release evidence
+
+`node scripts/l2-check.js` checks that a release meets NOVA's certification requirements and writes a bundle of the evidence with a fingerprint (hash) of every test result and record, so later changes can be detected. The files in `baseline/` and `docs/release-evidence/` are earlier results.
+
+### Before you run a demo
+
+- Run demos from the `nova-console` folder **with the desktop app closed**. They use `nova-console/data`, the database of the browser development mode (`npm start`), not the app's database.
+- Some demos replace their own earlier demo records each time they run.
+
 ## Local Workspace and projects
 
 *Approve a folder, let NOVA draft code changes you review and apply in one step, start new projects from templates, run install and dev, and keep a change looping until the tests pass.*
@@ -775,6 +1061,8 @@ Local Workspace lets NOVA read and change code on your computer, but only inside
 Press **Choose folder…**, pick a project folder and press **Approve root**. NOVA can then **Scan folder**, **Search** it and cite files as `path:line`. **Revoke approval** takes access away again. Nothing outside approved folders is ever read or written.
 
 ### Code changes
+
+NOVA plans changes only with a model that passed its coding checks: open **Models** and press **Qualify for coding** first ([Models](#models)). Models of 3.2B parameters or smaller can only plan changes to a single file.
 
 NOVA drafts changes from a chat request ("Create src/date.js that exports formatDate") or from JSON you enter. A **change batch** holds up to 50 operations:
 
@@ -812,7 +1100,9 @@ Commands only run after you approve an allowlist for the project.
 
 ### Development loop
 
-Describe a change, pick a local model and up to 5 attempts, and press **Start loop**. NOVA works on a private copy: it runs the tests, asks the model for a plan, applies it, runs the tests again, and feeds failures back until they pass. The result becomes a normal change batch for you to review; nothing changes in your folder until you apply it. **Cancel loop** stops it at any time. The project's `test` command must be allowlisted.
+Describe a change, pick a local model and up to 5 attempts, and press **Start loop**. NOVA works on a private copy: it runs the tests, asks the model for a plan, applies it, runs the tests again, and feeds failures back until they pass. The result becomes a normal change batch for you to review; nothing changes in your folder until you apply it. **Cancel loop** stops it at any time. The project's `test` command must be allowlisted, and the model must have passed **Qualify for coding**.
+
+A change applied after its checks passed, or a loop that ends with passing tests, completes step 5 of [the setup checklist](#the-setup-checklist).
 
 ### Git Updates
 
@@ -884,6 +1174,7 @@ Turn **Retrieval**, **Citations** and **Streaming** on or off for new sessions. 
 
 - **Allow network access** is off by default. Turn it on for things that need the internet: installing packages, web-connected automations, the collector and remote models.
 - **Local telemetry** keeps usage counters on this computer only. Nothing is sent anywhere.
+- The **agent browser** reaches only websites on its allowed list, whatever this setting says. See [The agent browser](#the-agent-browser).
 
 The privacy badge is worked out from these settings and the loaded model, not written in advance:
 
@@ -903,14 +1194,18 @@ NOVA's server listens only on `127.0.0.1`, so other computers cannot reach it. T
 | Server log | the same folder, `nova-runtime-server.log` |
 | Everything NOVA makes, as files | `~/Documents/NOVA Library`, one folder per day, each with a `.json` recipe |
 | Browser development mode | `nova-console/data/nova.db`, or the folder in `DATA_DIR` |
+| Workbench history: jobs, policies, budgets, rollbacks, connector requests, agent browser logs | inside `nova.db` |
+| Audit log (encrypted, each entry chained to the one before) | the data folder |
+| Secrets vault key (`.secret-master-key`) and resume passphrase (`.resume-passphrase`, stored hashed) | the data folder, readable only by your user account |
+| Agent browser profiles | the data folder, `browser-profiles`, one per agent |
 
 ### Back up and restore
 
-Quit NOVA fully (menu bar item → **Quit NOVA**), then copy the data folder and the NOVA Library. Restore only to the same or a newer NOVA version, with NOVA closed. Keep backups private: they contain your chats, documents and history.
+Quit NOVA fully (menu bar item → **Quit NOVA**), then copy the data folder and the NOVA Library. Copy the whole data folder, including its hidden files: without `.secret-master-key`, saved connector tokens cannot be read again. Restore only to the same or a newer NOVA version, with NOVA closed. Keep backups private: they contain your chats, documents and history.
 
 ### Reset
 
-**Reset workspace data** (Settings → Workspace data) deletes every record in NOVA's database: sessions, models, documents, agents, workflows and history. Press it twice to confirm. It cannot be undone, so back up first. Files in the NOVA Library are not deleted.
+**Reset workspace data** (Settings → Workspace data) deletes every record in NOVA's database: sessions, models, documents, agents, workflows and history. Press it twice to confirm. It cannot be undone, so back up first. Files in the NOVA Library are not deleted, and neither is Workbench history (jobs, policies, audit log), the secrets vault or the resume passphrase. To remove those too, quit NOVA and delete the data folder.
 
 ## The desktop app and portable pack
 
@@ -961,6 +1256,13 @@ From `nova-console`, run `npm start` and open `http://127.0.0.1:8787/`. Optional
 
 Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts; **Check NOVA on this Mac.command** reports what is missing.
 
+The app also leaves out two developer tools. Everything else works without them:
+
+- **The agent browser** needs Playwright, which comes with the source folder (`npm install` in `nova-console`). See [The agent browser](#the-agent-browser).
+- **Proof checking** in the correctness pipeline needs Dafny (`brew install dafny`). See [Built, not yet in the console](#built-not-yet-in-the-console).
+
+The support report shows whether each one is available.
+
 ## Get help and support
 
 *Use the Help Center, the ? panel on every screen, and the support report that gathers versions, engine status and recent errors without your private content.*
@@ -977,7 +1279,7 @@ Ollama, ComfyUI and the media engines are separate. Install them with the "Insta
 ### Make a support report
 
 1. Open **Help & Support → Support**.
-2. Read the checks at the top: backend, Ollama, engines and tool servers. Many problems are solved there, and each red check links to its fix.
+2. Read the checks at the top: backend, Ollama, coding-qualified models, engines, tool servers, the kill switch and the agent browser. Many problems are solved there, and each red check links to its fix.
 3. Press **Copy report** to copy it, or **Save report** to write it to a file in the NOVA Library `support` folder.
 4. Read it before you send it, then add what you did, what you expected and what happened.
 
@@ -987,6 +1289,7 @@ Ollama, ComfyUI and the media engines are separate. Install them with the "Insta
 - NOVA version, Node version, macOS version and chip.
 - The size of the database and the number of records in each area (not their contents).
 - Ollama status and installed model names; image, video, audio and transcription engine status; connected tool servers.
+- Which models passed **Qualify for coding**, the kill switch state and whether a resume passphrase is set, background job counts, and whether the agent browser and the Dafny proof checker are available.
 - The most recent failed runs from Execution History: what kind of run, when, and the error message, shortened.
 - The end of the server log, if you tick **Include log tail**.
 
@@ -1127,6 +1430,48 @@ It is probably waiting at a sign-off step: open Workflows and press **Approve** 
 
 It must be **Enabled**, NOVA must be open at the time, and its model and collections must exist. Check its run history and the **Scheduler** check in Diagnostics.
 
+### Workbench and oversight
+
+#### "No installed model is qualified" when NOVA plans code
+
+Open **Models**, press **Sync from Ollama**, then **Qualify for coding** on a model of 7B or larger. Wait until Activity shows the run finished and the card says **6 of 6 passed**. See [Models](models.html#qualify-for-coding).
+
+#### There is no "Qualify for coding" button on a model
+
+The card does not know the model's exact version yet. Press **Sync from Ollama** and look again. Remote models cannot be qualified.
+
+#### A model fails some coding checks
+
+Small models often fail **several files**, **large folder** or **asks when unclear**. Try a larger coding model (for example `qwen2.5-coder:7b` or `14b`). Models of 3.2B parameters or smaller can only plan single-file changes anyway. You can run the checks again; every run is recorded.
+
+#### "Models at or below 3.2B are restricted to qualified single-file workflows"
+
+The request needs changes to more than one file. Use a model larger than 3.2B, or ask for a change to one file.
+
+#### NOVA says it is halted and will not act on my computer
+
+Someone pressed **halt** in Workbench. Open Workbench, check the reason under **Allowed**, and press **resume** with your resume passphrase when it is safe.
+
+#### Resume says the passphrase is not right
+
+The passphrase is case-sensitive. On a server started with `NOVA_RESUME_CREDENTIAL`, that value is also accepted.
+
+#### I lost the resume passphrase
+
+Quit NOVA fully. In NOVA's data folder (see [Settings, privacy and your data](settings-privacy.html#where-your-data-lives)), delete the file `.resume-passphrase`. It is hidden, so press ⇧⌘. in Finder to see it. Start NOVA again and press **resume**: it asks you to choose a new passphrase.
+
+#### "The agent browser needs Playwright"
+
+The desktop app does not include the agent browser. Use NOVA from its source folder after `npm install` in `nova-console`. Nothing else in NOVA needs it.
+
+#### The setup checklist will not reach 5 / 5
+
+Step 2 needs a model that passed **Qualify for coding**. Step 5 needs a code change applied after its checks passed in Local Workspace, or an improve-and-test loop that ended with passing tests. See [The setup checklist](getting-started-checklist.html).
+
+#### The Workbench strip in the top bar shows "—"
+
+NOVA could not read Workbench's state. It retries after 30 seconds. If it stays, open Workbench to see the error, and make a support report.
+
 ### Local Workspace
 
 #### "install" is refused
@@ -1263,7 +1608,41 @@ Yes. Automations run on a timer while NOVA is open. Workflow schedules are not w
 
 #### Can NOVA change my code?
 
-Only in folders you approve in Local Workspace, and only after you review and apply each change batch. Every batch can be rolled back. See [Local Workspace and projects](workspace.html).
+Only in folders you approve in Local Workspace, and only after you review and apply each change batch. Every batch can be rolled back. Planning code needs a model that passed **Qualify for coding** in Models. See [Local Workspace and projects](workspace.html).
+
+### Oversight
+
+#### What is Workbench?
+
+One page that shows NOVA's background work: what is running, what waits for your decision, what it may do, what broke and what it produced. It has the kill switch. See [Workbench](workbench.html).
+
+#### Why are most Workbench panels empty?
+
+They fill as background work runs: jobs, connectors, agents of the multi-agent system and autonomy runs. Several of these are not started from the console yet, so on a new install Workbench is mostly quiet. See [Built, not yet in the console](developer-preview.html).
+
+#### What does the kill switch stop?
+
+Background jobs, autonomy runs, multi-agent agents, the agent browser and computer actions from chat. Chat keeps working. Resuming needs the resume passphrase you choose the first time. See [Workbench](workbench.html#the-kill-switch).
+
+#### Why does NOVA say my model is not qualified to plan code?
+
+Code plans and the improve-and-test loop only use models that passed NOVA's coding checks. Open **Models** and press **Qualify for coding** on the model, then wait for the 18 trials to finish. See [Models](models.html#qualify-for-coding).
+
+#### What does "setup: 3 / 5" mean?
+
+How many of five setup steps this computer has done. Click it to see the rest. See [The setup checklist](getting-started-checklist.html).
+
+#### Can NOVA work with GitHub?
+
+A GitHub connector is built. It can read repositories, issues, pull requests and checks, and open or merge a pull request, each one checked by a policy and approved in Workbench. It is not started from the console yet. See [Built, not yet in the console](developer-preview.html).
+
+#### Are tokens I give NOVA safe?
+
+Connector tokens are stored encrypted (AES-256-GCM) in the secrets vault. The key is a file in NOVA's data folder that only your user account can read, and a token is never shown again after you save it.
+
+#### What is the agent browser?
+
+A separate, locked-down browser that agents use, limited to allowed websites, with every action recorded. It does not use your own browser or your sign-ins. See [The agent browser](agent-browser.html).
 
 ### Data and settings
 

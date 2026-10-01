@@ -68,6 +68,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
 .btn-cancel   { color: var(--warn);   border-color: rgba(251,191,36,0.35); }
 .btn-halt     { color: var(--danger); border-color: rgba(248,113,113,0.35); }
 .btn-resume   { color: var(--ok);     border-color: rgba(110,231,183,0.35); }
+.wb-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+.wb-modal form { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px; width: min(420px, 100%); display: grid; gap: 10px; }
+.wb-modal h3 { margin: 0; font-size: 15px; }
+.wb-modal p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; white-space: pre-line; }
+.wb-modal label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.wb-modal input { background: var(--panel-2); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font: inherit; font-size: 13px; }
+.wb-modal .wb-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 .btn-revoke   { color: var(--danger); border-color: rgba(248,113,113,0.35); }
 .btn-review   { color: var(--accent); border-color: rgba(147,197,253,0.35); }
 .approval { display: flex; justify-content: space-between; align-items: center;
@@ -137,7 +144,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
 <body>
 
 <header class="topbar">
-  <div class="brand"><span class="dot"></span>NOVA Workbench</div>
+  <div class="brand"><a href="/" style="color:var(--muted);text-decoration:none;margin-right:10px">← Console</a><span class="dot"></span>NOVA Workbench <a href="/#help/workbench" style="color:var(--muted);font-size:11px;margin-left:10px">Help</a></div>
   <div class="pills">
     <span id="pill-system" class="pill">system: …</span>
     <span id="pill-kill" class="pill">kill: …</span>
@@ -178,14 +185,53 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
     var pill = document.getElementById('pill-operator');
     if (pill) pill.textContent = 'operator: ' + op;
   }
-  function ensureOperator() {
+  // In-page dialog. Browser pop-ups (prompt/confirm) do not show in every
+  // desktop web view, so every question is asked here instead.
+  // ask({title, message, fields:[{name,label,type,value}], ok}) -> values or null
+  function ask(opts) {
+    return new Promise(function (resolve) {
+      var wrap = document.createElement('div');
+      wrap.className = 'wb-modal';
+      var form = document.createElement('form');
+      var h = document.createElement('h3'); h.textContent = opts.title || 'Confirm';
+      form.appendChild(h);
+      if (opts.message) { var p = document.createElement('p'); p.textContent = opts.message; form.appendChild(p); }
+      var inputs = (opts.fields || []).map(function (f) {
+        var lab = document.createElement('label'); lab.textContent = f.label;
+        var inp = document.createElement('input');
+        inp.name = f.name; inp.type = f.type || 'text'; inp.value = f.value || ''; inp.required = f.optional !== true;
+        if (f.type === 'password') inp.autocomplete = 'off';
+        lab.appendChild(inp); form.appendChild(lab);
+        return inp;
+      });
+      var row = document.createElement('div'); row.className = 'wb-modal-actions';
+      var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn'; cancel.textContent = 'cancel';
+      var ok = document.createElement('button'); ok.type = 'submit'; ok.className = 'btn ' + (opts.danger ? 'btn-halt' : 'btn-apply'); ok.textContent = opts.ok || 'ok';
+      row.appendChild(cancel); row.appendChild(ok); form.appendChild(row);
+      wrap.appendChild(form); document.body.appendChild(wrap);
+      function close(v) { wrap.remove(); document.removeEventListener('keydown', onKey); resolve(v); }
+      function onKey(e) { if (e.key === 'Escape') close(null); }
+      document.addEventListener('keydown', onKey);
+      cancel.addEventListener('click', function () { close(null); });
+      wrap.addEventListener('click', function (e) { if (e.target === wrap) close(null); });
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var out = {};
+        inputs.forEach(function (i) { out[i.name] = i.value.trim(); });
+        close(out);
+      });
+      (inputs[0] || ok).focus();
+    });
+  }
+  window.novaWorkbenchAsk = ask;
+
+  async function ensureOperator() {
     var op = getOperator();
     if (op) return op;
-    op = window.prompt('Operator identity (for audit trail):', '');
-    if (!op || !op.trim()) return null;
-    op = op.trim();
-    setOperator(op);
-    return op;
+    var v = await ask({ title: 'Who is acting?', message: 'Your name is written next to every decision in the audit trail. NOVA asks once and remembers it on this computer.', fields: [{ name: 'op', label: 'Your name' }], ok: 'save' });
+    if (!v || !v.op) return null;
+    setOperator(v.op);
+    return v.op;
   }
 
   // ---------- DOM helpers ----------
@@ -259,7 +305,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
 
   // ---------- actions ----------
   async function postAction(path, body) {
-    var op = ensureOperator();
+    var op = await ensureOperator();
     if (!op) { toast('operator required', true); return null; }
     var payload = Object.assign({ operator: op }, body || {});
     try {
@@ -285,8 +331,20 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
     }
   }
 
-  function confirmAction(message) {
-    return window.confirm(message);
+  async function confirmAction(message, danger) {
+    return Boolean(await ask({ title: 'Please confirm', message: message, ok: 'yes', danger: danger }));
+  }
+
+  async function passphraseStatus() {
+    try { var r = await fetch('/api/workbench/resume-passphrase', { cache: 'no-store' }); return await r.json(); } catch (_) { return { set: false }; }
+  }
+  async function setPassphrase(pass) {
+    try {
+      var r = await fetch('/api/workbench/resume-passphrase', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Origin': window.location.origin }, body: JSON.stringify({ passphrase: pass }) });
+      var d = await r.json().catch(function () { return {}; });
+      if (!r.ok) { toast('passphrase: ' + (d.error || r.status), true); return false; }
+      return true;
+    } catch (e) { toast('network: ' + (e.message || e), true); return false; }
   }
 
   // ---------- renders ----------
@@ -300,8 +358,8 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
     var list = jobs.length
       ? el('div', { class: 'list' }, jobs.map(function (j) {
           var btn = el('button', { class: 'btn btn-cancel', text: 'cancel' });
-          btn.addEventListener('click', function () {
-            if (!confirmAction('Cancel job ' + j.id + '?')) return;
+          btn.addEventListener('click', async function () {
+            if (!await confirmAction('Cancel job ' + j.id + '?')) return;
             postAction('/api/workbench/actions/job/cancel', { id: j.id });
           });
           return el('div', { class: 'row' },
@@ -324,14 +382,14 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
       var actions = [];
       if (item.kind === 'quarantine') {
         var applyBtn = el('button', { class: 'btn btn-apply', text: 'apply' });
-        applyBtn.addEventListener('click', function () {
-          if (!confirmAction('Apply quarantine ' + item.id + '?')) return;
+        applyBtn.addEventListener('click', async function () {
+          if (!await confirmAction('Apply quarantine ' + item.id + '?')) return;
           postAction('/api/workbench/actions/quarantine/resolve',
             { id: item.id, decision: 'applied' });
         });
         var discardBtn = el('button', { class: 'btn btn-discard', text: 'discard' });
-        discardBtn.addEventListener('click', function () {
-          if (!confirmAction('Discard quarantine ' + item.id + '?')) return;
+        discardBtn.addEventListener('click', async function () {
+          if (!await confirmAction('Discard quarantine ' + item.id + '?')) return;
           postAction('/api/workbench/actions/quarantine/resolve',
             { id: item.id, decision: 'discarded' });
         });
@@ -340,13 +398,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
         actions.push(el('span', { class: 'btn btn-review', style: 'cursor:default', text: 'review' }));
       } else if (item.kind === 'connector_action') {
         var approveBtn = el('button', { class: 'btn btn-apply', text: 'approve' });
-        approveBtn.addEventListener('click', function () {
-          if (!confirmAction('Approve ' + item.ref.operation + ' on ' + item.subject + '?')) return;
+        approveBtn.addEventListener('click', async function () {
+          if (!await confirmAction('Approve ' + item.ref.operation + ' on ' + item.subject + '?')) return;
           postAction('/api/workbench/actions/connector/approve', { id: item.id });
         });
         var denyBtn = el('button', { class: 'btn btn-discard', text: 'deny' });
-        denyBtn.addEventListener('click', function () {
-          if (!confirmAction('Deny ' + item.ref.operation + '?')) return;
+        denyBtn.addEventListener('click', async function () {
+          if (!await confirmAction('Deny ' + item.ref.operation + '?')) return;
           postAction('/api/workbench/actions/connector/deny', { id: item.id });
         });
         actions.push(approveBtn, denyBtn);
@@ -378,23 +436,28 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
       el('span', { class: 'row-actions' }, (function () {
         if (ks.halted) {
           var b = el('button', { class: 'btn btn-resume', text: 'resume' });
-          b.addEventListener('click', function () {
-            var cred = window.prompt('Re-auth credential to resume.\n' +
-              'The server must have NOVA_RESUME_CREDENTIAL set and it must match.\n\nCredential:');
-            if (cred == null) return;
-            var reason = window.prompt('Reason for resume:');
-            if (!reason) return;
-            postAction('/api/workbench/actions/runtime/resume',
-              { reason: reason, credential: cred });
+          b.addEventListener('click', async function () {
+            var st = await passphraseStatus();
+            var fields = [];
+            if (!st.set) fields.push({ name: 'newPass', label: 'Choose a resume passphrase (at least 6 characters)', type: 'password' });
+            else fields.push({ name: 'cred', label: 'Resume passphrase', type: 'password' });
+            fields.push({ name: 'reason', label: 'Why is it safe to resume?' });
+            var v = await ask({ title: 'Resume NOVA', message: st.set ? 'Enter the resume passphrase to let jobs, agents and the agent browser run again.' : 'No resume passphrase is set yet. Choose one now; you will need it after every halt.', fields: fields, ok: 'resume' });
+            if (!v) return;
+            if (!st.set) { if (!await setPassphrase(v.newPass)) return; v.cred = v.newPass; }
+            postAction('/api/workbench/actions/runtime/resume', { reason: v.reason, credential: v.cred });
           });
           return b;
         }
         var h = el('button', { class: 'btn btn-halt', text: 'halt' });
-        h.addEventListener('click', function () {
-          if (!confirmAction('HALT the runtime? All workers stop at next boundary.')) return;
-          var reason = window.prompt('Reason for halt:');
-          if (!reason) return;
-          postAction('/api/workbench/actions/runtime/halt', { reason: reason });
+        h.addEventListener('click', async function () {
+          var st = await passphraseStatus();
+          var fields = [{ name: 'reason', label: 'Why are you halting?' }];
+          if (!st.set) fields.push({ name: 'newPass', label: 'Choose a resume passphrase (you need it to resume)', type: 'password' });
+          var v = await ask({ title: 'Halt NOVA', message: 'Stops background jobs, agents, autonomy runs, the agent browser and NOVA\'s actions on this computer at their next safe point. Chat keeps working. Resuming needs the resume passphrase.', fields: fields, ok: 'halt', danger: true });
+          if (!v) return;
+          if (!st.set && !await setPassphrase(v.newPass)) return;
+          postAction('/api/workbench/actions/runtime/halt', { reason: v.reason });
         });
         return h;
       })()));

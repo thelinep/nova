@@ -289,6 +289,7 @@ async function runTurn(deps, body, emit, clientSignal) {
           let resultText;
           try {
             if (!computer.TOOLS.some(t => t.name === name)) throw new Error('Unknown tool ' + name);
+            computer.checkHalt(store); // refuse before asking
             if (name === 'run_command') computer.checkCommand(args.command); // refuse before asking
             if (name === 'use_folder') {
               const want = computer.folderPath(args.path);

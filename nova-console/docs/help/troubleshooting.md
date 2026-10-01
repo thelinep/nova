@@ -122,6 +122,48 @@ It is probably waiting at a sign-off step: open Workflows and press **Approve** 
 
 It must be **Enabled**, NOVA must be open at the time, and its model and collections must exist. Check its run history and the **Scheduler** check in Diagnostics.
 
+## Workbench and oversight
+
+### "No installed model is qualified" when NOVA plans code
+
+Open **Models**, press **Sync from Ollama**, then **Qualify for coding** on a model of 7B or larger. Wait until Activity shows the run finished and the card says **6 of 6 passed**. See [Models](help:models#qualify-for-coding).
+
+### There is no "Qualify for coding" button on a model
+
+The card does not know the model's exact version yet. Press **Sync from Ollama** and look again. Remote models cannot be qualified.
+
+### A model fails some coding checks
+
+Small models often fail **several files**, **large folder** or **asks when unclear**. Try a larger coding model (for example `qwen2.5-coder:7b` or `14b`). Models of 3.2B parameters or smaller can only plan single-file changes anyway. You can run the checks again; every run is recorded.
+
+### "Models at or below 3.2B are restricted to qualified single-file workflows"
+
+The request needs changes to more than one file. Use a model larger than 3.2B, or ask for a change to one file.
+
+### NOVA says it is halted and will not act on my computer
+
+Someone pressed **halt** in Workbench. Open Workbench, check the reason under **Allowed**, and press **resume** with your resume passphrase when it is safe.
+
+### Resume says the passphrase is not right
+
+The passphrase is case-sensitive. On a server started with `NOVA_RESUME_CREDENTIAL`, that value is also accepted.
+
+### I lost the resume passphrase
+
+Quit NOVA fully. In NOVA's data folder (see [Settings, privacy and your data](help:settings-privacy#where-your-data-lives)), delete the file `.resume-passphrase`. It is hidden, so press ⇧⌘. in Finder to see it. Start NOVA again and press **resume**: it asks you to choose a new passphrase.
+
+### "The agent browser needs Playwright"
+
+The desktop app does not include the agent browser. Use NOVA from its source folder after `npm install` in `nova-console`. Nothing else in NOVA needs it.
+
+### The setup checklist will not reach 5 / 5
+
+Step 2 needs a model that passed **Qualify for coding**. Step 5 needs a code change applied after its checks passed in Local Workspace, or an improve-and-test loop that ended with passing tests. See [The setup checklist](help:getting-started-checklist).
+
+### The Workbench strip in the top bar shows "—"
+
+NOVA could not read Workbench's state. It retries after 30 seconds. If it stays, open Workbench to see the error, and make a support report.
+
 ## Local Workspace
 
 ### "install" is refused

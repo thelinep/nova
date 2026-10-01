@@ -16,6 +16,8 @@ The sidebar on the left lists every screen, grouped by purpose. The button at th
 - **Command** (⌘K) opens the command palette: type part of a screen or action ("agents", "diagnostics", "new session") and press Enter.
 - The **model pill** shows the model new messages use. Click it to change model.
 - The **privacy pill** reads **LOCAL ONLY** while network access is off and the model runs locally, and changes when that is no longer true.
+- The **setup** pill (for example **setup: 3 / 5**) shows how many of the [five setup steps](help:getting-started-checklist) are done. Click it to see what is left.
+- The **Workbench strip** (for example **0 · 0 · 0 · kill: clear · 0**) counts queued jobs, running jobs, items waiting for you, the kill switch and finished jobs. Hover for the words, click to open [Workbench](help:workbench).
 - The last button opens or closes the **inspector** on the right of the Console.
 
 @screen media/command.jpg "The command palette jumps to any screen or action."

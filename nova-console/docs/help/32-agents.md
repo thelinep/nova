@@ -48,3 +48,7 @@ Agents listed under **Can hand work to** appear to the model as tools. When it u
 ## Execution details
 
 **Execution details** on a card shows the last instruction, the answer, how many rounds it took and every tool call with its result, plus the agent's instructions.
+
+## Agents that work on their own
+
+The agents on this screen run when you ask them. NOVA also has a **multi-agent system** for agents that keep working over time, with their own memory, a shared task list, budgets, tool permissions and a supervisor to escalate to. Its agents appear in Workbench → **Agents**. It is built and tested, but not started from this screen yet. See [Built, not yet in the console](help:developer-preview).

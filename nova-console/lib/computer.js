@@ -315,6 +315,9 @@ function describe(name, args) {
   }
 }
 
+// The Workbench kill switch also stops NOVA acting on this computer.
+function halted(store) { try { return typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1'; } catch (_) { return false; } }
+function checkHalt(store) { if (halted(store)) throw error('NOVA is halted (Workbench kill switch), so it will not act on this computer. Resume it in Workbench first.', 423); }
 function policy(store) { const p = store.get('preferences', 'computer') || {}; return { enabled: p.enabled !== false, autoRead: Boolean(p.autoRead), screen: p.screen !== false }; }
 function setPolicy(store, input = {}) {
   const cur = store.get('preferences', 'computer') || { id: 'computer' };
@@ -361,6 +364,7 @@ function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 async function execute(name, args, ctx) {
   const a = args && typeof args === 'object' ? args : {};
   const p = policy(ctx.store);
+  checkHalt(ctx.store);
   if (!p.enabled) throw error('Computer access is turned off in Settings.', 403);
   if (SCREEN_TOOLS.has(name) && !p.screen) throw error('Seeing and controlling the screen is turned off in Settings.', 403);
   switch (name) {
@@ -408,4 +412,4 @@ function workspaceRoots(store) {
 
 function _reset() { for (const e of pending.values()) clearTimeout(e.timer); pending.clear(); sessionAllow.clear(); shots.clear(); listeners.clear(); }
 
-module.exports = { folderPath, TOOLS, SCREEN_TOOLS, toolSpecs, execute, approve, decide, pendingApprovals, forgetSession, subscribe, policy, setPolicy, status, describe, checkCommand, insideRoots, shotFile, workspaceRoots, _reset };
+module.exports = { halted, checkHalt, folderPath, TOOLS, SCREEN_TOOLS, toolSpecs, execute, approve, decide, pendingApprovals, forgetSession, subscribe, policy, setPolicy, status, describe, checkCommand, insideRoots, shotFile, workspaceRoots, _reset };
