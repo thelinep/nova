@@ -42,7 +42,8 @@
     "test:connector-actions": "node --test tests/connector-actions.test.js",
     "test:agents": "node --test tests/agents.test.js",
     "test:agent-memory": "node --test tests/agent-memory.test.js",
-    "test:agent-tasks": "node --test tests/agent-tasks.test.js"
+    "test:agent-tasks": "node --test tests/agent-tasks.test.js",
+    "test:agent-budgets": "node --test tests/agent-budgets.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
