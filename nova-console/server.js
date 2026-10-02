@@ -384,6 +384,19 @@ async function syncModelsFromOllama() {
   // rows not present in this tag list are left alone — e.g. a remote/API
   // model entry the user added by hand has nothing to do with `ollama list`).
   const mappedIds = new Set(mapped.map(m => m.id));
+  // A model renamed in Ollama (ollama cp + rm) keeps its digest: chats, agents, automations and saved
+  // profiles that used the old name follow it to the new one. Coding qualifications are keyed by digest already.
+  const renamed = new Map();
+  for (const m of existingById.values()) {
+    if (m.runtime !== 'ollama' || mappedIds.has(m.id) || !m.digest) continue;
+    const same = mapped.find(x => x.digest === m.digest && !existingById.has(x.id));
+    if (same) renamed.set(m.id, same.id);
+  }
+  if (renamed.size) {
+    for (const [storeName, field] of [['sessions', 'modelId'], ['agents', 'modelId'], ['automations', 'modelId'], ['modelProfiles', 'modelId'], ['workflows', 'modelId']]) {
+      for (const row of store.all(storeName)) if (renamed.has(row[field])) store.put(storeName, { ...row, [field]: renamed.get(row[field]) });
+    }
+  }
   for (const m of existingById.values()) {
     if (m.runtime === 'ollama' && !mappedIds.has(m.id)) store.delete('models', m.id);
   }
@@ -415,6 +428,7 @@ async function syncModelsFromOllama() {
       if (!am || am.runtime !== 'ollama') { auto.modelId = fallbackModelId; store.put('automations', auto); }
     }
   }
+  if (renamed.size) mapped.renamed = Object.fromEntries(renamed);
   return mapped;
 }
 
@@ -901,7 +915,7 @@ const routes = [
       for (const p of store.all('modelProfiles')) if (ids.has(p.modelId)) store.delete('modelProfiles', p.id);
       sendJson(res, 200, { removed: gone.length });
     } },
-  { method: 'POST', pattern: /^\/api\/models\/sync$/, handler: async (req, res) => sendJson(res, 200, { models: await syncModelsFromOllama() }) },
+  { method: 'POST', pattern: /^\/api\/models\/sync$/, handler: async (req, res) => { const models = await syncModelsFromOllama(); sendJson(res, 200, { models, renamed: models.renamed || {} }); } },
 
   {
     method: 'POST', pattern: /^\/api\/models\/([^/]+)\/load$/, handler: async (req, res, [id]) => {

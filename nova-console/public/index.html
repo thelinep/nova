@@ -2570,9 +2570,10 @@ function bindModelsViewEvents(){
     try {
       const r = await fetch(apiUrl('/api/models/sync'), {method:'POST'});
       if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error || ('HTTP '+r.status)); }
-      const { models } = await r.json();
-      DB.models = await idbAll('models');
+      const { models, renamed } = await r.json();
+      DB.models = await idbAll('models'); DB.sessions = await idbAll('sessions');
       setPrefs({ollamaSynced:true});
+      for (const [from, to] of Object.entries(renamed || {})) toast(from+' is now '+to+'; chats and agents follow it.');
       logEvent('MODEL', 'synced '+models.length+' model(s) from Ollama');
       renderModelsView(); renderShellChrome();
       toast(models.length+' model(s) synced from Ollama.');

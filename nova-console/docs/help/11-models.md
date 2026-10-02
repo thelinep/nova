@@ -37,6 +37,8 @@ Then press **Sync from Ollama** in **Models**. Maataa adds or updates a card for
 
 When more than one model is loaded, a note at the top says how much memory they use. **Unload all but…** frees memory for images and video.
 
+**Renaming a model.** If you rename a model in Ollama (`ollama cp old new`, then `ollama rm old`), the next sync recognises it by its digest. Chats, agents, automations and saved profiles move to the new name, and its coding checks stay. The brahmini folder has **Rename local model to guru-maataa.command** for the local model that used to be called `maataa`.
+
 **Example models.** Before Ollama is connected, Models shows a few example rows (Llama 3.1 8B, Mistral Nemo 12B, Qwen2.5 Coder 7B, Phi-3.5 Mini, Frontier Remote 70B). They are not on your Mac, and their numbers are not measured. Once real models are synced, the examples move into a closed **example models** section, are never shown as loaded, and **Remove examples** deletes them.
 
 ## Qualify for coding

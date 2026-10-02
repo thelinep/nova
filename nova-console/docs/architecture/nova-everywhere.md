@@ -25,7 +25,7 @@ MAATAA ECOSYSTEM (umbrella)
 | Repository | thelinep/nova (unchanged for now) |
 | Internal identifiers | `NOVA_*` settings, `lib/` names (unchanged for now) |
 | App bundle / data folder | `com.brahmini.nova-runtime` (unchanged until a migration) |
-| Local models | `maataa-assist`, `maataa-code`, `maataa-reason`, `maataa-vision`, `maataa-edge` (the platform name is never a model name) |
+| Local models | `guru-maataa` (renamed from `maataa:latest`, October 2026); further models follow the same pattern. The platform name is never a model name. |
 
 Sequence: (1) public and product rename in what people see; (2) model namespace; (3) a separate, explicit technical migration (bundle ID, data folder, env vars, repository) that moves sessions, databases, device identity, evidence, models, characters, knowledge and secrets intact.
 

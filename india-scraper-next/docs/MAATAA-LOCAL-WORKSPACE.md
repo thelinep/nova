@@ -5,7 +5,7 @@ Brahmini's landing page now starts with model management and a local Maataa conv
 ## Use
 
 1. Run Ollama locally and start Brahmini on a loopback host.
-2. Refresh installed models. `maataa:latest` is selected when installed. Load/unload controls manage memory residency; no model downloads or deletions are triggered.
+2. Refresh installed models. `guru-maataa:latest` (the local model formerly called `maataa:latest`) is selected when installed. Load/unload controls manage memory residency; no model downloads or deletions are triggered.
 3. Create a titled conversation and category. Send a prompt in conversation mode, or select “Design a district query”.
 4. Review the generated name and template. Saving calls the existing Query Studio method API; it does not run a scrape or change the collector's frozen query.
 5. Write an update or milestone linked to the conversation, save a draft, then publish it to the local journal. Publication is local, not internet deployment or a verified completion claim.

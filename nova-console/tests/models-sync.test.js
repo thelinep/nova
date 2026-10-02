@@ -44,3 +44,35 @@ test('server: sync measures loaded models and marks the example models', { timeo
     assert.equal((await j('/api/store/modelProfiles')).body.some(p => p.id === 'mp_x'), false);
   } finally { child.kill(); ollama.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('server: a model renamed in Ollama keeps its chats, agents and profiles', { timeout: 30000 }, async () => {
+  let names = ['maataa:latest'];
+  const ollama = http.createServer((req, res) => {
+    const send = o => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
+    if (req.url === '/api/tags') return send({ models: names.map(n => ({ name: n, size: 2e9, digest: 'c'.repeat(64), details: { parameter_size: '3.2B' } })) });
+    if (req.url === '/api/ps') return send({ models: [] });
+    if (req.url === '/api/show') return send({ model_info: {}, capabilities: ['completion'] });
+    res.writeHead(404); res.end('{}');
+  });
+  await new Promise(r => ollama.listen(0, '127.0.0.1', r));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-rename-'));
+  const child = spawn(process.execPath, ['--no-warnings', '-e', "const {server}=require('./server'); server.on('listening',()=>console.log('READY '+server.address().port));"], { cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: '0', DATA_DIR: dir, OLLAMA_HOST: 'http://127.0.0.1:' + ollama.address().port, COMFYUI_URL: 'http://127.0.0.1:9', NOVA_LIBRARY_DIR: path.join(dir, 'library') }, stdio: ['ignore', 'pipe', 'pipe'] });
+  try {
+    const port = await new Promise((resolve, reject) => {
+      let out = ''; const t = setTimeout(() => reject(new Error('no start: ' + out)), 15000);
+      child.stdout.on('data', d => { out += d; const m = /READY (\d+)/.exec(out); if (m) { clearTimeout(t); resolve(Number(m[1])); } });
+      child.stderr.on('data', d => { out += d; });
+    });
+    const base = `http://127.0.0.1:${port}`, H = { Origin: base, 'Content-Type': 'application/json' };
+    const j = async (p, o = {}) => { const r = await fetch(base + p, { headers: H, ...o }); return { status: r.status, body: await r.json().catch(() => null) }; };
+    await j('/api/models/sync', { method: 'POST' });
+    await j('/api/store/sessions', { method: 'PUT', body: JSON.stringify({ id: 's1', title: 'Chat', modelId: 'maataa:latest', messages: [] }) });
+    await j('/api/store/agents', { method: 'PUT', body: JSON.stringify({ id: 'a1', name: 'Planner', modelId: 'maataa:latest' }) });
+    names = ['guru-maataa:latest']; // ollama cp maataa:latest guru-maataa:latest && ollama rm maataa:latest
+    const r = (await j('/api/models/sync', { method: 'POST' })).body;
+    assert.deepEqual(r.renamed, { 'maataa:latest': 'guru-maataa:latest' });
+    assert.equal((await j('/api/store/sessions')).body.find(x => x.id === 's1').modelId, 'guru-maataa:latest');
+    assert.equal((await j('/api/store/agents')).body.find(x => x.id === 'a1').modelId, 'guru-maataa:latest');
+    assert.deepEqual((await j('/api/store/models')).body.filter(m => m.runtime === 'ollama').map(m => m.id), ['guru-maataa:latest']);
+  } finally { child.kill(); ollama.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
