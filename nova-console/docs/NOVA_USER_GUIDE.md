@@ -1648,6 +1648,10 @@ The helper uses your local model. Start Ollama and press **Sync from Ollama** in
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
 
+#### "No whisper speech model is installed yet" although I installed one
+
+Double-click **Add multilingual speech model.command** in the brahmini folder again. Earlier versions put the model only where NOVA started from the folder looks; the app keeps its own data folder. It now links models you already have into the app without downloading them again or using more space. No restart is needed.
+
 #### A character's shouting, whispering or singing sounds the same as normal speech
 
 Delivery effects need ffmpeg: run `brew install ffmpeg` and press **▶ Preview** again. Check that the line has cues such as `[shout]`, or choose a delivery in the preview list. Automatic delivery per sentence needs a chat model; without one, only cues, CAPITALS and "!" change the delivery.
