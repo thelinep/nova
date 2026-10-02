@@ -86,9 +86,25 @@ function trimHistory(messages, maxChars) {
  * body: {sessionId, model, messages, options, retrieved, computer, memory, followups}
  * emit(event) writes one NDJSON line; signal aborts when the client goes away.
  */
+
+/* Evidence for a reply: the actions that really ran in this turn (their execution contracts),
+ * and a warning when the reply claims to have run or found something although nothing ran.
+ * Small models often describe an action and invent its output instead of calling the tool. */
+const CLAIM = /\b(?:I(?:'ve| have)?\s+(?:just\s+)?(?:ran|run|executed|searched|scanned|listed|checked|opened|created|deleted|moved|renamed|wrote|saved|copied|downloaded|installed)\b|using the \w+ tool|the (?:command )?output (?:is|was)|here (?:is|are) the (?:results?|output|files)|I found (?:the following|these|\d+))/i;
+function evidenceFor(store, ids, content, { computerOn = false, modelName = '' } = {}) {
+  const evidence = ids.map(id => { try { const c = contracts.get(store, id); return { contract: c.id, capability: c.capability, status: c.status, intent: c.intent, seq: c.evidence ? c.evidence.seq : null, outputSha256: c.observation ? c.observation.outputSha256 : null }; } catch (_) { return null; } }).filter(Boolean);
+  const ran = evidence.some(e => e.status === 'completed' || e.status === 'failed');
+  if (ran || !CLAIM.test(String(content || ''))) return { evidence, unverified: null };
+  const small = /(?:^|[:\-_ ])(?:0\.5|1|1\.5|2|3|3\.8|4)b\b|llama3\.2(?!-vision)|phi|tinyllama|gemma.?2b/i.test(modelName);
+  const note = computerOn
+    ? 'No action ran for this reply, so nothing above was produced by this Mac: any commands, file names, sizes or output it describes were written by the model, not observed.' + (small ? ' Small models often describe actions instead of doing them; for Computer use, a model of 7B or more that supports tools works better (for example qwen2.5).' : '')
+    : 'Computer is off for this chat, so no action ran: anything the reply says it ran or found was written by the model, not observed. Turn on Computer to let it act, with your approval.';
+  return { evidence, unverified: { note } };
+}
 async function runTurn(deps, body, emit, clientSignal) {
   const { store, dataDir, ollama, media } = deps;
   const model = String(body.model || '');
+  const turnContracts = []; // execution contracts opened in this turn: the evidence behind the reply
   const sessionId = String(body.sessionId || '');
   const history = Array.isArray(body.messages) ? body.messages.filter(m => m && ['user', 'assistant'].includes(m.role)) : [];
   if (!model || !history.length) throw Object.assign(new Error('Expected {model, sessionId, messages[]}'), { statusCode: 400 });
@@ -300,6 +316,7 @@ async function runTurn(deps, body, emit, clientSignal) {
             }
             // Every computer action is an execution contract: plan → approval → execution → evidence.
             ctr = contracts.open(store, dataDir, { actor: { type: 'agent', id: model, label: 'Maataa (' + model + ')', onBehalfOf: 'local-operator' }, intent: d.title + (d.detail ? ': ' + d.detail : ''), context: { sessionId, round }, ...computer.contractFor(name, args), plan: { tool: name, args } });
+            turnContracts.push(ctr.id);
             const ap = computer.approve(store, { sessionId, tool: name, args, signal, contract: ctr });
             if (ap.info) { contracts.link(store, ctr.id, { approvalId: ap.info.id }); step.update({ waiting: true, approvalId: ap.info.id, detail: d.detail }); emit({ type: 'approval', approval: ap.info }); }
             const decision = await ap.promise;
@@ -345,7 +362,7 @@ async function runTurn(deps, body, emit, clientSignal) {
     const stats = { ttft: firstTokenAt ? firstTokenAt - started : null, tokens: evalCount || Math.round(content.length / 4.2), tokPerSec: evalCount && evalDuration ? +(evalCount / (evalDuration / 1e9)).toFixed(1) : null, seconds: +seconds.toFixed(1), steps: job.job.steps.length };
     job.done({ chars: content.length });
     emit({ type: 'steps', steps: job.job.steps, status: 'done' });
-    emit({ type: 'done', content, stats });
+    emit({ type: 'done', content, stats, ...evidenceFor(store, turnContracts, content, { computerOn: Boolean(body.computer), modelName: (record.name || model) }) });
 
     /* 6 · suggested follow-ups (after the reply is already on screen) */
     if (body.followups !== false && content.length > 60 && !signal.aborted) {

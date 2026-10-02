@@ -517,6 +517,12 @@ The model must support tools, for example `qwen2.5`, `llama3.1` or `mistral-nemo
 
 **Settings > Computer** can turn computer use off everywhere, turn off screen control, or let read-only actions (looking at files, the screen or the clipboard) run without asking. On macOS, clicking and typing need **System Settings > Privacy & Security > Accessibility**, and screenshots of other windows need **Screen Recording**. Allow Maataa Workstation, or Terminal when you use browser mode.
 
+#### Evidence: what really ran
+
+Under a reply that used the computer, **Evidence** chips list the actions that really ran, for example "Run a command: wc -l shots.txt". The colour shows the result: green for done, red for failed, grey for declined. Click a chip to see its execution contract in **Local Workspace > Execution contracts**.
+
+When a reply says it ran a command or found files but **no action ran**, a red **Not verified** note appears. Any file names, sizes or output in that reply were written by the model, not observed on your Mac. This happens most with small models (for example llama3.2 3B), which often describe an action instead of doing it. For Computer use, pick a model of 7B or more that supports tools (for example qwen2.5), and check that Computer is on.
+
 ### Talk and listen
 
 - **Hold the microphone** while you speak and let go to send. Or click it once, speak, and click again. whisper.cpp turns your words into text on this Mac. **Settings > Send right after I speak** decides whether it sends straight away.

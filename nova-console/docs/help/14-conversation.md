@@ -4,7 +4,7 @@ title: Add sources, live steps, computer and voice
 section: Chat and knowledge
 order: 14
 summary: Give Maataa a folder, files, a web page or a git repo to read, watch what it is doing step by step, let it use your Mac with your approval, and talk to it out loud.
-keywords: ocr text recognition extract code from image screenshot to html build page from image design to code sandbox browser compare add folder add file add url web page git repo clone source attach drag drop steps activity parallel queue computer run command open app screenshot click type clipboard approval allow deny voice microphone talk read aloud speak memory remember forget edit resend regenerate react pin follow-up
+keywords: evidence not verified hallucinated made up invented output contract ocr text recognition extract code from image screenshot to html build page from image design to code sandbox browser compare add folder add file add url web page git repo clone source attach drag drop steps activity parallel queue computer run command open app screenshot click type clipboard approval allow deny voice microphone talk read aloud speak memory remember forget edit resend regenerate react pin follow-up
 views: console
 ---
 Chat in Maataa works like talking to a colleague who can read what you hand them, show you what they are doing, and, when you allow it, use your computer.
@@ -69,6 +69,12 @@ While Maataa is **halted** with the kill switch in [Workbench](help:workbench), 
 The model must support tools, for example `qwen2.5`, `llama3.1` or `mistral-nemo`. If it does not, Maataa answers anyway and says why it could not act.
 
 **Settings > Computer** can turn computer use off everywhere, turn off screen control, or let read-only actions (looking at files, the screen or the clipboard) run without asking. On macOS, clicking and typing need **System Settings > Privacy & Security > Accessibility**, and screenshots of other windows need **Screen Recording**. Allow Maataa Workstation, or Terminal when you use browser mode.
+
+### Evidence: what really ran
+
+Under a reply that used the computer, **Evidence** chips list the actions that really ran, for example "Run a command: wc -l shots.txt". The colour shows the result: green for done, red for failed, grey for declined. Click a chip to see its execution contract in **Local Workspace > Execution contracts**.
+
+When a reply says it ran a command or found files but **no action ran**, a red **Not verified** note appears. Any file names, sizes or output in that reply were written by the model, not observed on your Mac. This happens most with small models (for example llama3.2 3B), which often describe an action instead of doing it. For Computer use, pick a model of 7B or more that supports tools (for example qwen2.5), and check that Computer is on.
 
 ## Talk and listen
 

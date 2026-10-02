@@ -106,4 +106,20 @@ test.describe('Conversation tools', () => {
       await expect(page.locator('.msg.user')).toHaveCount(0);
     } finally { fs.rmSync(proj, { recursive: true, force: true }); }
   });
+
+  test('replies show the evidence of what ran, or a warning when nothing ran', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#newSessionBtn').click();
+    await expect.poll(() => page.evaluate(() => !!activeSession())).toBe(true);
+    await page.evaluate(() => {
+      const s = activeSession();
+      s.messages.push({ id: 'a1', role: 'assistant', content: 'I ran find and the output is file1.zip', createdAt: nowIso(), unverified: { note: 'No action ran for this reply.' } });
+      s.messages.push({ id: 'a2', role: 'assistant', content: 'Counted 2 lines.', createdAt: nowIso(), evidence: [{ contract: 'ctr_x', capability: 'process.execute', status: 'completed', intent: 'Run a command: wc -l shots.txt', seq: 3 }] });
+      renderConvo();
+    });
+    await expect(page.locator('.msg-unverified')).toContainText('Not verified');
+    await expect(page.locator('.ev-chip')).toContainText('wc -l shots.txt');
+    await page.locator('.ev-chip').click();
+    await expect(page.locator('#contractsPanel')).toBeVisible();
+  });
 });

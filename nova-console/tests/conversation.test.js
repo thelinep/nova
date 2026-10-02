@@ -270,6 +270,8 @@ test('chat turn: computer tools ask first, run after approval, and report result
     assert.equal(done2[1].execution, null, 'a declined action never starts');
     assert.equal(events.find(e => e.type === 'approval').approval.planHash, done2[0].planHash);
     assert.deepEqual(contracts.verifyChain(store, dir).ok, true);
+    assert.deepEqual(done.evidence.map(e => [e.capability, e.status]), [['process.execute', 'completed'], ['file.write', 'denied']]);
+    assert.equal(done.unverified, null);
     const tools = ollama.calls.find(c => c.kind === 'full').opts.tools.map(t => t.function.name);
     assert.ok(tools.includes('run_command') && tools.includes('screenshot'));
     const system = ollama.calls[0].messages[0].content;
@@ -405,4 +407,27 @@ test('chat turn: "scan and report" on a folder added to the chat runs the read-o
     assert.ok(events.filter(e => e.type === 'steps').pop().steps.some(s => /^Scanning /.test(s.label) && s.status === 'done'));
     assert.equal(store.all('workspaceRoots').length, 0, 'scanning does not add the folder to Local Workspace');
   } finally { activity._reset(); db.close(); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(proj, { recursive: true, force: true }); }
+});
+
+test('chat turn: a reply that claims to have run something, when nothing ran, is marked not verified', async () => {
+  activity._reset(); computer._reset();
+  const { dir, store, db } = tempStore();
+  try {
+    activity.configure(store);
+    store.put('models', { id: 'llama3.2:latest', name: 'llama3.2:latest', runtime: 'ollama', capabilities: ['completion', 'tools'] });
+    const fake = 'Using the run_command tool, I ran the following command:\n\n    find ~/Desktop -size +1M\n\nThe output is:\n- file1.zip (2.5 GB)';
+    const ollama = fakeOllama(() => ({ message: { role: 'assistant', content: fake }, eval_count: 5, eval_duration: 1e9 }));
+    const events = [];
+    await chatTurn.runTurn({ store, dataDir: dir, ollama }, { sessionId: 's1', model: 'llama3.2:latest', computer: true, followups: false, messages: [{ role: 'user', content: 'find big files on my desktop' }] }, e => events.push(e));
+    const done = events.find(e => e.type === 'done');
+    assert.ok(done.unverified, 'flagged');
+    assert.match(done.unverified.note, /No action ran for this reply/);
+    assert.match(done.unverified.note, /Small models/);
+    assert.deepEqual(done.evidence, []);
+    // An ordinary answer is not flagged.
+    const plain = fakeOllama(() => ({ message: { role: 'assistant', content: 'Q4_K_M is smaller; Q5_K_M is more accurate.' }, eval_count: 5, eval_duration: 1e9 }));
+    const ev2 = [];
+    await chatTurn.runTurn({ store, dataDir: dir, ollama: plain }, { sessionId: 's2', model: 'llama3.2:latest', computer: false, followups: false, messages: [{ role: 'user', content: 'Q4 or Q5?' }] }, e => ev2.push(e));
+    assert.equal(ev2.find(e => e.type === 'done').unverified, null);
+  } finally { activity._reset(); computer._reset(); db.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
