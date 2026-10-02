@@ -351,4 +351,34 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.getByText('dense-tensor-backprop-v1')).toBeVisible();
     await expect(page.locator('.runtime-inline', { hasText: 'approved' })).toBeVisible();
   });
+
+  test('reads the Ashtadhyayi and trains a sutra neuron that agrees with its sutra', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-view="panini"]').click();
+    await expect(page.getByRole('heading', { name: 'Ashtadhyayi' })).toBeVisible();
+    await expect(page.locator('.panini-sutra').first()).toContainText('वृद्धिरादैच्');
+    await page.getByLabel('Find sutras').fill('1.1.101');
+    await page.getByRole('button', { name: 'Find' }).click();
+    await expect(page.getByText('There is no sutra 1.1.101. Pada 1.1 has 75 sutras.')).toBeVisible();
+    await page.getByLabel('Find sutras').fill('iko yaṇaci');
+    await page.getByRole('button', { name: 'Find' }).click();
+    await expect(page.locator('.panini-sutra')).toHaveCount(1);
+    await expect(page.locator('.panini-sutra')).toContainText('इको यणचि');
+    await page.getByRole('tab', { name: 'Dhatupatha' }).click();
+    await page.getByLabel('Find a root').fill('भू');
+    await page.getByRole('button', { name: 'Find' }).click();
+    await expect(page.getByText('सत्तायाम्')).toBeVisible();
+    await page.getByRole('tab', { name: 'Sutras' }).click();
+    await page.getByLabel('Find sutras').fill('6.1.77');
+    await page.getByRole('button', { name: 'Find' }).click();
+    await page.getByRole('button', { name: 'Train a neuron' }).click();
+    await expect(page.getByRole('heading', { name: 'Neuron Factory' })).toBeVisible();
+    const card = page.locator('article', { hasText: 'यण् sandhi neuron (6.1.77)' });
+    await card.getByRole('button', { name: 'Queue training' }).click();
+    await expect(card.getByRole('button', { name: 'Evaluate quality' })).toBeVisible({ timeout: 8000 });
+    await card.getByRole('button', { name: 'Evaluate quality' }).click();
+    await expect(page.getByText('Agrees with the sutra on 169 of 169 vowel pairs')).toBeVisible();
+    await page.locator('article', { hasText: 'यण् sandhi neuron (6.1.77)' }).getByRole('button', { name: 'Ask the neuron' }).click();
+    await expect(page.locator('.sutra-try-out')).toContainText('sutra 6.1.77: य् ✓');
+  });
 });

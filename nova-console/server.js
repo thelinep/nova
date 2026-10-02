@@ -37,6 +37,8 @@ const collectorWorkflows = require('./lib/collector-workflows');
 const codePlanner = require('./lib/code-planner');
 const modelQualifications = require('./lib/model-qualifications');
 const neuronFactory = require('./lib/neuron-factory');
+const panini = require('./lib/panini');
+const sutraNeurons = require('./lib/sutra-neurons');
 const backgroundJobs = require('./lib/background-jobs');
 const artifactGovernance = require('./lib/artifact-governance');
 const prConnectors = require('./lib/pr-connectors');
@@ -876,6 +878,13 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/neuron-factory\/artifacts$/, handler: async (_req,res)=>sendJson(res,200,store.all('neuronArtifacts').reverse()) },
   { method: 'GET', pattern: /^\/api\/background-jobs$/, handler: async (_req,res)=>sendJson(res,200,store.all('backgroundJobs').reverse()) },
   { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints$/, handler: async (req,res)=>sendJson(res,201,neuronFactory.createBlueprint(store,await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/neuron-factory\/presets$/, handler: async (_req,res)=>sendJson(res,200,sutraNeurons.list()) },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/presets\/([^/]+)$/, handler: async (_req,res,[id])=>{const input=sutraNeurons.blueprintInput(decodeURIComponent(id));sendJson(res,201,neuronFactory.createBlueprint(store,input,{sutra:input.sutra}));} },
+  { method: 'POST', pattern: /^\/api\/neuron-factory\/artifacts\/([^/]+)\/try$/, handler: async (req,res,[id])=>{const artifact=store.get('neuronArtifacts',decodeURIComponent(id));if(!artifact)return sendJson(res,404,{error:'Unknown neuron artifact.'});const blueprint=store.get('neuronBlueprints',artifact.blueprintId),body=await readJsonBody(req);sendJson(res,200,sutraNeurons.tryPair(artifact,blueprint?.sutra,body.first,body.second));} },
+  { method: 'GET', pattern: /^\/api\/panini$/, handler: async (_req,res)=>sendJson(res,200,panini.info()) },
+  { method: 'GET', pattern: /^\/api\/panini\/sutras$/, handler: async (req,res)=>{const u=new URL(req.url,'http://x');sendJson(res,200,panini.search(u.searchParams.get('q')||'',{script:u.searchParams.get('script')||'devanagari'}));} },
+  { method: 'GET', pattern: /^\/api\/panini\/sutras\/([^/]+)$/, handler: async (req,res,[id])=>{const u=new URL(req.url,'http://x'),s=panini.get(decodeURIComponent(id),u.searchParams.get('script')||'devanagari');s?sendJson(res,200,s):sendJson(res,404,{error:`There is no sutra ${decodeURIComponent(id)}.`});} },
+  { method: 'GET', pattern: /^\/api\/panini\/dhatus$/, handler: async (req,res)=>{const u=new URL(req.url,'http://x');sendJson(res,200,panini.dhatu(u.searchParams.get('root')||''));} },
   { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints\/([^/]+)\/approve$/, handler: async (_req,res,[id])=>sendJson(res,200,neuronFactory.approveBlueprint(store,decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/neuron-factory\/blueprints\/([^/]+)\/train$/, handler: async (_req,res,[id])=>{const job=backgroundJobs.enqueueNeuronTraining(store,decodeURIComponent(id));setImmediate(()=>backgroundJobs.startNeuronWorker(store,job.id));sendJson(res,202,job);} },
   { method: 'POST', pattern: /^\/api\/background-jobs\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,backgroundJobs.cancel(store,decodeURIComponent(id))) },

@@ -15,6 +15,7 @@ Maataa Workstation is a local AI workspace: chat with local models, search your 
 - [Chat and sessions](#chat-and-sessions)
 - [Models](#models)
 - [Knowledge and Retrieval Lab](#knowledge-and-retrieval-lab)
+- [Ashtadhyayi](#ashtadhyayi)
 - [Automations and Evaluations](#automations-and-evaluations)
 - [Add sources, live steps, computer and voice](#add-sources-live-steps-computer-and-voice)
 - [Images](#images)
@@ -381,7 +382,7 @@ When more than one model is loaded, a note at the top says how much memory they 
 
 **Renaming a model.** If you rename a model in Ollama (`ollama cp old new`, then `ollama rm old`), the next sync recognises it by its digest. Chats, agents, automations and saved profiles move to the new name, and its coding checks stay. The brahmini folder has **Rename local model to guru-maataa.command** for the local model that used to be called `maataa`.
 
-**Guru: our own models.** `guru-maataa-nano`, `-mini` and `-small` are MAATAA's own language models, trained from scratch on your Mac from Sanskrit, Hindi and English Wikipedia plus your own texts. Use the five **Guru … .command** files in the brahmini folder: set up, get the corpus, train, try, and add to Ollama. Once added, they appear here after **Sync from Ollama**. They are small: they write fluent text but know little, so use them to try things out, not for facts. See `guru/README.md`.
+**Guru: our own models.** `guru-maataa-nano`, `-mini` and `-small` are MAATAA's own language models, trained from scratch on your Mac from Sanskrit, Hindi and English Wikipedia plus your own texts and the full Ashtadhyayi and Dhatupatha. Use the five **Guru … .command** files in the brahmini folder: set up, get the corpus, train, try, and add to Ollama. Once added, they appear here after **Sync from Ollama**. They are small: they write fluent text but know little, so use them to try things out, not for facts. When Guru cites an Ashtadhyayi sutra, it checks the number and wording against the real text and tells you if they are wrong. See `guru/README.md`.
 
 **Example models.** Before Ollama is connected, Models shows a few example rows (Llama 3.1 8B, Mistral Nemo 12B, Qwen2.5 Coder 7B, Phi-3.5 Mini, Frontier Remote 70B). They are not on your Mac, and their numbers are not measured. Once real models are synced, the examples move into a closed **example models** section, are never shown as loaded, and **Remove examples** deletes them.
 
@@ -448,6 +449,43 @@ Use it to find missing, badly split or irrelevant material. Results depend on yo
 ### Using collections in chat
 
 Turn on **Retrieval** under the Console's message box. Maataa adds the best passages to the prompt, and the answer shows them as citation chips. The inspector's **Sources** and **Retrieval** tabs show everything that was retrieved.
+
+## Ashtadhyayi
+
+*Read Panini's Ashtadhyayi (all 3,983 sutras) and look up roots in the Dhatupatha. Search by number, range, pada or words, in Devanagari, IAST, Brahmi, Kharoshthi or Siddham.*
+
+**Ashtadhyayi** (Intelligence group) contains the full text of Panini's grammar, all 3,983 sutras from 1.1.1 to 8.4.68, and the Dhatupatha, a list of 2,259 verb roots.
+
+### Find sutras
+
+Type in the box and press **Find**:
+
+| You type | You get |
+| --- | --- |
+| `6.1.77` | that sutra, with buttons for the previous and next sutra and for its whole pada |
+| `6.1.77-6.1.80` | a range (up to 400 sutras) |
+| `6.1` | a whole pada |
+| `इको यण`, `iko yaṇaci`, or Brahmi or Siddham text | every sutra that contains those words |
+
+You can also open **Adhyayas and padas** and pick a pada. The list shows how many sutras each pada has.
+
+If a number doesn't exist, the answer tells you how many sutras that pada has. For example, there is no 1.1.101 because pada 1.1 has 75 sutras.
+
+**Script** shows the sutras in Devanagari, IAST, SLP1, Brahmi, Kharoshthi or Siddham. If letters show as boxes, install the free Noto Sans Brahmi, Noto Sans Kharoshthi or Noto Sans Siddham font.
+
+### Look up a root
+
+On the **Dhatupatha** tab, type a root with or without its marker letters, for example भू, गम्, एध् or कृ. Each result shows the root as the Dhatupatha writes it (with markers and accents), its meaning, and its gana.
+
+### Sutra neurons
+
+Five vowel-sandhi sutras have a **Train a neuron** button: 6.1.77, 6.1.78, 6.1.87, 6.1.88 and 6.1.101. It creates a ready-to-train blueprint in [Neuron Factory](#neuron-factory).
+
+### Where the text comes from
+
+The text comes from [Vidyut](https://github.com/ambuda-org/vidyut) by ambuda.org, under the MIT licence. Most of it was shared by the author of ashtadhyayi.com. The same data trains Guru, MAATAA's own language models.
+
+Only the sutra text is included. Meanings and commentaries are left out because modern translations have their own copyright.
 
 ## Automations and Evaluations
 
@@ -1005,6 +1043,28 @@ Press **Run now**. The server steps through the workflow and saves progress afte
 4. Press **Create blueprint**, then **Queue training** on its card.
 
 Training runs in the background, so you can keep using Maataa. The card shows the job's progress, then the result, including its **final loss** (how far the outputs are from the targets: lower is better).
+
+### Sutra neurons
+
+**Start from a sutra** offers five ready-made neurons. Each one learns a single vowel-sandhi rule of the [Ashtadhyayi](#ashtadhyayi):
+
+| Sutra | What it learns |
+| --- | --- |
+| 6.1.77 इको यणचि | Before a vowel, इ उ ऋ ऌ (short or long) become य व र ल |
+| 6.1.78 एचोऽयवायावः | Before a vowel, ए ओ ऐ औ become अय् अव् आय् आव् |
+| 6.1.87 आद्गुणः | अ/आ followed by इ उ ऋ ऌ become ए ओ अर् अल् |
+| 6.1.88 वृद्धिरेचि | अ/आ followed by ए ओ ऐ औ become ऐ or औ |
+| 6.1.101 अकः सवर्णे दीर्घः | Two vowels of the same place become its long vowel |
+
+Each vowel is described the way Panini describes it: by its place of articulation (throat, palate and so on) and whether it is long. The neuron trains on all 169 pairs of vowels, with the answers taken from the sutra itself.
+
+1. Press **Create sutra neuron**, then **Queue training**. Training takes a few seconds.
+2. **Evaluate quality** checks the final loss and also tests the neuron against the sutra on all 169 pairs. It passes only if every pair agrees. If any differ, the card lists a few of them.
+3. **Try** lets you pick two vowels and compare the neuron's answer with the sutra's.
+
+Each neuron learns its sutra on its own. When several rules apply, the Ashtadhyayi's order of exceptions decides which one wins (for example 6.1.101 over 6.1.77 for इ + इ), not the neuron.
+
+The sutra number on a card opens it in **Ashtadhyayi**.
 
 ### Scale
 

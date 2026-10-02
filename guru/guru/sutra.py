@@ -12,6 +12,7 @@ IAST or any Guru-Lipi script.
                              that the number exists and the quoted words match
   corpus_docs()              the texts as training documents (one per pada / gana)
   teach_pairs()              question/answer pairs for `guru teach`
+  export_json(path)          one compact JSON file for Maataa Workstation
 
 Only the sutra text is included, not commentary or meanings: Guru learns the
 exact wording and numbering, and check_citations() catches a wrong quote.
@@ -232,3 +233,35 @@ def teach_pairs(dhatupatha=True):
             pairs.append({"prompt": f"धातुपाठ में \"{d['deva']}\" धातु का अर्थ और गण क्या है?",
                           "answer": f"{d['deva']} — {d['artha']} ({d['gana_name']}गण, {d['code']})"})
     return pairs
+
+
+def export_json(path):
+    """Writes the Ashtadhyayi, the Dhatupatha and the Guru-Lipi tables as one compact JSON file
+    (used by Maataa Workstation's Ashtadhyayi view and sutra neurons)."""
+    import hashlib
+    import json
+    from . import lipi
+    raw = open(os.path.join(HERE, FILES["ashtadhyayi"]), "rb").read()
+    data = {
+        "source": {
+            "name": "Vidyut (ambuda.org)", "url": "https://github.com/ambuda-org/vidyut",
+            "commit": "8da2f90bee3ce1c07505fa432fc3729e3f7e02ea", "license": "MIT",
+            "attribution": "Ashtadhyayi and Dhatupatha from Vidyut (https://github.com/ambuda-org/vidyut), (c) ambuda.org, MIT licence; data originally shared by ashtadhyayi.com.",
+            "sutrapatha_sha256": hashlib.sha256(raw).hexdigest(),
+            "generated_by": "python -m guru panini-json",
+        },
+        "fields": {"sutras": ["id", "devanagari", "iast", "slp1"], "dhatus": ["code", "root", "meaning"]},
+        "ganas": GANAS,
+        "sutras": [[t["id"], t["deva"], t["iast"], t["slp1"]] for t in sutras()],
+        "dhatus": [[d["code"], d["deva"], d["artha"]] for d in dhatus()],
+        "lipi": {
+            "from_deva": {k: v for k, v in lipi.FROM_DEVA.items()},
+            "kharoshthi": {"a": lipi.K_A, "length": lipi.K_LEN, "signs": lipi.K_SIGN,
+                           "independent": {k: list(v) for k, v in lipi._K_INDEP.items()},
+                           "dependent": {k: list(v) for k, v in lipi._K_LONG_SIGN.items()}},
+        },
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("\n")
+    return path

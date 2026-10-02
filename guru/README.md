@@ -94,6 +94,8 @@ python -m guru dhatu भू                     # 01.0001 भू सत्ता
 python -m guru check "6.1.87 इको यणचि"      # mismatch: that is 6.1.77; 6.1.87 is आद्गुणः
 ```
 
+Maataa Workstation's **Ashtadhyayi** view and its sutra neurons in Neuron Factory read `nova-console/lib/panini-data.json`. Regenerate that file with `python -m guru panini-json` if the data in `data/panini` changes.
+
 ## Scripts: Brahmi, Kharoshthi, Siddham
 
 Guru-Lipi lets Guru work with three historic scripts without training on them separately. Digital text in these scripts is scarce, but their letters map almost one to one onto Devanagari.

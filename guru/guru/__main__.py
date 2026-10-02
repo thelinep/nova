@@ -11,6 +11,7 @@
   check      run Guru-Panini on a piece of text (script and Ashtadhyayi citations)
   sutra      show Ashtadhyayi sutras by number, or find them by words
   dhatu      look up a root in the Dhatupatha
+  panini-json  write the Panini texts as one JSON file (for Maataa Workstation)
   lipi       convert between Devanagari, Brahmi, Kharoshthi and Siddham
   export     checkpoint → Hugging Face folder → GGUF (→ Ollama with --ollama NAME)
   sizes      list the sizes with parameter counts and token budgets
@@ -41,6 +42,7 @@ def main(argv=None):
     ch = sub.add_parser("check"); ch.add_argument("text")
     su = sub.add_parser("sutra"); su.add_argument("query", nargs="+", help="a number like 1.1.1, a range like 1.1.1-1.1.10, or words to find"); su.add_argument("--script", default="devanagari", choices=["devanagari", "iast", "slp1", "brahmi", "kharoshthi", "siddham"])
     dh = sub.add_parser("dhatu"); dh.add_argument("root")
+    pj = sub.add_parser("panini-json"); pj.add_argument("--out", default=os.path.join(os.path.dirname(HERE), "nova-console", "lib", "panini-data.json"))
     li = sub.add_parser("lipi"); li.add_argument("text"); li.add_argument("--to", default="devanagari", choices=["devanagari", "brahmi", "kharoshthi", "siddham"])
     ex = sub.add_parser("export"); ex.add_argument("--size", default="nano"); ex.add_argument("--instruct", action="store_true"); ex.add_argument("--ollama", default=""); ex.add_argument("--no-gguf", action="store_true")
     sub.add_parser("sizes")
@@ -88,6 +90,10 @@ def main(argv=None):
         for s in rows:
             print(f"{s['id']:8} {slp1.convert(s['slp1'], args.script)}")
         return
+    if args.cmd == "panini-json":
+        from .sutra import export_json
+        os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+        print("Wrote", export_json(args.out)); return
     if args.cmd == "dhatu":
         from . import sutra
         rows = sutra.dhatu(args.root)

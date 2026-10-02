@@ -11,8 +11,17 @@ function evaluate(store, artifactId, input = {}) {
   const maximum = Number(input.maxFinalLoss ?? (artifact.kind === 'qubit' ? 0.05 : 0.08));
   if (!Number.isFinite(maximum) || maximum <= 0 || maximum > 1) throw error('maxFinalLoss must be greater than 0 and at most 1.');
   const finalLoss = Number(artifact.metrics?.finalLoss);
-  const passed = Number.isFinite(finalLoss) && finalLoss <= maximum;
-  const evaluation = { id: uid('artifact_eval'), artifactId: artifact.id, kind: artifact.kind, status: passed ? 'passed' : 'failed', criterion: { metric: 'finalLoss', maximum }, measured: { finalLoss, engine: artifact.engine, epochs: artifact.metrics?.epochs ?? null }, evaluatedAt: now() };
+  let passed = Number.isFinite(finalLoss) && finalLoss <= maximum;
+  const criterion = { metric: 'finalLoss', maximum }, measured = { finalLoss, engine: artifact.engine, epochs: artifact.metrics?.epochs ?? null };
+  // A sutra neuron must also give the sutra's own answer for every vowel pair.
+  const blueprint = artifact.blueprintId && store.get('neuronBlueprints', artifact.blueprintId);
+  if (blueprint?.sutra) {
+    const agreement = require('./sutra-neurons').agreement(artifact, blueprint.sutra);
+    criterion.ruleAgreement = `all ${agreement?.total ?? 169} vowel pairs agree with sutra ${blueprint.sutra.id}`;
+    measured.ruleAgreement = agreement;
+    passed = passed && !!agreement && agreement.correct === agreement.total;
+  }
+  const evaluation = { id: uid('artifact_eval'), artifactId: artifact.id, kind: artifact.kind, status: passed ? 'passed' : 'failed', criterion, measured, evaluatedAt: now() };
   artifact.lifecycle = passed ? 'awaiting-approval' : 'evaluation-failed'; artifact.lastEvaluationId = evaluation.id; artifact.updatedAt = evaluation.evaluatedAt;
   store.put('artifactEvaluations', evaluation); store.put('neuronArtifacts', artifact);
   return { artifact, evaluation };

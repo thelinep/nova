@@ -53,7 +53,7 @@ function qubitSpec(input, limits) {
   return { config: { qubits, layers, epochs, learningRate, seed: integer(config.seed || 1, 'seed', 1, 2147483647) }, targetDistribution: raw.map(value => value / total) };
 }
 
-function createBlueprint(store, input) {
+function createBlueprint(store, input, extra = {}) {
   const kind = String(input.kind || 'tensor');
   const scale = String(input.scale || 'micro');
   if (!['tensor', 'qubit'].includes(kind)) throw error('Kind must be tensor or qubit.');
@@ -68,6 +68,7 @@ function createBlueprint(store, input) {
       ? 'State-vector simulation. No physical qubits are created or accessed.'
       : 'Locally trained dense tensor artifact. This does not train or modify an Ollama foundation model.',
   };
+  if (extra.sutra) blueprint.sutra = extra.sutra; // set only by the sutra-neuron presets, never from the request body
   store.put('neuronBlueprints', blueprint);
   return blueprint;
 }
