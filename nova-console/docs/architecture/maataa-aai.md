@@ -64,6 +64,7 @@ For word forms there is no model in the loop. The rules derive the forms, and AA
 - **Maataa AAI screen:** install the engine in one click (or with `AAI - Set up.command`), Ask AAI with checked citations, and a citation checker for any pasted text.
 - **Sutra neurons:** five presets in Neuron Factory: 6.1.77, 6.1.78, 6.1.87, 6.1.88 and 6.1.101.
 - **Guru:** `teach --panini` adds the verified derivation pairs when `vidyut` is installed.
+- **Hardware (allb, Siddham):** a Paninian datapath (`hardware/rtl/sivasutra_rom.v`, `sandhi_engine.v`, `panini_datapath.v`). It has a Shiva Sutra ROM, parallel sutra match blocks with an exception-override matrix, a Saptādhyāyī loop and a Tripādī stage (8.3.19). It is verified on 338 reference cases and 143 Vidyut cases, and takes 208 LUT4s on iCE40. See allb `docs/PANINI_DATAPATH.md`.
 - **Tests:** unit tests for the engine, conversions, citations and the Ask verdicts, and a browser test that derives भवति and checks a wrong form.
 
 ## 8. Roadmap

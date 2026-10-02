@@ -45,10 +45,10 @@ const PRESETS = {
   },
   'sandhi-guna': {
     sutra: '6.1.87', name: 'गुण sandhi neuron (6.1.87)',
-    purpose: 'Learn sutra 6.1.87 आद्गुणः: अ or आ followed by इ उ ऋ ऌ merge into the guna vowel ए ओ अर् अल्.',
-    learns: 'अ/आ followed by इक् becomes one guna vowel of the second vowel\'s place: ए ओ अर् अल् (1.1.2 अदेङ् गुणः, 1.1.51 उरण् रपरः).',
-    outputs: ['ए', 'ओ', 'अर्', 'अल्', NONE],
-    rule: (l, r) => (AT.includes(l) && IK.includes(r) ? BY_STHANA({ 1: 'ए', 4: 'ओ', 2: 'अर्', 3: 'अल्' }, r) : NONE),
+    purpose: 'Learn sutra 6.1.87 आद्गुणः as Panini states it: अ or आ followed by any vowel merge into the nearest guna vowel अ ए ओ अर् अल्.',
+    learns: 'अ/आ followed by any vowel (अचि, inherited from 6.1.77) becomes the guna vowel nearest to the second vowel: अ ए ओ, or अर् अल् (1.1.2 अदेङ् गुणः, 1.1.50, 1.1.51 उरण् रपरः). In real sandhi 6.1.101 wins for अ + अ and 6.1.88 for अ + ए/ओ.',
+    outputs: ['अ', 'ए', 'ओ', 'अर्', 'अल्', NONE],
+    rule: (l, r) => (AT.includes(l) ? BY_STHANA({ 0: 'अ', 1: 'ए', 5: 'ए', 4: 'ओ', 6: 'ओ', 2: 'अर्', 3: 'अल्' }, r) : NONE),
     config: { hiddenSize: 12, epochs: 300, learningRate: 0.1, seed: 7 },
   },
   'sandhi-vrddhi': {

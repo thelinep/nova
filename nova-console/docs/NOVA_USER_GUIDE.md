@@ -1116,7 +1116,7 @@ Training runs in the background, so you can keep using Maataa. The card shows th
 | --- | --- |
 | 6.1.77 इको यणचि | Before a vowel, इ उ ऋ ऌ (short or long) become य व र ल |
 | 6.1.78 एचोऽयवायावः | Before a vowel, ए ओ ऐ औ become अय् अव् आय् आव् |
-| 6.1.87 आद्गुणः | अ/आ followed by इ उ ऋ ऌ become ए ओ अर् अल् |
+| 6.1.87 आद्गुणः | अ/आ followed by any vowel become the nearest guna vowel: अ ए ओ अर् अल् (its full domain, with अचि carried over from 6.1.77) |
 | 6.1.88 वृद्धिरेचि | अ/आ followed by ए ओ ऐ औ become ऐ or औ |
 | 6.1.101 अकः सवर्णे दीर्घः | Two vowels of the same place become its long vowel |
 
@@ -1126,7 +1126,7 @@ Each vowel is described the way Panini describes it: by its place of articulatio
 2. **Evaluate quality** checks the final loss and also tests the neuron against the sutra on all 169 pairs. It passes only if every pair agrees. If any differ, the card lists a few of them.
 3. **Try** lets you pick two vowels and compare the neuron's answer with the sutra's.
 
-Each neuron learns its sutra on its own. When several rules apply, the Ashtadhyayi's order of exceptions decides which one wins (for example 6.1.101 over 6.1.77 for इ + इ), not the neuron.
+Each neuron learns its sutra's full domain, as the sutra reads with the words it inherits from earlier sutras (anuvṛtti), and learns it on its own. When several rules apply, the Ashtadhyayi's order of exceptions decides which one wins (for example 6.1.101 over 6.1.77 for इ + इ), not the neuron.
 
 The sutra number on a card opens it in **Ashtadhyayi**.
 
