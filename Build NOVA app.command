@@ -101,7 +101,7 @@ fi
 echo "== 5/5 Portable folder"
 P=$(mktemp -d)/"NOVA Runtime"
 mkdir -p "$P/node/bin" "$P/scripts" "$P/docs"
-cp -X server.js package.json "$P/" && cp -RX lib skills mcp-servers public "$P/" && cp scripts/kokoro-say.py "$P/scripts/" && cp docs/NOVA_USER_GUIDE.md "$P/docs/" \
+cp -X server.js package.json "$P/" && cp -RX lib skills mcp-servers public "$P/" && cp scripts/kokoro-say.py scripts/install-comfyui-mac.sh "$P/scripts/" && cp docs/NOVA_USER_GUIDE.md "$P/docs/" \
   && cp "$BUNDLED" "$P/node/bin/node" && cp "packaging/portable/Start NOVA.command" packaging/portable/README.txt "$P/" && chmod +x "$P/Start NOVA.command" "$P/node/bin/node" \
   || fail "Could not assemble the portable folder."
 [ -f "$PWCORE/package.json" ] && mkdir -p "$P/node_modules" && cp -R "$PWCORE" "$P/node_modules/playwright-core"

@@ -19,7 +19,7 @@ There are three ways to run NOVA. They all run the same server and the same cons
 
 - **A Mac with Apple silicon** for the packed app and portable folder. Both carry their own Node runtime, so you do not need to install Node for them. Browser mode needs Node 22.5 or newer.
 - **Ollama** for chat, embeddings, evaluations and automations. Install it from ollama.com, then pull at least one model, for example `ollama pull llama3.2`. NOVA opens without Ollama, but anything that needs a model reports that Ollama is unavailable.
-- **Optional engines** for media: ComfyUI for images, songs and sound effects; LTX-2 for AI video; whisper.cpp for transcripts; Kokoro for better voices. Each has a double-click installer in the brahmini folder. See [Images](help:media-images), [Video](help:media-video) and [Audio, songs and transcripts](help:media-audio).
+- **Optional engines** for media: ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; NOVA starts and stops it for you); LTX-2 for AI video; whisper.cpp for transcripts; Kokoro for better voices. Each has a double-click installer in the brahmini folder. See [Images](help:media-images), [Video](help:media-video) and [Audio, songs and transcripts](help:media-audio).
 
 ## The desktop app
 

@@ -13,11 +13,22 @@ Everything in **Media** runs on your computer, and every item keeps the settings
 
 ## Set up ComfyUI
 
-1. Double-click **Install ComfyUI for NOVA.command** in the brahmini folder. It installs ComfyUI in `~/ComfyUI` and the SDXL base checkpoint (about 13 GB).
-2. Start it with **Start ComfyUI for NOVA.command** whenever you want to make images.
-3. NOVA finds ComfyUI on port 8188 (manual install) or 8000 (ComfyUI Desktop). Set `COMFYUI_URL` for another local port. Only local addresses are accepted.
+1. Open **Settings > Image engine** and press **Install ComfyUI** (or double-click **Install ComfyUI for NOVA.command** in the brahmini folder). It installs ComfyUI in `~/ComfyUI` with the SDXL base checkpoint (about 15 GB) and shows its progress in **Activity**.
+2. That is all: you do not need to start ComfyUI yourself.
 
-Until ComfyUI is running, the Image tab shows **COMFYUI OFFLINE** and what to start.
+## ComfyUI is started for you
+
+@screen media/comfy-settings.jpg "Settings > Image engine: NOVA starts, stops and restarts ComfyUI."
+
+- **Start ComfyUI when needed** (on by default): the first image, video, song or sound effect starts ComfyUI, waits until it is ready and then runs the job. The first job takes about 20–60 seconds longer while ComfyUI loads.
+- **Start with NOVA**: ComfyUI is ready straight away, but uses memory even when you are not making media.
+- **Stop when idle**: gives the memory back after 10, 20 or 60 quiet minutes; it starts again by itself next time.
+- When NOVA quits, it stops the ComfyUI it started, even if NOVA itself is closed suddenly. If ComfyUI crashes, NOVA restarts it, up to three times in ten minutes.
+- **Start now**, **Stop**, **Restart** and **Show log** are there when you need them. **ComfyUI folder** points NOVA at ComfyUI installed somewhere other than `~/ComfyUI`.
+- A ComfyUI you started yourself, or the **ComfyUI Desktop** app (port 8000), is used as it is and left running when NOVA quits. If only the Desktop app is installed, NOVA opens it when needed.
+- Set `COMFYUI_URL` for another local port. Only local addresses are accepted.
+
+Until ComfyUI has started, the Image tab shows **COMFYUI OFFLINE**; generating starts it.
 
 ## Generate an image
 

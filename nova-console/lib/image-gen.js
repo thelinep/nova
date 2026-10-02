@@ -47,6 +47,17 @@ async function discover() {
   return DEFAULT_URLS[0];
 }
 
+// The ComfyUI manager registers itself here. Starting a media job calls
+// ensureReady(), which starts ComfyUI if it is not running (when allowed).
+// Status checks never start it.
+let ensureHook = null;
+function setEnsure(fn) { ensureHook = typeof fn === 'function' ? fn : null; }
+async function ensureReady({ optional = false } = {}) {
+  if (!ensureHook) return;
+  try { await ensureHook(); await discover().catch(() => {}); }
+  catch (e) { if (!optional) throw e; }
+}
+
 async function call(path, init = {}, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -56,7 +67,7 @@ async function call(path, init = {}, timeoutMs = 10000) {
     return res;
   } catch (e) {
     if (e.statusCode) throw e;
-    throw error(`ComfyUI is not reachable${process.env.COMFYUI_URL ? ' at ' + baseUrl() : ' on port 8188 or 8000'} (${e.name === 'AbortError' ? 'timed out' : e.message}). Start ComfyUI, then try again.`, 503);
+    throw error(`ComfyUI is not reachable${process.env.COMFYUI_URL ? ' at ' + baseUrl() : ' on port 8188 or 8000'} (${e.name === 'AbortError' ? 'timed out' : e.message}). Start ComfyUI (Settings > Image engine), then try again.`, 503);
   } finally { clearTimeout(timer); }
 }
 
@@ -192,6 +203,7 @@ async function runGeneration(store, dataDir, job, settings) {
 
 /** Validates, records a job and generates in the background. */
 async function generate(store, dataDir, input) {
+  await ensureReady();
   const info = await status();
   if (!info.reachable) throw error(info.error, 503);
   const settings = normalise(input, info.checkpoints, info.loras);
@@ -280,6 +292,7 @@ function img2imgGraph(s, imageName) {
 }
 
 async function generateFromImage(store, dataDir, input) {
+  await ensureReady();
   const info = await status();
   if (!info.reachable) throw error(info.error, 503);
   const settings = normaliseImg2Img(store, input, info.checkpoints, info.loras, dataDir);
@@ -304,4 +317,4 @@ function recoverInterrupted(store) {
   return count;
 }
 
-module.exports = { comboOptions, status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, uploadBuffer, withLora, normaliseLora, optionList, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, queuePrompt, error, SAMPLERS };
+module.exports = { setEnsure, ensureReady, comboOptions, status, generate, generateFromImage, normaliseImg2Img, img2imgGraph, uploadImage, uploadBuffer, withLora, normaliseLora, optionList, runGraph, startJob, cancel, normalise, graph, recoverInterrupted, baseUrl, discover, call, waitForOutputs, queuePrompt, error, SAMPLERS };

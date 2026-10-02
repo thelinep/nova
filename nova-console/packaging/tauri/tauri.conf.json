@@ -35,6 +35,7 @@
       "../../public/help/*.*": "public/help/",
       "../../public/help/media/*.*": "public/help/media/",
       "../../scripts/kokoro-say.py": "scripts/kokoro-say.py",
+      "../../scripts/install-comfyui-mac.sh": "scripts/install-comfyui-mac.sh",
       "../../docs/NOVA_USER_GUIDE.md": "docs/NOVA_USER_GUIDE.md",
       "../runtime/node/bin/node": "node/bin/node"
     }

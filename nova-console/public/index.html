@@ -3391,9 +3391,9 @@ const MEDIA_TAB_HELP = {
 const MEDIA_TAB_PRESETS = { image:[['genPrompt','Prompt'],['genNegative','Avoid']], video:[['aiVideoPrompt','Motion prompt']], audio:[['audioText','Description']] };
 function mediaHelpersHtml({tab, jobs, img, stt, vid, aud, lib}){
   const needs = [];
-  if (tab==='image') { if (!img.reachable) needs.push('ComfyUI is not running.'); else { if (!img.checkpoints.length) needs.push('No checkpoint installed in ComfyUI.'); if (!(img.upscalers||[]).length) needs.push('Optional: an upscale model for sharper upscales (double-click "Add upscale model.command"); without it Upscale uses a plain resize.'); if (!(img.loras||[]).length) needs.push('Optional: LoRA files in ComfyUI/models/loras for a consistent style or character.'); } }
+  if (tab==='image') { if (!img.reachable) needs.push('ComfyUI is not running yet. NOVA starts it when you generate (Settings > Image engine).'); else { if (!img.checkpoints.length) needs.push('No checkpoint installed in ComfyUI.'); if (!(img.upscalers||[]).length) needs.push('Optional: an upscale model for sharper upscales (double-click "Add upscale model.command"); without it Upscale uses a plain resize.'); if (!(img.loras||[]).length) needs.push('Optional: LoRA files in ComfyUI/models/loras for a consistent style or character.'); } }
   if (tab==='video') { if (!vid.cameraMoves.ready) needs.push('ffmpeg for camera moves.'); (vid.ltx.missing||[]).forEach(m=>needs.push('LTX-2: '+m)); }
-  if (tab==='audio') { if (!aud.voice.ready) needs.push('Voice needs macOS speech or Kokoro.'); if (aud.voice.kokoro && !aud.voice.kokoro.ready) needs.push('Optional: natural voices (English, Hindi…) — double-click "Install Kokoro voices for NOVA.command" (about 400 MB).'); if (!aud.comfy.reachable) needs.push('ComfyUI is not running (sound effects, songs).'); else { (aud.comfy.sfx.missing||[]).forEach(m=>needs.push('Sound effects: '+m)); (aud.comfy.music.missing||[]).forEach(m=>needs.push('Songs: '+m)); } }
+  if (tab==='audio') { if (!aud.voice.ready) needs.push('Voice needs macOS speech or Kokoro.'); if (aud.voice.kokoro && !aud.voice.kokoro.ready) needs.push('Optional: natural voices (English, Hindi…) — double-click "Install Kokoro voices for NOVA.command" (about 400 MB).'); if (!aud.comfy.reachable) needs.push('ComfyUI is not running yet (sound effects, songs). NOVA starts it when you generate.'); else { (aud.comfy.sfx.missing||[]).forEach(m=>needs.push('Sound effects: '+m)); (aud.comfy.music.missing||[]).forEach(m=>needs.push('Songs: '+m)); } }
   if (tab==='transcribe') { (stt.missing||[]).forEach(m=>needs.push(m)); if (stt.model && !stt.multilingual) needs.push('Only English speech can be transcribed now. For Hindi and other languages, double-click "Add multilingual speech model.command" (about 575 MB).'); }
   if (tab==='edit' && !vid.cameraMoves.ready) needs.push('ffmpeg (brew install ffmpeg).');
   if (tab==='library' && !(lib.enabled&&lib.dir)) needs.push(lib.needsRestart?'Restart NOVA to turn on the library folder.':'The library folder is off.');
@@ -5503,9 +5503,11 @@ function renderSettingsView(){
       <div class="kv tnum"><span>Sessions</span><span>${DB.sessions.length}</span><span>Models in registry</span><span>${DB.models.length}</span><span>Knowledge documents</span><span>${DB.knowledgeDocuments.length}</span><span>Automations</span><span>${DB.automations.length}</span></div>
       <button class="btn btn-danger btn-sm" id="resetWorkspaceBtn" style="margin-top:14px">Reset workspace data</button>
     </div>
-    <div id="settingsConversation"></div>`;
+    <div id="settingsConversation"></div>
+    <div id="settingsComfy"></div>`;
   bindSettingsViewEvents();
   fillConversationSettings();
+  fillComfySettings();
 }
 function bindSettingsViewEvents(){
   const bind = (id, key) => { const el = $(id); el.onclick = () => { const val = !getPrefs()[key]; setPrefs({[key]:val}); el.classList.toggle('on', val); renderShellChrome(); }; };
@@ -6161,6 +6163,50 @@ function quickScreenshot(){
   const s = activeSession(); if (!s) return toast('Open a chat first.');
   if (!s.preferences.computer){ s.preferences.computer = true; idbPut('sessions', s); renderComposerChrome(); }
   $('composer').value = 'Take a screenshot and tell me what is on my screen.'; sendMessage();
+}
+
+/* ---------- settings: image engine (ComfyUI, managed by NOVA) ---------- */
+const COMFY_STATE = { stopped:['Stopped','var(--muted)'], starting:['Starting…','var(--amber)'], ready:['Running (started by NOVA)','var(--green)'], external:['Running (started outside NOVA)','var(--green)'], failed:['Not running — see below','var(--red)'], installing:['Installing…','var(--amber)'] };
+let comfyPoll = null;
+async function fillComfySettings(){
+  const box = $('settingsComfy'); if (!box) return;
+  let st = null; try { st = await (await fetch(apiUrl('/api/comfy/status'))).json(); } catch(_) {}
+  if (!st) { box.innerHTML = ''; return; }
+  const [label, color] = COMFY_STATE[st.state] || [st.state, 'var(--muted)'];
+  const toggle = (id, text, hint, on) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)"><div><div style="font-size:12.5px">${text}</div><div style="font-size:11px;color:var(--muted-dim);margin-top:2px">${hint}</div></div><label class="switch"><input type="checkbox" id="${id}" ${on?'checked':''}><span class="track"><span class="knob"></span></span></label></div>`;
+  const where = st.installed ? escapeHtml(st.dir) : st.desktopApp ? 'ComfyUI Desktop app' : 'not installed in ' + escapeHtml(st.dir);
+  box.innerHTML = `<div class="panel" style="padding:16px;margin-top:16px" id="comfyPanel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="eyebrow">Image engine · ComfyUI</div><a href="#help/media-images/comfyui-is-started-for-you" style="font-size:11.5px">How this works</a></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:10px 0 4px;flex-wrap:wrap"><strong id="comfyState" style="color:${color}">${escapeHtml(label)}</strong><span class="mono" style="font-size:11px;color:var(--muted-dim)">${where}${st.pid?' · pid '+st.pid:''}</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px">
+      ${st.state==='ready'||st.state==='starting' ? `<button class="btn btn-line btn-sm" data-comfy="stop">Stop</button><button class="btn btn-line btn-sm" data-comfy="restart">Restart</button>` : st.state==='external' ? '' : (st.installed||st.desktopApp) ? `<button class="btn btn-amber btn-sm" data-comfy="start">Start now</button>` : ''}
+      ${!st.installed && st.installer && st.state!=='installing' ? `<button class="btn btn-amber btn-sm" data-comfy="install">Install ComfyUI (about 15 GB)</button>` : ''}
+      <button class="btn btn-ghost btn-sm" id="comfyLogBtn">Show log</button>
+    </div>
+    ${st.lastError ? `<div class="runtime-inline" style="color:var(--red);white-space:pre-wrap">${escapeHtml(st.lastError)}</div>` : ''}
+    ${st.state==='external' ? '<p class="empty-hint" style="margin:6px 0">NOVA uses this ComfyUI as it is and leaves it running when NOVA quits.</p>' : ''}
+    ${toggle('comfyAuto','Start ComfyUI when needed','NOVA starts it the moment an image, video, song or sound effect needs it, and stops it when NOVA quits.', st.autoStart)}
+    ${toggle('comfyBoot','Start with NOVA','Ready straight away, but uses memory even when you are not making media.', st.startWithNova)}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)"><div><div style="font-size:12.5px">Stop when idle</div><div style="font-size:11px;color:var(--muted-dim);margin-top:2px">Gives the memory back after a quiet spell. It starts again by itself next time.</div></div>
+      <select id="comfyIdle" aria-label="Stop when idle">${[[0,'Never'],[10,'After 10 minutes'],[20,'After 20 minutes'],[60,'After 1 hour']].map(([v,l])=>`<option value="${v}" ${Number(st.idleMinutes)===v?'selected':''}>${l}</option>`).join('')}</select></div>
+    <div style="display:flex;gap:8px;align-items:center;padding:8px 0;flex-wrap:wrap"><div style="font-size:12.5px;flex:1;min-width:160px">ComfyUI folder</div><input id="comfyDir" aria-label="ComfyUI folder" value="${escapeHtml(st.dir)}" style="flex:2;min-width:200px"><button class="btn btn-line btn-sm" id="comfyDirSave">Save</button></div>
+    <pre id="comfyLog" class="mono" style="display:none;white-space:pre-wrap;max-height:240px;overflow:auto;font-size:10.5px;padding:10px;border:1px solid var(--line);border-radius:8px"></pre>
+  </div>`;
+  const put = async body => { try { const r = await fetch(apiUrl('/api/comfy/settings'), {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}); const d = await r.json(); if (!r.ok) throw new Error(d.error||r.status); fillComfySettings(); } catch(e){ toast(e.message); } };
+  $('comfyAuto').onchange = e => put({autoStart: e.target.checked});
+  $('comfyBoot').onchange = e => put({startWithNova: e.target.checked});
+  $('comfyIdle').onchange = e => put({idleMinutes: Number(e.target.value)});
+  $('comfyDirSave').onclick = () => put({dir: $('comfyDir').value.trim()});
+  $('comfyLogBtn').onclick = async () => { const pre = $('comfyLog'); if (pre.style.display==='block') { pre.style.display='none'; return; } try { pre.textContent = (await (await fetch(apiUrl('/api/comfy/log'))).json()).log || 'No log yet.'; } catch(_) { pre.textContent = 'Could not read the log.'; } pre.style.display='block'; pre.scrollTop = pre.scrollHeight; };
+  box.querySelectorAll('[data-comfy]').forEach(b => b.onclick = async () => {
+    const action = b.dataset.comfy; b.disabled = true;
+    if (action === 'install') { try { const r = await fetch(apiUrl('/api/comfy/install'), {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); const d = await r.json(); if (!r.ok) throw new Error(d.error||r.status); toast('Installing ComfyUI — follow it in Activity. It takes a while.'); if (typeof toggleActivityDrawer==='function') toggleActivityDrawer(true); } catch(e){ toast(e.message); } fillComfySettings(); return; }
+    if (action === 'start' || action === 'restart') { $('comfyState').textContent = 'Starting…'; $('comfyState').style.color = 'var(--amber)'; }
+    try { const r = await fetch(apiUrl('/api/comfy/' + action), {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}); const d = await r.json(); if (!r.ok) throw new Error(d.error||r.status); } catch(e){ toast(e.message); }
+    fillComfySettings();
+  });
+  clearTimeout(comfyPoll);
+  if (['starting','installing'].includes(st.state)) comfyPoll = setTimeout(() => { if (currentView==='settings') fillComfySettings(); }, 2500);
 }
 
 /* ---------- settings: computer, memory, voice ---------- */

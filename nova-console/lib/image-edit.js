@@ -177,6 +177,7 @@ async function comfyInfo() {
 
 /** Edit area (mode 'edit', from a prompt) or Remove object (mode 'remove'). */
 async function inpaint(store, dataDir, input) {
+  await comfy.ensureReady();
   const info = await comfyInfo();
   const { record, size } = sourceImage(store, dataDir, input.mediaId);
   const mask = decodeMask(input.mask);
@@ -196,6 +197,7 @@ async function inpaint(store, dataDir, input) {
 }
 
 async function outpaint(store, dataDir, input) {
+  await comfy.ensureReady();
   const info = await comfyInfo();
   const { record, size } = sourceImage(store, dataDir, input.mediaId);
   const plan = expandPlan(size.width, size.height, input.target || '16:9');
@@ -234,6 +236,7 @@ async function fitLimit(ffmpeg, buffer, ext = '.png') {
  * ComfyUI is running (engine 'model'); otherwise ffmpeg's Lanczos resize.
  */
 async function upscale(store, dataDir, input, { ffmpeg } = {}) {
+  await comfy.ensureReady({ optional: true }); // ffmpeg can upscale without ComfyUI
   const { record, size } = sourceImage(store, dataDir, input.mediaId);
   const factor = Number(input.factor) === 4 ? 4 : 2;
   if (Math.max(size.width, size.height) * factor > 8192) throw error(`That would be ${size.width * factor}×${size.height * factor}; NOVA keeps upscales to 8192 pixels on the long side. Try 2x.`);

@@ -97,7 +97,7 @@ There are three ways to run NOVA. They all run the same server and the same cons
 
 - **A Mac with Apple silicon** for the packed app and portable folder. Both carry their own Node runtime, so you do not need to install Node for them. Browser mode needs Node 22.5 or newer.
 - **Ollama** for chat, embeddings, evaluations and automations. Install it from ollama.com, then pull at least one model, for example `ollama pull llama3.2`. NOVA opens without Ollama, but anything that needs a model reports that Ollama is unavailable.
-- **Optional engines** for media: ComfyUI for images, songs and sound effects; LTX-2 for AI video; whisper.cpp for transcripts; Kokoro for better voices. Each has a double-click installer in the brahmini folder. See [Images](#images), [Video](#video) and [Audio, songs and transcripts](#audio-songs-and-transcripts).
+- **Optional engines** for media: ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; NOVA starts and stops it for you); LTX-2 for AI video; whisper.cpp for transcripts; Kokoro for better voices. Each has a double-click installer in the brahmini folder. See [Images](#images), [Video](#video) and [Audio, songs and transcripts](#audio-songs-and-transcripts).
 
 ### The desktop app
 
@@ -501,11 +501,21 @@ Everything in **Media** runs on your computer, and every item keeps the settings
 ![Media > Image: prompt, settings, and the helper panel with presets.](../public/help/media/media-image.jpg)
 ### Set up ComfyUI
 
-1. Double-click **Install ComfyUI for NOVA.command** in the brahmini folder. It installs ComfyUI in `~/ComfyUI` and the SDXL base checkpoint (about 13 GB).
-2. Start it with **Start ComfyUI for NOVA.command** whenever you want to make images.
-3. NOVA finds ComfyUI on port 8188 (manual install) or 8000 (ComfyUI Desktop). Set `COMFYUI_URL` for another local port. Only local addresses are accepted.
+1. Open **Settings > Image engine** and press **Install ComfyUI** (or double-click **Install ComfyUI for NOVA.command** in the brahmini folder). It installs ComfyUI in `~/ComfyUI` with the SDXL base checkpoint (about 15 GB) and shows its progress in **Activity**.
+2. That is all: you do not need to start ComfyUI yourself.
 
-Until ComfyUI is running, the Image tab shows **COMFYUI OFFLINE** and what to start.
+### ComfyUI is started for you
+
+![Settings > Image engine: NOVA starts, stops and restarts ComfyUI.](../public/help/media/comfy-settings.jpg)
+- **Start ComfyUI when needed** (on by default): the first image, video, song or sound effect starts ComfyUI, waits until it is ready and then runs the job. The first job takes about 20–60 seconds longer while ComfyUI loads.
+- **Start with NOVA**: ComfyUI is ready straight away, but uses memory even when you are not making media.
+- **Stop when idle**: gives the memory back after 10, 20 or 60 quiet minutes; it starts again by itself next time.
+- When NOVA quits, it stops the ComfyUI it started, even if NOVA itself is closed suddenly. If ComfyUI crashes, NOVA restarts it, up to three times in ten minutes.
+- **Start now**, **Stop**, **Restart** and **Show log** are there when you need them. **ComfyUI folder** points NOVA at ComfyUI installed somewhere other than `~/ComfyUI`.
+- A ComfyUI you started yourself, or the **ComfyUI Desktop** app (port 8000), is used as it is and left running when NOVA quits. If only the Desktop app is installed, NOVA opens it when needed.
+- Set `COMFYUI_URL` for another local port. Only local addresses are accepted.
+
+Until ComfyUI has started, the Image tab shows **COMFYUI OFFLINE**; generating starts it.
 
 ### Generate an image
 
@@ -1335,7 +1345,7 @@ From `nova-console`, run `npm start` and open `http://127.0.0.1:8787/`. Optional
 
 ### What the app does not include
 
-Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts; **Check NOVA on this Mac.command** reports what is missing.
+Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts (ComfyUI also from **Settings > Image engine**); **Check NOVA on this Mac.command** reports what is missing. NOVA starts and stops ComfyUI itself, so **Start ComfyUI for NOVA.command** is only needed if you turn that off.
 
 The app includes the agent browser's driver and uses the Google Chrome already on your Mac; without Chrome (or Edge, Brave or Chromium) the agent browser says so. See [Agent Browser](#agent-browser).
 
@@ -1442,7 +1452,11 @@ Attach the collection to the session and turn on **Retrieval**. Test the same qu
 
 #### "ComfyUI is not running" or image jobs fail at once
 
-Double-click **Start ComfyUI for NOVA.command** and wait until it says it is ready, then try again. If it was never installed, run **Install ComfyUI for NOVA.command** first.
+Open **Settings > Image engine**. If it says not installed, press **Install ComfyUI** (or choose its folder if it is somewhere other than `~/ComfyUI`). If **Start ComfyUI when needed** is off, turn it on or press **Start now**. If it says it stopped three times, press **Show log**: the last lines say why (often a missing Python package after an update; running the installer again fixes that).
+
+#### The first image takes much longer
+
+That is ComfyUI starting (20–60 seconds). Turn on **Start with NOVA** in **Settings > Image engine** to have it ready in advance, at the cost of some memory.
 
 #### A video job was refused for low memory
 
@@ -1660,7 +1674,7 @@ Only what you ask it to. Say "remember that …", or press the brain on a reply.
 
 #### What do I need for images, video and audio?
 
-ComfyUI for images, songs and sound effects, LTX-2 or Wan for AI video, Kokoro for better voices and whisper.cpp for transcripts. Each has a double-click installer in the brahmini folder. See [Images](media-images.html).
+ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; NOVA starts it when needed, so you never start it yourself), LTX-2 or Wan for AI video, Kokoro for better voices and whisper.cpp for transcripts. Each has a double-click installer in the brahmini folder. See [Images](media-images.html).
 
 #### Where are the files NOVA makes?
 

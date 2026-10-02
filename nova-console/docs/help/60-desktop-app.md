@@ -49,7 +49,7 @@ From `nova-console`, run `npm start` and open `http://127.0.0.1:8787/`. Optional
 
 ## What the app does not include
 
-Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts; **Check NOVA on this Mac.command** reports what is missing.
+Ollama, ComfyUI and the media engines are separate. Install them with the "Install … for NOVA" scripts (ComfyUI also from **Settings > Image engine**); **Check NOVA on this Mac.command** reports what is missing. NOVA starts and stops ComfyUI itself, so **Start ComfyUI for NOVA.command** is only needed if you turn that off.
 
 The app includes the agent browser's driver and uses the Google Chrome already on your Mac; without Chrome (or Edge, Brave or Chromium) the agent browser says so. See [Agent Browser](help:agent-browser).
 

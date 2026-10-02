@@ -70,7 +70,7 @@ Only what you ask it to. Say "remember that …", or press the brain on a reply.
 
 ### What do I need for images, video and audio?
 
-ComfyUI for images, songs and sound effects, LTX-2 or Wan for AI video, Kokoro for better voices and whisper.cpp for transcripts. Each has a double-click installer in the brahmini folder. See [Images](help:media-images).
+ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; NOVA starts it when needed, so you never start it yourself), LTX-2 or Wan for AI video, Kokoro for better voices and whisper.cpp for transcripts. Each has a double-click installer in the brahmini folder. See [Images](help:media-images).
 
 ### Where are the files NOVA makes?
 

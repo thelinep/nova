@@ -52,7 +52,11 @@ Attach the collection to the session and turn on **Retrieval**. Test the same qu
 
 ### "ComfyUI is not running" or image jobs fail at once
 
-Double-click **Start ComfyUI for NOVA.command** and wait until it says it is ready, then try again. If it was never installed, run **Install ComfyUI for NOVA.command** first.
+Open **Settings > Image engine**. If it says not installed, press **Install ComfyUI** (or choose its folder if it is somewhere other than `~/ComfyUI`). If **Start ComfyUI when needed** is off, turn it on or press **Start now**. If it says it stopped three times, press **Show log**: the last lines say why (often a missing Python package after an update; running the installer again fixes that).
+
+### The first image takes much longer
+
+That is ComfyUI starting (20–60 seconds). Turn on **Start with NOVA** in **Settings > Image engine** to have it ready in advance, at the cost of some memory.
 
 ### A video job was refused for low memory
 

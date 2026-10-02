@@ -110,7 +110,7 @@ async function startNova(ollamaPort, dataDir) {
   const port = 8900 + Math.floor(Math.random() * 90);
   const child = spawn(process.execPath, ['--no-warnings', 'server.js'], {
     cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, NOVA_LIBRARY_DIR: path.join(dataDir, 'library'), OLLAMA_HOST: `http://127.0.0.1:${ollamaPort}`, COMFYUI_URL: 'http://127.0.0.1:9' },
+    env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, NOVA_LIBRARY_DIR: path.join(dataDir, 'library'), OLLAMA_HOST: `http://127.0.0.1:${ollamaPort}` }, // no COMFYUI_URL: the Image engine shot lets NOVA start a stand-in ComfyUI
   });
   let log = '';
   child.stdout.on('data', d => { log += d; }); child.stderr.on('data', d => { log += d; });
@@ -188,6 +188,21 @@ async function main() {
     for (const v of ['sessions', 'knowledge', 'retrieval', 'automations', 'evaluations', 'boards', 'timeline', 'skills', 'mcp', 'agents', 'workflows', 'collector', 'graph', 'browser', 'workspace', 'git', 'runtime', 'trace', 'history', 'diagnostics', 'settings']) await shot(v, view(v));
     await shot('models', async () => { await page.evaluate(() => showView('models')); await sleep(800); await page.locator('.model-qualify').first().scrollIntoViewIfNeeded(); await page.evaluate(() => { const c = [...document.querySelectorAll('.model-card')].find(x => /qwen2\.5-coder:7b/.test(x.textContent)); if (c) c.scrollIntoView({ block: 'center' }); }); }, { wait: 900 });
     await shot('neuron-factory', view('neurons'), { wait: 1200 });
+    if (want('comfy-settings')) {
+      // A stand-in ComfyUI folder (a tiny Node server), so the panel shows NOVA starting it.
+      const fake = path.join(dataDir, 'ComfyUI'); fs.mkdirSync(path.join(fake, '.venv', 'bin'), { recursive: true });
+      fs.writeFileSync(path.join(fake, 'main.py'), '# stand-in');
+      fs.writeFileSync(path.join(fake, 'server.js'), "const port=+process.argv[process.argv.indexOf('--port')+1];require('http').createServer((q,r)=>r.end(JSON.stringify({system:{comfyui_version:'0.3'}}))).listen(port,'127.0.0.1',()=>console.log('Starting server\\nTo see the GUI go to: http://127.0.0.1:'+port));");
+      fs.writeFileSync(path.join(fake, '.venv', 'bin', 'python'), `#!/bin/sh\nshift\nexec "${process.execPath}" "${path.join(fake, 'server.js')}" "$@"\n`, { mode: 0o755 });
+      await fetch(base + '/api/comfy/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', Origin: base }, body: JSON.stringify({ dir: fake, idleMinutes: 20 }) });
+      await shot('comfy-settings', async () => {
+        await page.evaluate(() => showView('settings')); await sleep(800);
+        await page.locator('#comfyPanel [data-comfy="start"]').click();
+        await page.locator('#comfyState', { hasText: 'Running' }).waitFor({ timeout: 20000 });
+        await page.locator('#comfyPanel').scrollIntoViewIfNeeded();
+      }, { wait: 600 });
+      await fetch(base + '/api/comfy/stop', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: '{}' });
+    }
     if (want('agent-browser')) {
       // A small local page stands in for a website, so the capture needs no internet.
       const site = http.createServer((q, r) => { r.setHeader('Content-Type', 'text/html; charset=utf-8'); r.end('<!doctype html><title>Marine Drive · call sheet</title><body style="margin:0;font:18px -apple-system,Helvetica,sans-serif;background:#f7f4ec;color:#1d1d1f"><div style="padding:28px 36px"><h1 style="margin:0 0 8px">Marine Drive shoot</h1><p style="margin:0 0 16px;color:#555">Friday · call 6:00 am · two actors · one drone shot</p><a id="more" href="#">Location details</a><img src="https://cdn.example.net/logo.png" alt=""></div></body>'); }).listen(0);

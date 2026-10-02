@@ -120,7 +120,16 @@ async function buildReport(deps, options = {}) {
   const checks = [
     { id: 'backend', label: 'NOVA Runtime backend', ok: true, detail: 'Answering on this computer', help: 'monitoring' },
     { id: 'ollama', label: 'Ollama', ok: Boolean(ollama.reachable), detail: ollama.reachable ? `${(ollama.models || []).length} model(s) installed` : 'Not reachable' + (ollama.error ? ' (' + ollama.error + ')' : '') + '. Start Ollama.', help: 'models' },
-    { id: 'comfy', label: 'ComfyUI (images, songs, sound effects)', ok: Boolean(image.reachable), detail: image.reachable ? `${(image.checkpoints || []).length} image model(s)${image.device ? ' on ' + image.device : ''}` : 'Not running. Start ComfyUI for NOVA.', help: 'media-images' },
+    (() => {
+      const m = (() => { try { return require('./comfy-manager').status(); } catch (_) { return null; } })();
+      const canStart = Boolean(m && m.autoStart && (m.installed || m.desktopApp));
+      const detail = image.reachable ? `${(image.checkpoints || []).length} image model(s)${image.device ? ' on ' + image.device : ''}${m && m.managed ? ', started by NOVA' : ''}`
+        : m && m.state === 'failed' && m.lastError ? m.lastError.split('\n')[0]
+        : canStart ? 'Not running; NOVA starts it when a media job needs it'
+        : m && !m.installed && !m.desktopApp ? 'Not installed. Settings > Image engine > Install ComfyUI.'
+        : 'Not running. Start it in Settings > Image engine.';
+      return { id: 'comfy', label: 'ComfyUI (images, songs, sound effects)', ok: Boolean(image.reachable) || (canStart && !(m && m.state === 'failed')), detail, help: 'media-images' };
+    })(),
     { id: 'voice', label: 'Voice', ok: Boolean(audio.voice && audio.voice.ready), detail: audio.voice ? (audio.voice.kokoro && audio.voice.kokoro.ready ? 'Kokoro voices' : audio.voice.ready ? 'macOS voices' : 'No voice engine') : (audio.error || 'Unknown'), help: 'media-audio' },
     { id: 'transcribe', label: 'Transcription', ok: Boolean(transcribe.ready), detail: transcribe.ready ? (transcribe.modelName || 'Ready') : ((transcribe.missing || []).join('; ') || transcribe.error || 'Not set up'), help: 'media-audio' },
     { id: 'tools', label: 'Tool servers', ok: mcp.some(s => s.status === 'connected'), detail: mcp.length ? mcp.filter(s => s.status === 'connected').length + ' of ' + mcp.length + ' connected' : 'None configured', help: 'tools-approvals' },

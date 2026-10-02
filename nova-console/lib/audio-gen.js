@@ -245,6 +245,7 @@ function musicSettings(input, prompt, part, engine) {
  * and records how long each took so they can be compared by ear side by side.
  */
 async function compareMusic(store, dataDir, input) {
+  await comfy.ensureReady();
   const info = await comfyStatus();
   if (!info.reachable) throw error(info.error, 503);
   if (!info.music.ready) throw error('ACE-Step 1 needs: ' + info.music.missing.join('; ') + '.', 412);
@@ -270,6 +271,7 @@ async function compareMusic(store, dataDir, input) {
 }
 
 async function generate(store, dataDir, kind, input) {
+  await comfy.ensureReady();
   const info = await comfyStatus();
   if (!info.reachable) throw error(info.error, 503);
   // Songs use ACE-Step 1.5 when it is installed (unless engine 'ace-step-1' is asked for), else ACE-Step 1.

@@ -19,6 +19,6 @@ module.exports = defineConfig({
     url: `${baseURL}/api/health`,
     reuseExistingServer: false,
     timeout: 30_000,
-    env: { ...process.env, PORT: String(port) },
+    env: { ...process.env, PORT: String(port), NOVA_COMFY_AUTOSTART: '0' },
   },
 });

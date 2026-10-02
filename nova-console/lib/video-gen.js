@@ -319,6 +319,7 @@ async function runAi(store, dataDir, job, settings) {
 }
 
 async function startAi(store, dataDir, input) {
+  await comfy.ensureReady();
   const info = await aiStatus();
   if (!info.reachable) throw error(info.error, 503);
   if (!info.ready) throw error('AI video needs: ' + info.missing.join('; ') + '.', 412);

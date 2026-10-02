@@ -51,6 +51,7 @@ const devLoop = require('./lib/dev-loop');
 const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
+const comfyManager = require('./lib/comfy-manager');
 const comfyLive = require('./lib/comfy-live');
 const liveAddon = { at: 0, installed: false, reachable: false };
 const videoGen = require('./lib/video-gen');
@@ -109,6 +110,7 @@ function gitSnapshot() {
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
 activity.configure(store);
+comfyManager.configure({ store, dataDir: DATA_DIR, imageGen, activity }); imageGen.setEnsure(() => comfyManager.ensure());
 const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
 const jobEngine = new JobEngine(store, { pollMs: 500 });
 
@@ -441,6 +443,11 @@ const routes = [
       res.writeHead(200, { 'Content-Type': p.mime, 'Content-Length': p.data.length, 'Cache-Control': seq === 'latest' ? 'no-store' : 'private, max-age=3600' });
       res.end(p.data);
     } },
+  { method: 'GET', pattern: /^\/api\/comfy\/status$/, handler: async (_req, res) => sendJson(res, 200, { ...comfyManager.status(), running: Boolean(await comfyManager.findRunning()) }) },
+  { method: 'GET', pattern: /^\/api\/comfy\/log$/, handler: async (_req, res) => sendJson(res, 200, { log: comfyManager.logTail(200) }) },
+  { method: 'PUT', pattern: /^\/api\/comfy\/settings$/, handler: async (req, res) => sendJson(res, 200, comfyManager.setPrefs(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/comfy\/(start|stop|restart)$/, handler: async (_req, res, [action]) => sendJson(res, 200, await comfyManager[action]({ reason: 'from Settings' })) },
+  { method: 'POST', pattern: /^\/api\/comfy\/install$/, handler: async (req, res) => sendJson(res, 202, comfyManager.install(await readJsonBody(req))) },
   { method: 'GET', pattern: /^\/api\/images\/status$/, handler: async (_req, res) => sendJson(res, 200, await imageGen.status()) },
   { method: 'GET', pattern: /^\/api\/images\/jobs$/, handler: async (_req, res) => sendJson(res, 200, store.all('generationJobs').reverse()) },
   { method: 'GET', pattern: /^\/api\/images\/jobs\/([^/]+)$/, handler: async (_req, res, [id]) => { const job = store.get('generationJobs', decodeURIComponent(id)); if (!job) { sendJson(res, 404, { error: 'Unknown generation job.' }); return; } sendJson(res, 200, job); } },
@@ -1313,6 +1320,7 @@ server.listen(PORT, '127.0.0.1', () => {
   if (resumed) console.log(`  resumed:     ${resumed} in-flight workflow run(s)`);
   // Phase 5: the real automations scheduler + event receiver — starts
   // ticking immediately, independent of any browser tab being open.
+  comfyManager.boot().then(() => console.log('  comfyui:     ' + comfyManager.status().state + (comfyManager.prefs().autoStart ? ' (NOVA starts it when needed)' : ''))).catch(() => {});
   const schedStatus = scheduler.startScheduler(store, ollama);
   console.log(`  scheduler:   ticking every ${schedStatus.tickMs / 1000}s` +
     (schedStatus.lastCatchUp ? ` (rescheduled ${schedStatus.lastCatchUp.rescheduled} overdue automation(s) from startup)` : ''));
@@ -1322,8 +1330,8 @@ function shutdown() {
   console.log('\nShutting down NOVA Runtime...');
   mcpManager.shutdownAll(); // real child MCP server processes — close them, don't orphan
   workspaceRunner.stopAll(); // dev servers and commands run in their own process groups
-  const closing = browser.shutdown().catch(() => {}); // agent browser windows
-  const timer = setTimeout(() => process.exit(0), 3000);
+  const closing = Promise.all([browser.shutdown().catch(() => {}), comfyManager.shutdown().catch(() => {})]); // agent browser windows, NOVA's own ComfyUI
+  const timer = setTimeout(() => process.exit(0), 12000);
   closing.finally(() => server.close(() => { clearTimeout(timer); process.exit(0); }));
 }
 process.on('SIGINT', shutdown);
