@@ -9,6 +9,7 @@
   teach      instruction-tune a trained model on question/answer pairs (JSONL)
   ask        let a trained model continue text or answer
   check      run Guru-Panini on a piece of text
+  lipi       convert between Devanagari, Brahmi, Kharoshthi and Siddham
   export     checkpoint → Hugging Face folder → GGUF (→ Ollama with --ollama NAME)
   sizes      list the sizes with parameter counts and token budgets
 """
@@ -33,8 +34,9 @@ def main(argv=None):
     tr = sub.add_parser("train"); tr.add_argument("--size", default="nano"); tr.add_argument("--minutes", type=float); tr.add_argument("--tokens", type=float)
     tr.add_argument("--micro-bs", type=int); tr.add_argument("--resume", action="store_true"); tr.add_argument("--device"); tr.add_argument("--eval-every", type=int, default=200); tr.add_argument("--lr", type=float); tr.add_argument("--compile", action="store_true")
     te = sub.add_parser("teach"); te.add_argument("--size", default="nano"); te.add_argument("--pairs", required=True); te.add_argument("--minutes", type=float, default=20); te.add_argument("--device")
-    a = sub.add_parser("ask"); a.add_argument("text"); a.add_argument("--size", default="nano"); a.add_argument("--instruct", action="store_true"); a.add_argument("--tokens", type=int, default=120); a.add_argument("--temperature", type=float, default=0.8)
+    a = sub.add_parser("ask"); a.add_argument("text"); a.add_argument("--size", default="nano"); a.add_argument("--instruct", action="store_true"); a.add_argument("--tokens", type=int, default=120); a.add_argument("--temperature", type=float, default=0.8); a.add_argument("--script", default="devanagari", choices=["devanagari", "brahmi", "kharoshthi", "siddham"])
     ch = sub.add_parser("check"); ch.add_argument("text")
+    li = sub.add_parser("lipi"); li.add_argument("text"); li.add_argument("--to", default="devanagari", choices=["devanagari", "brahmi", "kharoshthi", "siddham"])
     ex = sub.add_parser("export"); ex.add_argument("--size", default="nano"); ex.add_argument("--instruct", action="store_true"); ex.add_argument("--ollama", default=""); ex.add_argument("--no-gguf", action="store_true")
     sub.add_parser("sizes")
     args = ap.parse_args(argv)
@@ -48,6 +50,13 @@ def main(argv=None):
         for k in PRESETS:
             cfg = preset(k)
             print(f"{k:8} {cfg.name:20} {cfg.n_params()/1e6:9,.1f}M params · context {cfg.max_seq_len:5} · budget {cfg.train_tokens/1e9:6.1f}B tokens")
+        return
+    if args.cmd == "lipi":
+        from .lipi import convert, detect, FONTS, LABELS
+        text, notes = convert(args.text, args.to)
+        print(text)
+        found = ", ".join(f"{LABELS[s]} {int(p*100)}%" for s, p in detect(args.text))
+        print(f"\n[from: {found or 'no Indic script'}{' · ' + '; '.join(notes) if notes else ''}{' · font: ' + FONTS[args.to] if args.to in FONTS else ''}]")
         return
     if args.cmd == "check":
         from .panini import verify
@@ -104,6 +113,11 @@ def main(argv=None):
         out = model.generate(ids, max_new_tokens=args.tokens, temperature=args.temperature, eos_id=EOS)
         text = tok.decode(out[0].tolist())
         shown = text[len(prompt):].strip() if args.instruct and text.startswith(prompt) else text
+        if args.script != "devanagari":
+            from .lipi import from_deva
+            shown, notes = from_deva(shown, args.script)
+            if notes:
+                print("[" + "; ".join(notes) + "]")
         print(shown or "(Guru ended without writing anything; it may need more training, or try a higher --temperature.)")
         from .panini import verify
         v = verify(text); print(f"\n[Guru-Panini: score {v['score']:.2f}{', issues: ' + ', '.join(sorted({i['rule'] for i in v['issues']})) if v['issues'] else ''}]")

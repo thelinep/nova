@@ -2,7 +2,8 @@
 
 A SentencePiece BPE vocabulary trained on Guru's own corpus (Sanskrit, Hindi,
 English and your texts), with byte fallback so no character is ever unknown.
-Text is NFC-normalised first, so the same akshara always has one spelling.
+Text is NFC-normalised first, so the same akshara always has one spelling, and
+Brahmi, Kharoshthi and Siddham are read through Devanagari (Guru-Lipi), so they cost the same tokens.
 
 Dhatu awareness, honestly: v0 learns pieces from data. If data/dhatus.txt
 exists (one root or affix per line, for example "गम्", "कृ", "ति"), those
@@ -15,11 +16,14 @@ import unicodedata
 
 import sentencepiece as spm
 
+from . import lipi
+
 UNK, BOS, EOS = 0, 1, 2
 
 
 def normalise(text: str) -> str:
-    return unicodedata.normalize("NFC", text)
+    """Brahmi, Kharoshthi and Siddham become Devanagari (Guru-Lipi); then NFC."""
+    return unicodedata.normalize("NFC", lipi.to_deva(text))
 
 
 def segment(text: str) -> str:
@@ -82,5 +86,6 @@ class Tokenizer:
     def encode_batch(self, texts):
         return self.sp.encode([segment(normalise(t)) for t in texts])
 
-    def decode(self, ids):
-        return self.sp.decode([i for i in ids if i not in (BOS, EOS)])
+    def decode(self, ids, script: str = "devanagari"):
+        text = self.sp.decode([i for i in ids if i not in (BOS, EOS)])
+        return lipi.from_deva(text, script)[0] if script != "devanagari" else text

@@ -13,11 +13,14 @@ Rules in v0
   P4  a word does not mix Devanagari and Latin letters
   P5  no invisible or control characters (other than ZWJ/ZWNJ inside words)
 
+Text in Brahmi, Kharoshthi or Siddham is checked through Devanagari (Guru-Lipi).
 Grammar rules (sandhi, vibhakti agreement, dhatu forms from the Ashtadhyayi)
 come later as separate rule sets with the same verify() interface.
 """
 import re
 import unicodedata
+
+from . import lipi
 
 VOWELS = set(chr(c) for c in range(0x0904, 0x0915)) | {"ॠ", "ॡ", "ॲ", "ॳ", "ॴ", "ॵ", "ॶ", "ॷ"}
 CONSONANTS = set(chr(c) for c in range(0x0915, 0x093A)) | set(chr(c) for c in range(0x0958, 0x0960)) | {"ॸ", "ॹ", "ॺ", "ॻ", "ॼ", "ॽ", "ॾ", "ॿ"}
@@ -38,7 +41,7 @@ def is_devanagari(text: str, share: float = 0.3) -> bool:
 
 def verify(text: str):
     """Returns {"ok": bool, "score": 0..1, "words": n, "issues": [{"rule", "word", "at"}]}."""
-    text = unicodedata.normalize("NFC", text)
+    text = unicodedata.normalize("NFC", lipi.to_deva(text))  # Brahmi, Kharoshthi and Siddham are checked through Devanagari
     issues = []
     words = re.findall(r"\S+", text)
     for wi, w in enumerate(words):
@@ -66,6 +69,7 @@ def verify(text: str):
 
 def keep_line(line: str, min_score: float = 0.9) -> bool:
     """Corpus filter: keeps non-Devanagari lines, and Devanagari lines that are well formed."""
+    line = lipi.to_deva(line)
     if not DEV.search(line):
         return True
     return verify(line)["score"] >= min_score

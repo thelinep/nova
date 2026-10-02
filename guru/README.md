@@ -5,7 +5,7 @@
 *Guru* (गुरु) is traditionally explained as "dispeller of darkness" (*gu*, darkness; *ru*, remover), from the Advaya Tāraka Upaniṣad. Linguistically the word means "weighty". Both fit.
 
 ```
-Guru = Guru-LLM + Guru-Dhatu + Guru-Panini (+ Guru-Veda / Guru-Shastra / Guru-Purana, later)
+Guru = Guru-LLM + Guru-Dhatu + Guru-Panini + Guru-Lipi (+ Guru-Veda / Guru-Shastra / Guru-Purana, later)
 ```
 
 | Module | What it is today (v0.1) | Next |
@@ -13,6 +13,7 @@ Guru = Guru-LLM + Guru-Dhatu + Guru-Panini (+ Guru-Veda / Guru-Shastra / Guru-Pu
 | **Guru-LLM** (`guru/model.py`) | `GuruForCausalLM`: a decoder-only transformer with RMSNorm, RoPE, grouped-query causal attention and SwiGLU, written from scratch. The tensor layout matches Llama, so it exports to GGUF and runs in Ollama. | Larger sizes on rented GPUs |
 | **Guru-Dhatu** (`guru/tokenizer.py`) | A SentencePiece BPE tokenizer trained on our corpus, with byte fallback and NFC normalisation. Roots listed in `data/dhatus.txt` are kept as whole pieces. | A real root + affix segmenter before BPE |
 | **Guru-Panini** (`guru/panini.py`) | A rule checker for Devanagari orthography (rules P1–P5). It filters the training corpus and scores everything Guru writes. | Sandhi and grammar rule sets, using the same `verify()` interface |
+| **Guru-Lipi** (`guru/lipi.py`) | Brahmi, Kharoshthi and Siddham ⇄ Devanagari. Guru learns and checks in Devanagari, reads the other three through it at the same token cost, and can answer in any of them. Round trips are exact, except Kharoshthi ai/au and digits, which are reported. | Sharada, Grantha, Tamil-Brahmi, IAST |
 | Guru-Veda / Shastra / Purana | Not built yet. | Grounding knowledge bases (retrieval), not weights |
 
 ## Sizes
@@ -65,8 +66,25 @@ Training on NVIDIA GPUs: `torchrun --nproc_per_node 8 -m guru train --size base-
 - An exported Guru loads as a standard Hugging Face `LlamaForCausalLM` and gives the same logits (within 1e-4).
 - The tokenizer round-trips Devanagari, nukta forms, English and unseen scripts; listed dhatus stay whole.
 - Guru-Panini flags broken Devanagari and passes well-formed text.
+- Guru-Lipi round-trips Brahmi, Kharoshthi and Siddham exactly (except the reported Kharoshthi cases), each costs the same tokens as Devanagari, and broken Brahmi is caught by Guru-Panini.
 
 The whole pipeline was also run end to end: corpus, tokenizer, training, export, GGUF, then generation with llama.cpp.
+
+## Scripts: Brahmi, Kharoshthi, Siddham
+
+Guru-Lipi lets Guru work with three historic scripts without training on them separately. Digital text in these scripts is scarce, but their letters map almost one to one onto Devanagari.
+
+- **Input:** text in any of the four scripts is converted to Devanagari before the tokenizer and Guru-Panini see it. A Siddham line costs exactly the tokens of the same line in Devanagari; without the conversion it would cost about 2.8 times as many, because each of these letters is 4 bytes. Guru-Panini checks Brahmi, Kharoshthi and Siddham too. Texts in these scripts placed in `data/my_texts` train as Devanagari.
+- **Output:** `python -m guru ask "…" --script siddham`, or the script choice in **Guru 4 - Talk to Guru**.
+- **Conversion:** `python -m guru lipi "गुरुः शिष्यं ज्ञानं ददाति।" --to kharoshthi` (any script to any script).
+
+| Script | Matched by Unicode name | Handled specially | Not exact |
+| --- | --- | --- | --- |
+| Brahmi | 76 of 115 | virama, jihvamuliya ᳵ, upadhmaniya ᳶ | additive numbers and ornaments are kept; nukta is dropped |
+| Kharoshthi (right to left) | 44 of 68 | vowels as A + sign, the length mark for ā ī ū ṝ, virama, dandas | ai/au are written as e/o + length mark (Guru convention); digits stay in Devanagari because Kharoshthi numbers are additive; Gandhari letters KKA, TTTA, TTTHA and VHA are kept |
+| Siddham | 65 of 92 | separators become a danda, alternate i/u forms become the normal ones | ornaments, repetition marks and the end-of-text sign are kept; no digits |
+
+Fonts: if letters show as boxes, install Noto Sans Brahmi, Noto Sans Kharoshthi and Noto Sans Siddham (Google Fonts, free).
 
 ## Data and licences
 

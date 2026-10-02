@@ -243,6 +243,7 @@ Guru is MAATAA's model family, trained from scratch in `brahmini/guru`. The modu
 - **Guru-LLM:** `GuruForCausalLM`, written from scratch (RMSNorm, RoPE, grouped-query attention, SwiGLU) with a Llama-compatible tensor layout, so it exports to GGUF and runs in Ollama.
 - **Guru-Dhatu:** our tokenizer.
 - **Guru-Panini:** a rule checker for Devanagari, used both on the corpus and on the model's output.
+- **Guru-Lipi:** Brahmi, Kharoshthi and Siddham ⇄ Devanagari. Guru reads and writes all four at the same token cost, and Guru-Panini checks them through Devanagari. It links Guru to the Lipi System in the ecosystem.
 
 Guru-Veda, Shastra and Purana will be grounding knowledge bases (retrieval), not weights.
 

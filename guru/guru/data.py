@@ -109,7 +109,8 @@ _WS = re.compile(r"[ \t ]+")
 
 
 def clean(text: str) -> str:
-    text = unicodedata.normalize("NFC", text).replace("\r\n", "\n").replace("\r", "\n")
+    from . import lipi
+    text = unicodedata.normalize("NFC", lipi.to_deva(text))  # Brahmi / Kharoshthi / Siddham texts train as Devanagari.replace("\r\n", "\n").replace("\r", "\n")
     lines = []
     for line in text.split("\n"):
         line = _WS.sub(" ", line).strip()
