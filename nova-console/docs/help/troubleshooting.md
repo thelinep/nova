@@ -116,6 +116,10 @@ For a **Kokoro blend**, install Kokoro voices first (double-click **Install Koko
 
 Faces are drawn with ComfyUI. Install it from **Settings > Image engine**, then press **Make a face** again.
 
+### The helper does not answer, or says it needs a chat model
+
+The helper uses your local model. Start Ollama and press **Sync from Ollama** in **Models**. If the face is gone, turn it back on in **Settings > Helper**.
+
 ### The microphone does not work
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).

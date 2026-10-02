@@ -32,6 +32,8 @@ The strip at the bottom shows whether NOVA is local, CPU and memory use, GPU and
 
 ## Help on every screen
 
+- The **helper** in the bottom right corner answers questions about the screen you are on, by text or voice, and walks you through tasks step by step. See [The helper](help:helper).
+
 - The **?** next to a screen's title opens a short explanation on the right, with **Read the full guide** to open the matching article in Help & Support.
 - Some panels have their own **?** (Media's video, audio, filter and library panels).
 - **Help & Support** in the System group has every guide, the FAQ, troubleshooting and the support report.

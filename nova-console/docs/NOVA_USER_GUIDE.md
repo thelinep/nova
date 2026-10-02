@@ -11,6 +11,7 @@ NOVA Runtime is a local AI workspace: chat with local models, search your docume
 - [First steps](#first-steps)
 - [A tour of the interface](#a-tour-of-the-interface)
 - [The setup checklist](#the-setup-checklist)
+- [The helper](#the-helper)
 - [Chat and sessions](#chat-and-sessions)
 - [Models](#models)
 - [Knowledge and Retrieval Lab](#knowledge-and-retrieval-lab)
@@ -59,7 +60,7 @@ The sidebar groups every screen by what you do there:
 | Capabilities | Skills, MCP Registry, Agents, Workflows, Neuron Factory, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
 | System | Runtime, Trace, Git Updates, Execution History, Diagnostics, Settings, Help & Support | Seeing what happened and keeping NOVA healthy |
 
-Read [A tour of the interface](#a-tour-of-the-interface) for the top bar, the command palette and the status bar.
+Read [A tour of the interface](#a-tour-of-the-interface) for the top bar, the command palette and the status bar. The face in the bottom right corner is [the helper](#the-helper): ask it how to do anything, or let it walk you through a task.
 
 ### Oversight
 
@@ -202,6 +203,8 @@ The strip at the bottom shows whether NOVA is local, CPU and memory use, GPU and
 
 ### Help on every screen
 
+- The **helper** in the bottom right corner answers questions about the screen you are on, by text or voice, and walks you through tasks step by step. See [The helper](#the-helper).
+
 - The **?** next to a screen's title opens a short explanation on the right, with **Read the full guide** to open the matching article in Help & Support.
 - Some panels have their own **?** (Media's video, audio, filter and library panels).
 - **Help & Support** in the System group has every guide, the FAQ, troubleshooting and the support report.
@@ -244,6 +247,45 @@ When all five are done, the page says **Setup complete** and links to the Consol
 - The checklist only reads what is already in NOVA. It never changes anything, and you can ignore it: every screen works whether or not the steps are done.
 - Step 2 matters if you want NOVA to plan code. Code plans and the improve-and-test loop only use models that passed the coding checks.
 - A step counts things that really happened on this computer. The example records some screens start with do not count.
+
+## The helper
+
+*The face in the bottom right corner. Ask it how to do anything, hold its mic to talk, or let it walk you through a task step by step on screen.*
+
+The face in the bottom right corner is NOVA's helper. Think of it as a colleague sitting next to you who knows NOVA well: ask it how to do something and it answers in a sentence or two, out loud if you like, and can show you the way.
+
+![Ask the helper; it answers from the help guides and offers to show you.](../public/help/media/helper.jpg)
+### Ask
+
+- Click the face, type a question and press **Ask**, for example "how do I let NOVA change my code?".
+- Or **hold the 🎙 button**, speak, and let go. Your voice is turned into text on this Mac (it needs whisper.cpp, like the microphone in chat). Talking while the helper is speaking cuts it off, as you would with a person.
+- The helper knows which screen you are on, and answers from NOVA's own help guides. Under each answer, **From:** links to the guides it used.
+- The face shows what it is doing: a red pulse while it listens, a turning ring while it thinks, and its mouth moves while it talks.
+
+### Show me
+
+When it helps, an answer ends with a button:
+
+- **Show me** starts a walkthrough. NOVA opens the right screen, dims everything else and points at one control at a time with a short note (read aloud if you like). **Next**, **Back** and **Stop**, or press Esc.
+- **Open …** goes to the screen it mentioned.
+
+The chips under the conversation start walkthroughs directly: qualify a model for coding, make an image, let NOVA read a folder, let NOVA use this Mac, talk to NOVA, let agents open a website, give an agent a personality, and set up images.
+
+![A walkthrough points at one control at a time.](../public/help/media/helper-tour.jpg)
+### What it will not do
+
+The helper explains and shows; it never presses buttons, changes settings or touches files itself. If it is not sure, it says so and suggests Help & Support. It runs on your local model, so an answer takes a second or two while the face shows it is thinking.
+
+### Settings
+
+Press ⚙ in the helper:
+
+| Setting | What it does |
+| --- | --- |
+| Read answers aloud | Speak answers and walkthrough notes (on by default) |
+| Tell me when something needs attention | Off by default. When on, the helper mentions only real changes: ComfyUI stopped and could not restart, NOVA was halted, or coding checks finished |
+| Helper character | Use a [Voice Studio](#voice-studio) character's name, face, personality and voice instead of Nova's |
+| Hide the helper | Removes the face. Bring it back in **Settings > Helper** |
 
 ## Chat and sessions
 
@@ -1571,6 +1613,10 @@ For a **Kokoro blend**, install Kokoro voices first (double-click **Install Koko
 
 Faces are drawn with ComfyUI. Install it from **Settings > Image engine**, then press **Make a face** again.
 
+#### The helper does not answer, or says it needs a chat model
+
+The helper uses your local model. Start Ollama and press **Sync from Ollama** in **Models**. If the face is gone, turn it back on in **Settings > Helper**.
+
 #### The microphone does not work
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
@@ -1870,6 +1916,10 @@ It works on Macs you trust, but it is not notarized, so each person has to appro
 #### How do I update NOVA?
 
 Pull the latest code and double-click **Build NOVA app.command**, then replace the app in Applications. Your data stays in its own folder and is kept.
+
+#### Is there an assistant that can show me how to use NOVA?
+
+Yes: the face in the bottom right corner. Ask it anything about NOVA by typing or holding its mic, and press **Show me** for a step-by-step walkthrough on screen. It explains and points; it never changes anything itself. See [The helper](helper.html).
 
 #### Where do I get more help?
 

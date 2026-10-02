@@ -53,6 +53,7 @@ const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
 const comfyManager = require('./lib/comfy-manager');
 const characters = require('./lib/characters');
+const helper = require('./lib/helper');
 const comfyLive = require('./lib/comfy-live');
 const liveAddon = { at: 0, installed: false, reachable: false };
 const videoGen = require('./lib/video-gen');
@@ -444,6 +445,7 @@ const routes = [
       res.writeHead(200, { 'Content-Type': p.mime, 'Content-Length': p.data.length, 'Cache-Control': seq === 'latest' ? 'no-store' : 'private, max-age=3600' });
       res.end(p.data);
     } },
+  { method: 'POST', pattern: /^\/api\/helper\/ask$/, handler: async (req, res) => sendJson(res, 200, await helper.ask({ store, ollama, characters }, await readJsonBody(req))) },
   { method: 'GET', pattern: /^\/api\/characters$/, handler: async (_req, res) => sendJson(res, 200, characters.list(store).map(c => ({ ...c, voiceLabel: characters.voiceLabel(c.voice), agents: store.all('agents').filter(a => a.characterId === c.id).map(a => ({ id: a.id, name: a.name })) }))) },
   { method: 'GET', pattern: /^\/api\/characters\/voices$/, handler: async (_req, res) => sendJson(res, 200, await characters.catalog()) },
   { method: 'POST', pattern: /^\/api\/characters$/, handler: async (req, res) => sendJson(res, 201, characters.create(store, await readJsonBody(req))) },

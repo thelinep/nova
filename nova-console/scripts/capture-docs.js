@@ -71,6 +71,7 @@ function startOllama() {
         }
         await sleep(600);
         let content = REPLY;
+        if (/helper built into the NOVA app/.test(system)) return send({ model: json.model, message: { role: 'assistant', content: 'Open Models, press Sync from Ollama, then press Qualify for coding on a model of 7B or more. It runs 18 short trials in a temporary folder, and you can follow them in Activity. Want me to show you?\n[tour:qualify-model]' }, done: true, ...usage });
         if (/self-contained HTML file/.test(system)) { await sleep(400); return send({ model: json.model, message: { role: 'assistant', content: '```html\n' + DESIGN_HTML + '\n```' }, done: true, ...usage }); }
         if (json.format === 'json' && /followups/.test(system)) return send({ model: json.model, message: { role: 'assistant', content: JSON.stringify({ followups: ['Make a call sheet for Friday', 'What is still TBC?', 'Translate the plan to Hindi'] }) }, done: true, ...usage });
         if (Array.isArray(json.tools) && json.tools.length) {
@@ -273,6 +274,13 @@ async function main() {
     await shot('workbench-halt', async () => { await page.locator('.btn-halt').click(); }, { wait: 500 });
     await shot('setup-checklist', async () => { await page.goto(base + '/activate.html'); await page.waitForLoadState('networkidle'); }, { wait: 1200 });
     await page.goto(base + '/'); await page.waitForLoadState('networkidle'); await sleep(1200);
+    await shot('helper', async () => {
+      await page.evaluate(() => { showView('models'); setPrefs({ helperSpeak: false }); });
+      await page.locator('#hfFace').click(); await page.locator('#hfText').fill('How do I let NOVA change my code?'); await page.locator('#hfSend').click();
+      await page.locator('#hfMsgs .hf-act').waitFor({ timeout: 15000 });
+    }, { wait: 500 });
+    await shot('helper-tour', async () => { await page.locator('#hfMsgs .hf-act').click(); await page.locator('.hf-tip').waitFor({ timeout: 8000 }); await page.locator('.hf-tip [data-n="next"]').click(); await sleep(1200); }, { wait: 600 });
+    await page.evaluate(() => { document.querySelectorAll('.hf-spot,.hf-tip').forEach(n => n.remove()); });
     await shot('help', () => page.evaluate(() => openHelp()));
     await shot('help-support', () => page.evaluate(() => openHelp('support-report')), { wait: 2500 });
     await shot('help-drawer', async () => { await page.evaluate(() => showView('agents')); await page.locator('#agentsView .help-btn').first().click(); }, { wait: 900 });

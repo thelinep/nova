@@ -349,6 +349,6 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.getByText('awaiting-approval')).toBeVisible();
     await page.getByRole('button', { name: 'Approve artifact' }).click();
     await expect(page.getByText('dense-tensor-backprop-v1')).toBeVisible();
-    await expect(page.getByText('approved')).toBeVisible();
+    await expect(page.locator('.runtime-inline', { hasText: 'approved' })).toBeVisible();
   });
 });

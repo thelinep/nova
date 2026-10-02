@@ -204,6 +204,10 @@ It works on Macs you trust, but it is not notarized, so each person has to appro
 
 Pull the latest code and double-click **Build NOVA app.command**, then replace the app in Applications. Your data stays in its own folder and is kept.
 
+### Is there an assistant that can show me how to use NOVA?
+
+Yes: the face in the bottom right corner. Ask it anything about NOVA by typing or holding its mic, and press **Show me** for a step-by-step walkthrough on screen. It explains and points; it never changes anything itself. See [The helper](help:helper).
+
 ### Where do I get more help?
 
 Open **Help & Support → Support** to check each part and make a support report. See [Get help and support](help:support).

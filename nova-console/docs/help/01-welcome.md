@@ -24,7 +24,7 @@ The sidebar groups every screen by what you do there:
 | Capabilities | Skills, MCP Registry, Agents, Workflows, Neuron Factory, Collector, Capability Graph, Provider Browser | What models may do, and the guard rails around it |
 | System | Runtime, Trace, Git Updates, Execution History, Diagnostics, Settings, Help & Support | Seeing what happened and keeping NOVA healthy |
 
-Read [A tour of the interface](help:interface) for the top bar, the command palette and the status bar.
+Read [A tour of the interface](help:interface) for the top bar, the command palette and the status bar. The face in the bottom right corner is [the helper](help:helper): ask it how to do anything, or let it walk you through a task.
 
 ## Oversight
 
