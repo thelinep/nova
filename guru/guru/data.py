@@ -102,6 +102,8 @@ def fetch_wikipedia(data_dir, langs=("sa", "hi", "en"), caps_mb=None, snapshot=S
             f.write(f"- Wikipedia ({lang}), snapshot {snapshot}, via the Wikimedia `{DATASET}` dataset: {n/1e6:,.0f} MB of text. "
                     "Licence: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Contributors: https://{lang}.wikipedia.org.\n".replace("{lang}", lang))
         f.write("- Your own texts in data/my_texts (your rights).\n")
+        f.write("- Ashtadhyayi (3,983 sutras), Dhatupatha, Unadipatha, Linganushasanam, Phit sutras: data/panini, from Vidyut "
+                "(ambuda.org), MIT licence, largely shared by the author of ashtadhyayi.com. See data/panini/SOURCES.md.\n")
     return report
 
 
@@ -137,8 +139,12 @@ def own_texts(data_dir):
                     yield fn, f.read()
 
 
-def build_corpus(data_dir, own_weight=3, seed=7):
-    """Writes data/corpus.txt (documents separated by a blank line plus \\x1e) and data/corpus.json (stats)."""
+def build_corpus(data_dir, own_weight=3, seed=7, panini_weight=3):
+    """Writes data/corpus.txt (documents separated by a blank line plus \\x1e) and data/corpus.json (stats).
+
+    The Panini texts in data/panini (Ashtadhyayi, Dhatupatha and companions) are
+    always included, panini_weight times; 0 leaves them out.
+    """
     random.seed(seed)
     raw = os.path.join(data_dir, "raw")
     docs, seen, stats = [], set(), {}
@@ -161,6 +167,10 @@ def build_corpus(data_dir, own_weight=3, seed=7):
     for fn, text in own_texts(data_dir):
         for part in re.split(r"\n{3,}", text):
             add("my_texts", part, own_weight)
+    if panini_weight:
+        from . import sutra
+        for name, doc in sutra.corpus_docs():
+            add(f"panini-{name}", doc, panini_weight)
     if not docs:
         raise SystemExit("The corpus is empty. Run Get corpus, or put .txt/.md files into guru/data/my_texts.")
     random.shuffle(docs)
@@ -169,7 +179,7 @@ def build_corpus(data_dir, own_weight=3, seed=7):
         for d in docs:
             f.write(d.replace("\x1e", " ") + "\n\x1e\n")
     total = sum(len(d) for d in docs)
-    summary = {"documents": len(docs), "characters": total, "sources": stats, "own_weight": own_weight}
+    summary = {"documents": len(docs), "characters": total, "sources": stats, "own_weight": own_weight, "panini_weight": panini_weight}
     with open(os.path.join(data_dir, "corpus.json"), "w") as f:
         json.dump(summary, f, indent=2)
     return summary

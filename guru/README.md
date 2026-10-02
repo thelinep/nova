@@ -12,7 +12,7 @@ Guru = Guru-LLM + Guru-Dhatu + Guru-Panini + Guru-Lipi (+ Guru-Veda / Guru-Shast
 | --- | --- | --- |
 | **Guru-LLM** (`guru/model.py`) | `GuruForCausalLM`: a decoder-only transformer with RMSNorm, RoPE, grouped-query causal attention and SwiGLU, written from scratch. The tensor layout matches Llama, so it exports to GGUF and runs in Ollama. | Larger sizes on rented GPUs |
 | **Guru-Dhatu** (`guru/tokenizer.py`) | A SentencePiece BPE tokenizer trained on our corpus, with byte fallback and NFC normalisation. Roots listed in `data/dhatus.txt` are kept as whole pieces. | A real root + affix segmenter before BPE |
-| **Guru-Panini** (`guru/panini.py`) | A rule checker for Devanagari orthography (rules P1–P5). It filters the training corpus and scores everything Guru writes. | Sandhi and grammar rule sets, using the same `verify()` interface |
+| **Guru-Panini** (`guru/panini.py`, `guru/sutra.py`) | A rule checker for Devanagari orthography (rules P1–P5), plus the real texts: all 3,983 Ashtadhyayi sutras, the Dhatupatha (2,259 roots) and the Unadi, Linganushasana and Phit sutras (MIT licence, see below). It filters the training corpus, scores everything Guru writes, and checks sutra citations in it. | Sandhi and grammar rule sets, using the same `verify()` interface |
 | **Guru-Lipi** (`guru/lipi.py`) | Brahmi, Kharoshthi and Siddham ⇄ Devanagari. Guru learns and checks in Devanagari, reads the other three through it at the same token cost, and can answer in any of them. Round trips are exact, except Kharoshthi ai/au and digits, which are reported. | Sharada, Grantha, Tamil-Brahmi, IAST |
 | Guru-Veda / Shastra / Purana | Not built yet. | Grounding knowledge bases (retrieval), not weights |
 
@@ -37,6 +37,7 @@ Mac times are rough estimates for Apple silicon; measured speed is printed while
 3. **Guru 3 - Train.command**: choose a size and a time limit. The Mac stays awake while it trains, progress is saved, and the next run can continue where this one stopped.
 4. **Guru 4 - Talk to Guru.command**: give it the start of a text and it continues.
 5. **Guru 5 - Add Guru to Ollama.command**: exports to GGUF and adds `guru-maataa-<size>` to Ollama. It can also make it *the* `guru-maataa`; the current Llama-based model is kept as `llama-guru-maataa`.
+6. **Guru 6 - Look up a sutra.command**: look up Ashtadhyayi sutras by number or words, or a root in the Dhatupatha. It works before setup.
 
 Your texts count three times as much as Wikipedia. Screenplays, notes and books in `data/my_texts` shape Guru's voice.
 
@@ -66,9 +67,32 @@ Training on NVIDIA GPUs: `torchrun --nproc_per_node 8 -m guru train --size base-
 - An exported Guru loads as a standard Hugging Face `LlamaForCausalLM` and gives the same logits (within 1e-4).
 - The tokenizer round-trips Devanagari, nukta forms, English and unseen scripts; listed dhatus stay whole.
 - Guru-Panini flags broken Devanagari and passes well-formed text.
+- The Ashtadhyayi has all 3,983 sutras, in order in 32 padas with no gaps. Known sutras (1.1.1, 6.1.77, 8.4.68 and others) read correctly, there is no placeholder text, citations are checked, and the SLP1 conversion is right.
 - Guru-Lipi round-trips Brahmi, Kharoshthi and Siddham exactly (except the reported Kharoshthi cases), each costs the same tokens as Devanagari, and broken Brahmi is caught by Guru-Panini.
 
 The whole pipeline was also run end to end: corpus, tokenizer, training, export, GGUF, then generation with llama.cpp.
+
+## Panini texts: Ashtadhyayi and Dhatupatha
+
+`data/panini` holds the real texts:
+
+- all 3,983 sutras of the Ashtadhyayi (1.1.1 to 8.4.68);
+- the Dhatupatha (2,259 roots with meaning and gana);
+- the Unadi sutras, the Linganushasana, the Phit sutras and the Dhatupatha's gana sutras.
+
+They come from [Vidyut](https://github.com/ambuda-org/vidyut) (ambuda.org) under the MIT licence; most of it was shared by the author of ashtadhyayi.com. Provenance, the commit and file hashes are in `data/panini/SOURCES.md`. Only the sutra text is included, not meanings or commentary, because modern translations have their own copyright.
+
+- **Training:** the texts are always part of the corpus, three times over (`--panini-weight`, 0 leaves them out). `teach --panini` adds about 18,000 question/answer pairs built only from the text: a sutra by number, the number of a sutra, the next sutra, and a root's meaning and gana.
+- **Checking:** `check` and `ask` look for citations such as `6.1.77`, `१.१.१` or `वृद्धिरादैच् (1.1.1)`. They report numbers that do not exist (for example 1.1.101, since the first pada ends at 1.1.75) and quotes that belong to a different sutra.
+- **Looking up:**
+
+```bash
+python -m guru sutra 1.1.1                  # 1.1.1  वृद्धिरादैच्
+python -m guru sutra 8.4.66-8.4.68 --script iast
+python -m guru sutra इको यण                 # find by words, in any script or SLP1
+python -m guru dhatu भू                     # 01.0001 भू सत्तायाम् (भ्वादिगण) …
+python -m guru check "6.1.87 इको यणचि"      # mismatch: that is 6.1.77; 6.1.87 is आद्गुणः
+```
 
 ## Scripts: Brahmi, Kharoshthi, Siddham
 
@@ -91,5 +115,6 @@ Fonts: if letters show as boxes, install Noto Sans Brahmi, Noto Sans Kharoshthi 
 - **Code:** Apache-2.0.
 - **Wikipedia text:** CC BY-SA 4.0, with attribution recorded in `data/SOURCES.md` and in each exported model card. Whether share-alike terms reach trained weights is not settled law; check before publishing weights.
 - **Your own texts:** these remain yours.
+- **Panini texts (`data/panini`):** MIT, © ambuda.org (Vidyut), data originally shared by ashtadhyayi.com. Keep `LICENSE-vidyut.md` and the attribution in `data/panini/SOURCES.md`.
 
 The name "Guru" is common. Before publishing, search trademarks and the Hugging Face hub; `guru-maataa-*` is the distinctive form.

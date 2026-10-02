@@ -4,7 +4,7 @@ title: Models
 section: Chat and knowledge
 order: 11
 summary: Sync models from Ollama, load and unload them, benchmark speed, and see which models passed Maataa's coding checks.
-keywords: guru guru-maataa own model from scratch train in memory ram estimate gpu example models demo unload memory warning models ollama sync load unload benchmark qualification quantization vision embedding pull
+keywords: guru guru-maataa ashtadhyayi panini sutra dhatupatha own model from scratch train in memory ram estimate gpu example models demo unload memory warning models ollama sync load unload benchmark qualification quantization vision embedding pull
 views: models
 ---
 @screen media/models.jpg "Models synced from Ollama, with size, quantization and speed."
@@ -39,7 +39,7 @@ When more than one model is loaded, a note at the top says how much memory they 
 
 **Renaming a model.** If you rename a model in Ollama (`ollama cp old new`, then `ollama rm old`), the next sync recognises it by its digest. Chats, agents, automations and saved profiles move to the new name, and its coding checks stay. The brahmini folder has **Rename local model to guru-maataa.command** for the local model that used to be called `maataa`.
 
-**Guru: our own models.** `guru-maataa-nano`, `-mini` and `-small` are MAATAA's own language models, trained from scratch on your Mac from Sanskrit, Hindi and English Wikipedia plus your own texts. Use the five **Guru … .command** files in the brahmini folder: set up, get the corpus, train, try, and add to Ollama. Once added, they appear here after **Sync from Ollama**. They are small: they write fluent text but know little, so use them to try things out, not for facts. See `guru/README.md`.
+**Guru: our own models.** `guru-maataa-nano`, `-mini` and `-small` are MAATAA's own language models, trained from scratch on your Mac from Sanskrit, Hindi and English Wikipedia plus your own texts and the full Ashtadhyayi and Dhatupatha. Use the five **Guru … .command** files in the brahmini folder: set up, get the corpus, train, try, and add to Ollama. Once added, they appear here after **Sync from Ollama**. They are small: they write fluent text but know little, so use them to try things out, not for facts. When Guru cites an Ashtadhyayi sutra, it checks the number and wording against the real text and tells you if they are wrong. See `guru/README.md`.
 
 **Example models.** Before Ollama is connected, Models shows a few example rows (Llama 3.1 8B, Mistral Nemo 12B, Qwen2.5 Coder 7B, Phi-3.5 Mini, Frontier Remote 70B). They are not on your Mac, and their numbers are not measured. Once real models are synced, the examples move into a closed **example models** section, are never shown as loaded, and **Remove examples** deletes them.
 

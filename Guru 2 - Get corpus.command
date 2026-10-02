@@ -15,6 +15,6 @@ else
   .venv/bin/python -m guru build || { read -r -p "Press Return to close."; exit 1; }
 fi
 .venv/bin/python -m guru tokenizer && .venv/bin/python -m guru encode
-echo; echo "Your own texts count three times as much as Wikipedia. Add more to guru/data/my_texts any time and run this again."
+echo; echo "Your own texts count three times as much as Wikipedia. The Ashtadhyayi (3,983 sutras) and the Dhatupatha are always included."; echo "Add more to guru/data/my_texts any time and run this again."
 echo "Next: double-click 'Guru 3 - Train.command'."
 read -r -p "Press Return to close."

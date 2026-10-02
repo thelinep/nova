@@ -165,6 +165,71 @@ class LipiTests(unittest.TestCase):
         self.assertEqual({i["rule"] for i in panini.verify(broken)["issues"]}, {"P2"})
 
 
+class SutraTests(unittest.TestCase):
+    """The Ashtadhyayi data is real and complete, and citations are checked."""
+    KNOWN = {"1.1.1": "वृद्धिरादैच्", "1.1.2": "अदेङ् गुणः", "1.1.3": "इको गुणवृद्धी", "1.1.4": "न धातुलोप आर्धधातुके",
+             "3.1.1": "प्रत्ययः", "3.1.2": "परश्च", "6.1.77": "इको यणचि", "6.1.87": "आद्गुणः",
+             "6.1.101": "अकः सवर्णे दीर्घः", "8.3.17": "भोभगोअघोअपूर्वस्य योऽशि", "8.4.68": "अ अ"}
+
+    def test_complete_and_in_order(self):
+        from guru import sutra
+        rows = sutra.sutras()
+        self.assertEqual(len(rows), sutra.TOTAL_SUTRAS)
+        self.assertEqual(len({r["id"] for r in rows}), len(rows))
+        per_pada = {}
+        for r in rows:
+            per_pada.setdefault((r["adhyaya"], r["pada"]), []).append(r["number"])
+        self.assertEqual(len(per_pada), 32)  # 8 adhyayas × 4 padas
+        for nums in per_pada.values():
+            self.assertEqual(nums, list(range(1, len(nums) + 1)))
+        self.assertEqual(len(per_pada[(1, 1)]), 75)
+        self.assertEqual(len(per_pada[(8, 4)]), 68)
+
+    def test_known_sutras(self):
+        from guru import sutra
+        for sid, text in self.KNOWN.items():
+            self.assertEqual(sutra.get(sid)["deva"], text, sid)
+        self.assertIsNone(sutra.get("1.1.101"))
+        self.assertEqual(sutra.get("8.3.37")["deva"], "कुप्वोः ᳵकᳶपौ च")
+
+    def test_no_placeholder_text(self):
+        from guru import sutra, panini
+        for r in sutra.sutras():
+            self.assertNotRegex(r["deva"], r"[0-9A-Za-z]|अष्टाध्यायी सूत्र")  # the placeholder pattern; 3.2.23 really contains सूत्र
+            self.assertTrue(panini.verify(r["deva"])["ok"], r["id"])
+
+    def test_find_in_any_script(self):
+        from guru import sutra
+        for q in ("वृद्धिरादैच्", "vfdDirAdEc", "vṛddhirādaic", "𑀯𑀾𑀤𑁆𑀥𑀺𑀭𑀸𑀤𑁃𑀘𑁆"):
+            self.assertEqual([r["id"] for r in sutra.find(q)], ["1.1.1"], q)
+
+    def test_citations(self):
+        from guru import sutra
+        got = {c["id"]: (c["status"], c["looks_like"]) for c in sutra.check_citations(
+            "1.1.1 वृद्धिरादैच् से वृद्धि संज्ञा होती है। अदेङ्गुणः (1.1.2)। 6.1.87 इको यणचि। 1.1.101 देखें। ६.१.१०१ और")}
+        self.assertEqual(got["1.1.1"][0], "ok")
+        self.assertEqual(got["1.1.2"][0], "ok")
+        self.assertEqual(got["6.1.87"], ("mismatch", "6.1.77 इको यणचि"))
+        self.assertEqual(got["1.1.101"][0], "unknown")
+        self.assertEqual(got["6.1.101"][0], "number")
+
+    def test_dhatupatha_and_training_data(self):
+        from guru import sutra
+        self.assertEqual(sutra.dhatu("भू")[0]["artha"], "सत्तायाम्")
+        docs = sutra.corpus_docs()
+        text = "\n".join(d for _, d in docs)
+        self.assertIn("1.1.1 वृद्धिरादैच्", text)
+        pairs = sutra.teach_pairs()
+        self.assertIn({"prompt": "अष्टाध्यायी का सूत्र 6.1.77 क्या है?", "answer": "6.1.77 इको यणचि"}, pairs)
+
+    def test_slp1(self):
+        from guru import slp1
+        self.assertEqual(slp1.to_devanagari("eDa~\\"), "एधँ॒")
+        self.assertEqual(slp1.to_devanagari("so'ham"), "सोऽहम्")
+        self.assertEqual(slp1.to_iast("vfdDirAdEc"), "vṛddhirādaic")
+        self.assertEqual(slp1.to_devanagari("ca . iti 6.4.15 .."), "च । इति 6.4.15 ॥")
+
+
 def unicodedata_lookup(name):
     import unicodedata
     return unicodedata.lookup(name)
