@@ -106,6 +106,14 @@ Only if you give an agent or workflow a tool that can, and approve it. Put a sig
 
 Only in chats where you turn on **Computer**, and only after you approve each action. It can run commands in approved folders, open apps, files and links, look at the screen and click or type, use the clipboard, and create, move or rename files. It never deletes (Move to Trash can be undone) and refuses administrator and disk-erasing commands. See [Add sources, live steps, computer and voice](help:conversation).
 
+### Can agents have their own personality and voice?
+
+Yes. **Voice Studio** makes characters with a personality, a way of speaking, a face and a voice. Blend Kokoro voices, use a macOS voice, or use the VoiceStudio app for cloned voices. Give a character to an agent, or let NOVA speak as one. See [Voice Studio](help:voice-studio).
+
+### Can NOVA speak in my own voice?
+
+Yes, through the free VoiceStudio app: clone your voice there (it asks for permission and watermarks what it makes), then choose it as a character's voice in Voice Studio. Only clone voices you have the right to use. See [Voice Studio](help:voice-studio#voicestudio-app).
+
 ### Can I talk to NOVA instead of typing?
 
 Yes. Hold the microphone button under the message box while you speak. whisper.cpp transcribes you on this Mac. Turn on **Voice** to hear replies read aloud.

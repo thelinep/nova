@@ -17,7 +17,7 @@ The sidebar groups every screen by what you do there:
 
 | Group | Screens | What they are for |
 | --- | --- | --- |
-| Create | Image, Video, Audio, Boards, Timeline, Library | Making media on this computer, arranging it and cutting it together |
+| Create | Image, Video, Audio, Voice Studio, Boards, Timeline, Library | Making media on this computer, arranging it and cutting it together |
 | Workspace | Console, Sessions, Local Workspace | Chatting with models, and changing code in approved folders |
 | Intelligence | Models, Knowledge, Retrieval Lab | The models you have, your documents, and testing search over them |
 | Operations | Automations, Evaluations, Workbench, Agent Browser | Scheduled runs, model comparisons, oversight of background work, and the browser agents use |

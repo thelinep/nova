@@ -108,6 +108,14 @@ The check renders the page in a browser NOVA can find: Google Chrome, Chromium, 
 
 Use a sharper or larger screenshot; tiny or blurred text is hard to read. On a Mac NOVA uses Apple's text recognition; if the support report shows "Text in images" as missing, install tesseract (`brew install tesseract`).
 
+### A character's preview is silent or fails
+
+For a **Kokoro blend**, install Kokoro voices first (double-click **Install Kokoro voices for NOVA.command**). For **VoiceStudio**, open the VoiceStudio app and press **Refresh**. Pitch changes need ffmpeg (`brew install ffmpeg`).
+
+### Make a face says ComfyUI is not installed
+
+Faces are drawn with ComfyUI. Install it from **Settings > Image engine**, then press **Make a face** again.
+
 ### The microphone does not work
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).

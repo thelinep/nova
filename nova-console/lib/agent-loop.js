@@ -204,6 +204,7 @@ function resolveOllamaModel(store, modelId) {
  *  (the Agents view's manual Run button, or a workflow's 'agent' node) so
  *  MCP logs and approval records say so honestly. */
 async function runAgentLoop(store, ollama, agent, instruction, context, origin, opts = {}) {
+  agent = require('./characters').withPersona(store, agent); // a Voice Studio character, when the agent has one
   const modelName = resolveOllamaModel(store, agent.modelId);
   const depth = opts.depth || 0;
   const chain = opts.chain || [agent.id];

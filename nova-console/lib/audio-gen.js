@@ -94,6 +94,17 @@ function finish(store, job, promise) {
  */
 async function synthesize(work, text, { voice = null, rate = 175, name = 'voice' } = {}) {
   fs.writeFileSync(path.join(work, name + '.txt'), text);
+  if (String(voice || '').startsWith('kokoro-mix:')) {
+    // A blend of Kokoro voices, e.g. "kokoro-mix:af_heart:0.7,bf_emma:0.3" (Voice Studio characters).
+    const k = kokoroStatus();
+    if (!k.ready) throw error('Kokoro voices are not installed. ' + k.missing[0] + '.', 412);
+    const parts = voice.slice(11).split(',').map(x => x.split(':')).filter(([v, w]) => KOKORO_VOICES.includes(v) && Number(w) > 0);
+    if (!parts.length) throw error('The voice mix has no known Kokoro voices.');
+    const out = path.join(work, name + '.wav');
+    const script = process.env.NOVA_KOKORO_SCRIPT || path.join(__dirname, '..', 'scripts', 'kokoro-say.py');
+    await run(kokoroPython(), [script, '--text-file', path.join(work, name + '.txt'), '--mix', parts.map(([v, w]) => `${v}:${Number(w)}`).join(','), '--lang', kokoroLang(parts[0][0]), '--speed', String(Math.round((rate / 175) * 100) / 100), '--out', out], 10 * 60 * 1000);
+    return out;
+  }
   if (String(voice || '').startsWith('kokoro:')) {
     const k = kokoroStatus();
     if (!k.ready) throw error('Kokoro voices are not installed. ' + k.missing[0] + '.', 412);
@@ -301,4 +312,4 @@ async function status() {
   return { voice: { ready: Boolean(sayBin()) || kokoro.ready, voices: v, kokoro, error: sayBin() || kokoro.ready ? null : 'Voice uses the speech built into macOS, or Kokoro voices.' }, comfy: await comfyStatus() };
 }
 
-module.exports = { compareMusic, music15Graph, musicSettings, ACE15_LANGUAGES, KEYSCALES, LYRIC_LANG, status, speak, synthesize, voiceFor, voices, kokoroStatus, kokoroLang, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };
+module.exports = { KOKORO_VOICES, KOKORO_LANGS, compareMusic, music15Graph, musicSettings, ACE15_LANGUAGES, KEYSCALES, LYRIC_LANG, status, speak, synthesize, voiceFor, voices, kokoroStatus, kokoroLang, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };

@@ -52,6 +52,7 @@ const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
 const comfyManager = require('./lib/comfy-manager');
+const characters = require('./lib/characters');
 const comfyLive = require('./lib/comfy-live');
 const liveAddon = { at: 0, installed: false, reachable: false };
 const videoGen = require('./lib/video-gen');
@@ -443,6 +444,29 @@ const routes = [
       res.writeHead(200, { 'Content-Type': p.mime, 'Content-Length': p.data.length, 'Cache-Control': seq === 'latest' ? 'no-store' : 'private, max-age=3600' });
       res.end(p.data);
     } },
+  { method: 'GET', pattern: /^\/api\/characters$/, handler: async (_req, res) => sendJson(res, 200, characters.list(store).map(c => ({ ...c, voiceLabel: characters.voiceLabel(c.voice), agents: store.all('agents').filter(a => a.characterId === c.id).map(a => ({ id: a.id, name: a.name })) }))) },
+  { method: 'GET', pattern: /^\/api\/characters\/voices$/, handler: async (_req, res) => sendJson(res, 200, await characters.catalog()) },
+  { method: 'POST', pattern: /^\/api\/characters$/, handler: async (req, res) => sendJson(res, 201, characters.create(store, await readJsonBody(req))) },
+  { method: 'PUT', pattern: /^\/api\/characters\/([^/]+)$/, handler: async (req, res, [id]) => sendJson(res, 200, characters.update(store, decodeURIComponent(id), await readJsonBody(req))) },
+  { method: 'DELETE', pattern: /^\/api\/characters\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, characters.remove(store, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/characters\/preview$/, handler: async (req, res) => {
+      const b = await readJsonBody(req);
+      const c = b.id ? characters.get(store, b.id) : characters.normalise({ name: 'Preview', ...(b.character || {}) });
+      const out = await characters.speak(c, b.text || `Hello, I am ${c.name}. ${c.tagline || 'This is how I sound.'}`, { maxChars: 600 });
+      res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice) }); res.end(out.data);
+    } },
+  { method: 'POST', pattern: /^\/api\/characters\/([^/]+)\/face$/, handler: async (req, res, [id]) => {
+      const c = characters.get(store, decodeURIComponent(id)); const b = await readJsonBody(req);
+      heavyJobs.check(store, 'image'); await heavyJobs.freeMemory({ ollama });
+      const prompt = String(b.prompt || `Portrait of ${c.name}${c.tagline ? ', ' + c.tagline : ''}. ${c.personality ? c.personality.slice(0, 200) + '. ' : ''}Friendly face looking at the camera, head and shoulders, soft studio light, clean plain background, illustrated character design`).slice(0, 900);
+      const { job } = await imageGen.generate(store, DATA_DIR, { prompt, negative: 'text, watermark, extra fingers, distorted face, multiple people', width: 768, height: 768 });
+      sendJson(res, 202, job);
+    } },
+  { method: 'PUT', pattern: /^\/api\/agents\/([^/]+)\/character$/, handler: async (req, res, [id]) => {
+      const agent = store.get('agents', decodeURIComponent(id)); if (!agent) return sendJson(res, 404, { error: 'Unknown agent.' });
+      const b = await readJsonBody(req); if (b.characterId) characters.get(store, b.characterId);
+      sendJson(res, 200, store.put('agents', { ...agent, characterId: b.characterId || null }));
+    } },
   { method: 'GET', pattern: /^\/api\/comfy\/status$/, handler: async (_req, res) => sendJson(res, 200, { ...comfyManager.status(), running: Boolean(await comfyManager.findRunning()) }) },
   { method: 'GET', pattern: /^\/api\/comfy\/log$/, handler: async (_req, res) => sendJson(res, 200, { log: comfyManager.logTail(200) }) },
   { method: 'PUT', pattern: /^\/api\/comfy\/settings$/, handler: async (req, res) => sendJson(res, 200, comfyManager.setPrefs(await readJsonBody(req))) },
@@ -752,7 +776,10 @@ const routes = [
   } },
   { method: 'POST', pattern: /^\/api\/voice\/speak$/, handler: async (req, res) => {
     const b = await readJsonBody(req);
-    const out = await voiceChat.speakText(DATA_DIR, b.text, { voice: b.voice || null, rate: b.rate });
+    // A Voice Studio character speaks in its own voice: asked for, or set in Settings > Voice.
+    const charId = b.characterId || (!b.voice && (store.get('preferences', 'default') || {}).replyCharacter) || null;
+    let character = null; if (charId) { try { character = characters.get(store, charId); } catch (_) {} }
+    const out = character ? await characters.speak(character, voiceChat.speakable(b.text)) : await voiceChat.speakText(DATA_DIR, b.text, { voice: b.voice || null, rate: b.rate });
     res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice) });
     res.end(out.data);
   } },

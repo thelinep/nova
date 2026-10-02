@@ -157,6 +157,7 @@
   .cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
   .cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
   .cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+  @media (max-width:900px){.vs-grid{grid-template-columns:minmax(0,1fr)!important;}}
   @media (max-width:1100px){.cols-4{grid-template-columns:repeat(2,minmax(0,1fr));}}
   @media(max-width:980px){.cols-2,.cols-3{grid-template-columns:1fr;}}
 
@@ -799,6 +800,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item" data-view="media" data-media-tab="image"><span data-lucide="image"></span><span class="rail-text">Image</span></button>
       <button class="nav-item" data-view="media" data-media-tab="video"><span data-lucide="clapperboard"></span><span class="rail-text">Video</span></button>
       <button class="nav-item" data-view="media" data-media-tab="audio"><span data-lucide="audio-lines"></span><span class="rail-text">Audio</span></button>
+      <button class="nav-item" data-view="voicestudio"><span data-lucide="drama"></span><span class="rail-text">Voice Studio</span></button>
       <button class="nav-item" data-view="boards"><span data-lucide="layout-dashboard"></span><span class="rail-text">Boards</span></button>
       <button class="nav-item" data-view="timeline"><span data-lucide="film"></span><span class="rail-text">Timeline</span></button>
       <button class="nav-item" data-view="media" data-media-tab="library"><span data-lucide="folder-open"></span><span class="rail-text">Library</span></button>
@@ -975,6 +977,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <section id="workflowsView" class="view"><div class="view-pad"><!-- VIEW:workflows --></div></section>
       <section id="neuronsView" class="view"><div class="view-pad"><!-- VIEW:neurons --></div></section>
       <section id="agentbrowserView" class="view"><div class="view-pad"><!-- VIEW:agentbrowser --></div></section>
+      <section id="voicestudioView" class="view"><div class="view-pad"><!-- VIEW:voicestudio --></div></section>
       <section id="collectorView" class="view"><div class="view-pad"><!-- VIEW:collector --></div></section>
       <section id="gitView" class="view"><div class="view-pad"><!-- VIEW:git --></div></section>
       <!-- ===================== CAPABILITY GRAPH ===================== -->
@@ -1156,8 +1159,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1569,7 +1572,7 @@ const PIPELINE = {
 
 const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
-  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
+  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
@@ -1630,7 +1633,7 @@ function showView(name){
   const renderers = {
     sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
-    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
+    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
   };
   if (renderers[name]) renderers[name]();
@@ -5011,6 +5014,129 @@ async function renderNeuronFactoryView(){
   if(window.lucide)lucide.createIcons();
 }
 
+/* ===================== marker: RENDER:VOICE STUDIO ===================== */
+// Characters: personality, face and voice for agents and for NOVA's spoken
+// replies. Voices: a Kokoro blend, a macOS voice, or a VoiceStudio profile.
+let vsSel = null, vsDraft = null, vsCatalog = null, vsChars = [], vsAudio = null;
+const VS_BLANK = () => ({ name:'', tagline:'', personality:'', speakingStyle:'', language:'English', avatarMediaId:null, voice:{ engine:'kokoro', mix:[{voice:'af_heart',weight:1}], speed:1, pitch:0 } });
+async function vsJson(path, opts = {}){ const r = await fetch(apiUrl(path), { ...opts, headers:{ 'Content-Type':'application/json', ...(opts.headers||{}) } }); const d = await r.json().catch(()=>({})); if (!r.ok) throw new Error(d.error || ('HTTP '+r.status)); return d; }
+async function renderVoiceStudioView(){
+  const pad = $('voicestudioView').querySelector('.view-pad');
+  try { [vsChars, vsCatalog] = await Promise.all([vsJson('/api/characters'), vsJson('/api/characters/voices')]); } catch (e) { pad.innerHTML = `<p class="empty-hint" style="color:var(--red)">${escapeHtml(e.message)}</p>`; return; }
+  if (vsSel && !vsChars.some(c => c.id === vsSel)) vsSel = null;
+  if (!vsDraft) vsDraft = vsSel ? JSON.parse(JSON.stringify(vsChars.find(c => c.id === vsSel))) : null;
+  const speaksAs = getPrefs().replyCharacter || '';
+  const k = vsCatalog.kokoro, vs = vsCatalog.voicestudio;
+  pad.innerHTML = `
+    <div class="view-head"><div><span class="eyebrow">Create</span><h1 class="view-title">Voice Studio</h1><p class="view-desc">Characters with a personality, a face and a voice. Give one to an agent, or let NOVA speak as one. Characters change how they sound and talk, never what they are allowed to do.</p></div>
+      <label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px">NOVA speaks as<select id="vsSpeaksAs" aria-label="NOVA speaks as"><option value="">Its usual voice</option>${vsChars.map(c => `<option value="${escapeHtml(c.id)}" ${c.id===speaksAs?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select></label></div>
+    <div class="card-grid cols-3" style="margin-bottom:14px">
+      <div class="panel" style="padding:12px"><div class="empty-hint">Kokoro voices</div><strong style="color:${k.ready?'var(--green)':'var(--amber)'}">${k.ready ? k.voices.length + ' voices ready' : 'Not installed'}</strong><div class="empty-hint" style="font-size:11px">${k.ready ? 'Blend up to three; English, Hindi and more' : escapeHtml((k.missing||[])[0] || 'Double-click "Install Kokoro voices for NOVA.command"')}</div></div>
+      <div class="panel" style="padding:12px"><div class="empty-hint">macOS voices</div><strong style="color:${vsCatalog.macos.ready?'var(--green)':'var(--muted)'}">${vsCatalog.macos.ready ? vsCatalog.macos.voices.length + ' voices' : 'Not on this computer'}</strong><div class="empty-hint" style="font-size:11px">Built in, no setup</div></div>
+      <div class="panel" style="padding:12px"><div class="empty-hint">VoiceStudio app</div><strong style="color:${vs.reachable?'var(--green)':'var(--muted)'}">${vs.reachable ? vs.voices.length + ' voice profile(s)' : 'Not running'}</strong><div class="empty-hint" style="font-size:11px">${vs.reachable ? 'Cloned and designed voices, 600+ languages' : 'Optional: open VoiceStudio for cloned voices · <a href="#help/voice-studio/voicestudio-app">how</a>'}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:14px;align-items:start" class="vs-grid">
+      <div class="panel" style="padding:12px"><button class="btn btn-amber btn-sm" id="vsNew" style="width:100%;margin-bottom:10px">New character</button>
+        ${vsChars.length ? vsChars.map(c => `<button class="vs-char ${c.id===vsSel?'active':''}" data-id="${escapeHtml(c.id)}" style="display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:8px;border:1px solid ${c.id===vsSel?'var(--amber)':'var(--line)'};border-radius:10px;background:transparent;color:inherit;margin-bottom:8px;cursor:pointer">
+          ${c.avatarMediaId ? `<img src="${mediaUrl(c.avatarMediaId)}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">` : `<span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--panel-2,#1a1e24);font-weight:600">${escapeHtml(c.name.slice(0,1).toUpperCase())}</span>`}
+          <span style="min-width:0"><strong style="font-size:13px">${escapeHtml(c.name)}</strong><div class="empty-hint" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.tagline || c.voiceLabel)}</div>${c.agents.length?`<div class="empty-hint" style="font-size:10.5px">${c.agents.length} agent(s)</div>`:''}</span></button>`).join('') : '<p class="empty-hint">No characters yet. Make one for each agent personality you want.</p>'}
+      </div>
+      <div class="panel" style="padding:16px" id="vsEditor">${vsDraft ? '' : '<p class="empty-hint">Choose a character, or press New character.</p>'}</div>
+    </div>`;
+  $('vsSpeaksAs').onchange = e => { setPrefs({ replyCharacter: e.target.value || null }); toast(e.target.value ? 'NOVA will read replies in this character\'s voice.' : 'NOVA uses its usual voice.'); };
+  $('vsNew').onclick = () => { vsSel = null; vsDraft = VS_BLANK(); renderVoiceStudioView(); };
+  $$('.vs-char').forEach(b => b.onclick = () => { vsSel = b.dataset.id; vsDraft = null; renderVoiceStudioView(); });
+  if (vsDraft) renderVsEditor();
+  if (window.lucide) lucide.createIcons();
+}
+function renderVsEditor(){
+  const box = $('vsEditor'); if (!box || !vsDraft) return;
+  const d = vsDraft, v = d.voice, k = vsCatalog.kokoro, vs = vsCatalog.voicestudio;
+  const agents = (DB.agents || []).filter(a => !a.seeded || true);
+  const owners = vsSel ? ((vsChars.find(c => c.id === vsSel) || {}).agents || []).map(a => a.id) : [];
+  const kOpts = sel => (k.voices.length ? k.voices : (window.VS_KOKORO_FALLBACK || [])).map(o => `<option value="${escapeHtml(o.id)}" ${o.id===sel?'selected':''}>${escapeHtml(o.label)}</option>`).join('');
+  box.innerHTML = `
+    <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:start">
+      <div style="text-align:center">${d.avatarMediaId ? `<img src="${mediaUrl(d.avatarMediaId)}" alt="Face" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:1px solid var(--line)">` : `<div style="width:120px;height:120px;border-radius:50%;display:grid;place-items:center;background:var(--panel-2,#1a1e24);font-size:40px;font-weight:600">${escapeHtml((d.name||'?').slice(0,1).toUpperCase())}</div>`}
+        <button class="btn btn-line btn-sm" id="vsFace" style="margin-top:8px;width:100%" ${vsSel?'':'disabled title="Save the character first"'}>Make a face</button>
+        ${d.avatarMediaId ? '<button class="btn btn-ghost btn-sm" id="vsFaceRemove" style="width:100%">Remove face</button>' : ''}<div id="vsFaceState" class="empty-hint" style="font-size:11px;margin-top:4px"></div></div>
+      <div class="card-grid cols-2">
+        <label>Name<input id="vsName" value="${escapeHtml(d.name)}" placeholder="e.g. Meera" style="display:block;width:100%;margin-top:4px"></label>
+        <label>Who they are<input id="vsTagline" value="${escapeHtml(d.tagline)}" placeholder="e.g. a calm first assistant director" style="display:block;width:100%;margin-top:4px"></label>
+        <label style="grid-column:1/-1">Personality<textarea id="vsPersonality" rows="3" placeholder="Warm, organised, gently funny; notices what is missing and says so." style="display:block;width:100%;margin-top:4px">${escapeHtml(d.personality)}</textarea></label>
+        <label style="grid-column:1/-1">How they speak<textarea id="vsStyle" rows="2" placeholder="Short sentences, film-set words, ends with the next step." style="display:block;width:100%;margin-top:4px">${escapeHtml(d.speakingStyle)}</textarea></label>
+        <label>Language<input id="vsLang" value="${escapeHtml(d.language)}" placeholder="English, Hindi…" style="display:block;width:100%;margin-top:4px"></label>
+      </div>
+    </div>
+    <div class="eyebrow" style="margin:16px 0 8px">Voice</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${[['kokoro','Kokoro blend'],['macos','macOS voice'],['voicestudio','VoiceStudio']].map(([id,l]) => `<button class="btn btn-sm ${v.engine===id?'btn-amber':'btn-line'} vs-engine" data-e="${id}">${l}</button>`).join('')}</div>
+    <div id="vsVoiceBox">${
+      v.engine === 'kokoro' ? `${(v.mix||[]).map((m,i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap"><select class="vs-mix-voice" data-i="${i}" aria-label="Voice ${i+1}" style="flex:1;min-width:180px">${kOpts(m.voice)}</select><input type="range" class="vs-mix-w" data-i="${i}" min="0" max="100" value="${Math.round(m.weight*100)}" aria-label="Share of voice ${i+1}" style="width:140px"><span class="mono" style="width:40px;font-size:11px">${Math.round(m.weight*100)}%</span>${v.mix.length>1?`<button class="btn btn-ghost btn-sm vs-mix-del" data-i="${i}" aria-label="Remove">×</button>`:''}</div>`).join('')}
+        ${v.mix.length < 3 ? '<button class="btn btn-ghost btn-sm" id="vsMixAdd">+ Blend in another voice</button>' : ''}
+        ${k.ready ? '' : '<p class="empty-hint" style="margin:6px 0 0">Kokoro is not installed yet, so previews will fail until you install it.</p>'}`
+      : v.engine === 'macos' ? `<select id="vsMac" aria-label="macOS voice" style="width:100%"><option value="">System default</option>${vsCatalog.macos.voices.map(o => `<option value="${escapeHtml(o.id)}" ${o.id===v.macVoice?'selected':''}>${escapeHtml(o.label)}</option>`).join('')}</select>`
+      : vs.reachable ? `<select id="vsProfile" aria-label="VoiceStudio voice" style="width:100%"><option value="">Choose a voice…</option>${vs.voices.map(o => `<option value="${escapeHtml(o.id)}" data-name="${escapeHtml(o.name)}" ${o.id===v.profile?'selected':''}>${escapeHtml(o.name)}${o.cloned?' · cloned':''}${o.language?' · '+escapeHtml(o.language):''}</option>`).join('')}</select><p class="empty-hint" style="margin:6px 0 0">To use your own voice, clone it in VoiceStudio (it asks for the speaker's permission and watermarks what it makes), then press Refresh.</p><button class="btn btn-ghost btn-sm" id="vsRefresh">Refresh</button>`
+      : `<p class="empty-hint">VoiceStudio is not running. Open the VoiceStudio app (it serves voices on this computer at port 3900), then press Refresh. <a href="#help/voice-studio/voicestudio-app">How to set it up</a></p><button class="btn btn-ghost btn-sm" id="vsRefresh">Refresh</button>`
+    }</div>
+    <div class="card-grid cols-2" style="margin-top:10px">
+      <label style="font-size:12px">Speed <span class="mono" id="vsSpeedV">${v.speed.toFixed(2)}×</span><input type="range" id="vsSpeed" min="60" max="160" value="${Math.round(v.speed*100)}" style="display:block;width:100%"></label>
+      <label style="font-size:12px">Pitch <span class="mono" id="vsPitchV">${v.pitch>0?'+':''}${v.pitch} semitones</span><input type="range" id="vsPitch" min="-6" max="6" value="${v.pitch}" style="display:block;width:100%"></label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="vsSay" aria-label="Text to preview" placeholder="Something for them to say…" style="flex:1;min-width:200px"><button class="btn btn-line btn-sm" id="vsPreview">▶ Preview</button></div>
+    ${agents.length ? `<div class="eyebrow" style="margin:16px 0 6px">Agents that use this character</div><div style="display:flex;flex-wrap:wrap;gap:6px">${agents.map(a => `<label class="badge" style="display:inline-flex;gap:6px;align-items:center;padding:4px 8px;cursor:pointer"><input type="checkbox" class="vs-agent" value="${escapeHtml(a.id)}" ${owners.includes(a.id)?'checked':''} ${vsSel?'':'disabled'}>${escapeHtml(a.name)}</label>`).join('')}</div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end"><span id="vsMsg" class="empty-hint" style="margin-right:auto"></span>${vsSel ? '<button class="btn btn-ghost btn-sm" id="vsDelete" style="color:var(--red)">Delete</button>' : ''}<button class="btn btn-amber btn-sm" id="vsSave">${vsSel ? 'Save' : 'Create character'}</button></div>`;
+  const read = () => { d.name = $('vsName').value; d.tagline = $('vsTagline').value; d.personality = $('vsPersonality').value; d.speakingStyle = $('vsStyle').value; d.language = $('vsLang').value; };
+  ['vsName','vsTagline','vsPersonality','vsStyle','vsLang'].forEach(id => $(id).oninput = read);
+  $$('.vs-engine').forEach(b => b.onclick = () => { read(); const e = b.dataset.e; d.voice = { engine:e, speed:v.speed, pitch:v.pitch, ...(e==='kokoro'?{mix:v.mix&&v.mix.length?v.mix:[{voice:'af_heart',weight:1}]}:e==='macos'?{macVoice:v.macVoice||''}:{profile:v.profile||'', profileName:v.profileName||''}) }; renderVsEditor(); });
+  $$('.vs-mix-voice').forEach(sel => sel.onchange = () => { v.mix[+sel.dataset.i].voice = sel.value; });
+  $$('.vs-mix-w').forEach(r => r.oninput = () => { v.mix[+r.dataset.i].weight = Number(r.value)/100; r.nextElementSibling.textContent = r.value + '%'; });
+  $$('.vs-mix-del').forEach(b => b.onclick = () => { read(); v.mix.splice(+b.dataset.i, 1); renderVsEditor(); });
+  if ($('vsMixAdd')) $('vsMixAdd').onclick = () => { read(); const used = v.mix.map(m => m.voice); const next = (k.voices.find(o => !used.includes(o.id)) || {id:'bf_emma'}).id; v.mix.push({voice: next, weight: 0.3}); renderVsEditor(); };
+  if ($('vsMac')) $('vsMac').onchange = e => { v.macVoice = e.target.value; };
+  if ($('vsProfile')) $('vsProfile').onchange = e => { v.profile = e.target.value; v.profileName = e.target.selectedOptions[0] ? e.target.selectedOptions[0].dataset.name || '' : ''; };
+  if ($('vsRefresh')) $('vsRefresh').onclick = async () => { read(); try { vsCatalog = await vsJson('/api/characters/voices'); } catch(_){} renderVsEditor(); };
+  $('vsSpeed').oninput = e => { v.speed = Number(e.target.value)/100; $('vsSpeedV').textContent = v.speed.toFixed(2) + '×'; };
+  $('vsPitch').oninput = e => { v.pitch = Number(e.target.value); $('vsPitchV').textContent = (v.pitch>0?'+':'') + v.pitch + ' semitones'; };
+  $('vsPreview').onclick = async () => {
+    read(); const btn = $('vsPreview'); btn.disabled = true; btn.textContent = 'Speaking…';
+    try {
+      const r = await fetch(apiUrl('/api/characters/preview'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ character: d, text: $('vsSay').value.trim() || undefined }) });
+      if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error || ('HTTP '+r.status));
+      const url = URL.createObjectURL(await r.blob()); if (vsAudio) vsAudio.pause(); vsAudio = new Audio(url); vsAudio.play().catch(()=>{});
+      $('vsMsg').textContent = decodeURIComponent(r.headers.get('X-Nova-Voice') || '');
+    } catch (e) { $('vsMsg').textContent = e.message; }
+    finally { btn.disabled = false; btn.textContent = '▶ Preview'; }
+  };
+  $('vsSave').onclick = async () => {
+    read();
+    try {
+      const saved = vsSel ? await vsJson('/api/characters/' + encodeURIComponent(vsSel), { method:'PUT', body: JSON.stringify(d) }) : await vsJson('/api/characters', { method:'POST', body: JSON.stringify(d) });
+      const wanted = $$('.vs-agent').filter(c => c.checked).map(c => c.value);
+      if (vsSel) for (const a of (DB.agents || [])) {
+        const has = owners.includes(a.id), want = wanted.includes(a.id);
+        if (has !== want) { await vsJson('/api/agents/' + encodeURIComponent(a.id) + '/character', { method:'PUT', body: JSON.stringify({ characterId: want ? saved.id : null }) }); a.characterId = want ? saved.id : null; }
+      }
+      vsSel = saved.id; vsDraft = null; toast(saved.name + ' saved.'); renderVoiceStudioView();
+    } catch (e) { $('vsMsg').textContent = e.message; }
+  };
+  if ($('vsDelete')) $('vsDelete').onclick = async () => { if ($('vsDelete').dataset.confirm !== '1') { $('vsDelete').dataset.confirm = '1'; $('vsDelete').textContent = 'Press again to delete'; return; } try { await vsJson('/api/characters/' + encodeURIComponent(vsSel), { method:'DELETE' }); if (getPrefs().replyCharacter === vsSel) setPrefs({ replyCharacter: null }); vsSel = null; vsDraft = null; renderVoiceStudioView(); } catch (e) { toast(e.message); } };
+  if ($('vsFaceRemove')) $('vsFaceRemove').onclick = () => { read(); d.avatarMediaId = null; renderVsEditor(); };
+  if ($('vsFace') && vsSel) $('vsFace').onclick = async () => {
+    read(); const st = $('vsFaceState'); $('vsFace').disabled = true; st.textContent = 'Starting ComfyUI and drawing…';
+    try {
+      const job = await vsJson('/api/characters/' + encodeURIComponent(vsSel) + '/face', { method:'POST', body:'{}' });
+      for (let i = 0; i < 240; i++) {
+        await new Promise(r => setTimeout(r, 2500));
+        const j = await vsJson('/api/images/jobs/' + encodeURIComponent(job.id));
+        if (j.status === 'done' || j.status === 'completed' || (j.mediaIds && j.mediaIds.length)) { if (!(j.mediaIds||[]).length) throw new Error('No picture came back.'); d.avatarMediaId = j.mediaIds[0]; await vsJson('/api/characters/' + encodeURIComponent(vsSel), { method:'PUT', body: JSON.stringify(d) }); renderVoiceStudioView(); return; }
+        if (j.status === 'failed' || j.status === 'cancelled') throw new Error(j.error || 'The picture failed.');
+        st.textContent = 'Drawing… ' + (j.progress ? Math.round(j.progress * 100) + '%' : '');
+      }
+      throw new Error('Still drawing; look in the Library later.');
+    } catch (e) { st.textContent = e.message; $('vsFace').disabled = false; }
+  };
+}
+
 /* ===================== marker: RENDER:AGENT BROWSER ===================== */
 // The agent browser: allowed websites, a try-it panel, open pages and the
 // activity log. Status and log refresh every 5 s while the screen is open;
@@ -6421,6 +6547,7 @@ init().then(routeHelpHash);
 // search/filter/sort bar, the view and key panels get a "?" help button, and prompt boxes get
 // preset chips. List choices are remembered per view in this browser.
 const VIEW_HELP = {
+  voicestudio:'Characters for your agents and for NOVA itself: a name, a personality and way of speaking, a face (made with ComfyUI) and a voice. Blend up to three Kokoro voices with speed and pitch, use a macOS voice, or a voice from the VoiceStudio app (including your own cloned voice). Give a character to an agent, or let NOVA speak as one.',
   agentbrowser:'The separate, locked-down browser NOVA\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting NOVA closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
   neurons:'Train very small, single-purpose models on this Mac: a tiny neural network from your examples, or a simulated quantum circuit. Create a blueprint, queue training, evaluate the result, then approve it. Your Ollama models are not changed.',
   console:'Chat with a local model. + adds files, a folder, a web page or a git repo for NOVA to read. Computer lets NOVA use this Mac (it asks first), the mic lets you talk, Voice reads replies aloud. Steps above each reply show what NOVA is doing; the list icon at the top shows everything running.',

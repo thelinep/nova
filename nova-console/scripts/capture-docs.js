@@ -188,6 +188,12 @@ async function main() {
     for (const v of ['sessions', 'knowledge', 'retrieval', 'automations', 'evaluations', 'boards', 'timeline', 'skills', 'mcp', 'agents', 'workflows', 'collector', 'graph', 'browser', 'workspace', 'git', 'runtime', 'trace', 'history', 'diagnostics', 'settings']) await shot(v, view(v));
     await shot('models', async () => { await page.evaluate(() => showView('models')); await sleep(800); await page.locator('.model-qualify').first().scrollIntoViewIfNeeded(); await page.evaluate(() => { const c = [...document.querySelectorAll('.model-card')].find(x => /qwen2\.5-coder:7b/.test(x.textContent)); if (c) c.scrollIntoView({ block: 'center' }); }); }, { wait: 900 });
     await shot('neuron-factory', view('neurons'), { wait: 1200 });
+    if (want('voice-studio')) {
+      const H = { 'Content-Type': 'application/json', Origin: base };
+      const c = await (await fetch(base + '/api/characters', { method: 'POST', headers: H, body: JSON.stringify({ name: 'Meera', tagline: 'a calm first assistant director', personality: 'Warm, organised and gently funny. Notices what is missing from a plan and says so kindly.', speakingStyle: 'Short sentences, film-set words, always ends with the next step.', language: 'English', voice: { engine: 'kokoro', mix: [{ voice: 'af_heart', weight: 0.7 }, { voice: 'hf_alpha', weight: 0.3 }], speed: 1.05, pitch: 1 } }) })).json();
+      await fetch(base + '/api/characters', { method: 'POST', headers: H, body: JSON.stringify({ name: 'Kabir', tagline: 'a dry-witted line producer', voice: { engine: 'kokoro', mix: [{ voice: 'bm_george', weight: 1 }] } }) });
+      await shot('voice-studio', async () => { await page.evaluate(id => { vsSel = id; vsDraft = null; showView('voicestudio'); }, c.id); await sleep(1200); }, { wait: 600 });
+    }
     if (want('comfy-settings')) {
       // A stand-in ComfyUI folder (a tiny Node server), so the panel shows NOVA starting it.
       const fake = path.join(dataDir, 'ComfyUI'); fs.mkdirSync(path.join(fake, '.venv', 'bin'), { recursive: true });
