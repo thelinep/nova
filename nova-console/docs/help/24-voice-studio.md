@@ -4,7 +4,7 @@ title: Voice Studio
 section: Create
 order: 24
 summary: Make characters with a personality, a face and a voice, give them to agents, or let NOVA speak as one. Blend Kokoro voices, use macOS voices, or voices from the VoiceStudio app, including your own cloned voice.
-keywords: voice studio characters persona personality speaking style face avatar voice kokoro blend mix pitch speed macos voicestudio clone cloned voice agents speak as
+keywords: voice studio characters persona personality speaking style face avatar voice kokoro blend mix pitch speed macos voicestudio clone cloned voice agents speak as delivery emotion mood shout shouting whisper sing singing taunt taunting angry sad laugh cues
 views: voicestudio
 ---
 **Voice Studio** (Create group) is where you give NOVA's agents a personality. A character has:
@@ -34,6 +34,31 @@ views: voicestudio
 
 **Speed** (0.6× to 1.6×) and **Pitch** (six semitones down to six up) work with every voice. Pitch needs ffmpeg (`brew install ffmpeg`).
 
+## Delivery: emotion and mode
+
+A character does not read every line the same way. **Delivery** decides how each part of a line is said: calm, warm, joyful, excited, sad, angry, shouting, whispering, taunting, fearful, laughing or singing.
+
+| Setting | What it does |
+| --- | --- |
+| **Usual delivery** | How the character normally sounds. Left on Neutral, NOVA takes it from the personality: "gentle and motherly" sounds warm, "playful and sarcastic" taunts |
+| **Let the personality choose the delivery for each sentence** | Your local model acts as voice director: it reads the character's personality and what each sentence means, and picks a delivery per sentence, so a scolding is said angrily and a secret is whispered. Without a model, NOVA goes by signs in the text: CAPITALS shout, "!!" sounds excited |
+
+### Direct a line yourself
+
+Write cues in the text, in square brackets or round ones. Everything after a cue is said that way, until the next cue:
+
+> [warm] Come here, my child. [taunt] Did you really think you could hide? [pause] [sing] La la la…
+
+Cues: `[shout]`, `[whisper]`, `[sing]`, `[taunt]`, `[laugh]`, `[angry]`, `[sad]`, `[joyful]`, `[excited]`, `[calm]`, `[warm]`, `[fearful]` and `[pause]` (a short silence). Words such as `(yells)`, `(sings)`, `(teasing)` or `(sighs)` work too. Click the cue chips under **Delivery** to add them to the preview box. Cues always win; the preview's delivery list sets the rest of the line.
+
+After **▶ Preview**, NOVA shows the deliveries it used, for example "delivered as warm → taunting → singing".
+
+### How it sounds
+
+- **Kokoro and macOS voices** act each delivery out: each part is spoken at its own speed, then NOVA changes pitch and loudness and adds an effect, such as a compressor for shouting, a breathy filter for whispering, a wobble for taunting, and vibrato with a little room for singing. This needs ffmpeg (`brew install ffmpeg`); without it, a line is said in one delivery, using speed only.
+- **VoiceStudio voices** also receive the delivery as an instruction ("speak shouting loudly"), which expressive voice models follow in their own way.
+- These voices cannot really sing a melody: singing here is a sung-style reading. For a real song with music, use **Media > Audio > Song**.
+
 ## VoiceStudio app
 
 [VoiceStudio](https://github.com/debpalash/VoiceStudio) is a separate, free desktop app for cloning and designing voices. NOVA talks to it over its local service at `http://127.0.0.1:3900` and never sends text anywhere else.
@@ -52,7 +77,7 @@ Tick the agents under **Agents that use this character** and press **Save**. Whe
 
 ## Let NOVA speak as a character
 
-Choose a character in **NOVA speaks as** at the top of Voice Studio. Replies read aloud (**Voice** under the message box, or the speaker button on a reply) then use that character's voice.
+Choose a character in **NOVA speaks as** at the top of Voice Studio. Replies read aloud (**Voice** under the message box, or the speaker button on a reply) then use that character's voice and delivery, so an excited reply sounds excited.
 
 ## What a character cannot change
 

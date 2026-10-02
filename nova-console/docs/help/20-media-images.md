@@ -36,7 +36,9 @@ Until ComfyUI has started, the Image tab shows **COMFYUI OFFLINE**; generating s
 2. Optionally add a negative prompt (things to avoid).
 3. Choose the checkpoint, size, steps, CFG, seed and sampler, then **Generate**.
 
-Each image is saved with its prompt, negative prompt, checkpoint and seed. **Reuse settings** loads them back. While ComfyUI works, the **Tensor view** opens at the bottom right and shows each denoising step; see [Boards, Timeline and Library](help:boards-library#tensor-view).
+Each image is saved with its prompt, negative prompt, checkpoint and seed. **Reuse settings** loads them back.
+
+**Click an image** to see it full size in NOVA's viewer, with its prompt, model and seed underneath. Use ‹ › or the arrow keys to step through the other images in the list, click the picture to zoom to 100%, **Download** to save a copy, and Esc or **Close** to go back. Images in chat, screenshots from the Agent Browser and character faces open the same way. While ComfyUI works, the **Tensor view** opens at the bottom right and shows each denoising step; see [Boards, Timeline and Library](help:boards-library#tensor-view).
 
 ## Start from another image
 

@@ -21,7 +21,10 @@ function fakeKokoro(dir) {
   const wav = (() => { const n = 8000, b = Buffer.alloc(44 + n * 2); b.write('RIFF', 0); b.writeUInt32LE(36 + n * 2, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(16000, 24); b.writeUInt32LE(32000, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write('data', 36); b.writeUInt32LE(n * 2, 40); for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(8000 * Math.sin(i / 8)), 44 + i * 2); return b; })();
   fs.writeFileSync(path.join(dir, 'tone.wav'), wav);
   const py = path.join(dir, 'python');
-  fs.writeFileSync(py, `#!/bin/sh\necho "$@" >> "${path.join(dir, 'calls.log')}"\nwhile [ $# -gt 0 ]; do if [ "$1" = "--out" ]; then cp "${path.join(dir, 'tone.wav')}" "$2"; fi; shift; done\necho '{"ok":true}'\n`, { mode: 0o755 });
+  // --out writes one file; --batch jobs.json writes every job's "out" and keeps a copy of the jobs.
+  const helper = path.join(dir, 'batch.js');
+  fs.writeFileSync(helper, `const fs=require('fs');const f=process.argv[2];const jobs=JSON.parse(fs.readFileSync(f,'utf8'));fs.appendFileSync(${JSON.stringify(path.join(dir, 'batches.log'))},JSON.stringify(jobs)+'\\n');for(const j of jobs)fs.copyFileSync(${JSON.stringify(path.join(dir, 'tone.wav'))},j.out);`);
+  fs.writeFileSync(py, `#!/bin/sh\necho "$@" >> "${path.join(dir, 'calls.log')}"\nwhile [ $# -gt 0 ]; do if [ "$1" = "--out" ]; then cp "${path.join(dir, 'tone.wav')}" "$2"; fi; if [ "$1" = "--batch" ]; then "${process.execPath}" "${helper}" "$2"; fi; shift; done\necho '{"ok":true}'\n`, { mode: 0o755 });
   return py;
 }
 
@@ -70,12 +73,14 @@ test('speak: a Kokoro blend passes --mix; pitch is applied with ffmpeg', { skip:
     const out = await characters.speak(c, 'Call time is six.');
     assert.equal(out.type, 'audio/wav');
     assert.equal(out.data.toString('ascii', 0, 4), 'RIFF');
-    const calls = fs.readFileSync(path.join(dir, 'calls.log'), 'utf8');
-    assert.match(calls, /--mix af_heart:0\.7,hf_alpha:0\.3/);
-    assert.match(calls, /--speed 1\.2/);
+    const batches = () => fs.readFileSync(path.join(dir, 'batches.log'), 'utf8').trim().split('\n').map(l => JSON.parse(l));
+    const [job] = batches()[0];
+    assert.equal(job.mix, 'af_heart:0.7,hf_alpha:0.3');
+    assert.equal(job.speed, 1.2);
+    assert.deepEqual(out.delivery, ['neutral']);
     const single = characters.normalise({ name: 'S', voice: { engine: 'kokoro', mix: [{ voice: 'bf_emma', weight: 1 }] } });
     await characters.speak(single, 'Hello');
-    assert.match(fs.readFileSync(path.join(dir, 'calls.log'), 'utf8'), /--voice bf_emma/);
+    assert.equal(batches()[1][0].voice, 'bf_emma');
   } finally {
     if (prev.p === undefined) delete process.env.NOVA_KOKORO_PYTHON; else process.env.NOVA_KOKORO_PYTHON = prev.p;
     if (prev.d === undefined) delete process.env.KOKORO_DIR; else process.env.KOKORO_DIR = prev.d;
@@ -99,6 +104,8 @@ test('VoiceStudio client: lists voices, speaks, explains when it is not running,
     assert.equal(buf.length, 400);
     const body = JSON.parse(seen.find(s => s.url.endsWith('/speech')).init.body);
     assert.deepEqual([body.voice, body.input, body.response_format], ['p1', 'Hello', 'wav']);
+    await voicestudio.speak('Hi', { voice: 'p1', instructions: 'Speak shouting loudly.' });
+    assert.equal(JSON.parse(seen.filter(s => s.url.endsWith('/speech')).pop().init.body).instructions, 'Speak shouting loudly.');
     voicestudio.setFetch(async () => { throw new TypeError('fetch failed'); });
     const off = await voicestudio.status();
     assert.equal(off.reachable, false); assert.match(off.error, /not running/);
@@ -126,6 +133,10 @@ test('server: character routes, preview in a character voice, agent assignment',
     const pr = await fetch(base + '/api/characters/preview', { method: 'POST', headers: H, body: JSON.stringify({ id: c.id, text: 'Hello' }) });
     assert.equal(pr.status, 200); assert.equal(pr.headers.get('content-type'), 'audio/wav');
     assert.match(decodeURIComponent(pr.headers.get('x-nova-voice')), /Kokoro heart 100%/);
+    const loud = await fetch(base + '/api/characters/preview', { method: 'POST', headers: H, body: JSON.stringify({ id: c.id, text: 'Hello. [whisper] Quiet now.', mood: 'shouting' }) });
+    assert.equal(loud.status, 200);
+    assert.equal(decodeURIComponent(loud.headers.get('x-nova-delivery')), 'shouting,whispering', 'cues win over the chosen mood only where they appear');
+    assert.ok(cat.moods.some(m => m.id === 'singing'));
     const store = await j('/api/store/agents', { method: 'PUT', body: JSON.stringify({ id: 'ag1', name: 'Planner' }) });
     assert.equal(store.status, 200);
     assert.equal((await j('/api/agents/ag1/character', { method: 'PUT', body: JSON.stringify({ characterId: c.id }) })).body.characterId, c.id);

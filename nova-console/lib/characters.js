@@ -18,6 +18,7 @@ const crypto = require('node:crypto');
 const { execFile } = require('node:child_process');
 const audioGen = require('./audio-gen');
 const voicestudio = require('./voicestudio');
+const delivery = require('./delivery');
 
 const STORE = 'characters';
 const ENGINES = ['kokoro', 'macos', 'voicestudio'];
@@ -60,6 +61,8 @@ function normalise(input = {}, prior = null) {
     language: clip(input.language ?? prior?.language, 40) || 'English',
     avatarMediaId: input.avatarMediaId !== undefined ? (input.avatarMediaId ? clip(input.avatarMediaId, 80) : null) : (prior?.avatarMediaId || null),
     voice: normaliseVoice(input.voice || prior?.voice || {}),
+    // How lines are delivered: a usual mood, and whether the personality picks a delivery per sentence.
+    delivery: (() => { const d = input.delivery || prior?.delivery || {}; return { mood: delivery.moodName(d.mood) || 'neutral', auto: d.auto !== false }; })(),
     createdAt: prior?.createdAt || now, updatedAt: now,
   };
 }
@@ -117,38 +120,66 @@ function ffmpegPath() {
   return null;
 }
 
-/** Reads text in the character's voice; returns { data, type, voice }. */
-async function speak(character, text, { maxChars = 6000 } = {}) {
+/**
+ * Reads text in the character's voice and delivery; returns { data, type, voice, delivery }.
+ * opts.mood forces one delivery ('auto' or none lets the line decide); opts.director is an
+ * async ({ system, user }) => text function backed by a local model (see delivery.plan).
+ */
+async function speak(character, text, { maxChars = 6000, mood = null, director = null } = {}) {
   const words = String(text || '').trim().slice(0, maxChars);
   if (!words) throw error('Nothing to say.');
   const v = character.voice || normaliseVoice({});
+  const segments = await delivery.plan(character, words, { mood, director });
+  const spoken = segments.filter(s => s.mood !== 'pause' && s.text);
+  if (!spoken.length) throw error('Nothing to say.');
+  const ffmpeg = ffmpegPath();
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-char-'));
+  const M = m => delivery.MOODS[m] || delivery.MOODS.neutral;
+  const kokoroSpec = () => v.mix.length === 1 && v.mix[0].weight === 1 ? { voice: v.mix[0].voice } : { voice: v.mix[0].voice, mix: v.mix.map(m => `${m.voice}:${m.weight}`).join(',') };
   try {
-    let file;
-    const rate = Math.round(175 * v.speed);
-    if (v.engine === 'voicestudio') {
-      file = path.join(work, 'voice.wav');
-      fs.writeFileSync(file, await voicestudio.speak(words, { voice: v.profile, model: v.model }));
-    } else if (v.engine === 'macos') {
-      file = await audioGen.synthesize(work, words, { voice: v.macVoice || null, rate, name: 'voice' });
+    // Without ffmpeg the line cannot be cut and joined: one take in the usual delivery, speed only.
+    if (!ffmpeg) {
+      const m = M(segments.length === 1 ? segments[0].mood : delivery.baseMood(character));
+      const line = spoken.map(s => s.text).join(' ');
+      let file;
+      if (v.engine === 'voicestudio') { file = path.join(work, 'voice.wav'); fs.writeFileSync(file, await voicestudio.speak(line, { voice: v.profile, model: v.model, instructions: m.say })); }
+      else if (v.engine === 'macos') file = await audioGen.synthesize(work, line, { voice: v.macVoice || null, rate: Math.round(175 * v.speed * m.speed), name: 'voice' });
+      else { const k = kokoroSpec(); [file] = await audioGen.kokoroBatch(work, [{ text: line, ...k, speed: v.speed * m.speed, out: path.join(work, 'voice.wav') }]); }
+      if (file.endsWith('.aiff') && fs.existsSync('/usr/bin/afconvert')) { const out = path.join(work, 'final.wav'); await run('/usr/bin/afconvert', ['-f', 'WAVE', '-d', 'LEI16', file, out]); file = out; }
+      return { data: fs.readFileSync(file), type: file.endsWith('.wav') ? 'audio/wav' : 'audio/aiff', voice: voiceLabel(v), delivery: [segments.length === 1 ? segments[0].mood : delivery.baseMood(character)] };
+    }
+    // 1. Each part in its own take.
+    const raw = [];
+    if (v.engine === 'kokoro') {
+      const k = kokoroSpec();
+      const jobs = spoken.map((s, i) => ({ text: s.text, ...k, speed: Math.max(0.5, Math.min(2, v.speed * M(s.mood).speed)), out: path.join(work, `take${i}.wav`) }));
+      raw.push(...await audioGen.kokoroBatch(work, jobs));
     } else {
-      const mix = v.mix.length === 1 && v.mix[0].weight === 1 ? 'kokoro:' + v.mix[0].voice : 'kokoro-mix:' + v.mix.map(m => `${m.voice}:${m.weight}`).join(',');
-      file = await audioGen.synthesize(work, words, { voice: mix, rate, name: 'voice' });
+      for (const [i, s] of spoken.entries()) {
+        if (v.engine === 'voicestudio') { const f = path.join(work, `take${i}.wav`); fs.writeFileSync(f, await voicestudio.speak(s.text, { voice: v.profile, model: v.model, instructions: `Speak ${M(s.mood).say}.` })); raw.push(f); }
+        else raw.push(await audioGen.synthesize(work, s.text, { voice: v.macVoice || null, rate: Math.round(175 * v.speed * M(s.mood).speed), name: `take${i}` }));
+      }
     }
-    const ffmpeg = ffmpegPath();
-    if (ffmpeg && (v.pitch || file.endsWith('.aiff'))) {
-      // Pitch in semitones without changing speed; also turns AIFF into WAV for the browser.
-      const out = path.join(work, 'final.wav');
-      const f = Math.pow(2, v.pitch / 12);
-      const filters = v.pitch ? ['-af', `asetrate=44100*${f.toFixed(4)},aresample=44100,atempo=${(1 / f).toFixed(4)}`] : [];
-      await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', file, ...filters, '-ar', '44100', out]);
-      file = out;
-    } else if (file.endsWith('.aiff') && fs.existsSync('/usr/bin/afconvert')) {
-      const out = path.join(work, 'final.wav');
-      await run('/usr/bin/afconvert', ['-f', 'WAVE', '-d', 'LEI16', file, out]); file = out;
+    // 2. The delivery: pitch, loudness and effect; expressive VoiceStudio engines keep their own colour.
+    const parts = []; let n = 0;
+    for (const s of segments) {
+      if (s.mood === 'pause') { const f = path.join(work, `p${parts.length}.wav`); await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono', '-t', '0.7', '-c:a', 'pcm_s16le', f]); parts.push(f); continue; }
+      if (!s.text) continue;
+      const fx = v.engine === 'voicestudio' ? ['aresample=44100', v.pitch ? delivery.filters('neutral', v.pitch).split(',').slice(1).join(',') : '', M(s.mood).gain ? `volume=${M(s.mood).gain}dB` : ''].filter(Boolean).join(',') : delivery.filters(s.mood, v.pitch);
+      const out = path.join(work, `d${parts.length}.wav`);
+      await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', raw[n++], '-af', fx + `,apad=pad_dur=${M(s.mood).pause}`, '-ac', '1', '-ar', '44100', '-c:a', 'pcm_s16le', out]);
+      parts.push(out);
     }
-    return { data: fs.readFileSync(file), type: file.endsWith('.wav') ? 'audio/wav' : 'audio/aiff', voice: voiceLabel(v) };
+    // 3. Joined into one line.
+    let final = parts[0];
+    if (parts.length > 1) {
+      const list = path.join(work, 'list.txt');
+      fs.writeFileSync(list, parts.map(f => `file '${f.replace(/'/g, "'\\''")}'`).join('\n'));
+      final = path.join(work, 'final.wav');
+      await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-c:a', 'pcm_s16le', final]);
+    }
+    return { data: fs.readFileSync(final), type: 'audio/wav', voice: voiceLabel(v), delivery: segments.map(s => s.mood) };
   } finally { fs.rmSync(work, { recursive: true, force: true }); }
 }
 
-module.exports = { STORE, ENGINES, normalise, normaliseVoice, list, get, create, update, remove, personaPrompt, withPersona, voiceLabel, catalog, speak };
+module.exports = { MOODS: delivery.MOODS, STORE, ENGINES, normalise, normaliseVoice, list, get, create, update, remove, personaPrompt, withPersona, voiceLabel, catalog, speak };

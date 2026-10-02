@@ -5018,7 +5018,7 @@ async function renderNeuronFactoryView(){
 // Characters: personality, face and voice for agents and for NOVA's spoken
 // replies. Voices: a Kokoro blend, a macOS voice, or a VoiceStudio profile.
 let vsSel = null, vsDraft = null, vsCatalog = null, vsChars = [], vsAudio = null;
-const VS_BLANK = () => ({ name:'', tagline:'', personality:'', speakingStyle:'', language:'English', avatarMediaId:null, voice:{ engine:'kokoro', mix:[{voice:'af_heart',weight:1}], speed:1, pitch:0 } });
+const VS_BLANK = () => ({ name:'', tagline:'', personality:'', speakingStyle:'', language:'English', avatarMediaId:null, voice:{ engine:'kokoro', mix:[{voice:'af_heart',weight:1}], speed:1, pitch:0 }, delivery:{ mood:'neutral', auto:true } });
 async function vsJson(path, opts = {}){ const r = await fetch(apiUrl(path), { ...opts, headers:{ 'Content-Type':'application/json', ...(opts.headers||{}) } }); const d = await r.json().catch(()=>({})); if (!r.ok) throw new Error(d.error || ('HTTP '+r.status)); return d; }
 async function renderVoiceStudioView(){
   const pad = $('voicestudioView').querySelector('.view-pad');
@@ -5057,7 +5057,7 @@ function renderVsEditor(){
   const kOpts = sel => (k.voices.length ? k.voices : (window.VS_KOKORO_FALLBACK || [])).map(o => `<option value="${escapeHtml(o.id)}" ${o.id===sel?'selected':''}>${escapeHtml(o.label)}</option>`).join('');
   box.innerHTML = `
     <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:start">
-      <div style="text-align:center">${d.avatarMediaId ? `<img src="${mediaUrl(d.avatarMediaId)}" alt="Face" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:1px solid var(--line)">` : `<div style="width:120px;height:120px;border-radius:50%;display:grid;place-items:center;background:var(--panel-2,#1a1e24);font-size:40px;font-weight:600">${escapeHtml((d.name||'?').slice(0,1).toUpperCase())}</div>`}
+      <div style="text-align:center">${d.avatarMediaId ? `<a class="nv-open" href="${mediaUrl(d.avatarMediaId)}" title="View full size"><img src="${mediaUrl(d.avatarMediaId)}" alt="Face" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:1px solid var(--line)"></a>` : `<div style="width:120px;height:120px;border-radius:50%;display:grid;place-items:center;background:var(--panel-2,#1a1e24);font-size:40px;font-weight:600">${escapeHtml((d.name||'?').slice(0,1).toUpperCase())}</div>`}
         <button class="btn btn-line btn-sm" id="vsFace" style="margin-top:8px;width:100%" ${vsSel?'':'disabled title="Save the character first"'}>Make a face</button>
         ${d.avatarMediaId ? '<button class="btn btn-ghost btn-sm" id="vsFaceRemove" style="width:100%">Remove face</button>' : ''}<div id="vsFaceState" class="empty-hint" style="font-size:11px;margin-top:4px"></div></div>
       <div class="card-grid cols-2">
@@ -5082,10 +5082,17 @@ function renderVsEditor(){
       <label style="font-size:12px">Speed <span class="mono" id="vsSpeedV">${v.speed.toFixed(2)}×</span><input type="range" id="vsSpeed" min="60" max="160" value="${Math.round(v.speed*100)}" style="display:block;width:100%"></label>
       <label style="font-size:12px">Pitch <span class="mono" id="vsPitchV">${v.pitch>0?'+':''}${v.pitch} semitones</span><input type="range" id="vsPitch" min="-6" max="6" value="${v.pitch}" style="display:block;width:100%"></label>
     </div>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="vsSay" aria-label="Text to preview" placeholder="Something for them to say…" style="flex:1;min-width:200px"><button class="btn btn-line btn-sm" id="vsPreview">▶ Preview</button></div>
+    <div class="eyebrow" style="margin:16px 0 8px">Delivery</div>
+    <div class="card-grid cols-2">
+      <label style="font-size:12px">Usual delivery<select id="vsMood" aria-label="Usual delivery" style="display:block;width:100%;margin-top:4px">${(vsCatalog.moods||[]).map(m => `<option value="${m.id}" ${((d.delivery||{}).mood||'neutral')===m.id?'selected':''}>${escapeHtml(m.label)}</option>`).join('')}</select></label>
+      <label style="font-size:12px;display:flex;gap:8px;align-items:center;margin-top:18px"><input type="checkbox" id="vsAuto" ${(d.delivery||{}).auto!==false?'checked':''}> Let the personality choose the delivery for each sentence</label>
+    </div>
+    <p class="empty-hint" style="margin:8px 0">Write cues in the text to direct a line yourself: ${['shout','whisper','sing','taunt','laugh','angry','sad','joyful','warm','pause'].map(c => `<button class="hf-chip vs-cue" data-c="${c}" style="font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:transparent;color:inherit;cursor:pointer">[${c}]</button>`).join(' ')}. Kokoro and macOS voices act these out with pitch, speed, loudness and effects; real singing is best made in Audio &gt; Song.</p>
+    <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="vsSay" aria-label="Text to preview" placeholder="[warm] Come here, my child. [taunt] Did you really think you could hide? [sing] La la la…" style="flex:1;min-width:220px"><select id="vsPreviewMood" aria-label="Delivery for this preview"><option value="auto">Auto delivery</option>${(vsCatalog.moods||[]).map(m => `<option value="${m.id}">${escapeHtml(m.label)}</option>`).join('')}</select><button class="btn btn-line btn-sm" id="vsPreview">▶ Preview</button></div>
     ${agents.length ? `<div class="eyebrow" style="margin:16px 0 6px">Agents that use this character</div><div style="display:flex;flex-wrap:wrap;gap:6px">${agents.map(a => `<label class="badge" style="display:inline-flex;gap:6px;align-items:center;padding:4px 8px;cursor:pointer"><input type="checkbox" class="vs-agent" value="${escapeHtml(a.id)}" ${owners.includes(a.id)?'checked':''} ${vsSel?'':'disabled'}>${escapeHtml(a.name)}</label>`).join('')}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end"><span id="vsMsg" class="empty-hint" style="margin-right:auto"></span>${vsSel ? '<button class="btn btn-ghost btn-sm" id="vsDelete" style="color:var(--red)">Delete</button>' : ''}<button class="btn btn-amber btn-sm" id="vsSave">${vsSel ? 'Save' : 'Create character'}</button></div>`;
-  const read = () => { d.name = $('vsName').value; d.tagline = $('vsTagline').value; d.personality = $('vsPersonality').value; d.speakingStyle = $('vsStyle').value; d.language = $('vsLang').value; };
+  const read = () => { d.name = $('vsName').value; d.tagline = $('vsTagline').value; d.personality = $('vsPersonality').value; d.speakingStyle = $('vsStyle').value; d.language = $('vsLang').value; d.delivery = { mood: $('vsMood') ? $('vsMood').value : 'neutral', auto: $('vsAuto') ? $('vsAuto').checked : true }; };
+  $$('.vs-cue').forEach(b => b.onclick = () => { const i = $('vsSay'); i.value = (i.value ? i.value.trimEnd() + ' ' : '') + '[' + b.dataset.c + '] '; i.focus(); });
   ['vsName','vsTagline','vsPersonality','vsStyle','vsLang'].forEach(id => $(id).oninput = read);
   $$('.vs-engine').forEach(b => b.onclick = () => { read(); const e = b.dataset.e; d.voice = { engine:e, speed:v.speed, pitch:v.pitch, ...(e==='kokoro'?{mix:v.mix&&v.mix.length?v.mix:[{voice:'af_heart',weight:1}]}:e==='macos'?{macVoice:v.macVoice||''}:{profile:v.profile||'', profileName:v.profileName||''}) }; renderVsEditor(); });
   $$('.vs-mix-voice').forEach(sel => sel.onchange = () => { v.mix[+sel.dataset.i].voice = sel.value; });
@@ -5100,10 +5107,11 @@ function renderVsEditor(){
   $('vsPreview').onclick = async () => {
     read(); const btn = $('vsPreview'); btn.disabled = true; btn.textContent = 'Speaking…';
     try {
-      const r = await fetch(apiUrl('/api/characters/preview'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ character: d, text: $('vsSay').value.trim() || undefined }) });
+      const r = await fetch(apiUrl('/api/characters/preview'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ character: d, text: $('vsSay').value.trim() || undefined, mood: $('vsPreviewMood').value }) });
       if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error || ('HTTP '+r.status));
       const url = URL.createObjectURL(await r.blob()); if (vsAudio) vsAudio.pause(); vsAudio = new Audio(url); vsAudio.play().catch(()=>{});
-      $('vsMsg').textContent = decodeURIComponent(r.headers.get('X-Nova-Voice') || '');
+      const dl = decodeURIComponent(r.headers.get('X-Nova-Delivery') || '').split(',').filter(Boolean);
+      $('vsMsg').textContent = decodeURIComponent(r.headers.get('X-Nova-Voice') || '') + (dl.length ? ' · delivered as ' + [...new Set(dl)].join(', ') : '');
     } catch (e) { $('vsMsg').textContent = e.message; }
     finally { btn.disabled = false; btn.textContent = '▶ Preview'; }
   };
@@ -7130,6 +7138,76 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   }
   window.novaHelper = { show(){ setPrefs({ helperEnabled: true }); root.hidden = false; }, hide(){ root.hidden = true; }, reload: loadChar, ask, say };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 300)); else setTimeout(init, 300);
+})();
+</script>
+
+<!-- ===================== Viewer: pictures and pages open inside NOVA ===================== -->
+<style>
+#novaViewer{position:fixed;inset:0;z-index:80;background:rgba(5,7,10,.92);display:flex;flex-direction:column}
+#novaViewer[hidden]{display:none!important}
+#novaViewer .nv-top{display:flex;align-items:center;gap:10px;padding:10px 14px;color:var(--ink,#e6e9ec)}
+#novaViewer .nv-title{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#novaViewer .nv-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;padding:0 56px 10px}
+#novaViewer .nv-stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;cursor:zoom-in;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#novaViewer.zoomed .nv-stage{overflow:auto;align-items:flex-start;justify-content:flex-start}
+#novaViewer.zoomed .nv-stage img{max-width:none;max-height:none;cursor:zoom-out}
+#novaViewer .nv-stage iframe{width:100%;height:100%;border:0;border-radius:6px;background:#fff}
+#novaViewer .nv-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(20,23,28,.8);color:#fff;font-size:20px;cursor:pointer}
+#novaViewer .nv-prev{left:8px}#novaViewer .nv-next{right:8px}
+#novaViewer .nv-cap{padding:0 16px 14px;color:var(--muted,#8b95a4);font-size:12px;line-height:1.5;max-height:72px;overflow:auto;text-align:center}
+</style>
+<div id="novaViewer" hidden role="dialog" aria-modal="true" aria-label="Viewer">
+  <div class="nv-top"><span class="nv-title" id="nvTitle"></span><span id="nvCount" style="font-size:12px;color:var(--muted,#8b95a4)"></span><a class="btn btn-line btn-sm" id="nvDownload" download>Download</a><button class="btn btn-line btn-sm" id="nvClose" aria-label="Close viewer">Close ✕</button></div>
+  <div class="nv-stage" id="nvStage"><button class="nv-nav nv-prev" id="nvPrev" aria-label="Previous">‹</button><button class="nv-nav nv-next" id="nvNext" aria-label="Next">›</button></div>
+  <div class="nv-cap" id="nvCap"></div>
+</div>
+<script>
+(function(){
+  'use strict';
+  // Links that would open a new browser tab do nothing inside the desktop app's
+  // window, so pictures (and pages NOVA built) open in this viewer instead.
+  const V = { items: [], i: 0 };
+  const $v = id => document.getElementById(id);
+  const IMG = /\/api\/media\/[^/]+\/file|\/api\/computer\/shots\/|\/browser\/shots\/|\.(png|jpe?g|gif|webp)(\?|$)/i;
+  const PAGE = /\/api\/builds\/[^/]+\/[^/]+\.html/i;
+  function kindOf(href){ return PAGE.test(href) ? 'page' : IMG.test(href) ? 'image' : null; }
+  function mediaId(href){ const m = /\/api\/media\/([^/]+)\/file/.exec(href); return m ? decodeURIComponent(m[1]) : null; }
+  async function caption(item){
+    const id = mediaId(item.href);
+    if (!id) return item.alt || '';
+    try { const r = await fetch(apiUrl('/api/media/' + encodeURIComponent(id))); if (!r.ok) return item.alt || ''; const m = await r.json(); const p = m.provenance || {}; return [p.prompt || p.text, p.checkpoint && ('Model: ' + p.checkpoint), p.seed != null && ('Seed: ' + p.seed), p.width && p.height && (p.width + '×' + p.height)].filter(Boolean).join(' · ') || ''; } catch (_) { return item.alt || ''; }
+  }
+  async function show(){
+    const it = V.items[V.i]; if (!it) return;
+    const stage = $v('nvStage'); stage.querySelectorAll('img,iframe').forEach(n => n.remove());
+    $v('novaViewer').classList.remove('zoomed');
+    if (it.kind === 'page') { const f = document.createElement('iframe'); f.src = it.href; f.setAttribute('sandbox', 'allow-scripts'); f.title = it.title; stage.appendChild(f); }
+    else { const img = document.createElement('img'); img.src = it.href; img.alt = it.alt || ''; img.onclick = () => $v('novaViewer').classList.toggle('zoomed'); stage.appendChild(img); }
+    $v('nvTitle').textContent = it.title || it.alt || (it.kind === 'page' ? 'Page' : 'Picture');
+    $v('nvCount').textContent = V.items.length > 1 ? (V.i + 1) + ' of ' + V.items.length : '';
+    $v('nvPrev').hidden = $v('nvNext').hidden = V.items.length < 2;
+    const dl = $v('nvDownload'); dl.href = it.href; dl.setAttribute('download', it.title || 'download'); dl.hidden = it.kind === 'page';
+    $v('nvCap').textContent = ''; const c = await caption(it); if (V.items[V.i] === it) $v('nvCap').textContent = c;
+  }
+  function open(items, index){ V.items = items; V.i = Math.max(0, Math.min(items.length - 1, index || 0)); $v('novaViewer').hidden = false; show(); $v('nvClose').focus(); }
+  function close(){ $v('novaViewer').hidden = true; $v('nvStage').querySelectorAll('img,iframe').forEach(n => n.remove()); }
+  function step(d){ if (V.items.length < 2) return; V.i = (V.i + d + V.items.length) % V.items.length; show(); }
+  function itemFrom(a){ const img = a.querySelector('img'); const card = a.closest('.media-item, article, .panel'); const name = card && card.querySelector('strong'); return { href: a.href, kind: kindOf(a.getAttribute('href') || a.href), alt: img ? img.alt : '', title: (img && img.alt) || (name && name.textContent) || '' }; }
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[target="_blank"], a.nv-open');
+    if (!a || e.metaKey || e.ctrlKey) return;
+    const href = a.getAttribute('href') || '';
+    const kind = kindOf(href); if (!kind) return;
+    e.preventDefault();
+    // Browse the pictures of the same list: the grid, the message or the panel the picture is in.
+    const scope = a.closest('.view-pad, .msg, .convo, .panel') || document;
+    const links = kind === 'image' ? [...scope.querySelectorAll('a[target="_blank"], a.nv-open')].filter(x => kindOf(x.getAttribute('href') || '') === 'image') : [a];
+    const items = links.map(itemFrom); open(items, Math.max(0, links.indexOf(a)));
+  }, true);
+  $v('nvClose').onclick = close; $v('nvPrev').onclick = () => step(-1); $v('nvNext').onclick = () => step(1);
+  $v('novaViewer').addEventListener('click', e => { if (e.target.id === 'novaViewer' || e.target.id === 'nvStage') close(); });
+  document.addEventListener('keydown', e => { if ($v('novaViewer').hidden) return; if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight') step(1); });
+  window.novaViewer = { open, close };
 })();
 </script>
 

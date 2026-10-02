@@ -54,6 +54,15 @@ const imageGen = require('./lib/image-gen');
 const comfyManager = require('./lib/comfy-manager');
 const characters = require('./lib/characters');
 const helper = require('./lib/helper');
+// A local model as voice director for Voice Studio characters (falls back to text signs when there is none).
+function voiceDirector() {
+  let model; try { model = helper.pickModel(store); } catch (_) { return null; }
+  return async ({ system, user }) => {
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), 20000);
+    try { return (await ollama.chatFull(model, [{ role: 'system', content: system }, { role: 'user', content: user }], { format: 'json', options: { temperature: 0.2, num_predict: 700 }, signal: c.signal }))?.message?.content || ''; }
+    finally { clearTimeout(t); }
+  };
+}
 const comfyLive = require('./lib/comfy-live');
 const liveAddon = { at: 0, installed: false, reachable: false };
 const videoGen = require('./lib/video-gen');
@@ -447,15 +456,15 @@ const routes = [
     } },
   { method: 'POST', pattern: /^\/api\/helper\/ask$/, handler: async (req, res) => sendJson(res, 200, await helper.ask({ store, ollama, characters }, await readJsonBody(req))) },
   { method: 'GET', pattern: /^\/api\/characters$/, handler: async (_req, res) => sendJson(res, 200, characters.list(store).map(c => ({ ...c, voiceLabel: characters.voiceLabel(c.voice), agents: store.all('agents').filter(a => a.characterId === c.id).map(a => ({ id: a.id, name: a.name })) }))) },
-  { method: 'GET', pattern: /^\/api\/characters\/voices$/, handler: async (_req, res) => sendJson(res, 200, await characters.catalog()) },
+  { method: 'GET', pattern: /^\/api\/characters\/voices$/, handler: async (_req, res) => sendJson(res, 200, { ...(await characters.catalog()), moods: Object.entries(characters.MOODS).map(([id, m]) => ({ id, label: m.label })) }) },
   { method: 'POST', pattern: /^\/api\/characters$/, handler: async (req, res) => sendJson(res, 201, characters.create(store, await readJsonBody(req))) },
   { method: 'PUT', pattern: /^\/api\/characters\/([^/]+)$/, handler: async (req, res, [id]) => sendJson(res, 200, characters.update(store, decodeURIComponent(id), await readJsonBody(req))) },
   { method: 'DELETE', pattern: /^\/api\/characters\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, characters.remove(store, decodeURIComponent(id))) },
   { method: 'POST', pattern: /^\/api\/characters\/preview$/, handler: async (req, res) => {
       const b = await readJsonBody(req);
       const c = b.id ? characters.get(store, b.id) : characters.normalise({ name: 'Preview', ...(b.character || {}) });
-      const out = await characters.speak(c, b.text || `Hello, I am ${c.name}. ${c.tagline || 'This is how I sound.'}`, { maxChars: 600 });
-      res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice) }); res.end(out.data);
+      const out = await characters.speak(c, b.text || `Hello, I am ${c.name}. ${c.tagline || 'This is how I sound.'}`, { maxChars: 600, mood: b.mood || null, director: voiceDirector() });
+      res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice), 'X-Nova-Delivery': encodeURIComponent((out.delivery || []).join(',')), 'Access-Control-Expose-Headers': 'X-Nova-Voice, X-Nova-Delivery' }); res.end(out.data);
     } },
   { method: 'POST', pattern: /^\/api\/characters\/([^/]+)\/face$/, handler: async (req, res, [id]) => {
       const c = characters.get(store, decodeURIComponent(id)); const b = await readJsonBody(req);
@@ -781,7 +790,7 @@ const routes = [
     // A Voice Studio character speaks in its own voice: asked for, or set in Settings > Voice.
     const charId = b.characterId || (!b.voice && (store.get('preferences', 'default') || {}).replyCharacter) || null;
     let character = null; if (charId) { try { character = characters.get(store, charId); } catch (_) {} }
-    const out = character ? await characters.speak(character, voiceChat.speakable(b.text)) : await voiceChat.speakText(DATA_DIR, b.text, { voice: b.voice || null, rate: b.rate });
+    const out = character ? await characters.speak(character, voiceChat.speakable(b.text), { director: voiceDirector() }) : await voiceChat.speakText(DATA_DIR, b.text, { voice: b.voice || null, rate: b.rate });
     res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice) });
     res.end(out.data);
   } },

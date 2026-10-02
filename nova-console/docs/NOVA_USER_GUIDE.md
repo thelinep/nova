@@ -566,7 +566,9 @@ Until ComfyUI has started, the Image tab shows **COMFYUI OFFLINE**; generating s
 2. Optionally add a negative prompt (things to avoid).
 3. Choose the checkpoint, size, steps, CFG, seed and sampler, then **Generate**.
 
-Each image is saved with its prompt, negative prompt, checkpoint and seed. **Reuse settings** loads them back. While ComfyUI works, the **Tensor view** opens at the bottom right and shows each denoising step; see [Boards, Timeline and Library](#boards-timeline-and-library).
+Each image is saved with its prompt, negative prompt, checkpoint and seed. **Reuse settings** loads them back.
+
+**Click an image** to see it full size in NOVA's viewer, with its prompt, model and seed underneath. Use ‹ › or the arrow keys to step through the other images in the list, click the picture to zoom to 100%, **Download** to save a copy, and Esc or **Close** to go back. Images in chat, screenshots from the Agent Browser and character faces open the same way. While ComfyUI works, the **Tensor view** opens at the bottom right and shows each denoising step; see [Boards, Timeline and Library](#boards-timeline-and-library).
 
 ### Start from another image
 
@@ -744,6 +746,31 @@ Use ⤢ for a bigger view, – to shrink it, × to close it until the next job. 
 
 **Speed** (0.6× to 1.6×) and **Pitch** (six semitones down to six up) work with every voice. Pitch needs ffmpeg (`brew install ffmpeg`).
 
+### Delivery: emotion and mode
+
+A character does not read every line the same way. **Delivery** decides how each part of a line is said: calm, warm, joyful, excited, sad, angry, shouting, whispering, taunting, fearful, laughing or singing.
+
+| Setting | What it does |
+| --- | --- |
+| **Usual delivery** | How the character normally sounds. Left on Neutral, NOVA takes it from the personality: "gentle and motherly" sounds warm, "playful and sarcastic" taunts |
+| **Let the personality choose the delivery for each sentence** | Your local model acts as voice director: it reads the character's personality and what each sentence means, and picks a delivery per sentence, so a scolding is said angrily and a secret is whispered. Without a model, NOVA goes by signs in the text: CAPITALS shout, "!!" sounds excited |
+
+#### Direct a line yourself
+
+Write cues in the text, in square brackets or round ones. Everything after a cue is said that way, until the next cue:
+
+> [warm] Come here, my child. [taunt] Did you really think you could hide? [pause] [sing] La la la…
+
+Cues: `[shout]`, `[whisper]`, `[sing]`, `[taunt]`, `[laugh]`, `[angry]`, `[sad]`, `[joyful]`, `[excited]`, `[calm]`, `[warm]`, `[fearful]` and `[pause]` (a short silence). Words such as `(yells)`, `(sings)`, `(teasing)` or `(sighs)` work too. Click the cue chips under **Delivery** to add them to the preview box. Cues always win; the preview's delivery list sets the rest of the line.
+
+After **▶ Preview**, NOVA shows the deliveries it used, for example "delivered as warm → taunting → singing".
+
+#### How it sounds
+
+- **Kokoro and macOS voices** act each delivery out: each part is spoken at its own speed, then NOVA changes pitch and loudness and adds an effect, such as a compressor for shouting, a breathy filter for whispering, a wobble for taunting, and vibrato with a little room for singing. This needs ffmpeg (`brew install ffmpeg`); without it, a line is said in one delivery, using speed only.
+- **VoiceStudio voices** also receive the delivery as an instruction ("speak shouting loudly"), which expressive voice models follow in their own way.
+- These voices cannot really sing a melody: singing here is a sung-style reading. For a real song with music, use **Media > Audio > Song**.
+
 ### VoiceStudio app
 
 [VoiceStudio](https://github.com/debpalash/VoiceStudio) is a separate, free desktop app for cloning and designing voices. NOVA talks to it over its local service at `http://127.0.0.1:3900` and never sends text anywhere else.
@@ -762,7 +789,7 @@ Tick the agents under **Agents that use this character** and press **Save**. Whe
 
 ### Let NOVA speak as a character
 
-Choose a character in **NOVA speaks as** at the top of Voice Studio. Replies read aloud (**Voice** under the message box, or the speaker button on a reply) then use that character's voice.
+Choose a character in **NOVA speaks as** at the top of Voice Studio. Replies read aloud (**Voice** under the message box, or the speaker button on a reply) then use that character's voice and delivery, so an excited reply sounds excited.
 
 ### What a character cannot change
 
@@ -1621,6 +1648,14 @@ The helper uses your local model. Start Ollama and press **Sync from Ollama** in
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
 
+#### A character's shouting, whispering or singing sounds the same as normal speech
+
+Delivery effects need ffmpeg: run `brew install ffmpeg` and press **▶ Preview** again. Check that the line has cues such as `[shout]`, or choose a delivery in the preview list. Automatic delivery per sentence needs a chat model; without one, only cues, CAPITALS and "!" change the delivery.
+
+#### Clicking a generated image does nothing
+
+Update to the latest NOVA: images now open in NOVA's own viewer. In older versions the desktop window ignored links that open a new tab.
+
 ### Agents, tools and workflows
 
 #### A skill or agent is blocked
@@ -1822,6 +1857,10 @@ Only in chats where you turn on **Computer**, and only after you approve each ac
 #### Can agents have their own personality and voice?
 
 Yes. **Voice Studio** makes characters with a personality, a way of speaking, a face and a voice. Blend Kokoro voices, use a macOS voice, or use the VoiceStudio app for cloned voices. Give a character to an agent, or let NOVA speak as one. See [Voice Studio](voice-studio.html).
+
+#### Can a character shout, whisper, taunt or sing?
+
+Yes. Each character has a delivery that follows its personality, and your local model can choose the delivery sentence by sentence. You can also write cues such as `[shout]`, `[whisper]`, `[taunt]` or `[sing]` in the text. Kokoro and macOS voices act these out with effects (ffmpeg needed); a real song with music is made in **Media > Audio > Song**. See [Voice Studio](voice-studio.html#delivery-emotion-and-mode).
 
 #### Can NOVA speak in my own voice?
 

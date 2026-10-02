@@ -58,9 +58,9 @@ async function status() {
 }
 
 /** Speech for text with a VoiceStudio voice profile; returns a WAV buffer. */
-async function speak(text, { voice, model = null } = {}) {
+async function speak(text, { voice, model = null, instructions = null } = {}) {
   if (!voice) throw error('Choose a VoiceStudio voice first.');
-  const body = { input: String(text).slice(0, 6000), voice: String(voice), response_format: 'wav', ...(model ? { model } : {}) };
+  const body = { input: String(text).slice(0, 6000), voice: String(voice), response_format: 'wav', ...(model ? { model } : {}), ...(instructions ? { instructions: String(instructions).slice(0, 300) } : {}) }; // engines that take a style instruction use it; others ignore it
   const r = await call('/v1/audio/speech', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, 180000);
   const buf = Buffer.from(await r.arrayBuffer());
   if (buf.length < 100) throw error('VoiceStudio returned no audio.', 502);

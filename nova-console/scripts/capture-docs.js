@@ -191,7 +191,7 @@ async function main() {
     await shot('neuron-factory', view('neurons'), { wait: 1200 });
     if (want('voice-studio')) {
       const H = { 'Content-Type': 'application/json', Origin: base };
-      const c = await (await fetch(base + '/api/characters', { method: 'POST', headers: H, body: JSON.stringify({ name: 'Meera', tagline: 'a calm first assistant director', personality: 'Warm, organised and gently funny. Notices what is missing from a plan and says so kindly.', speakingStyle: 'Short sentences, film-set words, always ends with the next step.', language: 'English', voice: { engine: 'kokoro', mix: [{ voice: 'af_heart', weight: 0.7 }, { voice: 'hf_alpha', weight: 0.3 }], speed: 1.05, pitch: 1 } }) })).json();
+      const c = await (await fetch(base + '/api/characters', { method: 'POST', headers: H, body: JSON.stringify({ name: 'Meera', tagline: 'a calm first assistant director', delivery: { mood: 'warm', auto: true }, personality: 'Warm, organised and gently funny. Notices what is missing from a plan and says so kindly.', speakingStyle: 'Short sentences, film-set words, always ends with the next step.', language: 'English', voice: { engine: 'kokoro', mix: [{ voice: 'af_heart', weight: 0.7 }, { voice: 'hf_alpha', weight: 0.3 }], speed: 1.05, pitch: 1 } }) })).json();
       await fetch(base + '/api/characters', { method: 'POST', headers: H, body: JSON.stringify({ name: 'Kabir', tagline: 'a dry-witted line producer', voice: { engine: 'kokoro', mix: [{ voice: 'bm_george', weight: 1 }] } }) });
       await shot('voice-studio', async () => { await page.evaluate(id => { vsSel = id; vsDraft = null; showView('voicestudio'); }, c.id); await sleep(1200); }, { wait: 600 });
     }

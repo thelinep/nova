@@ -124,6 +124,14 @@ The helper uses your local model. Start Ollama and press **Sync from Ollama** in
 
 Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
 
+### A character's shouting, whispering or singing sounds the same as normal speech
+
+Delivery effects need ffmpeg: run `brew install ffmpeg` and press **▶ Preview** again. Check that the line has cues such as `[shout]`, or choose a delivery in the preview list. Automatic delivery per sentence needs a chat model; without one, only cues, CAPITALS and "!" change the delivery.
+
+### Clicking a generated image does nothing
+
+Update to the latest NOVA: images now open in NOVA's own viewer. In older versions the desktop window ignored links that open a new tab.
+
 ## Agents, tools and workflows
 
 ### A skill or agent is blocked

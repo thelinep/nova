@@ -110,6 +110,10 @@ Only in chats where you turn on **Computer**, and only after you approve each ac
 
 Yes. **Voice Studio** makes characters with a personality, a way of speaking, a face and a voice. Blend Kokoro voices, use a macOS voice, or use the VoiceStudio app for cloned voices. Give a character to an agent, or let NOVA speak as one. See [Voice Studio](help:voice-studio).
 
+### Can a character shout, whisper, taunt or sing?
+
+Yes. Each character has a delivery that follows its personality, and your local model can choose the delivery sentence by sentence. You can also write cues such as `[shout]`, `[whisper]`, `[taunt]` or `[sing]` in the text. Kokoro and macOS voices act these out with effects (ffmpeg needed); a real song with music is made in **Media > Audio > Song**. See [Voice Studio](help:voice-studio#delivery-emotion-and-mode).
+
 ### Can NOVA speak in my own voice?
 
 Yes, through the free VoiceStudio app: clone your voice there (it asks for permission and watermarks what it makes), then choose it as a character's voice in Voice Studio. Only clone voices you have the right to use. See [Voice Studio](help:voice-studio#voicestudio-app).
