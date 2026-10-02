@@ -235,3 +235,20 @@ These already exist in `nova-console`:
 - **Agent Browser:** allowlist and egress controls (`lib/browser-service.js`).
 
 Phase 1 unifies these under one contract record and adds device identity.
+
+## 8. Guru: our own models
+
+Guru is MAATAA's model family, trained from scratch in `brahmini/guru`. The modules are:
+
+- **Guru-LLM:** `GuruForCausalLM`, written from scratch (RMSNorm, RoPE, grouped-query attention, SwiGLU) with a Llama-compatible tensor layout, so it exports to GGUF and runs in Ollama.
+- **Guru-Dhatu:** our tokenizer.
+- **Guru-Panini:** a rule checker for Devanagari, used both on the corpus and on the model's output.
+
+Guru-Veda, Shastra and Purana will be grounding knowledge bases (retrieval), not weights.
+
+| Sizes | Where | Status |
+| --- | --- | --- |
+| nano 19M, mini 36M, small 94M | Mac (Apple GPU) | Pipeline built and tested end to end, including the GGUF running in llama.cpp |
+| base-1b, 7b | Rented GPUs (torchrun, bf16) | Configs ready; need a far larger corpus |
+
+`guru-maataa-<size>` names the from-scratch models. `guru-maataa:latest` can point at one of them; the earlier Llama 3.2-based model is then kept as `llama-guru-maataa`, which is also the licence-compliant name if it is ever shared.

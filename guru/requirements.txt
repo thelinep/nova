@@ -1,0 +1,9 @@
+torch>=2.4
+numpy
+sentencepiece>=0.2
+pyarrow
+safetensors
+# for GGUF export (llama.cpp converter)
+gguf>=0.10
+transformers>=4.45
+protobuf

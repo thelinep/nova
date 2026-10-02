@@ -1,0 +1,16 @@
+# Copy to dhatus.txt to keep these roots and affixes as whole tokenizer pieces (one per line).
+# A starter list; extend it from a dhatupatha you have the rights to use.
+भू
+गम्
+कृ
+दा
+स्था
+पठ्
+वद्
+लिख्
+ज्ञा
+दृश्
+ति
+न्ति
+सि
+मि

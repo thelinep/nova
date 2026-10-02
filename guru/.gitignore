@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+tools/
+out/
+data/raw/
+data/*.bin
+data/corpus.txt
+data/corpus.json
+data/tokens.json
+data/tokenizer-input.txt
+data/guru-dhatu.*
+data/SOURCES.md
+data/my_texts/*
+!data/my_texts/README.txt
