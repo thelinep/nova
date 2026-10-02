@@ -4,7 +4,7 @@ title: Maataa AAI
 section: Chat and knowledge
 order: 12.4
 summary: Advanced Ancient Intelligence. Panini's rules derive Sanskrit words step by step, models answer questions, and only what the rules confirm is marked verified. Includes Derivation and Lipi.
-keywords: aai advanced ancient intelligence maataa panini prakriya derivation verb noun dhatu lakara tinanta subanta paradigm conjugation declension lipi script brahmi kharoshthi siddham iast slp1 citations verify vidyut guru
+keywords: aai advanced ancient intelligence maataa panini prakriya derivation verb noun dhatu lakara tinanta subanta paradigm conjugation declension lipi script brahmi kharoshthi siddham iast slp1 citations verify vidyut guru evidence record sealed signed replay export proof chain
 views: aai,derivation,lipi
 ---
 **Maataa AAI** (the AAI group) works on one principle: **rules derive and check, models propose, and nothing is called correct unless the rules confirm it.**
@@ -54,6 +54,28 @@ Choose an Ollama model (a `guru-maataa` model is picked first if you have one) a
 | **Contradicted by the sutras** | A citation is wrong: the number doesn't exist, or the quoted words belong to another sutra. |
 
 **Check sutra citations in any text** does the same check on text you paste, for example from another AI.
+
+## Evidence records
+
+Every derivation you open, every form you check and every Ask answer is **sealed as an evidence record**. The result shows a **Sealed as evidence #N** badge and an **Export** button.
+
+A record keeps:
+
+- what was asked, which engine (with its version) and which edition of the texts;
+- the result, as its SHA-256 hash;
+- the rule checks: every step names a real sutra, and every cited sutra exists and is quoted correctly;
+- a link to the record before it, and a signature made with this computer's own key.
+
+On **Maataa AAI**, under **Evidence records**:
+
+| Button | What it does |
+| --- | --- |
+| **Replay** | Runs a derivation or form check again and compares it with the sealed result. For an Ask answer, the model isn't run again (its answers vary), but its citations are checked again by rule. |
+| **Export** | Saves the record as a JSON file that anyone can check without this computer. |
+| **Verify an exported file** | Checks a file: the result matches its hash, the record is unchanged, and the signature is valid. Any edit is caught. |
+| **Verify the chain** | Checks every sealed record on this computer, so a changed, removed or reordered record is found. |
+
+An answer whose citations are wrong is sealed too, as **failed**. The failed check is itself the evidence. Recording never changes anything outside Maataa: these are read-only actions under the capability **knowledge.verify**.
 
 ## Lipi
 

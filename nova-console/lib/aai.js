@@ -31,10 +31,11 @@ const SOURCES = { Ashtadhyayi:'अष्टाध्यायी', Varttika:'व
 
 let dataDir = path.join(__dirname, '..', 'data');
 let pythonCache = null;
+let engineCache = null;
 let install = { state: 'idle', log: [], startedAt: null, finishedAt: null, error: null };
 
 function error(message, statusCode = 400, code) { return Object.assign(new Error(message), { statusCode, code }); }
-function configure(options = {}) { if (options.dataDir) dataDir = options.dataDir; pythonCache = null; }
+function configure(options = {}) { if (options.dataDir) dataDir = options.dataDir; pythonCache = null; engineCache = null; }
 function venvPython() { return path.join(dataDir, 'aai', 'venv', 'bin', 'python'); }
 
 function candidates() {
@@ -65,6 +66,13 @@ function run(request) {
     });
     child.stdin.end(JSON.stringify(request));
   });
+}
+
+// Which engine derived a result. Kept in every evidence record so a replay can say whether
+// the same engine version was used.
+async function engineInfo() {
+  if (!engineCache) { const v = await run({ op: 'version' }); engineCache = { name: 'Vidyut prakriya', package: 'vidyut', version: v.version || null }; }
+  return engineCache;
 }
 
 // --- status and installation ---------------------------------------------------------------
@@ -98,7 +106,7 @@ function startInstall({ killSwitch } = {}) {
   step(base, ['-m', 'venv', venv], () => {
     install.log.push(`Installing ${ENGINE_PACKAGE} (about 3 MB)`);
     step(path.join(venv, 'bin', 'python'), ['-m', 'pip', 'install', '--disable-pip-version-check', '-q', ENGINE_PACKAGE], () => {
-      pythonCache = null;
+      pythonCache = null; engineCache = null;
       install.state = hasEngine(path.join(venv, 'bin', 'python')) ? 'done' : 'failed';
       if (install.state === 'failed') install.error = 'The package installed but could not be loaded.';
       install.finishedAt = new Date().toISOString(); install.log.push(install.state === 'done' ? 'The derivation engine is ready.' : install.error);
@@ -229,4 +237,4 @@ async function ask({ ollama, question, model, killSwitch }) {
   };
 }
 
-module.exports = { configure, status, startInstall, deriveVerb, paradigm, deriveNoun, declension, checkForm, lipi, ask, LAKARAS, PREFIXES, _run: run, _reset: () => { pythonCache = null; install = { state: 'idle', log: [], startedAt: null, finishedAt: null, error: null }; } };
+module.exports = { configure, status, engineInfo, startInstall, deriveVerb, paradigm, deriveNoun, declension, checkForm, lipi, ask, LAKARAS, PREFIXES, _run: run, _reset: () => { pythonCache = null; engineCache = null; install = { state: 'idle', log: [], startedAt: null, finishedAt: null, error: null }; } };

@@ -40,6 +40,7 @@ const neuronFactory = require('./lib/neuron-factory');
 const panini = require('./lib/panini');
 const sutraNeurons = require('./lib/sutra-neurons');
 const aai = require('./lib/aai');
+const aaiEvidence = require('./lib/aai-evidence');
 const backgroundJobs = require('./lib/background-jobs');
 const artifactGovernance = require('./lib/artifact-governance');
 const prConnectors = require('./lib/pr-connectors');
@@ -129,6 +130,14 @@ activity.configure(store);
 // This install's device identity (Ed25519), and contracts a restart left open are sealed as cancelled.
 deviceIdentity.ensure(store, DATA_DIR); contracts.sweep(store, DATA_DIR);
 characters.ensureNova(store); // Nova, the helper, is a built-in character
+// R1: every AAI derivation, form check and Ask answer is sealed as a signed evidence record
+// (lib/aai-evidence.js). A failure to seal never hides the answer; it is reported with it.
+async function sealAai(body, kind, request, result) {
+  if (body && body.evidence === false) return result;
+  try { result.evidence = aaiEvidence.record(store, DATA_DIR, { kind, request, result, engine: kind === 'ask' ? null : await aai.engineInfo() }); }
+  catch (e) { result.evidence = { error: e.message }; }
+  return result;
+}
 aai.configure({ dataDir: DATA_DIR }); comfyManager.configure({ store, dataDir: DATA_DIR, imageGen, activity }); imageGen.setEnsure(() => comfyManager.ensure());
 const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
 const jobEngine = new JobEngine(store, { pollMs: 500 });
@@ -884,14 +893,19 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/neuron-factory\/artifacts\/([^/]+)\/try$/, handler: async (req,res,[id])=>{const artifact=store.get('neuronArtifacts',decodeURIComponent(id));if(!artifact)return sendJson(res,404,{error:'Unknown neuron artifact.'});const blueprint=store.get('neuronBlueprints',artifact.blueprintId),body=await readJsonBody(req);sendJson(res,200,sutraNeurons.tryPair(artifact,blueprint?.sutra,body.first,body.second));} },
   { method: 'GET', pattern: /^\/api\/aai$/, handler: async (_req,res)=>sendJson(res,200,await aai.status()) },
   { method: 'POST', pattern: /^\/api\/aai\/engine\/install$/, handler: async (_req,res)=>sendJson(res,202,aai.startInstall({killSwitch:workbenchKillSwitch})) },
-  { method: 'POST', pattern: /^\/api\/aai\/derive\/verb$/, handler: async (req,res)=>sendJson(res,200,await aai.deriveVerb(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/derive\/verb$/, handler: async (req,res)=>{const b=await readJsonBody(req);const r=await aai.deriveVerb(b);sendJson(res,200,await sealAai(b,'derive-verb',r.request,r));} },
   { method: 'POST', pattern: /^\/api\/aai\/paradigm\/verb$/, handler: async (req,res)=>sendJson(res,200,await aai.paradigm(await readJsonBody(req))) },
-  { method: 'POST', pattern: /^\/api\/aai\/derive\/noun$/, handler: async (req,res)=>sendJson(res,200,await aai.deriveNoun(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/derive\/noun$/, handler: async (req,res)=>{const b=await readJsonBody(req);const r=await aai.deriveNoun(b);sendJson(res,200,await sealAai(b,'derive-noun',r.request,r));} },
   { method: 'POST', pattern: /^\/api\/aai\/paradigm\/noun$/, handler: async (req,res)=>sendJson(res,200,await aai.declension(await readJsonBody(req))) },
-  { method: 'POST', pattern: /^\/api\/aai\/check-form$/, handler: async (req,res)=>sendJson(res,200,await aai.checkForm(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/check-form$/, handler: async (req,res)=>{const b=await readJsonBody(req);const r=await aai.checkForm(b);const keep={};for(const k of ['code','lakara','prayoga','pada','prefixes','stem','linga','form'])if(b[k]!=null)keep[k]=b[k];sendJson(res,200,await sealAai(b,'check-form',keep,r));} },
   { method: 'POST', pattern: /^\/api\/aai\/lipi$/, handler: async (req,res)=>sendJson(res,200,aai.lipi(await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/aai\/check-citations$/, handler: async (req,res)=>{const body=await readJsonBody(req);sendJson(res,200,panini.checkCitations(body.text||''));} },
-  { method: 'POST', pattern: /^\/api\/aai\/ask$/, handler: async (req,res)=>{const body=await readJsonBody(req);sendJson(res,200,await aai.ask({ollama,question:body.question,model:body.model,killSwitch:workbenchKillSwitch}));} },
+  { method: 'POST', pattern: /^\/api\/aai\/ask$/, handler: async (req,res)=>{const body=await readJsonBody(req);const r=await aai.ask({ollama,question:body.question,model:body.model,killSwitch:workbenchKillSwitch});sendJson(res,200,await sealAai(body,'ask',{question:r.question,model:r.model},r));} },
+  { method: 'GET', pattern: /^\/api\/aai\/evidence$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,aaiEvidence.list(store,{limit:q.get('limit'),kind:q.get('kind')}));} },
+  { method: 'POST', pattern: /^\/api\/aai\/evidence\/verify$/, handler: async (req,res)=>sendJson(res,200,aaiEvidence.verifyBundle(await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/aai\/evidence\/([^/]+)\/bundle$/, handler: async (_req,res,[id])=>{const b=aaiEvidence.bundle(store,DATA_DIR,decodeURIComponent(id));res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="aai-evidence-${b.contract.evidence.seq}.json"`});res.end(JSON.stringify(b,null,2));} },
+  { method: 'POST', pattern: /^\/api\/aai\/evidence\/([^/]+)\/replay$/, handler: async (_req,res,[id])=>sendJson(res,200,await aaiEvidence.replay(store,aai,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/aai\/evidence\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,aaiEvidence.get(store,decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/panini$/, handler: async (_req,res)=>sendJson(res,200,panini.info()) },
   { method: 'GET', pattern: /^\/api\/panini\/sutras$/, handler: async (req,res)=>{const u=new URL(req.url,'http://x');sendJson(res,200,panini.search(u.searchParams.get('q')||'',{script:u.searchParams.get('script')||'devanagari'}));} },
   { method: 'GET', pattern: /^\/api\/panini\/sutras\/([^/]+)$/, handler: async (req,res,[id])=>{const u=new URL(req.url,'http://x'),s=panini.get(decodeURIComponent(id),u.searchParams.get('script')||'devanagari');s?sendJson(res,200,s):sendJson(res,404,{error:`There is no sutra ${decodeURIComponent(id)}.`});} },

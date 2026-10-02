@@ -402,5 +402,25 @@ test.describe('NOVA Console interactions', () => {
     await page.getByLabel('Form to check').fill('भवाति');
     await page.getByRole('button', { name: 'Check', exact: true }).click();
     await expect(page.getByText('Not derived')).toBeVisible();
+    // R1: both results came back sealed as signed evidence records.
+    await expect(page.getByText(/Sealed as evidence #\d+/)).toHaveCount(2);
+    await page.locator('[data-view="aai"]').click();
+    const evRow = page.locator('#aaiView tr', { hasText: 'Derive भू (01.0001)' }).first();
+    await expect(evRow).toContainText('Derived');
+    await evRow.getByRole('button', { name: 'Replay' }).click();
+    await expect(page.locator('#aaiView')).toContainText('Run again, the rules give exactly the same result.');
+    await page.getByRole('button', { name: 'Verify the chain' }).click();
+    await expect(page.getByText(/Chain intact · \d+ sealed records/)).toBeVisible();
+    // An exported file checks out on its own, and an edited one does not (same-origin fetch, as the page does).
+    const [clean, edited] = await page.evaluate(async () => {
+      const list = await (await fetch('/api/aai/evidence?limit=5')).json();
+      const bundle = await (await fetch(`/api/aai/evidence/${list[0].id}/bundle`)).json();
+      const check = async b => (await (await fetch('/api/aai/evidence/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json()).ok;
+      const ok = await check(bundle);
+      bundle.result.claim = 'भवति';
+      return [ok, await check(bundle)];
+    });
+    expect(clean).toBe(true);
+    expect(edited).toBe(false);
   });
 });

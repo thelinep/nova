@@ -503,6 +503,28 @@ Choose an Ollama model (a `guru-maataa` model is picked first if you have one) a
 
 **Check sutra citations in any text** does the same check on text you paste, for example from another AI.
 
+### Evidence records
+
+Every derivation you open, every form you check and every Ask answer is **sealed as an evidence record**. The result shows a **Sealed as evidence #N** badge and an **Export** button.
+
+A record keeps:
+
+- what was asked, which engine (with its version) and which edition of the texts;
+- the result, as its SHA-256 hash;
+- the rule checks: every step names a real sutra, and every cited sutra exists and is quoted correctly;
+- a link to the record before it, and a signature made with this computer's own key.
+
+On **Maataa AAI**, under **Evidence records**:
+
+| Button | What it does |
+| --- | --- |
+| **Replay** | Runs a derivation or form check again and compares it with the sealed result. For an Ask answer, the model isn't run again (its answers vary), but its citations are checked again by rule. |
+| **Export** | Saves the record as a JSON file that anyone can check without this computer. |
+| **Verify an exported file** | Checks a file: the result matches its hash, the record is unchanged, and the signature is valid. Any edit is caught. |
+| **Verify the chain** | Checks every sealed record on this computer, so a changed, removed or reordered record is found. |
+
+An answer whose citations are wrong is sealed too, as **failed**. The failed check is itself the evidence. Recording never changes anything outside Maataa: these are read-only actions under the capability **knowledge.verify**.
+
 ### Lipi
 
 Type Devanagari, Brahmi or Siddham, or Latin letters (read as SLP1). Lipi shows the text in Devanagari, IAST, SLP1, Brahmi, Kharoshthi and Siddham, each with a **Copy** button. It's the same conversion Guru uses, checked on all 3,983 sutras. Kharoshthi can be written but not yet read.

@@ -49,6 +49,7 @@ const CAPABILITIES = {
   'browser.act': 'Act on web pages',
   'process.execute': 'Run programs and commands',
   'media.generate': 'Generate images, audio and video',
+  'knowledge.verify': 'Derive and check with rules (Maataa AAI)',
   'iot.read': 'Read sensors',
   'iot.control': 'Control connected devices',
   'robot.observe': 'Observe through a robot',
@@ -59,11 +60,11 @@ const CAPABILITIES = {
 const CLASS_CAPABILITIES = {
   interface: ['chat', 'camera.capture', 'microphone.capture'],
   companion: ['chat', 'camera.capture', 'microphone.capture', 'file.read'],
-  workstation: ['chat', 'camera.capture', 'microphone.capture', 'screen.capture', 'input.control', 'clipboard.read', 'clipboard.write', 'app.control', 'file.read', 'file.write', 'repo.read', 'repo.write', 'browser.read', 'browser.act', 'process.execute', 'media.generate'],
+  workstation: ['chat', 'camera.capture', 'microphone.capture', 'screen.capture', 'input.control', 'clipboard.read', 'clipboard.write', 'app.control', 'file.read', 'file.write', 'repo.read', 'repo.write', 'browser.read', 'browser.act', 'process.execute', 'media.generate', 'knowledge.verify'],
   edge: ['camera.capture', 'microphone.capture', 'iot.read', 'iot.control'],
   robot: ['camera.capture', 'microphone.capture', 'robot.observe', 'robot.navigate', 'robot.manipulate'],
 };
-const WORKSTATION_DEFAULT = ['chat', 'microphone.capture', 'screen.capture', 'input.control', 'clipboard.read', 'clipboard.write', 'app.control', 'file.read', 'file.write', 'repo.read', 'repo.write', 'browser.read', 'browser.act', 'process.execute', 'media.generate'];
+const WORKSTATION_DEFAULT = ['chat', 'microphone.capture', 'screen.capture', 'input.control', 'clipboard.read', 'clipboard.write', 'app.control', 'file.read', 'file.write', 'repo.read', 'repo.write', 'browser.read', 'browser.act', 'process.execute', 'media.generate', 'knowledge.verify'];
 
 function error(message, statusCode = 400, code) { return Object.assign(new Error(message), { statusCode, code }); }
 

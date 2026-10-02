@@ -1,6 +1,6 @@
 # Maataa AAI: Advanced Ancient Intelligence
 
-*Status: v0.1, built into Maataa Workstation. Codename AAI. October 2026.*
+*Status: v0.2, built into Maataa Workstation. Codename AAI. October 2026. v0.2 adds signed evidence records (R1).*
 
 ## 1. What it is
 
@@ -35,6 +35,7 @@ question ─► grounding: exact text of the sutras it mentions
          ─► model proposes an answer (Guru or any Ollama model)
          ─► AAI checks every cited sutra (number exists? quoted words are this sutra's?)
          ─► verdict: citations verified | not verified | contradicted
+         ─► sealed as an evidence record (signed, chained, exportable)
 ```
 
 For word forms there is no model in the loop. The rules derive the forms, and AAI shows each step with its sutra. "Check a form" answers whether the rules derive a claimed form.
@@ -46,6 +47,7 @@ For word forms there is no model in the loop. The rules derive the forms, and AA
 3. A sutra neuron is approved only if it agrees with its sutra on every case (169 of 169 vowel pairs). It learns its sutra on its own. Which rule wins when several apply is decided by the Ashtadhyayi's order of exceptions, not by the neuron.
 4. Only text with a licence that allows it is included. Meanings and commentaries stay out until a licensed edition is chosen.
 5. Placeholder data is refused by the build, as allb's `build.rs` now does.
+6. Every derivation, form check and Ask answer is sealed as an evidence record, including answers whose citations fail. A failed check is kept as evidence, never dropped.
 
 ## 6. Where AAI sits in the Maataa ecosystem
 
@@ -54,7 +56,7 @@ For word forms there is no model in the loop. The rules derive the forms, and AA
 - **Guru:** MAATAA's own model family. It is trained on AAI-verified pairs (about 11,000 derivation pairs, plus about 18,000 sutra and Dhatupatha pairs), and AAI checks what Guru writes.
 - **Lipi System:** AAI reads and writes the historic scripts through Guru-Lipi.
 - **allb (MAATAA × Siddham runtime):** uses the same real sutra dataset. Next step: derivations at the edge (R4).
-- **Replay + Proof System:** AAI verdicts become evidence records (R1).
+- **Replay + Proof System:** AAI verdicts are evidence records (R1, done): execution contracts with the capability `knowledge.verify`, sealed and signed by the workstation's Ed25519 key.
 
 ## 7. What exists today (v0.1)
 
@@ -67,13 +69,17 @@ For word forms there is no model in the loop. The rules derive the forms, and AA
 - **Hardware (allb, Siddham):** a Paninian datapath (`hardware/rtl/sivasutra_rom.v`, `sandhi_engine.v`, `panini_datapath.v`). It has a Shiva Sutra ROM, parallel sutra match blocks with an exception-override matrix, a Saptādhyāyī loop and a Tripādī stage (8.3.19). It is verified on 338 reference cases and 143 Vidyut cases, and takes 208 LUT4s on iCE40.
   - It also has a consonant and visarga sandhi pipeline: 8.2, 8.3 and 8.4 as registered stages, a bypass for 6.1.113, 6.1.114 and 6.3.111, and lanes for optional rules. All 11,844 junctures agree with the reference, and 1,305 of 1,314 Vidyut entries agree; the 9 differences are explained in the report. It takes 1,550 LUT4s. See allb `docs/PANINI_DATAPATH.md`.
   - It also has a **prakriyā core** that derives words from the root as taught. It covers the present active 3rd singular of 981 of the 1,156 first-class roots. Competing operations are decided by antaraṅga, by nitya (tested by speculative evaluation in hardware) and by para. All 1,042 forms agree with Vidyut's derivations, and all 21,707 steps agree between the RTL and the reference. It takes 6,176 LUT4s.
-- **Tests:** unit tests for the engine, conversions, citations and the Ask verdicts, and a browser test that derives भवति and checks a wrong form.
+- **Evidence records (R1):** every derivation, form check and Ask answer is an execution contract (`lib/aai-evidence.js`). The contract holds the request, the engine version, the edition of the texts (commit and SHA-256), the result's SHA-256 and the rule checks. It is approved by the read-only policy rule `aai.read-only`, chained to the previous contract and signed with the workstation's Ed25519 key. The full result is kept beside it in the `aaiEvidence` store.
+  - **Replay:** derivations and form checks are run again and must give the same result hash. For Ask, the model isn't run again; its citations are checked again by rule.
+  - **Export:** one JSON file (`maataa-aai-evidence/1`) with the contract, the result and the device's public key. Anyone can check it offline: the result hash, the record hash, the key fingerprint, the signature, and the citation or step checks redone from the sutra text. Its position in the chain can only be checked on the sealing workstation.
+  - **API:** `GET /api/aai/evidence`, `GET /api/aai/evidence/:id`, `GET /api/aai/evidence/:id/bundle`, `POST /api/aai/evidence/:id/replay`, `POST /api/aai/evidence/verify`; the chain is checked by `GET /api/contracts/verify`. Pass `"evidence": false` to skip sealing for one request.
+- **Tests:** unit tests for the engine, conversions, citations and the Ask verdicts; evidence tests (sealing, failed citations, tamper detection in exported files, chain breaks, replay of verb, noun and form-check results); and a browser test that derives भवति, checks a wrong form, replays the sealed record, verifies the chain and verifies an exported file.
 
 ## 8. Roadmap
 
 | # | Step | Why |
 | --- | --- | --- |
-| R1 | Save each Ask and each derivation as a signed evidence record (execution contracts) | Replay and proof; shareable verdicts |
+| R1 | **Done (v0.2).** Each Ask, derivation and form check is a signed evidence record (execution contracts), with replay and offline-verifiable export | Replay and proof; shareable verdicts |
 | R2 | Sandhi and segmentation (Vidyut's sandhi and cheda modules) to check whole sentences a model writes | Verify more than citations |
 | R3 | Anuvṛtti view: what each sutra inherits from earlier sutras | Read sutras as Panini meant them |
 | R4 | Derivations in allb: Vidyut's engine is Rust (MIT) and can compile into allb's WASM, giving `/api/z0/derive` at the edge | One engine across the Workstation, the edge and Siddham devices |

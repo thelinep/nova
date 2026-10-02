@@ -169,7 +169,7 @@ Policy decides whether the exact chain is authorised. Two examples:
 
 ### 3.3 Capabilities
 
-`chat`, `camera.capture`, `microphone.capture`, `file.read`, `file.write`, `repo.read`, `repo.write`, `browser.read`, `browser.act`, `process.execute`, `iot.read`, `iot.control`, `robot.observe`, `robot.navigate`, `robot.manipulate`.
+`chat`, `camera.capture`, `microphone.capture`, `file.read`, `file.write`, `repo.read`, `repo.write`, `browser.read`, `browser.act`, `process.execute`, `knowledge.verify` (Maataa AAI derivations and rule checks, read-only), `iot.read`, `iot.control`, `robot.observe`, `robot.navigate`, `robot.manipulate`.
 
 **A capability is not an authorization.** A device declares what it can do. Policy plus approval decide what it may do, one contract at a time.
 

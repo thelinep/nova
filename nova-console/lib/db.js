@@ -23,7 +23,7 @@ const STORE_NAMES = [
   'neuronBlueprints', 'neuronRuns', 'neuronArtifacts',
   'backgroundJobs', 'artifactEvaluations', 'connectorProfiles', 'secretRecords', 'releaseEvidence',
   'runtimeEvents', 'skills', 'mcpServers', 'agents', 'workflows', 'workflowRuns', 'executions', 'collectionRuns', 'collectorEvidence', 'venueObservations',
-  'workspaceRoots', 'workspaceReports', 'workspacePlans', 'workspacePlanningAttempts', 'workspaceChanges', 'workspaceChangeBatches', 'workspaceProjects', 'workspaceLoops', 'workspaceRuns', 'media', 'generationJobs', 'skillOutputs', 'boards', 'timelines', 'workspaceGitDrafts', 'workspaceGitActions', 'workspacePermissions', 'securityBackups', 'chatSources', 'chatJobs', 'userMemory', 'characters', 'devices', 'executionContracts',
+  'workspaceRoots', 'workspaceReports', 'workspacePlans', 'workspacePlanningAttempts', 'workspaceChanges', 'workspaceChangeBatches', 'workspaceProjects', 'workspaceLoops', 'workspaceRuns', 'media', 'generationJobs', 'skillOutputs', 'boards', 'timelines', 'workspaceGitDrafts', 'workspaceGitActions', 'workspacePermissions', 'securityBackups', 'chatSources', 'chatJobs', 'userMemory', 'characters', 'devices', 'executionContracts', 'aaiEvidence',
 ];
 
 function openDb(dataDir) {
