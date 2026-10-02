@@ -323,8 +323,10 @@ function serveStatic(req, res, pathname) {
  *  console). Anything Ollama doesn't expose (context window, GPU layer
  *  count) is left null rather than guessed — the frontend already renders
  *  null as "—". promptTps/genTps/ttft come from benchmark(), not here. */
-function mapOllamaTagToModel(tag, runningNames, existing, metadata) {
+function mapOllamaTagToModel(tag, runningNames, existing, metadata, loadedInfo = []) {
   const prior = existing || {};
+  const live = loadedInfo.find(x => x.name === tag.name) || null; // measured by Ollama while the model is in memory
+  const diskGb = typeof tag.size === 'number' ? tag.size / 1e9 : null;
   const info = (metadata && metadata.model_info) || {};
   const contextKey = Object.keys(info).find(key => key.endsWith('.context_length'));
   const contextLength = Number(contextKey ? info[contextKey] : 0) || null;
@@ -336,15 +338,19 @@ function mapOllamaTagToModel(tag, runningNames, existing, metadata) {
     quant: (tag.details && tag.details.quantization_level) || '—',
     params: (tag.details && tag.details.parameter_size) || '—',
     diskGb: typeof tag.size === 'number' ? tag.size / 1e9 : null,
-    ramGb: prior.ramGb != null ? prior.ramGb : null,
+    // In memory: Ollama's measured size while loaded; otherwise an estimate from the file size (weights plus a working context).
+    ramGb: live && live.size ? live.size / 1e9 : (diskGb != null ? Math.round((diskGb * 1.15 + 0.4) * 10) / 10 : (prior.ramGb != null ? prior.ramGb : null)),
+    ramMeasured: Boolean(live && live.size),
+    expiresAt: live ? live.expiresAt : null,
     // ctx/ctxMax are in K tokens (the unit the console renders, e.g. "8K");
     // contextTokens keeps Ollama's exact figure. Older syncs stored raw
     // tokens in ctxMax, so values above 1024 are normalised here.
     contextTokens: contextLength || (prior.contextTokens != null ? prior.contextTokens : null),
     ctxMax: contextLength ? Math.round(contextLength / 1024) : (prior.ctxMax != null ? (prior.ctxMax > 1024 ? Math.round(prior.ctxMax / 1024) : prior.ctxMax) : null),
-    ctx: prior.ctx != null ? (prior.ctx > 1024 ? Math.round(prior.ctx / 1024) : prior.ctx) : (contextLength ? Math.round(contextLength / 1024) : null),
-    gpuLayers: prior.gpuLayers != null ? prior.gpuLayers : '—',
-    gpuLayersMax: prior.gpuLayersMax != null ? prior.gpuLayersMax : '—',
+    ctx: live && live.contextLength ? Math.round(live.contextLength / 1024) : prior.ctx != null ? (prior.ctx > 1024 ? Math.round(prior.ctx / 1024) : prior.ctx) : (contextLength ? Math.round(contextLength / 1024) : null),
+    // Ollama reports how much of a loaded model sits on the GPU, not layer counts.
+    gpuLayers: live && live.size ? Math.round((live.sizeVram / live.size) * 100) + '% on GPU' : '—',
+    gpuLayersMax: '—',
     promptTps: prior.promptTps != null ? prior.promptTps : null,
     genTps: prior.genTps != null ? prior.genTps : null,
     ttft: prior.ttft != null ? prior.ttft : null,
@@ -360,6 +366,7 @@ function mapOllamaTagToModel(tag, runningNames, existing, metadata) {
   };
 }
 
+const DEMO_MODEL_IDS = new Set(['m_llama', 'm_mistral', 'm_qwen', 'm_phi', 'm_remote']);
 async function syncModelsFromOllama() {
   const status = await ollama.status();
   if (!status.reachable) {
@@ -372,7 +379,7 @@ async function syncModelsFromOllama() {
     try { return await ollama.show(tag.name); }
     catch (_) { return null; }
   }));
-  const mapped = status.models.map((tag, index) => mapOllamaTagToModel(tag, status.runningModelNames, existingById.get(tag.name), inspected[index]));
+  const mapped = status.models.map((tag, index) => mapOllamaTagToModel(tag, status.runningModelNames, existingById.get(tag.name), inspected[index], status.loaded || []));
   // Replace only the models that came from Ollama (runtimeKind local/ollama
   // rows not present in this tag list are left alone — e.g. a remote/API
   // model entry the user added by hand has nothing to do with `ollama list`).
@@ -381,6 +388,11 @@ async function syncModelsFromOllama() {
     if (m.runtime === 'ollama' && !mappedIds.has(m.id)) store.delete('models', m.id);
   }
   for (const m of mapped) store.put('models', m);
+  // The example models shown before Ollama was connected are not real: once real models exist they are
+  // marked as examples (never loaded), so the registry stops presenting made-up numbers as this Mac's.
+  if (mapped.length) for (const m of existingById.values()) {
+    if (m.runtime !== 'ollama' && DEMO_MODEL_IDS.has(m.id) && (!m.example || m.loaded)) store.put('models', { ...m, example: true, loaded: false });
+  }
 
   // Phase 5 fix: the seeded demo agents/automations point at seeded demo
   // model rows (runtime 'llama.cpp'/'MLX'/'API', never 'ollama') — real
@@ -881,6 +893,14 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); contracts._resetHeads(store); deviceIdentity.ensure(store, DATA_DIR); characters.ensureNova(store); sendJson(res, 200, { ok: true }); } },
 
   { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
+  { method: 'POST', pattern: /^\/api\/models\/examples\/remove$/, handler: async (_req, res) => {
+      // Removes the example rows seeded before Ollama was connected, and saved profiles that pointed at them.
+      const gone = store.all('models').filter(m => m.example || (m.runtime !== 'ollama' && DEMO_MODEL_IDS.has(m.id)));
+      const ids = new Set(gone.map(m => m.id));
+      for (const m of gone) store.delete('models', m.id);
+      for (const p of store.all('modelProfiles')) if (ids.has(p.modelId)) store.delete('modelProfiles', p.id);
+      sendJson(res, 200, { removed: gone.length });
+    } },
   { method: 'POST', pattern: /^\/api\/models\/sync$/, handler: async (req, res) => sendJson(res, 200, { models: await syncModelsFromOllama() }) },
 
   {

@@ -1581,6 +1581,8 @@ const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Wo
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
+// Models people can pick: the example rows shown before Ollama was connected are left out.
+function usableModels(){ return DB.models.filter(m => !m.example); }
 function sessionById(id){ return DB.sessions.find(s => s.id === id); }
 function activeSession(){ return sessionById(activeSessionId); }
 // Prefer a model Ollama reports as loaded, then any real Ollama model, and
@@ -1648,7 +1650,10 @@ function showView(name){
 async function syncModelsFromOllamaIfAvailable(){
   await refreshOllamaStatus();
   if (!ollamaStatus.reachable) return;
-  if (getPrefs().ollamaSynced) return; // one-time replace of the seeded demo models with real ones
+  if (getPrefs().ollamaSynced) { // after the first time: refresh in the background (loaded state, memory, versions)
+    fetch(apiUrl('/api/models/sync'), {method:'POST'}).then(async r => { if (!r.ok) return; DB.models = await idbAll('models'); if (currentView === 'models') renderModelsView(); renderShellChrome(); }).catch(() => {});
+    return;
+  }
   try {
     const r = await fetch(apiUrl('/api/models/sync'), {method:'POST'});
     if (!r.ok) return;
@@ -1848,7 +1853,7 @@ function startRenameSession(id){
 function createSession(opts){
   opts = opts || {};
   const prefs = getPrefs();
-  const s = {id:uid('s'), title:opts.title||'New local session', modelId:(loadedModel()||DB.models[0]).id,
+  const s = {id:uid('s'), title:opts.title||'New local session', modelId:(loadedModel()||usableModels()[0]||DB.models[0]).id,
     pinned:false, archived:false, tags:opts.tags||[], createdAt:nowIso(), updatedAt:nowIso(),
     preferences:{temperature:prefs.temperature, topP:prefs.topP, topK:prefs.topK, repeatPenalty:prefs.repeatPenalty, maxTokens:prefs.maxTokens, seed:prefs.seed, retrieval:prefs.retrieval, citations:prefs.citations, streaming:prefs.streaming},
     snapshots:[], forkedFrom:opts.forkedFrom||null, excludedDocIds:[],
@@ -2470,7 +2475,13 @@ function renderModelsView(){
       <table><thead><tr><th>Profile</th><th>Model</th><th>Temp</th><th>Top P</th><th>Top K</th><th>Max tok</th><th></th></tr></thead>
       <tbody id="modelProfileRows"></tbody></table>
     </div>`;
-  $('modelCardGrid').innerHTML = DB.models.map(modelCardHtml).join('');
+  const real = DB.models.filter(m => !m.example), examples = DB.models.filter(m => m.example);
+  const inMem = real.filter(m => m.loaded && m.runtime === 'ollama');
+  const memGb = inMem.reduce((t, m) => t + (m.ramMeasured ? m.ramGb || 0 : 0), 0);
+  const warn = inMem.length > 1 ? `<div class="panel" id="modelMemWarn" style="padding:10px 14px;margin-bottom:12px;border-color:var(--amber-line);font-size:12.5px">${inMem.length} models are loaded at once${memGb ? `, using about ${fmtBytes(memGb)} of memory` : ''}: ${inMem.map(m => escapeHtml(m.name)).join(', ')}. Ollama keeps each one in memory for a few minutes after use; unload the ones you are not using to free memory for images and video. <button class="btn btn-line btn-sm" id="modelUnloadOthers" style="margin-left:6px">Unload all but ${escapeHtml((loadedModel() || inMem[0]).name)}</button></div>` : '';
+  $('modelCardGrid').insertAdjacentHTML('beforebegin', warn);
+  $('modelCardGrid').innerHTML = real.map(modelCardHtml).join('') || '<p class="empty-hint">No models yet. Start Ollama, pull a model (ollama pull qwen2.5-coder:7b), then press Sync from Ollama.</p>';
+  if (examples.length) $('modelCardGrid').insertAdjacentHTML('afterend', `<details id="modelExamples" style="margin-top:16px"><summary class="eyebrow" style="cursor:pointer">${examples.length} example models (shown before Ollama was connected; not on this Mac)</summary><p class="empty-hint" style="margin:8px 0">These rows and their numbers are examples, not measurements. <button class="btn btn-ghost btn-sm" id="modelRemoveExamples" style="color:var(--red)">Remove examples</button></p><div class="card-grid cols-3">${examples.map(modelCardHtml).join('')}</div></details>`);
   loadModelQualifications();
   $('modelProfileRows').innerHTML = DB.modelProfiles.map(modelProfileRowHtml).join('') || '<tr><td colspan="7" class="empty-hint">No saved profiles yet.</td></tr>';
   if (window.lucide) lucide.createIcons();
@@ -2481,27 +2492,28 @@ function modelCardHtml(m){
   return `<div class="panel model-card">
     <div class="model-card-head">
       <div><strong style="font-size:13.5px">${escapeHtml(m.name)}</strong><div class="mono" style="font-size:10.5px;color:var(--muted-dim);margin-top:3px">${m.runtime} · ${m.format}${m.quant!=='—'?' · '+m.quant:''}</div></div>
-      <span class="badge ${m.loaded?'badge-green':isRemote?'badge-blue':''}">${m.loaded?'Loaded':isRemote?'Remote':'Idle'}</span>
+      <span class="badge ${m.example?'':m.loaded?'badge-green':isRemote?'badge-blue':''}">${m.example?'Example':m.loaded?'Loaded':isRemote?'Remote':'Idle'}</span>
     </div>
     <div class="model-specs tnum">
       <span>Parameters</span><span>${m.params}</span>
       <span>Disk</span><span>${m.diskGb!=null?fmtBytes(m.diskGb):'—'}</span>
-      <span>RAM estimate</span><span>${m.ramGb!=null?fmtBytes(m.ramGb):'—'}</span>
+      <span>${m.ramMeasured?'In memory':'RAM estimate'}</span><span>${m.ramGb!=null?fmtBytes(m.ramGb):'—'}</span>
       <span>Context</span><span>${ctxLabel(m.ctx)} / ${ctxLabel(m.ctxMax)}</span>
       <span>GPU layers</span><span>${m.gpuLayers}${typeof m.gpuLayers==='number'?' / '+m.gpuLayersMax:''}</span>
       <span>Prompt tok/s</span><span>${m.promptTps ?? '—'}</span>
       <span>Decode tok/s</span><span>${m.genTps ?? '—'}</span>
       <span>TTFT</span><span>${m.ttft!=null?m.ttft+' ms':'—'}</span>
     </div>
-    <div class="model-qual" data-digest="${escapeHtml(m.digest||'')}" style="font-size:11.5px;color:var(--muted);margin:8px 0 2px">${isRemote?'':'Coding checks: '+(m.digest?'loading…':'sync from Ollama first')}</div>
-    <div class="model-actions">
+    ${m.loaded && m.expiresAt ? `<div class="empty-hint" style="font-size:11px;margin-top:6px">Ollama unloads it ${escapeHtml(whenLabel(m.expiresAt))} unless it is used again.</div>` : ''}
+    ${m.example ? '<div class="empty-hint" style="font-size:11.5px;margin:8px 0 2px">Example only: not installed on this Mac, and the numbers are not measured.</div>' : `<div class="model-qual" data-digest="${escapeHtml(m.digest||'')}" style="font-size:11.5px;color:var(--muted);margin:8px 0 2px">${isRemote?'':'Coding checks: '+(m.digest?'loading…':'press Sync from Ollama to check this model')}</div>`}
+    ${m.example ? '' : `<div class="model-actions">
       ${isRemote||!m.digest?'':`<button class="btn btn-line btn-sm model-qualify" data-name="${escapeHtml(m.name)}">Qualify for coding</button>`}
       ${m.loaded ? `<button class="btn btn-line btn-sm model-unload" data-id="${m.id}">Unload</button>` : `<button class="btn btn-amber btn-sm model-load" data-id="${m.id}">Load</button>`}
       <button class="btn btn-line btn-sm model-duplicate" data-id="${m.id}">Duplicate profile</button>
       <button class="btn btn-line btn-sm model-benchmark" data-id="${m.id}">Benchmark</button>
       ${isRemote?'':`<button class="btn btn-ghost btn-sm model-reveal" data-id="${m.id}">Reveal file</button>`}
       <button class="btn btn-ghost btn-sm model-delete" data-id="${m.id}" style="color:var(--red)">Delete</button>
-    </div>
+    </div>`}
   </div>`;
 }
 // Coding qualification: code plans and the improve-and-test loop only use
@@ -2542,6 +2554,17 @@ function modelProfileRowHtml(p){
     <td><button class="btn btn-ghost btn-sm profile-delete" data-id="${p.id}" style="color:var(--red)">Remove</button></td></tr>`;
 }
 function bindModelsViewEvents(){
+  if ($('modelRemoveExamples')) $('modelRemoveExamples').onclick = async () => {
+    const r = await fetch(apiUrl('/api/models/examples/remove'), {method:'POST'}); const out = await r.json().catch(()=>({}));
+    if (!r.ok) { toast(out.error || 'Could not remove the examples.'); return; }
+    DB.models = await idbAll('models'); DB.modelProfiles = await idbAll('modelProfiles'); toast('Removed '+out.removed+' example model'+(out.removed===1?'':'s')+'.'); renderModelsView(); renderShellChrome();
+  };
+  if ($('modelUnloadOthers')) $('modelUnloadOthers').onclick = async () => {
+    const keep = (loadedModel() || {}).id; const others = DB.models.filter(m => m.loaded && m.runtime === 'ollama' && m.id !== keep);
+    $('modelUnloadOthers').disabled = true;
+    for (const m of others) { try { const r = await fetch(apiUrl('/api/models/'+encodeURIComponent(m.id)+'/unload'), {method:'POST'}); if (r.ok) idbPut('models', await r.json()); } catch (_) {} }
+    toast('Unloaded '+others.length+' model'+(others.length===1?'':'s')+'.'); await refreshOllamaStatus(); DB.models = await idbAll('models'); renderModelsView(); renderShellChrome();
+  };
   $('modelImportBtn').onclick = async () => {
     toast('Syncing model registry from Ollama…');
     try {
@@ -2942,7 +2965,7 @@ function automationEditorHtml(a){
     <div class="cap-card-title" style="margin-bottom:10px;font-size:12.5px">Configure trigger</div>
     <div class="agent-builder">
       <div><label>Name</label><input id="aeName" value="${escapeHtml(a.name)}"></div>
-      <div><label>Model</label><select id="aeModel">${DB.models.map(m=>`<option value="${m.id}" ${m.id===a.modelId?'selected':''}>${escapeHtml(m.name)}</option>`).join('')||'<option value="">No models yet</option>'}</select></div>
+      <div><label>Model</label><select id="aeModel">${usableModels().map(m=>`<option value="${m.id}" ${m.id===a.modelId?'selected':''}>${escapeHtml(m.name)}</option>`).join('')||'<option value="">No models yet</option>'}</select></div>
       <div class="field-full"><label>Collections (retrieval context)</label>
         <div class="multi-pick" id="aeCollections">${DB.knowledgeCollections.map(c=>`<button type="button" class="tag-chip ae-coll-pick ${aeSelectedCollections.has(c.id)?'active-tag':''}" data-id="${c.id}">${escapeHtml(c.name)}</button>`).join('')||'<span class="empty-hint">No collections yet — add one in Knowledge.</span>'}</div>
       </div>
@@ -4437,7 +4460,7 @@ function agentBuilderHtml(){
     <div class="agent-builder">
       <div><label>Name</label><input id="abName" placeholder="e.g. Support Triage"></div>
       <div><label>Role</label><input id="abRole" placeholder="e.g. Support"></div>
-      <div><label>Model</label><select id="abModel">${DB.models.map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('')}</select></div>
+      <div><label>Model</label><select id="abModel">${usableModels().map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('')}</select></div>
       <div><label>Memory scope</label><select id="abMemory"><option value="none">None</option><option value="session">Session</option><option value="workspace" selected>Workspace</option></select></div>
       <div class="field-full"><label>System prompt</label><textarea id="abPrompt" placeholder="What this agent is for and its limits…"></textarea></div>
       <div class="field-full"><label>Skills</label><div class="multi-pick" id="abSkills">${DB.skills.filter(s=>s.status!=='available').map(s=>`<button type="button" class="tag-chip ab-skill-pick ${abSelectedSkills.has(s.id)?'active-tag':''}" data-id="${s.id}">${escapeHtml(s.name)}</button>`).join('')}</div></div>
@@ -6497,7 +6520,7 @@ function bindCmdk(){
 function openModelPicker(){ renderModelPickerList(); $('modelPickerModal').classList.add('open'); }
 function closeModelPicker(){ $('modelPickerModal').classList.remove('open'); }
 function renderModelPickerList(){
-  $('modelPickerList').innerHTML = DB.models.map(m=>`<button class="rail-btn model-pick-item" data-id="${m.id}" style="width:100%;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-radius:8px">
+  $('modelPickerList').innerHTML = usableModels().map(m=>`<button class="rail-btn model-pick-item" data-id="${m.id}" style="width:100%;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-radius:8px">
     <span><strong style="font-size:12.5px">${escapeHtml(m.name)}</strong><div class="mono" style="font-size:10.5px;color:var(--muted-dim)">${m.runtime} · ${m.quant}</div></span>
     <span class="badge ${m.loaded?'badge-green':''}">${m.loaded?'Loaded':'Load'}</span>
   </button>`).join('');

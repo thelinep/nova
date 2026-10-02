@@ -369,6 +369,18 @@ Then press **Sync from Ollama** in **Models**. Maataa adds or updates a card for
 - **Benchmark** runs a real generation and records time to first token and tokens per second.
 - Values Ollama does not report (for example some GPU figures) show as unavailable rather than estimated.
 
+#### What the numbers mean
+
+- **In memory** is what Ollama measures while a model is loaded. When it is not loaded, the card shows a **RAM estimate** worked out from the file size.
+- **% on GPU** is how much of a loaded model sits on the GPU. On Apple silicon this is normally 100%.
+- **Context** shows the window in use and the most the model supports.
+- A loaded card says when Ollama will unload the model if it is not used again, normally after five minutes.
+- Maataa refreshes all of this from Ollama each time it starts. **Sync from Ollama** refreshes it right away.
+
+When more than one model is loaded, a note at the top says how much memory they use. **Unload all but…** frees memory for images and video.
+
+**Example models.** Before Ollama is connected, Models shows a few example rows (Llama 3.1 8B, Mistral Nemo 12B, Qwen2.5 Coder 7B, Phi-3.5 Mini, Frontier Remote 70B). They are not on your Mac, and their numbers are not measured. Once real models are synced, the examples move into a closed **example models** section, are never shown as loaded, and **Remove examples** deletes them.
+
 ### Qualify for coding
 
 Code plans (in chat and Local Workspace) and the improve-and-test loop only use models that passed Maataa's coding checks, so a model cannot quietly produce broken edits.

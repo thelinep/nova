@@ -39,12 +39,14 @@ class OllamaClient {
       ]);
       if (!tagsRes.ok) throw new Error(`Ollama responded ${tagsRes.status}`);
       const tags = await tagsRes.json();
-      let running = [];
+      let running = [], loaded = [];
       if (psRes && psRes.ok) {
         const ps = await psRes.json();
         running = (ps.models || []).map(m => m.name);
+        // What each loaded model really uses: memory, share on the GPU, context window, when Ollama unloads it.
+        loaded = (ps.models || []).map(m => ({ name: m.name, size: Number(m.size) || null, sizeVram: Number(m.size_vram) || 0, contextLength: Number(m.context_length) || null, expiresAt: m.expires_at || null }));
       }
-      return { reachable: true, host: this.host, models: tags.models || [], runningModelNames: running };
+      return { reachable: true, host: this.host, models: tags.models || [], runningModelNames: running, loaded };
     } catch (e) {
       return { reachable: false, host: this.host, error: e.message, models: [], runningModelNames: [] };
     } finally {
