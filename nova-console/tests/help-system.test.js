@@ -96,7 +96,12 @@ test('support report: counts, checks and failures, with private details masked',
       transcribeStatus: () => ({ ready: false, missing: ['ffmpeg (brew install ffmpeg)'] }),
       libraryInfo: () => ({ dir: path.join(home, 'Documents', 'NOVA Library'), enabled: true }),
     };
-    const r = await support.buildReport(deps);
+    // ComfyUI is not installed for this check, whatever is on this computer
+    // (on a Mac with ~/ComfyUI, NOVA would rightly report that it can start it).
+    const comfy = require('../lib/comfy-manager');
+    const prevDir = process.env.COMFY_DIR; process.env.COMFY_DIR = path.join(dir, 'no-comfyui');
+    comfy.configure({ store, dataDir: dir, platform: 'linux' });
+    const r = await support.buildReport(deps).finally(() => { if (prevDir === undefined) delete process.env.COMFY_DIR; else process.env.COMFY_DIR = prevDir; });
     assert.equal(r.nova.version, '9.9.9');
     assert.equal(r.data.counts.sessions, 1);
     assert.equal(r.data.counts.executions, 2);
@@ -104,6 +109,7 @@ test('support report: counts, checks and failures, with private details masked',
     assert.deepEqual(r.engines.ollama.models, ['llama3.2:latest']);
     assert.equal(r.checks.find(c => c.id === 'ollama').ok, true);
     assert.equal(r.checks.find(c => c.id === 'comfy').ok, false);
+    assert.match(r.checks.find(c => c.id === 'comfy').detail, /Not installed/);
     assert.equal(r.checks.find(c => c.id === 'tools').ok, true);
     assert.match(r.checks.find(c => c.id === 'voice').detail, /no answer/);
     assert.equal(r.recentFailures.length, 1);
