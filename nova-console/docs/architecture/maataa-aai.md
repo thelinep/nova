@@ -66,6 +66,7 @@ For word forms there is no model in the loop. The rules derive the forms, and AA
 - **Guru:** `teach --panini` adds the verified derivation pairs when `vidyut` is installed.
 - **Hardware (allb, Siddham):** a Paninian datapath (`hardware/rtl/sivasutra_rom.v`, `sandhi_engine.v`, `panini_datapath.v`). It has a Shiva Sutra ROM, parallel sutra match blocks with an exception-override matrix, a Saptādhyāyī loop and a Tripādī stage (8.3.19). It is verified on 338 reference cases and 143 Vidyut cases, and takes 208 LUT4s on iCE40.
   - It also has a consonant and visarga sandhi pipeline: 8.2, 8.3 and 8.4 as registered stages, a bypass for 6.1.113, 6.1.114 and 6.3.111, and lanes for optional rules. All 11,844 junctures agree with the reference, and 1,305 of 1,314 Vidyut entries agree; the 9 differences are explained in the report. It takes 1,550 LUT4s. See allb `docs/PANINI_DATAPATH.md`.
+  - It also has a **prakriyā core** that derives words from the root as taught. It covers the present active 3rd singular of 981 of the 1,156 first-class roots. Competing operations are decided by antaraṅga, by nitya (tested by speculative evaluation in hardware) and by para. All 1,042 forms agree with Vidyut's derivations, and all 21,707 steps agree between the RTL and the reference. It takes 6,176 LUT4s.
 - **Tests:** unit tests for the engine, conversions, citations and the Ask verdicts, and a browser test that derives भवति and checks a wrong form.
 
 ## 8. Roadmap
