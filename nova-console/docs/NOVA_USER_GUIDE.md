@@ -1128,6 +1128,23 @@ This is separate from the rollback you use by hand in Local Workspace (**Roll ba
 
 **halt** in Workbench stops all of the above at the next safe point, closes the agent browser and stops computer actions from chat. **resume** needs your resume passphrase. See [Workbench](#workbench).
 
+### Execution contracts and evidence
+
+Every action NOVA takes on this computer runs as an **execution contract**: running a command, reading or changing files, taking screenshots, clicking or typing, and applying approved code changes. Each contract records:
+
+- who asked for the action, and from which device;
+- the plan and the capability it needs;
+- the risk;
+- the approval, the result and the checks.
+
+- **This device.** Each NOVA install has its own key, created on first start. The device ID is the key's fingerprint. A device declares what it can do, its capabilities, but a capability is never permission by itself.
+- **Approvals fit one plan.** An approval names the exact plan it approves, can be used once, and expires after 10 minutes. If the plan changes, the approval no longer fits and nothing runs. Read-only actions you allowed in Settings are recorded as approved by policy.
+- **Evidence.** When a contract ends, NOVA chains it to the one before and signs it with this device's key. **Local Workspace > Execution contracts** shows this device, its capabilities, recent contracts and whether the chain is verified. **Help & Support > Support report** checks the chain too.
+
+A changed, removed or reordered record shows as **Chain broken**. The check catches changes made to NOVA's data. It does not protect against someone who already controls your user account, because the key lives on this computer.
+
+This is the first step of NOVA Everywhere: later, a paired phone will approve the same contracts with its own key.
+
 ### The audit trail
 
 Workbench decisions, policy checks, connector actions, agent browser actions and kill switch events are written to the audit log in NOVA's data folder, with the operator's name and the reason.

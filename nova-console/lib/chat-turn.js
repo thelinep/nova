@@ -23,6 +23,7 @@ const path = require('node:path');
 const activity = require('./activity');
 const chatSources = require('./chat-sources');
 const computer = require('./computer');
+const contracts = require('./contracts');
 const memory = require('./user-memory');
 const workspaceScanner = require('./workspace-scanner');
 const ocr = require('./ocr');
@@ -286,7 +287,7 @@ async function runTurn(deps, body, emit, clientSignal) {
           if (typeof args === 'string') { try { args = JSON.parse(args); } catch (_) { args = {}; } }
           const d = computer.describe(name, args);
           const step = job.step(d.title, d.detail || '', { tool: name });
-          let resultText;
+          let resultText, ctr = null;
           try {
             if (!computer.TOOLS.some(t => t.name === name)) throw new Error('Unknown tool ' + name);
             computer.checkHalt(store); // refuse before asking
@@ -297,14 +298,25 @@ async function runTurn(deps, body, emit, clientSignal) {
               const real = fs.realpathSync.native(want);
               if (roots.includes(real)) { step.done('Already approved'); messages.push({ role: 'tool', content: real + ' is already approved. Go ahead.' }); continue; }
             }
-            const ap = computer.approve(store, { sessionId, tool: name, args, signal });
-            if (ap.info) { step.update({ waiting: true, approvalId: ap.info.id, detail: d.detail }); emit({ type: 'approval', approval: ap.info }); }
+            // Every computer action is an execution contract: plan → approval → execution → evidence.
+            ctr = contracts.open(store, dataDir, { actor: { type: 'agent', id: model, label: 'NOVA (' + model + ')', onBehalfOf: 'local-operator' }, intent: d.title + (d.detail ? ': ' + d.detail : ''), context: { sessionId, round }, ...computer.contractFor(name, args), plan: { tool: name, args } });
+            const ap = computer.approve(store, { sessionId, tool: name, args, signal, contract: ctr });
+            if (ap.info) { contracts.link(store, ctr.id, { approvalId: ap.info.id }); step.update({ waiting: true, approvalId: ap.info.id, detail: d.detail }); emit({ type: 'approval', approval: ap.info }); }
             const decision = await ap.promise;
             step.update({ waiting: false, approvalId: null });
-            if (decision === 'deny') { step.update({ status: 'failed', detail: 'You declined' }); resultText = 'The person declined this action. Do not try it again; ask what they would prefer.'; }
+            const answered = contracts.get(store, ctr.id).approval; // a paired device may have answered already
+            if (decision === 'deny') {
+              if (!answered && !contracts.get(store, ctr.id).evidence) { if (signal.aborted) contracts.seal(store, dataDir, ctr.id, 'cancelled'); else contracts.approve(store, dataDir, ctr.id, 'deny', { via: 'nova-desktop' }); }
+              ctr = null;
+              step.update({ status: 'failed', detail: 'You declined' }); resultText = 'The person declined this action. Do not try it again; ask what they would prefer.';
+            }
             else {
-              if (ap.auto) step.update({ note: ap.auto });
+              if (ap.auto) { step.update({ note: ap.auto }); contracts.autoApprove(store, dataDir, ctr.id, ap.auto, /chat/i.test(ap.auto) ? 'chat-always-allow' : 'auto-read'); }
+              else if (!answered) contracts.approve(store, dataDir, ctr.id, 'allow', { via: decision === 'always' ? 'nova-desktop (always in this chat)' : 'nova-desktop' });
+              contracts.begin(store, ctr.id, { adapter: 'desktop.computer' });
               const r = name === 'use_folder' ? approveFolder(args) : await computer.execute(name, args, { store, dataDir, sessionId, roots, signal });
+              contracts.observe(store, ctr.id, { ok: r.ok !== false, summary: r.summary, output: r.output });
+              contracts.seal(store, dataDir, ctr.id); ctr = null;
               step.done(r.summary + (name === 'run_command' || name === 'read_file' || name === 'list_files' || name === 'clipboard_read' ? '\n' + r.output.slice(0, 1500) : ''));
               resultText = r.output;
               if (r.image) {
@@ -315,6 +327,7 @@ async function runTurn(deps, body, emit, clientSignal) {
               }
             }
           } catch (e) {
+            if (ctr) { try { const c = contracts.get(store, ctr.id); if (!c.evidence) { if (c.execution) contracts.observe(store, ctr.id, { ok: false, error: e.message }); contracts.seal(store, dataDir, ctr.id, c.execution ? 'failed' : 'cancelled'); } } catch (_) {} ctr = null; }
             if (signal.aborted) throw e;
             step.fail(e);
             resultText = 'That did not work: ' + e.message;

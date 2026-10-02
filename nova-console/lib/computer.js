@@ -328,14 +328,23 @@ function setPolicy(store, input = {}) {
 }
 
 /** Waits for the person to decide. Resolves 'allow' | 'always' | 'deny'. */
-function approve(store, { sessionId, tool, args, signal }) {
+/** What a tool call commits to in an execution contract: capability, risk and the resource it touches. */
+const CAPABILITY = { use_folder: 'file.read', run_command: 'process.execute', open: 'app.control', screenshot: 'screen.capture', click: 'input.control', type_text: 'input.control', press_key: 'input.control', scroll: 'input.control', clipboard_read: 'clipboard.read', clipboard_write: 'clipboard.write', list_files: 'file.read', read_file: 'file.read', write_file: 'file.write', move_file: 'file.write', make_folder: 'file.write', move_to_trash: 'file.write' };
+function contractFor(tool, args = {}) {
+  const spec = BY_NAME.get(tool);
+  const risk = !spec ? 'change' : spec.risk === 'read' ? 'read' : spec.risk === 'run' ? 'run' : 'change';
+  const target = args.path || args.from || args.target || args.url || args.app || null;
+  const resource = tool === 'run_command' ? { type: 'command', id: String(args.cwd || '') } : target ? { type: /^https?:/.test(String(target)) ? 'url' : 'path', id: String(target) } : { type: tool.startsWith('clipboard') ? 'clipboard' : 'screen', id: '' };
+  return { capability: CAPABILITY[tool] || 'process.execute', risk, resource };
+}
+function approve(store, { sessionId, tool, args, signal, contract = null }) {
   const spec = BY_NAME.get(tool);
   const p = policy(store);
   if (tool !== 'use_folder' && (sessionAllow.get(sessionId) || new Set()).has(tool)) return { promise: Promise.resolve('allow'), auto: 'Allowed for this chat' };
   if (tool === 'use_folder') { /* always asks: a folder is a new permission */ }
   else if (p.autoRead && spec && spec.risk === 'read') return { promise: Promise.resolve('allow'), auto: 'Read-only: allowed by your settings' };
   const id = 'apr_' + crypto.randomBytes(6).toString('hex');
-  const info = { id, sessionId, tool, risk: spec ? spec.risk : 'change', ...describe(tool, args), requestedAt: new Date().toISOString() };
+  const info = { id, sessionId, tool, risk: spec ? spec.risk : 'change', ...describe(tool, args), requestedAt: new Date().toISOString(), ...(contract ? { contractId: contract.id, planHash: contract.planHash, expiresAt: contract.challenge?.expiresAt } : {}) };
   const promise = new Promise(resolve => {
     const finish = (d) => { const e = pending.get(id); if (!e) return; clearTimeout(e.timer); pending.delete(id); emit({ type: 'approval.resolved', id, decision: d }); resolve(d); };
     const timer = setTimeout(() => finish('deny'), 10 * 60 * 1000);
@@ -412,4 +421,4 @@ function workspaceRoots(store) {
 
 function _reset() { for (const e of pending.values()) clearTimeout(e.timer); pending.clear(); sessionAllow.clear(); shots.clear(); listeners.clear(); }
 
-module.exports = { halted, checkHalt, folderPath, TOOLS, SCREEN_TOOLS, toolSpecs, execute, approve, decide, pendingApprovals, forgetSession, subscribe, policy, setPolicy, status, describe, checkCommand, insideRoots, shotFile, workspaceRoots, _reset };
+module.exports = { contractFor, CAPABILITY, halted, checkHalt, folderPath, TOOLS, SCREEN_TOOLS, toolSpecs, execute, approve, decide, pendingApprovals, forgetSession, subscribe, policy, setPolicy, status, describe, checkCommand, insideRoots, shotFile, workspaceRoots, _reset };

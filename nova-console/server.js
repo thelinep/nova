@@ -54,6 +54,8 @@ const imageGen = require('./lib/image-gen');
 const comfyManager = require('./lib/comfy-manager');
 const characters = require('./lib/characters');
 const helper = require('./lib/helper');
+const deviceIdentity = require('./lib/device-identity');
+const contracts = require('./lib/contracts');
 // A local model as voice director for Voice Studio characters (falls back to text signs when there is none).
 function voiceDirector() {
   let model; try { model = helper.pickModel(store); } catch (_) { return null; }
@@ -121,6 +123,8 @@ function gitSnapshot() {
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
 activity.configure(store);
+// This install's device identity (Ed25519), and contracts a restart left open are sealed as cancelled.
+deviceIdentity.ensure(store, DATA_DIR); contracts.sweep(store, DATA_DIR);
 comfyManager.configure({ store, dataDir: DATA_DIR, imageGen, activity }); imageGen.setEnsure(() => comfyManager.ensure());
 const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
 const jobEngine = new JobEngine(store, { pollMs: 500 });
@@ -403,6 +407,23 @@ async function syncModelsFromOllama() {
 
 /* --------------------------------- routes -------------------------------- */
 
+
+// Approved workspace writes are execution contracts too: approval → execution → sealed evidence.
+function writeContract(kind, rec, files) {
+  const c = contracts.open(store, DATA_DIR, { actor: { type: 'agent', id: 'workspace-planner', label: 'Workspace planner', onBehalfOf: 'local-operator' }, intent: (kind === 'batch' ? 'Apply change batch: ' : 'Apply change: ') + String(rec.summary || rec.impact || rec.relativePath || rec.id).slice(0, 200), context: { [kind === 'batch' ? 'batchId' : 'proposalId']: rec.id }, capability: 'file.write', resource: { type: 'workspace', id: rec.rootPath || '' }, plan: { kind, id: rec.id, files }, risk: 'change', links: { [kind]: rec.id } });
+  return contracts.approve(store, DATA_DIR, c.id, 'allow', { via: 'nova-desktop' });
+}
+function governedExecute(kind, id, files, run) {
+  let c = contracts.list(store, { status: 'approved', limit: 500 }).find(x => x.links && x.links[kind] === id);
+  if (!c) {
+    const rec = store.get(kind === 'batch' ? 'workspaceChangeBatches' : 'workspaceChanges', id);
+    if (!rec || rec.status !== 'approved' || !rec.approval || rec.approval.consumedAt) return run(); // not approved: the workspace check refuses it
+    c = writeContract(kind, rec, files()); // approved before contracts existed
+  }
+  contracts.begin(store, c.id, { adapter: 'desktop.workspace' });
+  try { const r = run(); contracts.observe(store, c.id, { ok: true, summary: r.status + ' · ' + (r.execution ? JSON.stringify(r.execution).slice(0, 200) : '') }); contracts.seal(store, DATA_DIR, c.id); return r; }
+  catch (e) { contracts.observe(store, c.id, { ok: false, error: e.message }); contracts.seal(store, DATA_DIR, c.id, 'failed'); throw e; }
+}
 const routes = [
   /* ---- media: uploads, generated images, transcripts ---- */
   { method: 'GET', pattern: /^\/api\/media$/, handler: async (_req, res) => sendJson(res, 200, store.all('media').reverse()) },
@@ -635,8 +656,8 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/model-qualifications$/, handler: async (_req,res)=>sendJson(res,200,store.all('modelQualifications').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes$/, handler: async (req, res) => sendJson(res, 201, workspaceChanges.proposeChange(store, workspaceScanner, await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/check$/, handler: async (_req, res, [id]) => sendJson(res, 200, workspaceChanges.checkProposal(store, workspaceScanner, DATA_DIR, decodeURIComponent(id))) },
-  { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.approveProposal(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.approved',proposalId:result.id,affectedFiles:result.approval.affectedFiles});sendJson(res,200,result);} },
-  { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.executeProposal(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.executed',proposalId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/approve$/, handler: async (_req, res, [id]) => {const result=workspaceChanges.approveProposal(store,workspaceScanner,decodeURIComponent(id));writeContract('proposal',result,result.approval.affectedFiles);desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.approved',proposalId:result.id,affectedFiles:result.approval.affectedFiles});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/changes\/([^/]+)\/execute$/, handler: async (_req, res, [id]) => {const pid=decodeURIComponent(id);const result=governedExecute('proposal',pid,()=>(store.get('workspaceChanges',pid)?.approval?.affectedFiles||[]),()=>workspaceChanges.executeProposal(store,workspaceScanner,DATA_DIR,pid));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.write.executed',proposalId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
   { method: 'GET', pattern: /^\/api\/workspace\/loops$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceLoops').reverse()) },
   { method: 'GET', pattern: /^\/api\/workspace\/loops\/([^/]+)$/, handler: async (_req,res,[id])=>{const loop=store.get('workspaceLoops',decodeURIComponent(id));if(!loop){sendJson(res,404,{error:'Unknown development loop.'});return;}sendJson(res,200,loop);} },
   { method: 'POST', pattern: /^\/api\/workspace\/loops$/, handler: async (req,res)=>{const {loop}=devLoop.startLoop(store,{scanner:workspaceScanner,changes:workspaceChanges,runner:workspaceRunner,planner:codePlanner,ollama,dataDir:DATA_DIR},await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.loop.started',loopId:loop.id,rootId:loop.rootId,maxAttempts:loop.maxAttempts});sendJson(res,201,loop);} },
@@ -648,9 +669,9 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/workspace\/change-batches$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceChangeBatches').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/change-batches$/, handler: async (req,res)=>sendJson(res,201,workspaceChanges.createBatch(store,workspaceScanner,await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/check$/, handler: async (_req,res,[id])=>sendJson(res,200,workspaceChanges.checkBatch(store,workspaceScanner,DATA_DIR,decodeURIComponent(id))) },
-  { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/approve$/, handler: async (_req,res,[id])=>{const result=workspaceChanges.approveBatch(store,workspaceScanner,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.batch.approved',batchId:result.id,approval:result.approval});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/approve$/, handler: async (_req,res,[id])=>{const result=workspaceChanges.approveBatch(store,workspaceScanner,decodeURIComponent(id));writeContract('batch',result,result.approval.hashes);desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.batch.approved',batchId:result.id,approval:result.approval});sendJson(res,200,result);} },
   { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/rollback$/, handler: async (_req,res,[id])=>{const result=workspaceChanges.rollbackBatch(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.batch.rolled-back',batchId:result.id,rollback:result.rollback});sendJson(res,200,result);} },
-  { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/execute$/, handler: async (_req,res,[id])=>{const result=workspaceChanges.executeBatch(store,workspaceScanner,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.batch.executed',batchId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/workspace\/change-batches\/([^/]+)\/execute$/, handler: async (_req,res,[id])=>{const bid=decodeURIComponent(id);const result=governedExecute('batch',bid,()=>(store.get('workspaceChangeBatches',bid)?.approval?.hashes||[]),()=>workspaceChanges.executeBatch(store,workspaceScanner,DATA_DIR,bid));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.batch.executed',batchId:result.id,execution:result.execution,rollback:result.rollback});sendJson(res,200,result);} },
   { method: 'GET', pattern: /^\/api\/workspace\/runs$/, handler: async (_req, res) => sendJson(res, 200, store.all('workspaceRuns').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/roots\/([^/]+)\/commands\/allow$/, handler: async (req, res, [id]) => {const body=await readJsonBody(req),root=workspaceRunner.allowRepository(store,workspaceScanner,decodeURIComponent(id),body.actions),permission=desktopSecurity.recordPermission(store,{rootId:root.id,path:root.path,capabilities:root.commandAllowlist.actions.map(x=>'command:'+x),source:'explicit-command-allowlist'});desktopSecurity.appendAudit(DATA_DIR,{action:'command.allowlist.granted',rootId:root.id,permissionId:permission.id,actions:root.commandAllowlist.actions});sendJson(res,200,root);} },
   { method: 'POST', pattern: /^\/api\/workspace\/runs$/, handler: async (req, res) => sendJson(res, 200, await workspaceRunner.run(store,workspaceScanner,workspaceChanges,DATA_DIR,await readJsonBody(req))) },
@@ -675,7 +696,7 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/security\/audit$/, handler: async (_req, res) => sendJson(res,200,desktopSecurity.readAudit(DATA_DIR).reverse().slice(0,200)) },
   { method: 'GET', pattern: /^\/api\/security\/backups$/, handler: async (_req, res) => sendJson(res,200,store.all('securityBackups').reverse()) },
   { method: 'POST', pattern: /^\/api\/security\/backups$/, handler: async (req, res) => {const body=await readJsonBody(req),backup=desktopSecurity.createBackup(store,DATA_DIR,body.label);desktopSecurity.appendAudit(DATA_DIR,{action:'backup.created',backupId:backup.id,sha256:backup.sha256});sendJson(res,201,backup);} },
-  { method: 'POST', pattern: /^\/api\/security\/backups\/([^/]+)\/restore$/, handler: async (_req, res, [id]) => {const result=desktopSecurity.restoreBackup(store,DATA_DIR,decodeURIComponent(id));desktopSecurity.appendAudit(DATA_DIR,{action:'backup.restored',...result});sendJson(res,200,result);} },
+  { method: 'POST', pattern: /^\/api\/security\/backups\/([^/]+)\/restore$/, handler: async (_req, res, [id]) => {const result=desktopSecurity.restoreBackup(store,DATA_DIR,decodeURIComponent(id));contracts._resetHeads(store);deviceIdentity.ensure(store,DATA_DIR);desktopSecurity.appendAudit(DATA_DIR,{action:'backup.restored',...result});sendJson(res,200,result);} },
   { method: 'GET', pattern: /^\/api\/git\/status$/, handler: async (_req, res) => sendJson(res, 200, gitSnapshot()) },
   { method: 'GET', pattern: /^\/api\/collector\/runs$/, handler: async (_req, res) => sendJson(res, 200, store.all('collectionRuns')) },
   { method: 'POST', pattern: /^\/api\/collector\/plans$/, handler: async (req, res) => sendJson(res, 201, collectorWorkflows.createPlan(store, await readJsonBody(req))) },
@@ -740,6 +761,22 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/activity\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, { ok: activity.cancel(decodeURIComponent(id)) }) },
   { method: 'GET', pattern: /^\/api\/computer\/status$/, handler: async (_req, res) => sendJson(res, 200, { ...(await computer.status()), policy: computer.policy(store), workspaceRoots: computer.workspaceRoots(store) }) },
   { method: 'PUT', pattern: /^\/api\/computer\/policy$/, handler: async (req, res) => { const p = computer.setPolicy(store, await readJsonBody(req)); desktopSecurity.appendAudit(DATA_DIR, { action: 'computer.policy.changed', policy: p }); sendJson(res, 200, p); } },
+  // NOVA Everywhere: device identity and execution contracts (docs/architecture/nova-everywhere.md).
+  { method: 'GET', pattern: /^\/api\/device$/, handler: async (_req, res) => sendJson(res, 200, { device: deviceIdentity.ensure(store, DATA_DIR), classes: deviceIdentity.CLASSES, capabilities: deviceIdentity.CAPABILITIES }) },
+  { method: 'GET', pattern: /^\/api\/devices$/, handler: async (_req, res) => sendJson(res, 200, deviceIdentity.list(store, DATA_DIR)) },
+  { method: 'GET', pattern: /^\/api\/contracts$/, handler: async (req, res) => { const q = new URL(req.url, 'http://x').searchParams; sendJson(res, 200, contracts.list(store, { status: q.get('status'), capability: q.get('capability'), sessionId: q.get('sessionId'), limit: q.get('limit') })); } },
+  { method: 'GET', pattern: /^\/api\/contracts\/verify$/, handler: async (_req, res) => sendJson(res, 200, contracts.verifyChain(store, DATA_DIR)) },
+  { method: 'GET', pattern: /^\/api\/contracts\/([^/]+)\/challenge$/, handler: async (_req, res, [id]) => sendJson(res, 200, contracts.challenge(store, decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/contracts\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, contracts.get(store, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/contracts\/([^/]+)\/approval$/, handler: async (req, res, [id]) => {
+    // An approval for a contract: given here, or signed by a registered device that may approve (a paired phone, Phase 2).
+    const b = await readJsonBody(req);
+    const c = contracts.approve(store, DATA_DIR, decodeURIComponent(id), b.decision, { deviceId: b.deviceId, signature: b.signature, planHash: b.planHash, human: b.human, via: b.via });
+    const waiting = c.links && c.links.approvalId && computer.pendingApprovals().find(a => a.id === c.links.approvalId);
+    if (waiting) computer.decide(waiting.id, c.approval.decision === 'allow' ? 'allow' : 'deny');
+    desktopSecurity.appendAudit(DATA_DIR, { action: 'contract.approval', contract: c.id, decision: c.approval.decision, device: c.approval.device && c.approval.device.id, planHash: c.planHash });
+    sendJson(res, 200, c);
+  } },
   { method: 'GET', pattern: /^\/api\/computer\/approvals$/, handler: async (_req, res) => sendJson(res, 200, computer.pendingApprovals()) },
   { method: 'POST', pattern: /^\/api\/computer\/approvals\/([^/]+)$/, handler: async (req, res, [id]) => {
     const body = await readJsonBody(req);
@@ -836,9 +873,9 @@ const routes = [
       sendJson(res, 200, store.page(decodeURIComponent(name), { limit, beforeUpdatedAt: before }));
     },
   },
-  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req),storeName=decodeURIComponent(name); if (['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts'].includes(storeName)) return sendJson(res,403,{error:'This store is written only by its validated runtime.'}); sendJson(res, 200, store.put(storeName, body)); } },
-  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { const storeName=decodeURIComponent(name);if(['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts'].includes(storeName)) return sendJson(res,403,{error:'This store is runtime-managed and read-only.'}); store.delete(storeName, decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
-  { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); sendJson(res, 200, { ok: true }); } },
+  { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req),storeName=decodeURIComponent(name); if (['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts','devices','executionContracts'].includes(storeName)) return sendJson(res,403,{error:'This store is written only by its validated runtime.'}); sendJson(res, 200, store.put(storeName, body)); } },
+  { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { const storeName=decodeURIComponent(name);if(['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts','devices','executionContracts'].includes(storeName)) return sendJson(res,403,{error:'This store is runtime-managed and read-only.'}); store.delete(storeName, decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
+  { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); contracts._resetHeads(store); deviceIdentity.ensure(store, DATA_DIR); sendJson(res, 200, { ok: true }); } },
 
   { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
   { method: 'POST', pattern: /^\/api\/models\/sync$/, handler: async (req, res) => sendJson(res, 200, { models: await syncModelsFromOllama() }) },

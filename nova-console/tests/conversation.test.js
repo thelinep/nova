@@ -259,6 +259,17 @@ test('chat turn: computer tools ask first, run after approval, and report result
     assert.match(done.content, /\d+ shots\.txt/);
     assert.match(done.content, /declined/);
     assert.ok(!fs.existsSync(path.join(root, 'out.txt')), 'a declined write never happens');
+    // Each action is an execution contract with a device-signed approval and sealed evidence.
+    const contracts = require('../lib/contracts');
+    const done2 = contracts.list(store).sort((a, b) => a.evidence.seq - b.evidence.seq);
+    assert.deepEqual(done2.map(c => [c.capability, c.status]), [['process.execute', 'completed'], ['file.write', 'denied']]);
+    assert.equal(done2[0].approval.by.id, 'local-operator');
+    assert.equal(done2[0].risk, 'run');
+    assert.ok(done2[0].approval.signature && done2[0].approval.consumedAt);
+    assert.match(done2[0].observation.excerpt, /shots\.txt/);
+    assert.equal(done2[1].execution, null, 'a declined action never starts');
+    assert.equal(events.find(e => e.type === 'approval').approval.planHash, done2[0].planHash);
+    assert.deepEqual(contracts.verifyChain(store, dir).ok, true);
     const tools = ollama.calls.find(c => c.kind === 'full').opts.tools.map(t => t.function.name);
     assert.ok(tools.includes('run_command') && tools.includes('screenshot'));
     const system = ollama.calls[0].messages[0].content;

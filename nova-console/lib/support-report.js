@@ -117,8 +117,10 @@ async function buildReport(deps, options = {}) {
   const library = (() => { try { return deps.libraryInfo ? deps.libraryInfo() : null; } catch (_) { return null; } })();
   const dbBytes = fileSize(path.join(dataDir, 'nova.db'));
 
+  const evidence = (() => { try { return require('./contracts').verifyChain(store, dataDir); } catch (e) { return { ok: false, reason: e.message, count: 0 }; } })();
   const checks = [
     { id: 'backend', label: 'NOVA Runtime backend', ok: true, detail: 'Answering on this computer', help: 'monitoring' },
+    { id: 'evidence', label: 'Evidence chain (execution contracts)', ok: Boolean(evidence.ok), detail: evidence.ok ? `${evidence.count} sealed contract(s), every record and signature verified` : 'Not verified: ' + (evidence.reason || 'unknown'), help: 'safety-controls' },
     { id: 'ollama', label: 'Ollama', ok: Boolean(ollama.reachable), detail: ollama.reachable ? `${(ollama.models || []).length} model(s) installed` : 'Not reachable' + (ollama.error ? ' (' + ollama.error + ')' : '') + '. Start Ollama.', help: 'models' },
     (() => {
       const m = (() => { try { return require('./comfy-manager').status(); } catch (_) { return null; } })();
