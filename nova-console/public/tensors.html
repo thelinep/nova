@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NOVA Tensor Guide</title>
+<title>Maataa Tensor Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600;700&display=swap">
 <style>
@@ -126,10 +126,10 @@
 
 <section class="hero" aria-labelledby="t-hero">
   <div class="hero-copy">
-    <span class="eyebrow">NOVA · how generation works</span>
+    <span class="eyebrow">Maataa · how generation works</span>
     <h1 id="t-hero">Every song and picture starts as a block of random numbers</h1>
-    <p class="lede">NOVA's models don't paint or sing directly. They take a tensor full of noise and, step by step, predict how to remove it. The block shown here is that tensor. Press play or drag the slider to watch it go from static to structure.</p>
-    <p class="note">This is a simulation with the same shapes and schedule NOVA uses. The Tensor view in NOVA shows the real thing while a job runs.</p>
+    <p class="lede">Maataa's models don't paint or sing directly. They take a tensor full of noise and, step by step, predict how to remove it. The block shown here is that tensor. Press play or drag the slider to watch it go from static to structure.</p>
+    <p class="note">This is a simulation with the same shapes and schedule Maataa uses. The Tensor view in Maataa shows the real thing while a job runs.</p>
   </div>
   <div class="stage">
     <div class="controls">
@@ -151,7 +151,7 @@
 <section aria-labelledby="t-what">
   <span class="eyebrow">The basics</span>
   <h2 id="t-what">A tensor is a grid of numbers with a shape</h2>
-  <p>The shape says how many numbers there are along each direction. NOVA writes shapes the way the models do, batch first: <span class="shape">[1, 64, 750]</span> means one item, 64 rows (channels), 750 columns (time). Colour here means value: amber is positive, blue is negative, dark is near zero.</p>
+  <p>The shape says how many numbers there are along each direction. Maataa writes shapes the way the models do, batch first: <span class="shape">[1, 64, 750]</span> means one item, 64 rows (channels), 750 columns (time). Colour here means value: amber is positive, blue is negative, dark is near zero.</p>
   <div class="ladder">
     <div class="rung"><h3>Scalar <span class="shape">[]</span></h3><div class="viz"><span class="mono" style="font-size:28px;color:var(--amber)">0.42</span></div><small>One number. A seed, a CFG value, the noise level σ.</small></div>
     <div class="rung"><h3>Vector <span class="shape">[8]</span></h3><div class="viz"><div class="cells" id="vec" style="grid-template-columns:repeat(8,16px)"></div></div><small>A row of numbers. One token's embedding is a vector of 1,024 or 2,048 of these.</small></div>
@@ -163,7 +163,7 @@
 <section aria-labelledby="t-pipe">
   <span class="eyebrow">The pipeline</span>
   <h2 id="t-pipe">What happens between your prompt and the file</h2>
-  <p>These are the stages NOVA's Tensor view lights up, with the tensor shapes for a 30-second song and a 1024 × 1024 picture.</p>
+  <p>These are the stages Maataa's Tensor view lights up, with the tensor shapes for a 30-second song and a 1024 × 1024 picture.</p>
   <div class="tabs seg" role="group" aria-label="Pipeline" style="width:max-content">
     <button type="button" id="pipeSong" aria-pressed="true">Song · ACE-Step 1.5</button>
     <button type="button" id="pipeImage" aria-pressed="false">Image · SDXL</button>
@@ -183,7 +183,7 @@
     </div>
     <div class="card">
       <h3>Noise schedule and shift</h3>
-      <p class="note">σ is how much noise is left. <b>Shift</b> keeps σ high for longer, so early steps settle the big picture (the song's structure) before details. NOVA runs ACE-Step 1.5 with shift 3.</p>
+      <p class="note">σ is how much noise is left. <b>Shift</b> keeps σ high for longer, so early steps settle the big picture (the song's structure) before details. Maataa runs ACE-Step 1.5 with shift 3.</p>
       <svg id="sched" viewBox="0 0 320 190" role="img" aria-label="Noise level per step for shift 1 and the chosen shift"></svg>
       <div class="controls"><label for="shift" class="mono" style="color:var(--muted);font-size:12px">shift <span id="shiftOut">3</span></label><input type="range" id="shift" min="1" max="6" step="0.5" value="3"></div>
       <div class="legend"><span><i style="background:var(--muted)"></i>shift 1</span><span><i style="background:var(--amber)"></i>chosen shift</span></div>
@@ -219,12 +219,12 @@
 </section>
 
 <section aria-labelledby="t-view">
-  <span class="eyebrow">In NOVA</span>
+  <span class="eyebrow">In Maataa</span>
   <h2 id="t-view">Reading the Tensor view</h2>
-  <p>It opens at the bottom right whenever NOVA sends a job to ComfyUI. Press ⤢ for a bigger view.</p>
+  <p>It opens at the bottom right whenever Maataa sends a job to ComfyUI. Press ⤢ for a bigger view.</p>
   <div class="anatomy">
     <div class="card"><h3>Stages <span class="chip on">Denoise × 8</span></h3><p class="note">The pipeline above, live. Ticks mark finished stages with their time. Loading weights is often the slowest part of the first run.</p></div>
-    <div class="card"><h3>The picture</h3><p class="note">The model's current guess, x̂₀, after each step. Images are shown by ComfyUI's colour projection of the 4 channels, so they look soft and blocky. Songs are a channels × time heatmap drawn by NOVA's ComfyUI add-on.</p></div>
+    <div class="card"><h3>The picture</h3><p class="note">The model's current guess, x̂₀, after each step. Images are shown by ComfyUI's colour projection of the 4 channels, so they look soft and blocky. Songs are a channels × time heatmap drawn by Maataa's ComfyUI add-on.</p></div>
     <div class="card"><h3>Shape line</h3><p class="note">The latent and output shapes for this job, worked out from its settings, such as <span class="shape">[1, 64, 750]</span> for 30 seconds.</p></div>
     <div class="card"><h3>Seconds per step</h3><p class="note">One bar per sampler step, with the average and time left. Taller bars mid-run usually mean the Mac is short of memory.</p></div>
     <div class="card"><h3>From noise to result</h3><p class="note">A film strip of up to 16 previews. Click one to pause on it, then ▶ live to follow the job again.</p></div>
@@ -242,7 +242,7 @@
   let s = 20260927;
   const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
   const gauss = () => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
-  const heat = v => { // value in -1..1 -> [r,g,b], same colours as NOVA's add-on
+  const heat = v => { // value in -1..1 -> [r,g,b], same colours as Maataa's add-on
     const p = Math.max(0, v), n = Math.max(0, -v);
     return [14 + p * 241 + n * 50, 14 + p * 162 + n * 126, 20 + p * 28 + n * 235];
   };
@@ -320,7 +320,7 @@
       ['Starting latent', 'A block of pure noise from the seed. 30 seconds is 750 time frames (25 a second).', '[1, 64, 750]', true],
       ['Denoise × 8', 'Each step the model predicts the clean latent; the sampler removes a share of the noise (Euler, shift 3, CFG 1).', '[1, 64, 750]', true],
       ['Decode', 'The audio VAE turns the 64 × 750 latent into sound: stereo samples at 48 kHz.', '[1, 2, 1440000]', false],
-      ['Save', 'ComfyUI writes an MP3 and NOVA stores it in Media with the full recipe.', '.mp3', false],
+      ['Save', 'ComfyUI writes an MP3 and Maataa stores it in Media with the full recipe.', '.mp3', false],
     ],
     image: [
       ['Load weights', 'The SDXL checkpoint: UNet, two CLIP text encoders and the VAE.', '', false],

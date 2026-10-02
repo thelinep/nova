@@ -280,7 +280,7 @@ function remove(store, dataDir, id) {
   const s = store.get('chatSources', id);
   if (!s) throw error('Unknown source.', 404);
   store.delete('chatSources', id);
-  fs.rmSync(dirFor(dataDir, id), { recursive: true, force: true }); // only NOVA's own copy; a folder source is never touched
+  fs.rmSync(dirFor(dataDir, id), { recursive: true, force: true }); // only Maataa's own copy; a folder source is never touched
   return { ok: true };
 }
 

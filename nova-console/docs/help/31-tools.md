@@ -3,11 +3,11 @@ id: tools-approvals
 title: Tools and approvals (MCP Registry)
 section: Capabilities
 order: 31
-summary: The tool servers models can call — files, git and a web browser — and how NOVA asks before anything happens.
+summary: The tool servers models can call — files, git and a web browser — and how Maataa asks before anything happens.
 keywords: mcp registry tool servers filesystem git browser automation playwright approval policy ask allow connect disconnect permissions
 views: mcp
 ---
-Tool servers give models real abilities: reading files, checking git, browsing the web. NOVA starts each server as a local child process and talks to it over the MCP protocol.
+Tool servers give models real abilities: reading files, checking git, browsing the web. Maataa starts each server as a local child process and talks to it over the MCP protocol.
 
 @screen media/mcp.jpg "The MCP Registry: servers, their tools and approval policy."
 
@@ -30,6 +30,6 @@ Pending approvals appear in the MCP Registry and wherever the call came from. Re
 
 ## Good habits
 
-- Disconnect a server you no longer need. Servers do not survive a NOVA restart and must reconnect.
+- Disconnect a server you no longer need. Servers do not survive a Maataa restart and must reconnect.
 - Keep **ask** on for anything that changes files or reaches the web.
 - If Browser Automation reports that Chromium could not start, run `npx playwright install chromium` in `nova-console`.

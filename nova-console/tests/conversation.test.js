@@ -215,7 +215,7 @@ test('chat turn: grounded streaming reply with steps, memory and follow-ups', as
     const types = events.map(e => e.type);
     assert.ok(types.includes('job') && types.includes('token') && types.includes('done') && types.includes('followups'), types.join(','));
     const system = ollama.calls.find(c => c.kind === 'stream').messages[0].content;
-    assert.match(system, /You are NOVA/);
+    assert.match(system, /You are Maataa/);
     assert.match(system, /Prefers short answers/);
     assert.match(system, /Marine Drive/);
     assert.match(system, /Camera 42000/);

@@ -39,19 +39,19 @@ fn show_main_window(app: &AppHandle) {
 }
 
 fn install_menu_bar(app: &AppHandle) -> tauri::Result<()> {
-    let show = MenuItem::with_id(app, "show", "Show NOVA", true, None::<&str>)?;
-    let hide = MenuItem::with_id(app, "hide", "Hide NOVA", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", "Show Maataa", true, None::<&str>)?;
+    let hide = MenuItem::with_id(app, "hide", "Hide Maataa", true, None::<&str>)?;
     let refresh = MenuItem::with_id(app, "refresh", "Refresh workspace", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit NOVA", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit Maataa", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show, &hide, &refresh, &quit])?;
     let icon = app
         .default_window_icon()
         .cloned()
-        .ok_or_else(|| tauri::Error::AssetNotFound("NOVA application icon".into()))?;
+        .ok_or_else(|| tauri::Error::AssetNotFound("Maataa application icon".into()))?;
 
     TrayIconBuilder::with_id("nova-menu-bar")
         .icon(icon)
-        .tooltip("NOVA Runtime")
+        .tooltip("Maataa Workstation")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
@@ -252,7 +252,7 @@ fn open_provider_browser(app: AppHandle, url: String) -> Result<(), String> {
         PROVIDER_BROWSER_LABEL,
         WebviewUrl::External(parsed_url),
     )
-    .title("NOVA Provider Browser")
+    .title("Maataa Provider Browser")
     .inner_size(1240.0, 860.0)
     .min_inner_size(900.0, 620.0)
     .build()
@@ -273,7 +273,7 @@ fn pick_local_folder() -> Result<String, String> {
         let output = Command::new("osascript")
             .args([
                 "-e",
-                "POSIX path of (choose folder with prompt \"Approve a local folder for NOVA\")",
+                "POSIX path of (choose folder with prompt \"Approve a local folder for Maataa\")",
             ])
             .output()
             .map_err(|error| format!("Could not open the native folder picker: {error}"))?;
@@ -371,7 +371,7 @@ mod tests {
     #[test]
     fn menu_bar_declares_expected_visible_actions() {
         let source = include_str!("main.rs");
-        for item in ["Show NOVA", "Hide NOVA", "Refresh workspace", "Quit NOVA"] {
+        for item in ["Show Maataa", "Hide Maataa", "Refresh workspace", "Quit Maataa"] {
             assert!(source.contains(item), "missing menu item: {item}");
         }
         assert!(source.contains("nova-menu-bar"));
@@ -479,7 +479,7 @@ fn main() {
                 } else {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::AddrInUse,
-                        "Port 8787 is occupied by a server outside this NOVA data directory.",
+                        "Port 8787 is occupied by a server outside this Maataa data directory.",
                     )
                     .into());
                 }
@@ -495,7 +495,7 @@ fn main() {
                     }
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::TimedOut,
-                        "Bundled NOVA server did not become healthy.",
+                        "Bundled Maataa server did not become healthy.",
                     )
                     .into());
                 }
@@ -509,7 +509,7 @@ fn main() {
                 .parse()
                 .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{error}")))?;
             let window = WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL, WebviewUrl::External(url))
-                .title("NOVA Runtime")
+                .title("Maataa Workstation")
                 .inner_size(1360.0, 860.0)
                 .resizable(true)
                 .build()?;
@@ -518,14 +518,14 @@ fn main() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("error while building NOVA Runtime desktop shell")
+        .expect("error while building Maataa Workstation desktop shell")
         .run(|app_handle, event| {
             if matches!(event, tauri::RunEvent::Ready) {
                 // macOS rejects status-item construction while its application
                 // delegate is still handling didFinishLaunching. `Ready` runs
                 // immediately after that lifecycle boundary.
                 if let Err(error) = install_menu_bar(app_handle) {
-                    eprintln!("NOVA menu-bar item unavailable: {error}");
+                    eprintln!("Maataa menu-bar item unavailable: {error}");
                 }
             }
             if matches!(

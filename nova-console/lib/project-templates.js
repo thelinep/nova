@@ -94,7 +94,7 @@ test('unknown routes return 404', () => withServer(async base => {
 }));
 `,
       '.gitignore': GITIGNORE,
-      'README.md': '# {{title}}\n\nA small JSON API created with NOVA.\n\n```bash\nnpm start   # http://127.0.0.1:3000/health\nnpm test\n```\n',
+      'README.md': '# {{title}}\n\nA small JSON API created with Maataa.\n\n```bash\nnpm start   # http://127.0.0.1:3000/health\nnpm test\n```\n',
     },
   },
 
@@ -175,7 +175,7 @@ test('page has a title', () => {
 });
 `,
       '.gitignore': GITIGNORE,
-      'README.md': '# {{title}}\n\nA static website created with NOVA.\n\n```bash\nnpm start       # preview at http://127.0.0.1:5173\nnpm run build   # copies the site to dist/\nnpm test\n```\n',
+      'README.md': '# {{title}}\n\nA static website created with Maataa.\n\n```bash\nnpm start       # preview at http://127.0.0.1:5173\nnpm run build   # copies the site to dist/\nnpm test\n```\n',
     },
   },
 
@@ -230,7 +230,7 @@ main { max-width: 40rem; margin: 4rem auto; padding: 0 1rem; }
 `,
       'test/greeting.test.js': GREETING_TEST_ESM('../src/greeting.js'),
       '.gitignore': GITIGNORE,
-      'README.md': '# {{title}}\n\nA React app created with NOVA.\n\n```bash\nnpm install\nnpm run dev     # http://127.0.0.1:5173\nnpm run build\nnpm test        # works before install\n```\n',
+      'README.md': '# {{title}}\n\nA React app created with Maataa.\n\n```bash\nnpm install\nnpm run dev     # http://127.0.0.1:5173\nnpm run build\nnpm test        # works before install\n```\n',
     },
   },
 
@@ -274,7 +274,7 @@ main { max-width: 40rem; margin: 4rem auto; padding: 0 1rem; }
       'test/greeting.test.js': GREETING_TEST_ESM('../lib/greeting.js'),
       'jsconfig.json': JSON.stringify({ compilerOptions: { baseUrl: '.' } }, null, 2) + '\n',
       '.gitignore': GITIGNORE,
-      'README.md': '# {{title}}\n\nA Next.js app created with NOVA.\n\n```bash\nnpm install\nnpm run dev     # http://127.0.0.1:3000\nnpm run build\nnpm test        # works before install\n```\n',
+      'README.md': '# {{title}}\n\nA Next.js app created with Maataa.\n\n```bash\nnpm install\nnpm run dev     # http://127.0.0.1:3000\nnpm run build\nnpm test        # works before install\n```\n',
     },
   },
 };

@@ -21,12 +21,12 @@
  * context rather than already knowing the answer.
  * ========================================================================= */
 
-const DATASET_NAME = 'NOVA Bench 10';
+const DATASET_NAME = 'Maataa Bench 10';
 const CITATION_MARK = '[source]';
 
 const BENCH_SET = [
-  { id: 'b1', groundOnly: true, context: 'NOVA Runtime listens on port 8787 by default, configurable via the PORT environment variable.', prompt: 'What port does NOVA Runtime listen on by default?', expect: ['8787'] },
-  { id: 'b2', groundOnly: true, context: 'NOVA Runtime persists every store to a real SQLite database via Node’s built-in node:sqlite module, avoiding any native compile step.', prompt: 'What database does NOVA Runtime use for persistence?', expect: ['sqlite'] },
+  { id: 'b1', groundOnly: true, context: 'Maataa Workstation listens on port 8787 by default, configurable via the PORT environment variable.', prompt: 'What port does Maataa Workstation listen on by default?', expect: ['8787'] },
+  { id: 'b2', groundOnly: true, context: 'Maataa Workstation persists every store to a real SQLite database via Node’s built-in node:sqlite module, avoiding any native compile step.', prompt: 'What database does Maataa Workstation use for persistence?', expect: ['sqlite'] },
   { id: 'b3', groundOnly: true, context: 'A workflow run that is still "running" when the server process restarts is resumed from its last persisted node by a function called resumeInFlightRuns().', prompt: 'What function resumes an in-flight workflow run after a restart?', expect: ['resumeinflightruns'] },
   { id: 'b4', groundOnly: true, context: 'The real agent tool-calling loop is capped at a maximum of 6 tool-call rounds before it errors out.', prompt: 'How many tool-call rounds is the agent loop capped at?', expect: ['6', 'six'] },
   { id: 'b5', groundOnly: true, context: 'Each connected MCP server has an approval policy that can be set to auto, ask, or deny.', prompt: 'Name one of the three MCP approval policy values.', expect: ['auto', 'ask', 'deny'] },

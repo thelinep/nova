@@ -108,7 +108,7 @@ function checkProposal(store,scanner,dataDir,id){
   const copyPath=path.join(dataDir,'workspace-copies',proposal.id);
   const copied=copyWorkspace(scanner,target.root.path,copyPath);
   const copiedTarget=path.join(copyPath,proposal.relativePath);fs.writeFileSync(copiedTarget,proposed,'utf8');
-  const checks=[{name:'Source fingerprint',status:'passed',detail:'Current source matches the proposal SHA-256.'},{name:'Patch application',status:'passed',detail:'Patch applied only inside the NOVA workspace copy.'}];
+  const checks=[{name:'Source fingerprint',status:'passed',detail:'Current source matches the proposal SHA-256.'},{name:'Patch application',status:'passed',detail:'Patch applied only inside the Maataa workspace copy.'}];
   const ext=path.extname(copiedTarget).toLowerCase();
   if(ext==='.json'){
     try{JSON.parse(proposed);checks.push({name:'JSON parse',status:'passed',detail:'Copied JSON parses successfully.'});}catch(e){checks.push({name:'JSON parse',status:'failed',detail:e.message});}
@@ -141,7 +141,7 @@ function executeProposal(store,scanner,dataDir,id){
   const stat=fs.statSync(target.path),temporary=path.join(path.dirname(target.path),`.nova-${proposal.id}-${process.pid}.tmp`);
   try { fs.writeFileSync(temporary,proposed,{encoding:'utf8',mode:stat.mode});fs.renameSync(temporary,target.path); } finally { try{if(fs.existsSync(temporary))fs.unlinkSync(temporary);}catch(_){} }
   const written=fs.readFileSync(target.path,'utf8'),afterHash=hash(written);
-  if(afterHash!==proposal.proposedSha256){fs.writeFileSync(target.path,target.content,{encoding:'utf8',mode:stat.mode});throw error('Post-write verification failed; NOVA restored the original file.',500);}
+  if(afterHash!==proposal.proposedSha256){fs.writeFileSync(target.path,target.content,{encoding:'utf8',mode:stat.mode});throw error('Post-write verification failed; Maataa restored the original file.',500);}
   proposal.status='applied';proposal.updatedAt=now;proposal.appliedAt=now;proposal.approval.consumedAt=now;
   proposal.execution={status:'success',executedAt:now,affectedFiles:[{relativePath:proposal.relativePath,absolutePath:target.path,beforeSha256:beforeHash,afterSha256:afterHash}],validationResults:proposal.checks.map(check=>({...check}))};
   proposal.rollback={available:true,backupPath:rollbackPath,originalSha256:beforeHash,currentSha256:afterHash,instructions:'Create and explicitly approve a separate rollback write batch before restoring this backup.'};

@@ -34,7 +34,7 @@ The privacy badge is worked out from these settings and the loaded model, not wr
 | NETWORK ALLOWED | The model is local, but automations and collectors may reach the internet. |
 | REMOTE MODEL | The loaded model runs on another service, so prompts go there. |
 
-NOVA's server listens only on `127.0.0.1`, so other computers cannot reach it. The Provider Browser keeps provider sign-ins separate from NOVA and never stores their passwords.
+Maataa's server listens only on `127.0.0.1`, so other computers cannot reach it. The Provider Browser keeps provider sign-ins separate from Maataa and never stores their passwords.
 
 ## Where your data lives
 
@@ -42,7 +42,7 @@ NOVA's server listens only on `127.0.0.1`, so other computers cannot reach it. T
 | --- | --- |
 | Database (sessions, models, agents, history) | `~/Library/Application Support/com.brahmini.nova-runtime/nova.db` |
 | Server log | the same folder, `nova-runtime-server.log` |
-| Everything NOVA makes, as files | `~/Documents/NOVA Library`, one folder per day, each with a `.json` recipe |
+| Everything Maataa makes, as files | `~/Documents/NOVA Library`, one folder per day, each with a `.json` recipe |
 | Browser development mode | `nova-console/data/nova.db`, or the folder in `DATA_DIR` |
 | Workbench history: jobs, policies, budgets, rollbacks, connector requests, agent browser logs | inside `nova.db` |
 | Audit log (encrypted, each entry chained to the one before) | the data folder |
@@ -51,8 +51,8 @@ NOVA's server listens only on `127.0.0.1`, so other computers cannot reach it. T
 
 ## Back up and restore
 
-Quit NOVA fully (menu bar item → **Quit NOVA**), then copy the data folder and the NOVA Library. Copy the whole data folder, including its hidden files: without `.secret-master-key`, saved connector tokens cannot be read again. Restore only to the same or a newer NOVA version, with NOVA closed. Keep backups private: they contain your chats, documents and history.
+Quit Maataa fully (menu bar item → **Quit Maataa**), then copy the data folder and the Maataa Library. Copy the whole data folder, including its hidden files: without `.secret-master-key`, saved connector tokens cannot be read again. Restore only to the same or a newer Maataa version, with Maataa closed. Keep backups private: they contain your chats, documents and history.
 
 ## Reset
 
-**Reset workspace data** (Settings → Workspace data) deletes every record in NOVA's database: sessions, models, documents, agents, workflows and history. Press it twice to confirm. It cannot be undone, so back up first. Files in the NOVA Library are not deleted, and neither is Workbench history (jobs, policies, audit log), the secrets vault or the resume passphrase. To remove those too, quit NOVA and delete the data folder.
+**Reset workspace data** (Settings → Workspace data) deletes every record in Maataa's database: sessions, models, documents, agents, workflows and history. Press it twice to confirm. It cannot be undone, so back up first. Files in the Maataa Library are not deleted, and neither is Workbench history (jobs, policies, audit log), the secrets vault or the resume passphrase. To remove those too, quit Maataa and delete the data folder.

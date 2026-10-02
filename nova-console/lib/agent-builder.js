@@ -82,7 +82,7 @@ async function askJson(ollama, model, system, prompt, check) {
 /* ------------------------------------------------------------------ agents */
 
 const AGENT_SYSTEM = [
-  'You design agents for NOVA, a local AI workspace. An agent is a local model plus instructions plus a small set of tools.',
+  'You design agents for Maataa, a local AI workspace. An agent is a local model plus instructions plus a small set of tools.',
   'Choose tools ONLY from the catalog you are given, by id. Choose the fewest tools the goal needs; an agent with no tools is fine.',
   'Skills marked "real": false are placeholders that do nothing useful; avoid them.',
   'Only choose "delegates" (other agents this agent may hand work to) when the goal clearly needs their speciality.',
@@ -180,7 +180,7 @@ function approveAgent(store, agentId) {
 /* --------------------------------------------------------------- workflows */
 
 const WORKFLOW_SYSTEM = [
-  'You design workflows for NOVA, a local AI workspace. A workflow is a straight line of steps; each step gets the previous step\'s output.',
+  'You design workflows for Maataa, a local AI workspace. A workflow is a straight line of steps; each step gets the previous step\'s output.',
   'Step types: "agent" (ref = an existing agent id), "new_agent" (goal = what a new agent for this step should do; use only when no',
   'existing agent fits), "skill" (ref = a skill id from the catalog), "mcp" (ref = a server id whose workflowStep is true; it lists',
   'files or shows git status), and "approval" (a person must sign off before the workflow continues).',

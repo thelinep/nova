@@ -184,7 +184,7 @@ async function execute(store, deps, loop, controller) {
       if (attempt.test.status === 'passed' && !attempt.syntaxErrors.length) {
         attempt.status = 'passed'; save(store, loop);
         const { ops, conflicts } = netOperations(scanner, root.path, copyRoot, start, allTouched);
-        if (conflicts.length) { loop.status = 'conflict'; loop.error = 'These files changed in your project while the loop was running, so NOVA did not prepare a batch: ' + conflicts.join(', '); return; }
+        if (conflicts.length) { loop.status = 'conflict'; loop.error = 'These files changed in your project while the loop was running, so Maataa did not prepare a batch: ' + conflicts.join(', '); return; }
         if (!ops.length) { loop.status = 'no-changes'; loop.error = 'Tests pass, but the working copy has no net change from your project.'; return; }
         const batch = changes.createBatch(store, scanner, { rootId: loop.rootId, summary: `${loop.request.slice(0, 200)} (development loop, ${number} attempt${number > 1 ? 's' : ''})`, changes: ops });
         batch.devLoopId = loop.id; store.put('workspaceChangeBatches', batch);
@@ -242,7 +242,7 @@ function cancelLoop(store, id) {
 
 function recoverInterrupted(store) {
   let count = 0;
-  for (const loop of store.all('workspaceLoops')) if (loop.status === 'running') { loop.status = 'interrupted'; loop.phase = null; loop.finishedAt = now(); loop.error = 'NOVA restarted while the loop was running.'; store.put('workspaceLoops', loop); count++; }
+  for (const loop of store.all('workspaceLoops')) if (loop.status === 'running') { loop.status = 'interrupted'; loop.phase = null; loop.finishedAt = now(); loop.error = 'Maataa restarted while the loop was running.'; store.put('workspaceLoops', loop); count++; }
   return count;
 }
 

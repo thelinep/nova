@@ -68,12 +68,13 @@ async function ask({ store, ollama, characters = null }, input = {}) {
   const views = (Array.isArray(input.views) ? input.views : []).map(v => ({ id: String(v.id).slice(0, 40), label: String(v.label).slice(0, 60) })).slice(0, 60);
   const tours = (Array.isArray(input.tours) ? input.tours : []).map(t => ({ id: String(t.id).slice(0, 40), title: String(t.title).slice(0, 100) })).slice(0, 30);
   const passages = search(text, view);
-  let persona = 'You are Nova, the friendly helper built into the NOVA app. You talk like a calm, capable colleague sitting next to the person.';
-  if (input.characterId && characters) { try { persona = characters.personaPrompt(characters.get(store, input.characterId)); } catch (_) {} }
+  // Nova (or another character) as designed in the personality designer; this fallback if none exists.
+  let persona = 'You are Nova, the friendly helper built into Maataa Workstation. You talk like a calm, capable colleague sitting next to the person.';
+  if (characters) { try { persona = characters.personaPrompt(characters.get(store, input.characterId || characters.NOVA_ID)); } catch (_) {} }
   const system = [
     persona,
-    'You help the person use NOVA, a local AI workspace on their Mac. Answer in 1 to 4 short sentences that sound natural when read aloud: no lists, tables, markdown or code unless they ask. Be concrete: name the exact screen and button.',
-    'Use only the help passages and screen notes below for facts about NOVA. If they do not cover the question, say you are not sure and suggest opening Help & Support. Never invent buttons or settings.',
+    'You help the person use Maataa Workstation, a governed AI workspace that runs on their own Mac. Answer in 1 to 4 short sentences that sound natural when read aloud: no lists, tables, markdown or code unless they ask. Be concrete: name the exact screen and button.',
+    'Use only the help passages and screen notes below for facts about the app. If they do not cover the question, say you are not sure and suggest opening Help & Support. Never invent buttons or settings.',
     'You cannot press buttons, change settings or touch files yourself. You can offer ONE of these by ending your answer with a tag on its own:',
     views.length ? '  [go:<screen id>] to open a screen. Screens: ' + views.map(v => `${v.id} (${v.label})`).join(', ') : '',
     tours.length ? '  [tour:<id>] to walk them through it step by step on screen. Walkthroughs: ' + tours.map(t => `${t.id} (${t.title})`).join(', ') : '',

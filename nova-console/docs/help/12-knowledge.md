@@ -11,7 +11,7 @@ views: knowledge,retrieval
 
 1. Open **Knowledge** and create a collection with a clear purpose, for example "Product requirements".
 2. Add documents: text, Markdown, HTML, PDF and similar text-based files, or paste text. Transcripts from Media can land in a collection too.
-3. NOVA splits each document into chunks and makes embeddings with Ollama. Wait for the document's status and chunk count before relying on it.
+3. Maataa splits each document into chunks and makes embeddings with Ollama. Wait for the document's status and chunk count before relying on it.
 
 @screen media/knowledge.jpg "Knowledge collections and their documents."
 
@@ -31,4 +31,4 @@ Use it to find missing, badly split or irrelevant material. Results depend on yo
 
 ## Using collections in chat
 
-Turn on **Retrieval** under the Console's message box. NOVA adds the best passages to the prompt, and the answer shows them as citation chips. The inspector's **Sources** and **Retrieval** tabs show everything that was retrieved.
+Turn on **Retrieval** under the Console's message box. Maataa adds the best passages to the prompt, and the answer shows them as citation chips. The inspector's **Sources** and **Retrieval** tabs show everything that was retrieved.

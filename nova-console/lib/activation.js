@@ -61,7 +61,7 @@ class ActivationLadder {
     return {
       id: 'runtime',
       label: 'Local runtime ready',
-      description: 'The NOVA server is running and the local database is reachable.',
+      description: 'The Maataa server is running and the local database is reachable.',
       done: true,
       detail: 'loopback only',
       action: null,

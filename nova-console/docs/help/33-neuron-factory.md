@@ -27,7 +27,7 @@ views: neurons
 3. Edit the **Training specification**. Changing the kind fills in a working example (for a tensor network, it learns "both inputs on").
 4. Press **Create blueprint**, then **Queue training** on its card.
 
-Training runs in the background, so you can keep using NOVA. The card shows the job's progress, then the result, including its **final loss** (how far the outputs are from the targets: lower is better).
+Training runs in the background, so you can keep using Maataa. The card shows the job's progress, then the result, including its **final loss** (how far the outputs are from the targets: lower is better).
 
 ## Scale
 
@@ -45,6 +45,6 @@ A result that fails the check stays unapproved, and you can change the specifica
 
 ## Good to know
 
-- If NOVA restarts while a job is training, the job is marked **interrupted** and the blueprint can be queued again.
-- While NOVA is halted with the kill switch in [Workbench](help:workbench), new training is refused.
-- Blueprints, results and evaluations can only be changed by NOVA itself, not through the general data interface.
+- If Maataa restarts while a job is training, the job is marked **interrupted** and the blueprint can be queued again.
+- While Maataa is halted with the kill switch in [Workbench](help:workbench), new training is refused.
+- Blueprints, results and evaluations can only be changed by Maataa itself, not through the general data interface.

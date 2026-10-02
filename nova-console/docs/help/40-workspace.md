@@ -3,23 +3,23 @@ id: workspace
 title: Local Workspace and projects
 section: Local Workspace
 order: 40
-summary: Approve a folder, let NOVA draft code changes you review and apply in one step, start new projects from templates, run install and dev, and keep a change looping until the tests pass.
+summary: Approve a folder, let Maataa draft code changes you review and apply in one step, start new projects from templates, run install and dev, and keep a change looping until the tests pass.
 keywords: workspace folder approve code changes change batch apply atomically rollback new project template node api static website react vite next.js install dev server development loop tests git updates allowlist
 views: workspace,git
 ---
-Local Workspace lets NOVA read and change code on your computer, but only inside folders you approve, and only after you review each change.
+Local Workspace lets Maataa read and change code on your computer, but only inside folders you approve, and only after you review each change.
 
 @screen media/workspace.jpg "Local Workspace with an approved project folder."
 
 ## Approve a folder
 
-Press **Choose folder…**, pick a project folder and press **Approve root**. NOVA can then **Scan folder**, **Search** it and cite files as `path:line`. **Revoke approval** takes access away again. Nothing outside approved folders is ever read or written.
+Press **Choose folder…**, pick a project folder and press **Approve root**. Maataa can then **Scan folder**, **Search** it and cite files as `path:line`. **Revoke approval** takes access away again. Nothing outside approved folders is ever read or written.
 
 ## Code changes
 
-NOVA plans changes only with a model that passed its coding checks: open **Models** and press **Qualify for coding** first ([Models](help:models#qualify-for-coding)). Models of 3.2B parameters or smaller can only plan changes to a single file.
+Maataa plans changes only with a model that passed its coding checks: open **Models** and press **Qualify for coding** first ([Models](help:models#qualify-for-coding)). Models of 3.2B parameters or smaller can only plan changes to a single file.
 
-NOVA drafts changes from a chat request ("Create src/date.js that exports formatDate") or from JSON you enter. A **change batch** holds up to 50 operations:
+Maataa drafts changes from a chat request ("Create src/date.js that exports formatDate") or from JSON you enter. A **change batch** holds up to 50 operations:
 
 | Operation | What it does |
 | --- | --- |
@@ -44,18 +44,18 @@ NOVA drafts changes from a chat request ("Create src/date.js that exports format
 | React app (Vite) | React single-page app | Yes |
 | Next.js app | Next.js App Router project | Yes |
 
-**Preview files** lists what would be written. **Create project** builds it in a hidden staging folder, runs `git init` on `main`, and moves it into place in one step, then approves the new folder. If your git name and email are set, NOVA makes a first commit.
+**Preview files** lists what would be written. **Create project** builds it in a hidden staging folder, runs `git init` on `main`, and moves it into place in one step, then approves the new folder. If your git name and email are set, Maataa makes a first commit.
 
 ## Install packages and run the dev server
 
 Commands only run after you approve an allowlist for the project.
 
 - **install** runs `npm ci` or `npm install`. It needs **Settings → Allow network access**. Package install scripts are skipped unless you tick **allow install scripts**.
-- **dev** runs the project's `dev` (or `start`) script on `127.0.0.1`, streams the log and shows the address. **Stop dev server** ends it; quitting NOVA stops them all.
+- **dev** runs the project's `dev` (or `start`) script on `127.0.0.1`, streams the log and shows the address. **Stop dev server** ends it; quitting Maataa stops them all.
 
 ## Development loop
 
-Describe a change, pick a local model and up to 5 attempts, and press **Start loop**. NOVA works on a private copy: it runs the tests, asks the model for a plan, applies it, runs the tests again, and feeds failures back until they pass. The result becomes a normal change batch for you to review; nothing changes in your folder until you apply it. **Cancel loop** stops it at any time. The project's `test` command must be allowlisted, and the model must have passed **Qualify for coding**.
+Describe a change, pick a local model and up to 5 attempts, and press **Start loop**. Maataa works on a private copy: it runs the tests, asks the model for a plan, applies it, runs the tests again, and feeds failures back until they pass. The result becomes a normal change batch for you to review; nothing changes in your folder until you apply it. **Cancel loop** stops it at any time. The project's `test` command must be allowlisted, and the model must have passed **Qualify for coding**.
 
 A change applied after its checks passed, or a loop that ends with passing tests, completes step 5 of [the setup checklist](help:getting-started-checklist).
 

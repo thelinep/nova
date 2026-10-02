@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NOVA Workbench</title>
+<title>Maataa Workbench</title>
 <style>
 :root {
   --bg: #0b0d10; --panel: #14171c; --panel-2: #1a1e24;
@@ -144,7 +144,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
 <body>
 
 <header class="topbar">
-  <div class="brand"><a href="/" style="color:var(--muted);text-decoration:none;margin-right:10px">← Console</a><span class="dot"></span>NOVA Workbench <a href="/#help/workbench" style="color:var(--muted);font-size:11px;margin-left:10px">Help</a></div>
+  <div class="brand"><a href="/" style="color:var(--muted);text-decoration:none;margin-right:10px">← Console</a><span class="dot"></span>Maataa Workbench <a href="/#help/workbench" style="color:var(--muted);font-size:11px;margin-left:10px">Help</a></div>
   <div class="pills">
     <span id="pill-system" class="pill">system: …</span>
     <span id="pill-kill" class="pill">kill: …</span>
@@ -228,7 +228,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
   async function ensureOperator() {
     var op = getOperator();
     if (op) return op;
-    var v = await ask({ title: 'Who is acting?', message: 'Your name is written next to every decision in the audit trail. NOVA asks once and remembers it on this computer.', fields: [{ name: 'op', label: 'Your name' }], ok: 'save' });
+    var v = await ask({ title: 'Who is acting?', message: 'Your name is written next to every decision in the audit trail. Maataa asks once and remembers it on this computer.', fields: [{ name: 'op', label: 'Your name' }], ok: 'save' });
     if (!v || !v.op) return null;
     setOperator(v.op);
     return v.op;
@@ -442,7 +442,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
             if (!st.set) fields.push({ name: 'newPass', label: 'Choose a resume passphrase (at least 6 characters)', type: 'password' });
             else fields.push({ name: 'cred', label: 'Resume passphrase', type: 'password' });
             fields.push({ name: 'reason', label: 'Why is it safe to resume?' });
-            var v = await ask({ title: 'Resume NOVA', message: st.set ? 'Enter the resume passphrase to let jobs, agents and the agent browser run again.' : 'No resume passphrase is set yet. Choose one now; you will need it after every halt.', fields: fields, ok: 'resume' });
+            var v = await ask({ title: 'Resume Maataa', message: st.set ? 'Enter the resume passphrase to let jobs, agents and the agent browser run again.' : 'No resume passphrase is set yet. Choose one now; you will need it after every halt.', fields: fields, ok: 'resume' });
             if (!v) return;
             if (!st.set) { if (!await setPassphrase(v.newPass)) return; v.cred = v.newPass; }
             postAction('/api/workbench/actions/runtime/resume', { reason: v.reason, credential: v.cred });
@@ -454,7 +454,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans);
           var st = await passphraseStatus();
           var fields = [{ name: 'reason', label: 'Why are you halting?' }];
           if (!st.set) fields.push({ name: 'newPass', label: 'Choose a resume passphrase (you need it to resume)', type: 'password' });
-          var v = await ask({ title: 'Halt NOVA', message: 'Stops background jobs, agents, autonomy runs, the agent browser and NOVA\'s actions on this computer at their next safe point. Chat keeps working. Resuming needs the resume passphrase.', fields: fields, ok: 'halt', danger: true });
+          var v = await ask({ title: 'Halt Maataa', message: 'Stops background jobs, agents, autonomy runs, the agent browser and Maataa\'s actions on this computer at their next safe point. Chat keeps working. Resuming needs the resume passphrase.', fields: fields, ok: 'halt', danger: true });
           if (!v) return;
           if (!st.set && !await setPassphrase(v.newPass)) return;
           postAction('/api/workbench/actions/runtime/halt', { reason: v.reason });

@@ -147,3 +147,38 @@ test('server: character routes, preview in a character voice, agent assignment',
     assert.equal((await j('/api/characters/' + c.id, { method: 'DELETE' })).status, 200);
   } finally { child.kill(); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(kok, { recursive: true, force: true }); }
 });
+
+test('Nova: a built-in helper character with traits and an avatar; cannot be deleted, can be reset', () => {
+  const dir = tmp('nova-builtin-'); const { db } = openDb(dir); const store = new Store(db);
+  try {
+    const n = characters.ensureNova(store);
+    assert.deepEqual([n.id, n.name, n.builtin, n.voice.engine, n.avatar.style], ['nova', 'Nova', true, 'default', 'face']);
+    assert.equal(characters.voiceLabel(n.voice), 'Usual voice');
+    assert.equal(characters.ensureNova(store).createdAt, n.createdAt, 'ensure is idempotent');
+    const u = characters.update(store, 'nova', { traits: { warmth: 90, humor: 10, formality: 50, brevity: 80, encouragement: 70 }, avatar: { style: 'face', face: { color: '#6ee7b7', eyes: 'happy', extra: 'headset', skin: 'nope' } } });
+    assert.equal(u.builtin, true, 'stays built in after an update');
+    assert.deepEqual(u.avatar.face, { color: '#6ee7b7', skin: 'slate', eyes: 'happy', shape: 'circle', extra: 'headset' }, 'unknown values fall back');
+    const p = characters.personaPrompt(u);
+    assert.match(p, /Warm and caring/); assert.match(p, /Serious, no jokes/); assert.match(p, /Very brief/); assert.match(p, /Encouraging/);
+    assert.doesNotMatch(p, /Formal and polite|Casual and friendly/, 'a trait in the middle says nothing');
+    assert.throws(() => characters.remove(store, 'nova'), /built in/);
+    const r = characters.resetNova(store);
+    assert.equal(r.traits.warmth, characters.PRESETS.colleague.traits.warmth); assert.equal(r.avatar.face.eyes, 'round');
+    assert.equal(characters.traitsText({ warmth: 50, humor: 50, formality: 50, brevity: 50, encouragement: 50 }), '');
+  } finally { db.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('helper: speaks as the designed Nova', async () => {
+  const helper = require('../lib/helper');
+  const dir = tmp('nova-helper-persona-'); const { db } = openDb(dir); const store = new Store(db);
+  try {
+    characters.ensureNova(store);
+    characters.update(store, 'nova', { traits: { warmth: 10, humor: 90, formality: 50, brevity: 50, encouragement: 50 } });
+    store.put('models', { id: 'm1', name: 'm1', runtime: 'ollama' });
+    let system = '';
+    const ollama = { chatFull: async (_m, msgs) => { system = msgs[0].content; return { message: { content: 'Open Media.' } }; } };
+    await helper.ask({ store, ollama, characters }, { text: 'how do I make an image?' });
+    assert.match(system, /^You are Nova, the friendly helper built into Maataa Workstation\./);
+    assert.match(system, /Cool and matter-of-fact/); assert.match(system, /Playful/);
+  } finally { db.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});

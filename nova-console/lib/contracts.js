@@ -57,7 +57,7 @@ function open(store, dataDir, input = {}) {
   if (device.status === 'revoked') throw error('This device has been revoked.', 403, 'device_revoked');
   if (!(device.capabilities || []).includes(capability)) throw error(`${device.name} has not declared the capability ${capability}.`, 403, 'capability_not_declared');
   const risk = RISKS.includes(input.risk) ? input.risk : 'change';
-  const actor = { type: ['human', 'agent', 'automation', 'system'].includes(input.actor?.type) ? input.actor.type : 'agent', id: clip(input.actor?.id || 'nova', 120), label: clip(input.actor?.label || input.actor?.id || 'NOVA', 120) };
+  const actor = { type: ['human', 'agent', 'automation', 'system'].includes(input.actor?.type) ? input.actor.type : 'agent', id: clip(input.actor?.id || 'nova', 120), label: clip(input.actor?.label || input.actor?.id || 'Maataa', 120) };
   if (input.actor?.onBehalfOf) actor.onBehalfOf = clip(input.actor.onBehalfOf, 120);
   const c = {
     id: 'ctr_' + Date.now().toString(36) + crypto.randomBytes(5).toString('hex'), v: 1, surface: clip(input.surface || 'desktop', 20), status: 'planned',

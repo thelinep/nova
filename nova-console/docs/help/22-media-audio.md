@@ -14,7 +14,7 @@ views:
 **Voice** reads text aloud. It is instant and good for scratch voice-over.
 
 - With **Kokoro** installed (double-click **Install Kokoro voices for NOVA.command**, about 400 MB), Kokoro voices appear first. They sound far more natural and include English (US and UK), Hindi and several other languages.
-- Otherwise NOVA uses the voices installed on your Mac. Add more, including Hindi, in **System Settings > Accessibility > Spoken Content > System voice > Manage Voices**.
+- Otherwise Maataa uses the voices installed on your Mac. Add more, including Hindi, in **System Settings > Accessibility > Spoken Content > System voice > Manage Voices**.
 
 ## Sound effects and music
 
@@ -29,15 +29,15 @@ Both run in ComfyUI and need **Add audio models.command** (about 13 GB).
 2. Press **Write lyrics**. Your local model writes a title, a style line and [verse]/[chorus]/[bridge] lyrics.
 3. Edit anything, then **Generate**. ACE-Step sings it. To sing your own words, paste them in the Lyrics box instead.
 
-**Engines.** NOVA sings with ACE-Step 1.5 (turbo) or ACE-Step 1. With 1.5 installed (**Add ACE-Step 1.5.command**, about 10 GB) it is the default; pick the other in **Engine**. 1.5 also sets the sung language, BPM and key. **Compare 1 vs 1.5** makes the same song with both engines so you can listen side by side. In tests on an 18 GB M3 Pro, 1.5 was about twice as fast, but ACE-Step 1 sang the words more clearly; try 1.5 for drafts and instrumentals, and 1 when the words matter.
+**Engines.** Maataa sings with ACE-Step 1.5 (turbo) or ACE-Step 1. With 1.5 installed (**Add ACE-Step 1.5.command**, about 10 GB) it is the default; pick the other in **Engine**. 1.5 also sets the sung language, BPM and key. **Compare 1 vs 1.5** makes the same song with both engines so you can listen side by side. In tests on an 18 GB M3 Pro, 1.5 was about twice as fast, but ACE-Step 1 sang the words more clearly; try 1.5 for drafts and instrumentals, and 1 when the words matter.
 
 ## Transcripts
 
-1. Install `brew install whisper-cpp ffmpeg`. If ffmpeg will not install, NOVA uses macOS's `afconvert` for WAV, AIFF, MP3, M4A and FLAC.
+1. Install `brew install whisper-cpp ffmpeg`. If ffmpeg will not install, Maataa uses macOS's `afconvert` for WAV, AIFF, MP3, M4A and FLAC.
 2. Put a model such as `ggml-base.en.bin` in `nova-console/data/models/whisper`, or set `WHISPER_MODEL`. For Hindi, Urdu, Punjabi, Tamil and other languages, double-click **Add multilingual speech model.command** (whisper large-v3-turbo, about 575 MB).
 3. Upload audio (WAV, MP3, M4A, OGG, FLAC, WebM) or video (MP4, MOV), choose the spoken language or **Detect**, choose a Knowledge collection if you want the transcript searchable, and press **Transcribe**.
 
-Transcripts carry timestamps like `[00:01:02]`. NOVA uses the English model for English (faster) and the multilingual model for everything else.
+Transcripts carry timestamps like `[00:01:02]`. Maataa uses the English model for English (faster) and the multilingual model for everything else.
 
 @screen media/media-transcribe.jpg "Media > Transcribe: upload, choose the language, transcribe."
 

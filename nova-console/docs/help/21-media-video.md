@@ -19,19 +19,19 @@ Needs ffmpeg, no AI model. Pick a push in, pull out, pan or tilt and a length fo
 
 The default on Apple silicon. The first shot and your prompt (describe the motion and the sound, for example "waves crash, gulls call") go to LTX-2 running on this computer, and the clip comes back with sound.
 
-- Install it with **Install LTX-2 video for NOVA.command** in the brahmini folder. It downloads only what NOVA uses: about 28 GB for **Fast** clips. For **Better** clips run `bash scripts/install-ltx-mac.sh --better` in `nova-console` (another 19 GB).
-- Clips are 1–8 seconds at up to 960×544. NOVA never lets LTX-2 start a download on its own.
+- Install it with **Install LTX-2 video for NOVA.command** in the brahmini folder. It downloads only what Maataa uses: about 28 GB for **Fast** clips. For **Better** clips run `bash scripts/install-ltx-mac.sh --better` in `nova-console` (another 19 GB).
+- Clips are 1–8 seconds at up to 960×544. Maataa never lets LTX-2 start a download on its own.
 - Set `LTX_MLX_BIN` or `LTX_MLX_MODEL` if you installed it elsewhere.
 
 With no shots added, AI motion becomes **Make video from prompt**: LTX-2 makes the whole clip, with sound, from the prompt alone.
 
 ## AI motion with Wan 2.2 (no sound)
 
-Choose it in the AI motion list. It runs Wan 2.2 5B in your local ComfyUI. ComfyUI needs three files (about 21 GB together): `wan2.2_ti2v_5B_fp16.safetensors` in `models/diffusion_models`, `umt5_xxl_fp16.safetensors` in `models/text_encoders` (the fp8 version does not run on Apple silicon) and `wan2.2_vae.safetensors` in `models/vae`. **Add Wan video models.command** fetches them; NOVA lists anything missing. Clips are 1–5 seconds at 24 fps; start at 480p and 2 seconds, because each second can take several minutes on a Mac.
+Choose it in the AI motion list. It runs Wan 2.2 5B in your local ComfyUI. ComfyUI needs three files (about 21 GB together): `wan2.2_ti2v_5B_fp16.safetensors` in `models/diffusion_models`, `umt5_xxl_fp16.safetensors` in `models/text_encoders` (the fp8 version does not run on Apple silicon) and `wan2.2_vae.safetensors` in `models/vae`. **Add Wan video models.command** fetches them; Maataa lists anything missing. Clips are 1–5 seconds at 24 fps; start at 480p and 2 seconds, because each second can take several minutes on a Mac.
 
 ## Memory safety
 
-Image and video models share the computer's memory. NOVA runs one image or video job at a time and unloads chat models (and ComfyUI's models, before LTX-2) when a job starts. On 16 GB Macs it keeps LTX-2 to 480p, 5 seconds and low-memory mode, and it does not start Wan 2.2 on Macs with less than 32 GB (it can freeze and restart the Mac; `NOVA_ALLOW_WAN_LOW_RAM=1` overrides). Avoid running other heavy apps during a clip.
+Image and video models share the computer's memory. Maataa runs one image or video job at a time and unloads chat models (and ComfyUI's models, before LTX-2) when a job starts. On 16 GB Macs it keeps LTX-2 to 480p, 5 seconds and low-memory mode, and it does not start Wan 2.2 on Macs with less than 32 GB (it can freeze and restart the Mac; `NOVA_ALLOW_WAN_LOW_RAM=1` overrides). Avoid running other heavy apps during a clip.
 
 ## Continuity and joining
 

@@ -1,5 +1,5 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NOVA Console</title>
+<title>Maataa Workstation</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -788,8 +788,8 @@ a.nav-item { color: inherit; text-decoration: none; }
     <div class="brand">
       <div class="brand-mark" style="width:28px;height:28px"><span data-lucide="sparkles" style="width:16px;height:16px"></span></div>
       <div class="rail-text">
-        <div class="brand-name">NOVA</div>
-        <div class="brand-sub">Local Console</div>
+        <div class="brand-name">MAATAA</div>
+        <div class="brand-sub">Workstation</div>
       </div>
     </div>
     <button id="newSessionBtn" class="new-session-btn"><span data-lucide="plus"></span><span class="rail-text">New session</span></button>
@@ -909,7 +909,7 @@ a.nav-item { color: inherit; text-decoration: none; }
               <div class="composer">
                 <div id="pasteHint" class="paste-hint" style="display:none"></div>
                 <div id="contextChips" class="context-chips"></div>
-                <textarea id="composer" placeholder="Message NOVA locally…"></textarea>
+                <textarea id="composer" placeholder="Message Maataa locally…"></textarea>
                 <div class="composer-row">
                   <div class="composer-left">
                     <div class="add-wrap"><button id="addBtn" class="icon-btn" title="Add files, a folder, a web page or a git repo" aria-label="Add to this chat" aria-haspopup="menu" aria-expanded="false" style="width:30px;height:30px"><span data-lucide="plus"></span></button>
@@ -924,12 +924,12 @@ a.nav-item { color: inherit; text-decoration: none; }
                     </div><input id="sourceInput" type="file" multiple hidden><input id="attachInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
                     <button id="retrievalToggleBtn" class="chip-toggle on" title="Toggle retrieval"><span data-lucide="search" style="width:11px;height:11px"></span>Retrieval</button>
                     <button id="profileBtn" class="chip-toggle mono" title="Inference profile">Balanced</button>
-                    <button id="computerToggleBtn" class="chip-toggle" title="Let NOVA use this Mac in this chat (asks before every action)"><span data-lucide="mouse-pointer-click" style="width:11px;height:11px"></span>Computer</button>
+                    <button id="computerToggleBtn" class="chip-toggle" title="Let Maataa use this Mac in this chat (asks before every action)"><span data-lucide="mouse-pointer-click" style="width:11px;height:11px"></span>Computer</button>
                     <button id="speakToggleBtn" class="chip-toggle" title="Read replies aloud"><span data-lucide="volume-2" style="width:11px;height:11px"></span>Voice</button>
                   </div>
                   <div class="composer-right">
                     <span class="mono" id="tokenCounter" style="font-size:10.5px;color:var(--muted-dim)">0 tok</span>
-                    <button id="micBtn" class="icon-btn mic-btn" title="Hold to talk, or click to start and stop" aria-label="Talk to NOVA" style="width:30px;height:30px"><span data-lucide="mic"></span></button>
+                    <button id="micBtn" class="icon-btn mic-btn" title="Hold to talk, or click to start and stop" aria-label="Talk to Maataa" style="width:30px;height:30px"><span data-lucide="mic"></span></button>
                     <button id="pauseBtn" class="icon-btn" style="display:none;width:30px;height:30px" aria-label="Pause generation"><span data-lucide="pause"></span></button>
                     <button id="sendBtn" class="send-btn" aria-label="Send"><span data-lucide="arrow-up"></span></button>
                   </div>
@@ -1058,8 +1058,8 @@ function rand(min,max){ return min + Math.random()*(max-min); }
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 /* ===================== marker: DATA LAYER ===================== */
-/* ===================== DATA LAYER (NOVA Runtime API, cache-hydrated) =====================
-   Phase 1 replaced IndexedDB with a real local backend ("NOVA Runtime", see
+/* ===================== DATA LAYER (Maataa Workstation API, cache-hydrated) =====================
+   Phase 1 replaced IndexedDB with a real local backend ("Maataa Workstation", see
    /server.js) that persists every store to real SQLite. The seam the
    roadmap was built around: every render function in this file still reads
    DB.<name> synchronously and calls idbPut/idbAll/idbDelete/idbClearAll
@@ -1074,7 +1074,7 @@ const STORE_NAMES = ['sessions','models','modelProfiles','modelQualifications','
   'skills','mcpServers','agents','workflows','workflowRuns','executions','neuronBlueprints','neuronRuns','neuronArtifacts','backgroundJobs','artifactEvaluations','connectorProfiles','secretRecords','releaseEvidence','workspaceRoots','workspaceReports','workspacePlans','workspacePlanningAttempts','workspaceChanges','workspaceChangeBatches','workspaceProjects','workspaceRuns','workspaceGitDrafts','collectorEvidence','venueObservations'];
 const DB = {}; STORE_NAMES.forEach(n => DB[n] = []);
 let backendHealthy = true;
-function apiUrl(p){ return p; } // same-origin — NOVA Runtime serves this file and the API from one port
+function apiUrl(p){ return p; } // same-origin — Maataa Workstation serves this file and the API from one port
 function idbAll(store){
   return fetch(apiUrl('/api/store/'+encodeURIComponent(store)))
     .then(r => { if (!r.ok) throw new Error('store fetch failed: '+r.status); backendHealthy = true; return r.json(); })
@@ -1274,7 +1274,7 @@ async function seedIfEmpty(){
   documents.forEach(d => idbPut('knowledgeDocuments', d));
 
   const chunks = [
-    {id:'ck1', docId:'kd_arch', docName:'NOVA Architecture.md', text:'NOVA’s console is organized into six operational layers — Workspace, Inference, Context, Runtime, Knowledge, and Operations — each with its own explicit state machine rather than implicit UI state.', embedded:true},
+    {id:'ck1', docId:'kd_arch', docName:'NOVA Architecture.md', text:'Maataa’s console is organized into six operational layers — Workspace, Inference, Context, Runtime, Knowledge, and Operations — each with its own explicit state machine rather than implicit UI state.', embedded:true},
     {id:'ck2', docId:'kd_arch', docName:'NOVA Architecture.md', text:'Execution moves through IDLE → PREPARING → RETRIEVING → PREFILL → GENERATING → TOOL/RUNTIME → COMPLETE, with CANCELLING, CANCELLED, ERROR and QUEUED as alternate branches.', embedded:true},
     {id:'ck3', docId:'kd_runtime', docName:'runtime-notes.txt', text:'KV-cache occupancy should be surfaced per-session, not just globally — a long pinned session can hold cache that a short one never needs.', embedded:true},
     {id:'ck4', docId:'kd_runtime', docName:'runtime-notes.txt', text:'Prompt tok/s and decode tok/s are different numbers and should never be averaged into one “speed” metric on a model card.', embedded:true},
@@ -1290,7 +1290,7 @@ async function seedIfEmpty(){
      preferences:{...DEFAULT_PREFS}, snapshots:[], forkedFrom:null,
      messages:[
        {id:'msg1', role:'user', content:'Summarize how the six operational layers relate to the execution state machine.', createdAt:new Date(t0-3*3600e3).toISOString()},
-       {id:'msg2', role:'assistant', content:'The six layers (Workspace, Inference, Context, Runtime, Knowledge, Operations) describe *what* NOVA can do; the state machine describes *what is happening right now* while any of them act. A retrieval call inside Knowledge, for instance, surfaces as the RETRIEVING stage system-wide, not as a spinner local to one panel — so the same state is visible from the status bar, the inspector, and the trace.',
+       {id:'msg2', role:'assistant', content:'The six layers (Workspace, Inference, Context, Runtime, Knowledge, Operations) describe *what* Maataa can do; the state machine describes *what is happening right now* while any of them act. A retrieval call inside Knowledge, for instance, surfaces as the RETRIEVING stage system-wide, not as a spinner local to one panel — so the same state is visible from the status bar, the inspector, and the trace.',
         createdAt:new Date(t0-3*3600e3+238e3).toISOString(), citations:[{docId:'kd_arch', label:'NOVA Architecture.md', score:0.94}, {docId:'kd_runtime', label:'runtime-notes.txt', score:0.87}],
         stats:{ttft:184, tokPerSec:43.1, tokens:96}},
      ]},
@@ -1753,7 +1753,7 @@ function renderStatusBar(){
     <span class="seg tnum hide-sm">TTFT <b>${loadedModel()?.ttft ?? '—'} ms</b></span>
     <span class="seg tnum">Queue <b>${TELE.queue}</b></span>
     <span class="flexfill"></span>
-    <span class="seg privacy" style="color:var(--muted-dim)">${escapeHtml('NOVA Runtime • ' + footerText)}</span>
+    <span class="seg privacy" style="color:var(--muted-dim)">${escapeHtml('Maataa Workstation • ' + footerText)}</span>
   `;
 }
 function renderShellChrome(){
@@ -1918,7 +1918,7 @@ function msgHtml(m){
   const st = m.stats || {};
   const stats = (st.tokens || st.seconds) && !m.pending ? `<div class="msg-stats tnum">${st.ttft?`<span>first words ${(st.ttft/1000).toFixed(1)} s</span>`:''}${st.tokPerSec?`<span>${(+st.tokPerSec).toFixed(1)} tok/s</span>`:''}${st.tokens?`<span>${st.tokens} tok</span>`:''}${st.simulated?'<span style="color:var(--amber)">simulated</span>':''}${m.modelName?`<span>${escapeHtml(m.modelName)}</span>`:''}</div>` : '';
   const planAction = m.workspacePlanId ? `<div style="margin-top:8px"><button class="btn btn-line btn-sm msg-review-plan" data-plan-id="${escapeHtml(m.workspacePlanId)}"><span data-lucide="clipboard-list" style="width:13px;height:13px"></span>Review scan plan</button></div>` : '';
-  const who = m.role==='user' ? 'YOU' : 'NOVA';
+  const who = m.role==='user' ? 'YOU' : 'MAATAA';
   const badges = (m.queued?'<span class="msg-badge">queued — next up</span>':'') + (m.editedAt?'<span class="msg-badge">edited</span>':'') + (m.pinned?'<span class="msg-badge pin">pinned</span>':'');
   const images = (m.mediaIds||[]).length ? `<div class="msg-images" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:6px">${m.mediaIds.map(id=>`<a href="${mediaUrl(id)}" target="_blank" rel="noopener"><img src="${mediaUrl(id)}" alt="Attached image" loading="lazy" style="max-width:220px;max-height:160px;border-radius:9px;border:1px solid var(--line)"></a>`).join('')}</div>` : '';
   const shots = (m.images||[]).length ? `<div class="msg-shots">${m.images.map(im=>`<a href="${apiUrl(im.url)}" target="_blank" rel="noopener"><img src="${apiUrl(im.url)}" alt="${escapeHtml(im.caption||'Screenshot')}" loading="lazy"></a>`).join('')}</div>` : '';
@@ -2040,7 +2040,7 @@ async function sendMessage(){
   renderConvo(); renderSessList();
   logEvent('SESSION', 'prompt submitted · session '+s.id);
   if (msg.queued) { toast('Got it — I will answer that right after this reply.'); return; }
-  // With a folder/files added to the chat (or Computer on), NOVA answers directly from them
+  // With a folder/files added to the chat (or Computer on), Maataa answers directly from them
   // instead of the older Local Workspace plan drafts, which need a folder approved there.
   const hasSources = (SOURCES[s.id] || []).some(x => x.status !== 'failed');
   if (!s.preferences.computer) {
@@ -2498,7 +2498,7 @@ async function loadModelQualifications(){
   $$('.model-qual').forEach(el => {
     const d = el.dataset.digest; if (!d) return;
     const rec = byDigest[d];
-    if (!rec) { el.textContent = 'Coding checks: not run yet — needed before NOVA plans code with this model.'; return; }
+    if (!rec) { el.textContent = 'Coding checks: not run yet — needed before Maataa plans code with this model.'; return; }
     const caps = rec.capabilities || {};
     const ok = Object.keys(QUAL_LABELS).filter(k => caps[k] && caps[k].qualified);
     const bad = Object.keys(QUAL_LABELS).filter(k => caps[k] && !caps[k].qualified);
@@ -3104,13 +3104,13 @@ function bindEvaluationsViewEvents(){
     const m = loadedModel(); if (!m) return toast('Load a model first.');
     const btn = $('evalRunBtn'); if (btn.disabled) return;
     btn.disabled = true; const origLabel = btn.innerHTML; btn.innerHTML = 'Running 10 fixed item(s)…';
-    logEvent('EVAL','real evaluation started · '+m.name+' · NOVA Bench 10');
+    logEvent('EVAL','real evaluation started · '+m.name+' · Maataa Bench 10');
     try {
       const r = await fetch(apiUrl('/api/evaluations/run'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({modelId:m.id})});
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || ('HTTP '+r.status));
       DB.evaluations.push(data.evaluation);
-      logEvent('EVAL','evaluation complete · '+data.evaluation.accuracy+'% accuracy (real, scored against NOVA Bench 10)');
+      logEvent('EVAL','evaluation complete · '+data.evaluation.accuracy+'% accuracy (real, scored against Maataa Bench 10)');
       renderEvaluationsView(); toast('Evaluation complete: '+data.evaluation.accuracy+'% accuracy.');
     } catch(e) {
       logEvent('ERROR','evaluation failed: '+e.message);
@@ -3387,19 +3387,19 @@ const MEDIA_TAB_HELP = {
   image:['Describe the picture, or set Start from to rework a library image (Change: 0.1 stays close, 0.9 reimagines).','Style / character LoRA: pick a LoRA file from ComfyUI/models/loras to keep a look or a character across images; Strength 0.6–0.9 is typical.','Actions ▾ on any image: Edit area and Remove object (paint over it), Expand background, Upscale 2x/4x.','Runs SDXL through ComfyUI on this Mac. Start it with "Start ComfyUI for NOVA.command".'],
   video:['No shots? AI motion makes a clip from the prompt alone (text to video, LTX-2).','Add shots with Animate (on any image) or Upload stills.','Camera moves: pans and zooms across each still and joins them, in seconds.','AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound.','Continue from last frame chains clips; Add to join assembles them. For a full scene with music and voice, use Timeline.','Actions ▾ on a clip: Translate (dub or subtitles), Enhance speech.'],
   audio:['Voice reads text with Kokoro (natural, offline; English, Hindi and more) or macOS voices.','Actions ▾ on a recording: Enhance speech (noise and level clean-up), Translate (dub into another language).','Sound effect: up to 47 s from a description.','Song: describe an idea and press Write lyrics, edit, then Generate; or paste your own lyrics. About 5 minutes per 30 s on this Mac.'],
-  transcribe:['Choose the spoken language on each item (or let NOVA detect it), then press Transcribe. Hindi and other languages need the multilingual speech model.','Upload audio or video and press Transcribe on it. Transcripts get timestamps and can go straight into a Knowledge collection.'],
+  transcribe:['Choose the spoken language on each item (or let Maataa detect it), then press Transcribe. Hindi and other languages need the multilingual speech model.','Upload audio or video and press Transcribe on it. Transcripts get timestamps and can go straight into a Knowledge collection.'],
   edit:['Pick an item, choose one or more filters and Apply. The original is kept; the result is a new item with its settings in the recipe.'],
-  library:['Everything NOVA made or you uploaded. Each item keeps its recipe. Generated items are also saved as files in the library folder, one folder per day.'],
+  library:['Everything Maataa made or you uploaded. Each item keeps its recipe. Generated items are also saved as files in the library folder, one folder per day.'],
 };
 const MEDIA_TAB_PRESETS = { image:[['genPrompt','Prompt'],['genNegative','Avoid']], video:[['aiVideoPrompt','Motion prompt']], audio:[['audioText','Description']] };
 function mediaHelpersHtml({tab, jobs, img, stt, vid, aud, lib}){
   const needs = [];
-  if (tab==='image') { if (!img.reachable) needs.push('ComfyUI is not running yet. NOVA starts it when you generate (Settings > Image engine).'); else { if (!img.checkpoints.length) needs.push('No checkpoint installed in ComfyUI.'); if (!(img.upscalers||[]).length) needs.push('Optional: an upscale model for sharper upscales (double-click "Add upscale model.command"); without it Upscale uses a plain resize.'); if (!(img.loras||[]).length) needs.push('Optional: LoRA files in ComfyUI/models/loras for a consistent style or character.'); } }
+  if (tab==='image') { if (!img.reachable) needs.push('ComfyUI is not running yet. Maataa starts it when you generate (Settings > Image engine).'); else { if (!img.checkpoints.length) needs.push('No checkpoint installed in ComfyUI.'); if (!(img.upscalers||[]).length) needs.push('Optional: an upscale model for sharper upscales (double-click "Add upscale model.command"); without it Upscale uses a plain resize.'); if (!(img.loras||[]).length) needs.push('Optional: LoRA files in ComfyUI/models/loras for a consistent style or character.'); } }
   if (tab==='video') { if (!vid.cameraMoves.ready) needs.push('ffmpeg for camera moves.'); (vid.ltx.missing||[]).forEach(m=>needs.push('LTX-2: '+m)); }
-  if (tab==='audio') { if (!aud.voice.ready) needs.push('Voice needs macOS speech or Kokoro.'); if (aud.voice.kokoro && !aud.voice.kokoro.ready) needs.push('Optional: natural voices (English, Hindi…) — double-click "Install Kokoro voices for NOVA.command" (about 400 MB).'); if (!aud.comfy.reachable) needs.push('ComfyUI is not running yet (sound effects, songs). NOVA starts it when you generate.'); else { (aud.comfy.sfx.missing||[]).forEach(m=>needs.push('Sound effects: '+m)); (aud.comfy.music.missing||[]).forEach(m=>needs.push('Songs: '+m)); } }
+  if (tab==='audio') { if (!aud.voice.ready) needs.push('Voice needs macOS speech or Kokoro.'); if (aud.voice.kokoro && !aud.voice.kokoro.ready) needs.push('Optional: natural voices (English, Hindi…) — double-click "Install Kokoro voices for NOVA.command" (about 400 MB).'); if (!aud.comfy.reachable) needs.push('ComfyUI is not running yet (sound effects, songs). Maataa starts it when you generate.'); else { (aud.comfy.sfx.missing||[]).forEach(m=>needs.push('Sound effects: '+m)); (aud.comfy.music.missing||[]).forEach(m=>needs.push('Songs: '+m)); } }
   if (tab==='transcribe') { (stt.missing||[]).forEach(m=>needs.push(m)); if (stt.model && !stt.multilingual) needs.push('Only English speech can be transcribed now. For Hindi and other languages, double-click "Add multilingual speech model.command" (about 575 MB).'); }
   if (tab==='edit' && !vid.cameraMoves.ready) needs.push('ffmpeg (brew install ffmpeg).');
-  if (tab==='library' && !(lib.enabled&&lib.dir)) needs.push(lib.needsRestart?'Restart NOVA to turn on the library folder.':'The library folder is off.');
+  if (tab==='library' && !(lib.enabled&&lib.dir)) needs.push(lib.needsRestart?'Restart Maataa to turn on the library folder.':'The library folder is off.');
   const presetKey = f => f==='audioText' ? 'audioText:'+audioMode : f;
   const presets = (MEDIA_TAB_PRESETS[tab]||[]).filter(([f])=>PROMPT_PRESETS[presetKey(f)]).map(([f,label])=>`<div class="helper-block"><div class="helper-title">Presets · ${escapeHtml(label)}</div>${Object.entries(PROMPT_PRESETS[presetKey(f)]).map(([g,list])=>`<div class="helper-group">${escapeHtml(g)}</div><div class="helper-chips">${list.map(t=>`<button type="button" class="helper-chip" data-target="${f}" data-text="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>`).join('')}</div>`).join('');
   const types = MEDIA_TABS[tab].jobs;
@@ -3454,13 +3454,13 @@ async function renderMediaView(){
     </article>`;
   };
   pad.innerHTML = `
-    <div class="view-head"><div><span class="eyebrow">Generative</span><h1 class="view-title">Media</h1><p class="view-desc">Generate images, turn stills into video, transcribe audio and video, and keep the media you use with NOVA. Everything runs on this computer; each item keeps the settings that made it.</p></div></div>
+    <div class="view-head"><div><span class="eyebrow">Generative</span><h1 class="view-title">Media</h1><p class="view-desc">Generate images, turn stills into video, transcribe audio and video, and keep the media you use with Maataa. Everything runs on this computer; each item keeps the settings that made it.</p></div></div>
     <div class="media-tabs" role="tablist" aria-label="Media tools">${Object.entries(MEDIA_TABS).map(([k,t])=>`<button role="tab" class="media-tab ${k===mediaTab?'active':''}" data-tab="${k}" aria-selected="${k===mediaTab}">${t.label}</button>`).join('')}</div>
     <div class="media-layout"><div class="media-main">
     <div class="card-grid cols-2">
       <div class="panel" id="imagePanel" data-tab="image" style="padding:16px">
         <div style="display:flex;justify-content:space-between;gap:8px"><div><span class="eyebrow">Image generation · ComfyUI</span><h2 style="font-size:16px;margin:5px 0">Generate an image</h2></div><span class="badge ${img.reachable?'badge-green':'badge-red'}">${img.reachable?'ComfyUI connected':'ComfyUI offline'}</span></div>
-        ${img.reachable?`<p class="empty-hint">${escapeHtml(img.url)}${img.device?' · '+escapeHtml(img.device):''} · ${img.checkpoints.length} checkpoint(s)</p>`:`<p class="empty-hint">${escapeHtml(img.error||'Not reachable.')} NOVA looks for ComfyUI on this computer at port 8188 (manual install) or 8000 (ComfyUI Desktop); set COMFYUI_URL for another port.</p>`}
+        ${img.reachable?`<p class="empty-hint">${escapeHtml(img.url)}${img.device?' · '+escapeHtml(img.device):''} · ${img.checkpoints.length} checkpoint(s)</p>`:`<p class="empty-hint">${escapeHtml(img.error||'Not reachable.')} Maataa looks for ComfyUI on this computer at port 8188 (manual install) or 8000 (ComfyUI Desktop); set COMFYUI_URL for another port.</p>`}
         <textarea id="genPrompt" aria-label="Image prompt" placeholder="Rain-soaked Mumbai street at dusk, neon reflections, anamorphic, 35mm film still" style="width:100%;min-height:74px;${field}"></textarea>
         <input id="genNegative" aria-label="Negative prompt" placeholder="Negative prompt (optional): blurry, text, watermark" style="width:100%;margin-top:6px;${field}">
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
@@ -3562,7 +3562,7 @@ async function renderMediaView(){
         <button class="btn btn-amber" id="fltApply">Apply</button></div>
     </div>`; })()}
     <div class="panel" id="libraryPanel" data-tab="library" style="padding:12px 16px;margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <div style="flex:1;min-width:240px"><span class="eyebrow">Library folder</span><div style="font-size:12.5px;margin-top:3px">${lib.needsRestart?'The NOVA server running now is older than this page. Stop it and run <code>npm start</code> again to turn on the library folder.':lib.enabled&&lib.dir?`Everything NOVA generates — images, videos, transcripts, skill outputs — is also saved as files with a recipe .json in <code>${escapeHtml(lib.dir)}</code>, one folder per day.`:'Saving to a library folder is off.'}</div></div>
+      <div style="flex:1;min-width:240px"><span class="eyebrow">Library folder</span><div style="font-size:12.5px;margin-top:3px">${lib.needsRestart?'The Maataa server running now is older than this page. Stop it and run <code>npm start</code> again to turn on the library folder.':lib.enabled&&lib.dir?`Everything Maataa generates — images, videos, transcripts, skill outputs — is also saved as files with a recipe .json in <code>${escapeHtml(lib.dir)}</code>, one folder per day.`:'Saving to a library folder is off.'}</div></div>
       ${lib.needsRestart?'':lib.source==='env'?'<span class="empty-hint">Set by NOVA_LIBRARY_DIR</span>':`<input id="libraryDir" aria-label="Library folder" value="${escapeHtml(lib.dir||lib.defaultDir||'~/Documents/NOVA Library')}" style="${field};min-width:260px"><button class="btn btn-line btn-sm" id="librarySave">Save folder</button>`}
       <button class="btn btn-ghost btn-sm" id="libraryBackfill" ${lib.enabled?'':'disabled'}>Copy earlier items</button>
     </div>
@@ -3687,7 +3687,7 @@ function jobStarted(msg){ closeActionModal(); toast(msg); if (currentView==='med
 /* ---- mask brush: Edit area / Remove object ---- */
 function openMaskEditor(m, mode){
   openActionModal(mode==='remove' ? 'Remove object' : 'Edit area', `
-    <p class="empty-hint" style="padding:0 0 8px">${mode==='remove'?'Paint over what should disappear. NOVA fills it with matching background.':'Paint over the area to change, then describe what should be there.'} Only the painted area changes.</p>
+    <p class="empty-hint" style="padding:0 0 8px">${mode==='remove'?'Paint over what should disappear. Maataa fills it with matching background.':'Paint over the area to change, then describe what should be there.'} Only the painted area changes.</p>
     <div class="mask-wrap" id="maskWrap"><img id="maskImg" alt="${escapeHtml(m.originalName)}" src="${mediaUrl(m.id)}"><canvas id="maskCanvas" aria-label="Paint mask"></canvas></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <label class="empty-hint" style="padding:0">Brush <input id="maskBrush" type="range" min="6" max="120" value="36" aria-label="Brush size"></label>
@@ -3753,7 +3753,7 @@ async function openUpscale(m){
   let img = {}; try { img = await apiGet('/api/images/status'); } catch (_) {}
   const models = img.upscalers || [];
   openActionModal('Upscale', `
-    <p class="empty-hint" style="padding:0 0 8px">${models.length&&img.reachable?'Uses an upscale model in ComfyUI: sharper detail than a plain resize.':'No upscale model found (or ComfyUI is not running), so NOVA does a high-quality resize with ffmpeg. For sharper results, double-click "Add upscale model.command" in the brahmini folder and start ComfyUI.'}</p>
+    <p class="empty-hint" style="padding:0 0 8px">${models.length&&img.reachable?'Uses an upscale model in ComfyUI: sharper detail than a plain resize.':'No upscale model found (or ComfyUI is not running), so Maataa does a high-quality resize with ffmpeg. For sharper results, double-click "Add upscale model.command" in the brahmini folder and start ComfyUI.'}</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="upFactor" aria-label="Upscale factor" style="${FIELD_STYLE}"><option value="2">2x</option><option value="4">4x</option></select>
       ${models.length&&img.reachable?`<select id="upModel" aria-label="Upscale model" style="${FIELD_STYLE}">${models.map(x=>`<option>${escapeHtml(x)}</option>`).join('')}</select>`:''}
@@ -3779,8 +3779,8 @@ async function openTranslate(m){
     return `<option value="">Automatic</option>${k.map(v=>`<option value="${escapeHtml(v.name)}">Kokoro · ${escapeHtml(v.label)}</option>`).join('')}${mac.map(v=>`<option value="${escapeHtml(v.name)}">macOS · ${escapeHtml(v.name)}</option>`).join('')}`;
   };
   openActionModal('Translate', `
-    <p class="empty-hint" style="padding:0 0 8px">NOVA transcribes the speech${m.transcript?' (already done)':''}, translates each line with your local model, then dubs it or burns in subtitles. The subtitle file is kept in the recipe. No lip sync.</p>
-    ${stt.multilingual?'':`<p class="empty-hint" style="padding:0 0 8px;color:var(--amber)">Only the English speech model is installed, so NOVA can translate from English only. For Hindi or other spoken languages, double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB), then restart NOVA.</p>`}
+    <p class="empty-hint" style="padding:0 0 8px">Maataa transcribes the speech${m.transcript?' (already done)':''}, translates each line with your local model, then dubs it or burns in subtitles. The subtitle file is kept in the recipe. No lip sync.</p>
+    ${stt.multilingual?'':`<p class="empty-hint" style="padding:0 0 8px;color:var(--amber)">Only the English speech model is installed, so Maataa can translate from English only. For Hindi or other spoken languages, double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB), then restart Maataa.</p>`}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label class="empty-hint" style="padding:0">Spoken <select id="trFrom" aria-label="Spoken language" style="${FIELD_STYLE}">${Object.entries(stt.languages||{}).map(([v,l])=>`<option value="${v}" ${v===spoken?'selected':''} ${!stt.multilingual&&v!=='en'&&v!=='auto'?'disabled':''}>${escapeHtml(v==='auto'?'Detect':l)}</option>`).join('')}</select></label> →
       <select id="trLang" aria-label="Translate into" style="${FIELD_STYLE}">${TRANSLATE_LANGS.map(([v,l])=>`<option value="${v}" ${v===(spoken==='hi'?'en':'hi')?'selected':''}>${l}</option>`).join('')}</select>
@@ -4368,7 +4368,7 @@ function agentDraftHtml(a){
   const passed = tests.some(t=>t.ok);
   const testRows = tests.slice().reverse().map(t=>`<div class="handoff-row">${fmtClock(t.at)} — ${t.ok?'✓':'✗'} ${escapeHtml(t.instruction||'')}${t.via?' <span style="color:var(--muted-dim)">('+escapeHtml(t.via)+')</span>':''}${t.ok?(t.content?' — '+escapeHtml(String(t.content).slice(0,160)):''):(' — '+escapeHtml(t.error||'failed'))}</div>`).join('') || '<div class="empty-hint">Not tested yet. Pick a test prompt above or write your own, then click Test.</div>';
   return `<div class="approval-banner" style="flex-direction:column;align-items:stretch">
-      <div><b>Draft.</b> ${escapeHtml(d.createdBy && d.createdBy.startsWith('agent:') ? 'Proposed by another agent.' : 'Built by NOVA from your goal.')} It can be tested here but cannot be handed work or run in an approved workflow until you approve it.</div>
+      <div><b>Draft.</b> ${escapeHtml(d.createdBy && d.createdBy.startsWith('agent:') ? 'Proposed by another agent.' : 'Built by Maataa from your goal.')} It can be tested here but cannot be handed work or run in an approved workflow until you approve it.</div>
       ${d.goal ? `<div style="margin-top:6px"><b>Goal:</b> ${escapeHtml(d.goal)}</div>` : ''}
       ${d.notes ? `<div style="margin-top:6px;color:var(--ink-dim)">${escapeHtml(d.notes)}</div>` : ''}
       <div class="cap-chip-row" style="margin-top:8px">${(d.testPrompts||[]).map((t,i)=>`<button type="button" class="tag-chip agent-test-prompt" data-id="${a.id}" data-i="${i}" title="Use this test prompt">${escapeHtml(t)}</button>`).join('')}</div>
@@ -4438,7 +4438,7 @@ function agentBuilderHtml(){
 function agentAutoBuildHtml(){
   if (!agentAutoBuildOpen) return '';
   return `<div class="panel" style="padding:16px;margin-bottom:18px">
-    <div class="cap-card-title" style="margin-bottom:6px">Build an agent with NOVA</div>
+    <div class="cap-card-title" style="margin-bottom:6px">Build an agent with Maataa</div>
     <div class="cap-card-sub" style="margin-bottom:10px">Describe what the agent should do. A local model drafts it using only the skills, tool servers and agents installed here. You then test it and approve it.</div>
     <div class="agent-builder">
       <div class="field-full"><label>Goal</label><textarea id="aabGoal" placeholder="e.g. Turn my shoot notes into a call sheet and translate it to Hindi" ${agentAutoBuildBusy?'disabled':''}></textarea></div>
@@ -4454,8 +4454,8 @@ function renderAgentsView(){
   const pad = $('agentsView').querySelector('.view-pad');
   pad.innerHTML = `
     <div class="view-head">
-      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Agents</h1><p class="view-desc">Each agent pairs a model with a fixed set of skills and MCP tools, a memory scope, and a run history. Run sends a real instruction through a real tool-calling loop against Ollama — the model can really call the agent's skills and MCP tools, approval-gated exactly like the Skills and MCP Registry views. An agent can hand work to the agents you allow (up to two levels deep, never in a loop). <b>Build with NOVA</b> drafts a new agent from a goal; drafts must be tested and approved before other agents or workflows can use them.</p></div>
-      <span style="display:flex;gap:8px"><button class="btn btn-amber" id="autoAgentBtn"><span data-lucide="sparkles" style="width:13px;height:13px"></span>Build with NOVA</button>
+      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Agents</h1><p class="view-desc">Each agent pairs a model with a fixed set of skills and MCP tools, a memory scope, and a run history. Run sends a real instruction through a real tool-calling loop against Ollama — the model can really call the agent's skills and MCP tools, approval-gated exactly like the Skills and MCP Registry views. An agent can hand work to the agents you allow (up to two levels deep, never in a loop). <b>Build with Maataa</b> drafts a new agent from a goal; drafts must be tested and approved before other agents or workflows can use them.</p></div>
+      <span style="display:flex;gap:8px"><button class="btn btn-amber" id="autoAgentBtn"><span data-lucide="sparkles" style="width:13px;height:13px"></span>Build with Maataa</button>
       <button class="btn btn-line" id="newAgentBtn"><span data-lucide="plus" style="width:13px;height:13px"></span>New agent</button></span>
     </div>
     ${agentAutoBuildHtml()}
@@ -4477,7 +4477,7 @@ function bindAgentsView(){
       try {
         const a = await postJson('/api/builder/agents', {goal, modelId});
         upsertLocal('agents', a); agentAutoBuildOpen = false; agentDetailId = a.id;
-        logEvent('AGENT', a.name+' drafted by NOVA'); toast(a.name+' drafted — test it, then approve.');
+        logEvent('AGENT', a.name+' drafted by Maataa'); toast(a.name+' drafted — test it, then approve.');
       } catch(e){ toast('Could not draft: '+e.message); }
       finally { agentAutoBuildBusy = false; renderAgentsView(); }
     };
@@ -4577,7 +4577,7 @@ function validateWorkflowNodes(workflow){
 function workflowAutoBuildHtml(){
   if (!workflowAutoBuildOpen) return '';
   return `<div class="panel" style="padding:16px;margin-bottom:18px">
-    <div class="cap-card-title" style="margin-bottom:6px">Build a workflow with NOVA</div>
+    <div class="cap-card-title" style="margin-bottom:6px">Build a workflow with Maataa</div>
     <div class="cap-card-sub" style="margin-bottom:10px">Describe the job from start to finish. A local model lines up steps from the agents, skills and tool servers installed here, drafts any new agents a step needs, and adds a sign-off before anything that publishes or changes files.</div>
     <div class="agent-builder">
       <div class="field-full"><label>Goal</label><textarea id="wabGoal" placeholder="e.g. Summarise the new documents, get my sign-off, then translate the digest to Hindi" ${workflowAutoBuildBusy?'disabled':''}></textarea></div>
@@ -4593,7 +4593,7 @@ function workflowDraftHtml(w){
   const d = w.draft || {};
   const waiting = w.nodes.filter(n=>n.type==='agent').map(n=>DB.agents.find(a=>a.id===n.ref)).filter(a=>!a || a.status==='draft');
   return `<div class="approval-banner" style="flex-direction:column;align-items:stretch">
-    <div><b>Draft.</b> Built by NOVA from your goal. Use <b>Test run</b> to try it; approve it when it does what you want.</div>
+    <div><b>Draft.</b> Built by Maataa from your goal. Use <b>Test run</b> to try it; approve it when it does what you want.</div>
     ${d.goal?`<div style="margin-top:6px"><b>Goal:</b> ${escapeHtml(d.goal)}</div>`:''}
     ${d.notes?`<div style="margin-top:6px;color:var(--ink-dim)">${escapeHtml(d.notes)}</div>`:''}
     ${waiting.length?`<div style="margin-top:6px">Approve these agents in <b>Agents</b> first: ${waiting.map(a=>escapeHtml(a?a.name:'missing agent')).join(', ')}. A test run of this workflow counts as a test of them.</div>`:''}
@@ -4633,8 +4633,8 @@ function renderWorkflowsView(){
   const pad = $('workflowsView').querySelector('.view-pad');
   pad.innerHTML = `
     <div class="view-head">
-      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Workflows</h1><p class="view-desc">Each workflow chains agents, skills, and MCP calls into one real, server-driven pipeline — an 'agent' node runs the real tool-calling loop, a 'skill'/'mcp' node makes a real call — with an approval gate wherever a node needs a sign-off before continuing. Run state is persisted after every node, so a run survives a server restart. Cron/event scheduling itself is not wired up yet — only "Run now" and the approval gate are real so far. <b>Build with NOVA</b> drafts a workflow from a goal.</p></div>
-      <button class="btn btn-amber" id="autoWorkflowBtn"><span data-lucide="sparkles" style="width:13px;height:13px"></span>Build with NOVA</button>
+      <div><span class="eyebrow">Capabilities</span><h1 class="view-title">Workflows</h1><p class="view-desc">Each workflow chains agents, skills, and MCP calls into one real, server-driven pipeline — an 'agent' node runs the real tool-calling loop, a 'skill'/'mcp' node makes a real call — with an approval gate wherever a node needs a sign-off before continuing. Run state is persisted after every node, so a run survives a server restart. Cron/event scheduling itself is not wired up yet — only "Run now" and the approval gate are real so far. <b>Build with Maataa</b> drafts a workflow from a goal.</p></div>
+      <button class="btn btn-amber" id="autoWorkflowBtn"><span data-lucide="sparkles" style="width:13px;height:13px"></span>Build with Maataa</button>
     </div>
     ${workflowAutoBuildHtml()}
     ${DB.workflows.map(workflowCardHtml).join('') || '<div class="empty-hint">No workflows defined.</div>'}
@@ -4654,7 +4654,7 @@ function bindWorkflowsView(){
         const out = await postJson('/api/builder/workflows', {goal, modelId});
         upsertLocal('workflows', out.workflow); (out.agents||[]).forEach(a=>upsertLocal('agents', a));
         workflowAutoBuildOpen = false;
-        logEvent('WORKFLOW', out.workflow.name+' drafted by NOVA'); toast(out.workflow.name+' drafted'+((out.agents||[]).length?' with '+out.agents.length+' new draft agent(s)':'')+'.');
+        logEvent('WORKFLOW', out.workflow.name+' drafted by Maataa'); toast(out.workflow.name+' drafted'+((out.agents||[]).length?' with '+out.agents.length+' new draft agent(s)':'')+'.');
       } catch(e){ toast('Could not draft: '+e.message); }
       finally { workflowAutoBuildBusy = false; renderWorkflowsView(); }
     };
@@ -4831,9 +4831,9 @@ function renderGraphView(){
 /* ===================== marker: RENDER:PROVIDER-BROWSER ===================== */
 const PROVIDER_BROWSER_SITES = [
   {name:'Codex', description:'Code, review, and ship work with your ChatGPT account.', url:'https://chatgpt.com/codex', icon:'code-2'},
-  {name:'Claude', description:'Open your Claude account in NOVA’s provider browser.', url:'https://claude.ai/new', icon:'sparkles'},
-  {name:'Gemini', description:'Open your Gemini account in NOVA’s provider browser.', url:'https://gemini.google.com', icon:'bot'},
-  {name:'Perplexity', description:'Open Perplexity in NOVA’s provider browser.', url:'https://www.perplexity.ai', icon:'search'},
+  {name:'Claude', description:'Open your Claude account in Maataa’s provider browser.', url:'https://claude.ai/new', icon:'sparkles'},
+  {name:'Gemini', description:'Open your Gemini account in Maataa’s provider browser.', url:'https://gemini.google.com', icon:'bot'},
+  {name:'Perplexity', description:'Open Perplexity in Maataa’s provider browser.', url:'https://www.perplexity.ai', icon:'search'},
 ];
 
 async function openProviderBrowser(url){
@@ -4842,7 +4842,7 @@ async function openProviderBrowser(url){
   try {
     if (window.__TAURI__?.core?.invoke) await window.__TAURI__.core.invoke('open_provider_browser', {url:target});
     else window.open(target, '_blank', 'noopener');
-    toast('Opened in the NOVA Provider Browser.');
+    toast('Opened in the Maataa Provider Browser.');
   } catch (error) {
     toast(typeof error === 'string' ? error : (error?.message || 'Could not open that address.'));
   }
@@ -4892,16 +4892,16 @@ async function renderWorkspaceView(){
   const batch=batches.find(x=>x.id===workspaceSelectedBatchId);
   const options=roots.map(x=>`<option value="${x.id}" ${x.id===workspaceSelectedRootId?'selected':''}>${escapeHtml(x.label)} — ${escapeHtml(x.path)}</option>`).join('');
   const reportRows=reports.slice(0,25).map(x=>`<button class="rail-btn workspace-report" data-id="${x.id}" style="border:1px solid var(--line-soft);margin-top:6px;display:flex;justify-content:space-between"><span><strong>${x.type==='workspace-search'?'Search: '+escapeHtml(x.query):x.type==='workspace-structured'?'Structured report':'Folder scan'}</strong><span class="mono" style="display:block;font-size:10px;color:var(--muted-dim);margin-top:3px">${escapeHtml(x.rootPath)} · ${fmtRelDate(x.completedAt)}</span></span><span class="badge badge-green">${x.type==='workspace-search'?(x.matches||[]).length:x.type==='workspace-structured'?(x.sections||[]).length:(x.summary?.files||0)}</span></button>`).join('');
-  const planHtml=plan?`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Conversation scan plan</span><h2 style="font-size:16px;margin:5px 0">${escapeHtml(plan.request)}</h2></div><span class="badge ${plan.status==='completed'?'badge-green':'badge-amber'}">${escapeHtml(plan.status)}</span></div><div class="kv" style="margin-top:10px"><span>Folders</span><span>${plan.folders.length?plan.folders.map(x=>escapeHtml(x.path)+' (read-only)').join(', '):'Selection required'}</span><span>Tools</span><span>${escapeHtml(plan.tools.join(', '))}</span><span>Expected output</span><span>${escapeHtml(plan.expectedOutput.join('; '))}</span><span>Read permission</span><span>${escapeHtml(plan.permissions.read.scope)}</span><span>Write permission</span><span>No writes to local folders; NOVA plan/report store only</span><span>Commands / network</span><span>Disabled / disabled</span><span>Created</span><span class="mono">${escapeHtml(plan.createdAt)}</span></div><div style="display:flex;gap:8px;margin-top:12px">${plan.rootSelectionRequired&&selected?'<button class="btn btn-line" id="workspaceAssignPlanRoot">Use selected approved root</button>':''}${plan.status==='draft'?`<button class="btn btn-amber" id="workspaceRunPlan" ${plan.rootSelectionRequired?'disabled':''}>Run plan</button>`:''}</div><div class="cap-section-label">Saved plans</div><div style="display:flex;gap:6px;flex-wrap:wrap">${plans.slice(0,20).map(x=>`<button class="tag-chip workspace-plan" data-id="${x.id}">${escapeHtml(x.request.slice(0,46))}${x.request.length>46?'…':''}</button>`).join('')}</div></div>`:'';
-  const changeHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Draft code changes</span><h2 style="font-size:16px;margin:5px 0">Propose an exact replacement</h2></div><span class="badge">Every write requires approval</span></div><div class="card-grid cols-2" style="margin-top:10px"><div><label class="eyebrow" for="workspaceChangePath">Scanned relative file</label><input id="workspaceChangePath" aria-label="Scanned relative file" placeholder="src/example.js" style="width:100%;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><label class="eyebrow" for="workspaceChangeFind">Exact text to replace</label><textarea id="workspaceChangeFind" aria-label="Exact text to replace" style="width:100%;min-height:90px;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea><label class="eyebrow" for="workspaceChangeReplacement">Replacement</label><textarea id="workspaceChangeReplacement" aria-label="Replacement" style="width:100%;min-height:90px;margin-top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea></div><div><label class="eyebrow" for="workspaceChangeImpact">Impact explanation</label><textarea id="workspaceChangeImpact" aria-label="Impact explanation" placeholder="What changes and why" style="width:100%;min-height:90px;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea><button class="btn btn-amber" id="workspaceProposeChange" ${selected?'':'disabled'}>Create patch proposal</button><p class="empty-hint">Creating and checking a proposal cannot modify the approved folder. Safe checks run against a bounded copy under NOVA's data directory.</p><div class="cap-section-label">Saved proposals</div><div style="display:flex;gap:6px;flex-wrap:wrap">${changes.slice(0,20).map(x=>`<button class="tag-chip workspace-change" data-id="${x.id}">${escapeHtml(x.relativePath)} · ${escapeHtml(x.status)}</button>`).join('')||'<span class="empty-hint">No proposals yet.</span>'}</div></div></div>${change?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(change.relativePath)}</strong><span class="badge ${['checks-passed','applied'].includes(change.status)?'badge-green':change.status==='checks-failed'?'badge-red':'badge-amber'}">${escapeHtml(change.status)}</span></div><p style="font-size:12px;color:var(--muted)">${escapeHtml(change.impact)}</p><pre aria-label="Proposed unified diff" style="white-space:pre-wrap;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:12px;color:var(--ink-dim);font-size:11px">${escapeHtml(change.diff)}</pre><div class="kv"><span>Original write</span><span>${change.status==='approved'?'Approved for this batch':change.status==='applied'?'Completed':'Disabled'}</span><span>Before SHA-256</span><span class="mono">${escapeHtml(change.sourceSha256)}</span><span>After SHA-256</span><span class="mono">${escapeHtml(change.proposedSha256)}</span><span>Workspace-copy write</span><span>Allowed</span><span>Network</span><span>Disabled</span>${change.copy?`<span>Copy</span><span class="mono">${escapeHtml(change.copy.path)}</span>`:''}${change.approval?`<span>Approval</span><span class="mono">${escapeHtml(change.approval.id)} · ${escapeHtml(change.approval.approvedAt)}</span>`:''}${change.rollback?`<span>Rollback backup</span><span class="mono">${escapeHtml(change.rollback.backupPath)}</span><span>Rollback guidance</span><span>${escapeHtml(change.rollback.instructions)}</span>`:''}</div><div class="cap-section-label">Validation results</div>${(change.checks||[]).map(x=>`<div style="padding:6px 0"><span class="badge ${x.status==='passed'?'badge-green':x.status==='failed'?'badge-red':''}">${escapeHtml(x.status)}</span> <strong style="font-size:12px">${escapeHtml(x.name)}</strong><span style="font-size:11px;color:var(--muted);margin-left:6px">${escapeHtml(x.detail)}</span></div>`).join('')||'<p class="empty-hint">Checks have not run.</p>'}${change.status==='draft'?'<button class="btn btn-line" id="workspaceCheckChange" style="margin-top:10px">Run safe checks in workspace copy</button>':''}${change.status==='checks-passed'?'<button class="btn btn-amber" id="workspaceApproveChange" style="margin-top:10px">Approve this write batch</button>':''}${change.status==='approved'?'<div class="approval-banner" style="margin-top:10px"><span>Approval applies once to the listed file and hashes.</span><button class="btn btn-amber" id="workspaceExecuteChange">Write approved batch</button></div>':''}</article>`:''}</div>`;
+  const planHtml=plan?`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Conversation scan plan</span><h2 style="font-size:16px;margin:5px 0">${escapeHtml(plan.request)}</h2></div><span class="badge ${plan.status==='completed'?'badge-green':'badge-amber'}">${escapeHtml(plan.status)}</span></div><div class="kv" style="margin-top:10px"><span>Folders</span><span>${plan.folders.length?plan.folders.map(x=>escapeHtml(x.path)+' (read-only)').join(', '):'Selection required'}</span><span>Tools</span><span>${escapeHtml(plan.tools.join(', '))}</span><span>Expected output</span><span>${escapeHtml(plan.expectedOutput.join('; '))}</span><span>Read permission</span><span>${escapeHtml(plan.permissions.read.scope)}</span><span>Write permission</span><span>No writes to local folders; Maataa plan/report store only</span><span>Commands / network</span><span>Disabled / disabled</span><span>Created</span><span class="mono">${escapeHtml(plan.createdAt)}</span></div><div style="display:flex;gap:8px;margin-top:12px">${plan.rootSelectionRequired&&selected?'<button class="btn btn-line" id="workspaceAssignPlanRoot">Use selected approved root</button>':''}${plan.status==='draft'?`<button class="btn btn-amber" id="workspaceRunPlan" ${plan.rootSelectionRequired?'disabled':''}>Run plan</button>`:''}</div><div class="cap-section-label">Saved plans</div><div style="display:flex;gap:6px;flex-wrap:wrap">${plans.slice(0,20).map(x=>`<button class="tag-chip workspace-plan" data-id="${x.id}">${escapeHtml(x.request.slice(0,46))}${x.request.length>46?'…':''}</button>`).join('')}</div></div>`:'';
+  const changeHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Draft code changes</span><h2 style="font-size:16px;margin:5px 0">Propose an exact replacement</h2></div><span class="badge">Every write requires approval</span></div><div class="card-grid cols-2" style="margin-top:10px"><div><label class="eyebrow" for="workspaceChangePath">Scanned relative file</label><input id="workspaceChangePath" aria-label="Scanned relative file" placeholder="src/example.js" style="width:100%;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><label class="eyebrow" for="workspaceChangeFind">Exact text to replace</label><textarea id="workspaceChangeFind" aria-label="Exact text to replace" style="width:100%;min-height:90px;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea><label class="eyebrow" for="workspaceChangeReplacement">Replacement</label><textarea id="workspaceChangeReplacement" aria-label="Replacement" style="width:100%;min-height:90px;margin-top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea></div><div><label class="eyebrow" for="workspaceChangeImpact">Impact explanation</label><textarea id="workspaceChangeImpact" aria-label="Impact explanation" placeholder="What changes and why" style="width:100%;min-height:90px;margin:6px 0 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea><button class="btn btn-amber" id="workspaceProposeChange" ${selected?'':'disabled'}>Create patch proposal</button><p class="empty-hint">Creating and checking a proposal cannot modify the approved folder. Safe checks run against a bounded copy under Maataa's data directory.</p><div class="cap-section-label">Saved proposals</div><div style="display:flex;gap:6px;flex-wrap:wrap">${changes.slice(0,20).map(x=>`<button class="tag-chip workspace-change" data-id="${x.id}">${escapeHtml(x.relativePath)} · ${escapeHtml(x.status)}</button>`).join('')||'<span class="empty-hint">No proposals yet.</span>'}</div></div></div>${change?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(change.relativePath)}</strong><span class="badge ${['checks-passed','applied'].includes(change.status)?'badge-green':change.status==='checks-failed'?'badge-red':'badge-amber'}">${escapeHtml(change.status)}</span></div><p style="font-size:12px;color:var(--muted)">${escapeHtml(change.impact)}</p><pre aria-label="Proposed unified diff" style="white-space:pre-wrap;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:12px;color:var(--ink-dim);font-size:11px">${escapeHtml(change.diff)}</pre><div class="kv"><span>Original write</span><span>${change.status==='approved'?'Approved for this batch':change.status==='applied'?'Completed':'Disabled'}</span><span>Before SHA-256</span><span class="mono">${escapeHtml(change.sourceSha256)}</span><span>After SHA-256</span><span class="mono">${escapeHtml(change.proposedSha256)}</span><span>Workspace-copy write</span><span>Allowed</span><span>Network</span><span>Disabled</span>${change.copy?`<span>Copy</span><span class="mono">${escapeHtml(change.copy.path)}</span>`:''}${change.approval?`<span>Approval</span><span class="mono">${escapeHtml(change.approval.id)} · ${escapeHtml(change.approval.approvedAt)}</span>`:''}${change.rollback?`<span>Rollback backup</span><span class="mono">${escapeHtml(change.rollback.backupPath)}</span><span>Rollback guidance</span><span>${escapeHtml(change.rollback.instructions)}</span>`:''}</div><div class="cap-section-label">Validation results</div>${(change.checks||[]).map(x=>`<div style="padding:6px 0"><span class="badge ${x.status==='passed'?'badge-green':x.status==='failed'?'badge-red':''}">${escapeHtml(x.status)}</span> <strong style="font-size:12px">${escapeHtml(x.name)}</strong><span style="font-size:11px;color:var(--muted);margin-left:6px">${escapeHtml(x.detail)}</span></div>`).join('')||'<p class="empty-hint">Checks have not run.</p>'}${change.status==='draft'?'<button class="btn btn-line" id="workspaceCheckChange" style="margin-top:10px">Run safe checks in workspace copy</button>':''}${change.status==='checks-passed'?'<button class="btn btn-amber" id="workspaceApproveChange" style="margin-top:10px">Approve this write batch</button>':''}${change.status==='approved'?'<div class="approval-banner" style="margin-top:10px"><span>Approval applies once to the listed file and hashes.</span><button class="btn btn-amber" id="workspaceExecuteChange">Write approved batch</button></div>':''}</article>`:''}</div>`;
   const batchHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div><span class="eyebrow">Multi-file changes</span><h2 style="font-size:16px;margin:5px 0">Coordinated atomic batch</h2><p class="empty-hint">Enter changes as JSON. Each change is an exact edit, or an operation of create (with full content), delete, or rename (with toPath). Optional dependsOn paths determine order. Every path stays inside the approved folder.</p></div><textarea id="workspaceBatchChanges" aria-label="Multi-file batch changes" placeholder='[{"relativePath":"config.json","find":"false","replacement":"true"},{"operation":"create","relativePath":"src/feature.js","content":"module.exports = {};\n"},{"operation":"rename","relativePath":"old.js","toPath":"src/old.js"},{"operation":"delete","relativePath":"unused.js"}]' style="width:100%;min-height:120px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"></textarea><div style="display:flex;gap:8px;margin-top:8px"><input id="workspaceBatchSummary" aria-label="Batch summary" placeholder="Impact summary" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspaceCreateBatch" ${selected?'':'disabled'}>Create multi-file batch</button></div><div class="cap-section-label">Saved batches</div><div style="display:flex;gap:6px;flex-wrap:wrap">${batches.slice(0,20).map(x=>`<button class="tag-chip workspace-batch" data-id="${x.id}">${escapeHtml(x.summary)} · ${escapeHtml(x.status)}</button>`).join('')||'<span class="empty-hint">No batches yet.</span>'}</div>${batch?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px"><div style="display:flex;justify-content:space-between"><strong>${escapeHtml(batch.summary)}</strong><span class="badge">${escapeHtml(batch.status)}</span></div><div class="kv"><span>Dependency order</span><span>${batch.orderedFiles.map(escapeHtml).join(' → ')}</span><span>Operations</span><span>${batch.changes.map(x=>escapeHtml((x.operation||'edit')+' '+x.relativePath+(x.toPath?' → '+x.toPath:''))).join('<br>')}</span>${batch.approval?`<span>Approval</span><span class="mono">${escapeHtml(batch.approval.id)}</span>`:''}${batch.rollback?`<span>Rollback</span><span class="mono">${escapeHtml(batch.rollback.directory)}</span>`:''}</div><pre aria-label="Combined batch diff" style="white-space:pre-wrap;max-height:320px;overflow:auto;background:var(--bg);padding:10px;font-size:10.5px">${escapeHtml(batch.changes.map(x=>x.diff).join('\n\n'))}</pre>${(batch.checks||[]).map(x=>`<div><span class="badge ${x.status==='passed'?'badge-green':'badge-red'}">${escapeHtml(x.status)}</span> ${escapeHtml(x.file)} · ${escapeHtml(x.detail)}</div>`).join('')||'<p class="empty-hint">Awaiting validation.</p>'}${batch.status==='draft'?'<button class="btn btn-line" id="workspaceCheckBatch">Validate entire batch</button>':''}${batch.status==='checks-passed'?'<button class="btn btn-amber" id="workspaceApproveBatch">Approve exact batch</button>':''}${batch.status==='approved'?'<button class="btn btn-amber" id="workspaceExecuteBatch">Apply atomically</button>':''}${batch.execution&&batch.status==='applied'?`<p class="badge badge-green">Applied ${batch.execution.orderedFiles.length} change(s).</p>`:''}${batch.status==='applied'&&batch.rollback&&batch.rollback.available?'<button class="btn btn-line" id="workspaceRollbackBatch" style="margin-left:8px">Roll back batch</button>':''}${batch.status==='rolled-back'?'<p class="badge">Rolled back — every file restored to its pre-batch state.</p>':''}</article>`:''}</div>`;
   const rootRuns=runs.filter(x=>x.rootId===workspaceSelectedRootId),latestRun=rootRuns[0],devRun=rootRuns.find(x=>x.action==='dev'&&x.status==='running'),missingActions=['install','dev'].filter(a=>selected?.commandAllowlist&&!selected.commandAllowlist.actions.includes(a));
   const executionHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Local execution workspace</span><h2 style="font-size:16px;margin:5px 0">Controlled repository commands</h2></div><span class="badge ${selected?.commandAllowlist?'badge-green':'badge-amber'}">${selected?.commandAllowlist?'Allowlisted':'Approval required'}</span></div><p class="empty-hint">Tests, formatting, and builds run in bounded copies that reuse the project's installed packages. Git status and diagnostics are read-only. Install runs in the project folder and needs Settings &gt; Privacy &gt; Allow network access; package install scripts are skipped unless you allow them. Dev runs the project's dev server in the project folder until you stop it. Output limit 256 KiB.</p>${selected?.commandAllowlist?`<div style="display:flex;gap:7px;flex-wrap:wrap">${selected.commandAllowlist.actions.map(action=>`<button class="btn btn-line workspace-command" data-action="${action}" ${action==='dev'&&devRun?'disabled':''}>${escapeHtml(action)}</button>`).join('')}${selected.commandAllowlist.actions.includes('install')?'<label class="tag-chip" title="Runs package lifecycle scripts such as postinstall"><input type="checkbox" id="workspaceInstallScripts"> allow install scripts</label>':''}${missingActions.length?`<button class="btn btn-ghost" id="workspaceAddActions">Add ${missingActions.join(' and ')} to allowlist</button>`:''}</div>${devRun?`<div class="approval-banner" style="margin-top:10px"><span>Dev server running${devRun.url?` at <a href="${escapeHtml(devRun.url)}" target="_blank" rel="noopener">${escapeHtml(devRun.url)}</a>`:' (waiting for its address)'}</span><button class="btn btn-line" id="workspaceStopDev" data-id="${devRun.id}">Stop dev server</button></div>`:''}`:`<div id="workspaceCommandChoices" style="display:flex;gap:7px;flex-wrap:wrap">${['test','format','build','git-status','diagnostics','install','dev'].map(action=>`<label class="tag-chip"><input type="checkbox" value="${action}" checked> ${action}</label>`).join('')}</div><button class="btn btn-amber" id="workspaceAllowCommands" ${selected?'':'disabled'} style="margin-top:10px">Approve repository command allowlist</button>`}${latestRun?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:12px"><div style="display:flex;justify-content:space-between"><strong>${escapeHtml(latestRun.action)}</strong><span id="workspaceRunStatus" class="badge ${latestRun.status==='passed'||latestRun.status==='stopped'?'badge-green':latestRun.status==='running'?'badge-amber':'badge-red'}">${escapeHtml(latestRun.status)}</span></div><div class="kv" style="margin-top:8px"><span>Timeout</span><span>${latestRun.command?.timeoutMs||'—'} ms</span><span>Output limit</span><span>${workspaceBytes(latestRun.outputLimitBytes)}</span><span>Working location</span><span class="mono">${escapeHtml(latestRun.command?.cwd||'—')}</span></div><pre id="workspaceRunOutput" aria-label="Command output" style="white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px;font-size:11px">${latestRun.outputStart?'[earlier output trimmed]\n':''}${escapeHtml(latestRun.output||(latestRun.status==='running'?'':'(no output)'))}${latestRun.truncated&&!latestRun.outputStart?'\n[output truncated]':''}</pre></article>`:''}</div>`;
   const gitDraft=gitDrafts[0];
   const gitHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Git workflow</span><h2 style="font-size:16px;margin:5px 0">Live changes and reviewed commits</h2></div><button class="btn btn-line" id="workspaceGitRefresh">Refresh</button></div>${gitView?`<div class="kv"><span>Branch</span><span>${escapeHtml(gitView.branch||'detached')}</span><span>HEAD</span><span class="mono">${escapeHtml(gitView.head)}</span><span>Sampled</span><span class="mono">${escapeHtml(gitView.sampledAt)}</span></div><div class="cap-section-label">Branches</div><div style="display:flex;gap:6px;flex-wrap:wrap">${gitView.branches.map(x=>`<span class="tag-chip">${x.current?'● ':''}${escapeHtml(x.name)} · ${escapeHtml(x.sha)}</span>`).join('')}</div><div class="cap-section-label">Exact changed files</div><div id="workspaceGitFiles">${gitView.status.map(row=>`<label style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)"><input type="checkbox" value="${escapeHtml(row.path)}"><span class="mono">${escapeHtml(row.code)} ${escapeHtml(row.path)}${row.fromPath?' ← '+escapeHtml(row.fromPath):''}</span></label>`).join('')||'<p class="empty-hint">Working tree is clean.</p>'}</div><label class="eyebrow" for="workspaceCommitMessage" style="display:block;margin-top:12px">Draft commit message</label><input id="workspaceCommitMessage" aria-label="Draft commit message" maxlength="200" style="width:100%;margin:6px 0 8px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspaceCreateGitDraft" ${gitView.status.length?'':'disabled'}>Stage selected files and create draft</button><div class="card-grid cols-2" style="margin-top:14px"><div><div class="cap-section-label">Working diff</div><pre aria-label="Working diff" style="white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--bg);padding:10px;font-size:10.5px">${escapeHtml(gitView.workingDiff||'(none)')}</pre></div><div><div class="cap-section-label">Staged diff</div><pre aria-label="Staged diff" style="white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--bg);padding:10px;font-size:10.5px">${escapeHtml(gitView.stagedDiff||'(none)')}</pre></div></div><div class="cap-section-label">Test evidence</div>${gitView.testEvidence.map(x=>`<div class="mono" style="padding:5px 0">${escapeHtml(x.id)} · ${escapeHtml(x.status)} · ${escapeHtml(x.finishedAt||x.startedAt)}</div>`).join('')||'<p class="empty-hint">No controlled test run recorded for this repository.</p>'}`:'<p class="empty-hint">Select and approve the exact Git repository root to inspect Git evidence.</p>'}${gitDraft?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:12px"><div style="display:flex;justify-content:space-between"><strong>Commit draft: ${escapeHtml(gitDraft.message||'(message required)')}</strong><span class="badge ${gitDraft.status==='committed'?'badge-green':'badge-amber'}">${escapeHtml(gitDraft.status)}</span></div><div class="cap-section-label">Exact staged files</div>${gitDraft.stagedFiles.map(file=>`<div class="mono" style="padding:4px 0">${escapeHtml(file)}</div>`).join('')}<div class="mono" style="font-size:10px;color:var(--muted);margin:8px 0">Staged diff SHA-256: ${escapeHtml(gitDraft.stagedDiffSha256)}</div><pre aria-label="Reviewed staged diff" style="white-space:pre-wrap;max-height:300px;overflow:auto;background:var(--bg);padding:10px;font-size:10.5px">${escapeHtml(gitDraft.stagedDiff)}</pre>${gitDraft.status==='awaiting-review'?'<button class="btn btn-amber" id="workspaceReviewGitDraft">I reviewed these exact staged files and diff</button>':''}${gitDraft.status==='reviewed'?'<div class="approval-banner"><span>The reviewed staged snapshot is unchanged.</span><button class="btn btn-amber" id="workspaceCommitGitDraft">Create commit</button></div>':''}${gitDraft.commit?`<div class="kv"><span>Commit</span><span class="mono">${escapeHtml(gitDraft.commit.sha)}</span><span>Committed</span><span>${escapeHtml(gitDraft.commit.committedAt)}</span></div>`:''}</article>`:''}</div>`;
   const CT_TONE={completed:'var(--green,#4ade80)',denied:'var(--muted)',failed:'var(--red,#f87171)',cancelled:'var(--muted)',expired:'var(--muted)'};
-  const contractsHtml=deviceInfo?`<div class="panel" id="contractsPanel" style="padding:16px;margin-top:16px"><div><span class="eyebrow">Execution contracts</span><h2 style="font-size:16px;margin:5px 0">This device and the evidence of every action</h2></div><div class="card-grid cols-3" style="margin-top:12px"><div><strong>${escapeHtml(deviceInfo.device.name)}</strong><div class="empty-hint">${escapeHtml(deviceInfo.classes[deviceInfo.device.class]?.label||deviceInfo.device.class)} · <span class="mono" title="Device ID: fingerprint of its Ed25519 public key">${escapeHtml(deviceInfo.device.id)}</span></div></div><div><strong>${chain?chain.count:0}</strong><div class="empty-hint">sealed contracts${chain&&chain.open?` · ${chain.open} open`:''}</div></div><div><strong id="contractChainState" style="color:${chain&&chain.ok?'var(--green,#4ade80)':'var(--red,#f87171)'}">${chain&&chain.ok?'Chain verified':'Chain broken'}</strong><div class="empty-hint">${chain&&chain.ok?'Every record, link and signature checks out':escapeHtml(chain?.reason||'Could not check')}</div></div></div><div class="cap-section-label">Capabilities this device declares</div><div style="display:flex;flex-wrap:wrap;gap:5px">${deviceInfo.device.capabilities.map(c=>`<span class="mono" title="${escapeHtml(deviceInfo.capabilities[c]||'')}" style="font-size:10.5px;padding:2px 7px;border:1px solid var(--line);border-radius:10px">${escapeHtml(c)}</span>`).join('')}</div><div class="cap-section-label">Recent contracts</div>${contractList.map(c=>`<div class="contract-row" style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft)"><span style="min-width:0"><strong style="font-size:12.5px">${escapeHtml(c.intent||c.capability)}</strong><span class="mono" style="display:block;font-size:10px;color:var(--muted)">${escapeHtml(c.capability)} · ${escapeHtml(c.risk)} risk · ${c.approval?('approved by '+escapeHtml(c.approval.by.type==='policy'?'policy ('+c.approval.by.id+')':c.approval.by.id+' on '+(c.approval.device?.name||'this device'))):'no approval'} · plan ${escapeHtml(c.planHash.slice(0,10))}…${c.evidence?' · #'+c.evidence.seq:''}</span></span><span style="font-size:12px;white-space:nowrap;color:${CT_TONE[c.status]||'var(--amber)'}">${escapeHtml(c.status)}</span></div>`).join('')||'<p class="empty-hint">No contracts yet. Each action NOVA takes on this Mac (commands, files, screen, approved code changes) appears here.</p>'}<p class="empty-hint">An approval names the exact plan it approves and can be used once. Each finished contract is chained to the one before and signed with this device's key, so an edited or removed record is detected.</p></div>`:'';
-  const securityHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div><span class="eyebrow">Desktop security</span><h2 style="font-size:16px;margin:5px 0">Permissions, encrypted audit, backup and restore</h2></div><div class="card-grid cols-3" style="margin-top:12px"><div><strong>${permissions.filter(x=>x.status==='active').length}</strong><div class="empty-hint">active permission records</div></div><div><strong>${audit.length}</strong><div class="empty-hint">verified encrypted audit entries shown</div></div><div><strong>${backups.length}</strong><div class="empty-hint">encrypted local backups</div></div></div><div style="display:flex;gap:8px;margin-top:12px"><input id="workspaceBackupLabel" aria-label="Backup label" placeholder="Backup label" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspaceCreateBackup">Create encrypted backup</button></div><div class="cap-section-label">Backups</div>${backups.slice(0,10).map(x=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--line-soft)"><span><strong>${escapeHtml(x.label)}</strong><span class="mono" style="display:block;font-size:10px">${escapeHtml(x.createdAt)} · ${escapeHtml(x.sha256.slice(0,16))}…</span></span><button class="btn btn-line workspace-restore" data-id="${x.id}">Restore</button></div>`).join('')||'<p class="empty-hint">No backups yet.</p>'}<div class="cap-section-label">Encrypted audit trail</div>${audit.slice(0,20).map(x=>`<div class="mono" style="font-size:10.5px;padding:5px 0">${escapeHtml(x.at)} · ${escapeHtml(x.event?.action||'event')} · ${escapeHtml(x.recordHash.slice(0,16))}…</div>`).join('')||'<p class="empty-hint">No security events yet.</p>'}<p class="empty-hint">Audit and backup payloads use AES-256-GCM at rest. Keys and files are restricted to the local NOVA data directory.</p></div>`+contractsHtml;
+  const contractsHtml=deviceInfo?`<div class="panel" id="contractsPanel" style="padding:16px;margin-top:16px"><div><span class="eyebrow">Execution contracts</span><h2 style="font-size:16px;margin:5px 0">This device and the evidence of every action</h2></div><div class="card-grid cols-3" style="margin-top:12px"><div><strong>${escapeHtml(deviceInfo.device.name)}</strong><div class="empty-hint">${escapeHtml(deviceInfo.classes[deviceInfo.device.class]?.label||deviceInfo.device.class)} · <span class="mono" title="Device ID: fingerprint of its Ed25519 public key">${escapeHtml(deviceInfo.device.id)}</span></div></div><div><strong>${chain?chain.count:0}</strong><div class="empty-hint">sealed contracts${chain&&chain.open?` · ${chain.open} open`:''}</div></div><div><strong id="contractChainState" style="color:${chain&&chain.ok?'var(--green,#4ade80)':'var(--red,#f87171)'}">${chain&&chain.ok?'Chain verified':'Chain broken'}</strong><div class="empty-hint">${chain&&chain.ok?'Every record, link and signature checks out':escapeHtml(chain?.reason||'Could not check')}</div></div></div><div class="cap-section-label">Capabilities this device declares</div><div style="display:flex;flex-wrap:wrap;gap:5px">${deviceInfo.device.capabilities.map(c=>`<span class="mono" title="${escapeHtml(deviceInfo.capabilities[c]||'')}" style="font-size:10.5px;padding:2px 7px;border:1px solid var(--line);border-radius:10px">${escapeHtml(c)}</span>`).join('')}</div><div class="cap-section-label">Recent contracts</div>${contractList.map(c=>`<div class="contract-row" style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft)"><span style="min-width:0"><strong style="font-size:12.5px">${escapeHtml(c.intent||c.capability)}</strong><span class="mono" style="display:block;font-size:10px;color:var(--muted)">${escapeHtml(c.capability)} · ${escapeHtml(c.risk)} risk · ${c.approval?('approved by '+escapeHtml(c.approval.by.type==='policy'?'policy ('+c.approval.by.id+')':c.approval.by.id+' on '+(c.approval.device?.name||'this device'))):'no approval'} · plan ${escapeHtml(c.planHash.slice(0,10))}…${c.evidence?' · #'+c.evidence.seq:''}</span></span><span style="font-size:12px;white-space:nowrap;color:${CT_TONE[c.status]||'var(--amber)'}">${escapeHtml(c.status)}</span></div>`).join('')||'<p class="empty-hint">No contracts yet. Each action Maataa takes on this Mac (commands, files, screen, approved code changes) appears here.</p>'}<p class="empty-hint">An approval names the exact plan it approves and can be used once. Each finished contract is chained to the one before and signed with this device's key, so an edited or removed record is detected.</p></div>`:'';
+  const securityHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div><span class="eyebrow">Desktop security</span><h2 style="font-size:16px;margin:5px 0">Permissions, encrypted audit, backup and restore</h2></div><div class="card-grid cols-3" style="margin-top:12px"><div><strong>${permissions.filter(x=>x.status==='active').length}</strong><div class="empty-hint">active permission records</div></div><div><strong>${audit.length}</strong><div class="empty-hint">verified encrypted audit entries shown</div></div><div><strong>${backups.length}</strong><div class="empty-hint">encrypted local backups</div></div></div><div style="display:flex;gap:8px;margin-top:12px"><input id="workspaceBackupLabel" aria-label="Backup label" placeholder="Backup label" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspaceCreateBackup">Create encrypted backup</button></div><div class="cap-section-label">Backups</div>${backups.slice(0,10).map(x=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--line-soft)"><span><strong>${escapeHtml(x.label)}</strong><span class="mono" style="display:block;font-size:10px">${escapeHtml(x.createdAt)} · ${escapeHtml(x.sha256.slice(0,16))}…</span></span><button class="btn btn-line workspace-restore" data-id="${x.id}">Restore</button></div>`).join('')||'<p class="empty-hint">No backups yet.</p>'}<div class="cap-section-label">Encrypted audit trail</div>${audit.slice(0,20).map(x=>`<div class="mono" style="font-size:10.5px;padding:5px 0">${escapeHtml(x.at)} · ${escapeHtml(x.event?.action||'event')} · ${escapeHtml(x.recordHash.slice(0,16))}…</div>`).join('')||'<p class="empty-hint">No security events yet.</p>'}<p class="empty-hint">Audit and backup payloads use AES-256-GCM at rest. Keys and files are restricted to the local Maataa data directory.</p></div>`+contractsHtml;
   const gitAction=gitActions[gitActions.length-1];
   const gitAdvancedHtml=`<div class="panel" style="padding:16px;margin-top:16px"><span class="eyebrow">Git delivery</span><h2 style="font-size:16px;margin:5px 0">Branches, pull requests and reviewed pushes</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="workspaceBranchName" aria-label="Branch name" placeholder="feature/name" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-line" id="workspaceCreateBranch">Create branch</button><button class="btn btn-line" id="workspaceSwitchBranch">Switch branch</button></div><div style="display:flex;gap:8px;margin-top:8px"><input id="workspacePrBase" aria-label="Pull request base" value="main" style="width:140px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><input id="workspacePrTitle" aria-label="Pull request title" placeholder="Pull request title" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-line" id="workspacePreparePr">Prepare PR draft</button></div><div style="display:flex;gap:8px;margin-top:8px"><input id="workspacePushRemote" aria-label="Push remote" value="origin" style="width:140px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px"><button class="btn btn-amber" id="workspacePreparePush">Prepare push review</button></div>${gitAction?`<div class="approval-banner" style="margin-top:10px"><span>${escapeHtml(gitAction.type)} · ${escapeHtml(gitAction.status)}${gitAction.headSha?' · '+escapeHtml(gitAction.headSha.slice(0,12)):''}</span>${gitAction.type==='push-request'&&gitAction.status==='awaiting-review'?`<button class="btn btn-amber" id="workspaceReviewPush" data-id="${gitAction.id}">Review exact push</button>`:''}${gitAction.type==='push-request'&&gitAction.status==='reviewed'?`<button class="btn btn-amber" id="workspaceExecutePush" data-id="${gitAction.id}">Push reviewed commit</button>`:''}</div>`:''}<div class="cap-section-label">Commit history</div>${gitHistory.slice(0,20).map(x=>`<div class="mono" style="font-size:10.5px;padding:5px 0">${escapeHtml(x.shortSha)} · ${escapeHtml(x.subject)} · ${escapeHtml(x.author)}</div>`).join('')||'<p class="empty-hint">No history available.</p>'}</div>`;
   let detail='<p class="empty-hint">Run a scan or search to create a cited, persisted report.</p>';
@@ -4925,12 +4925,12 @@ async function renderWorkspaceView(){
   const fieldStyle='background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px';
   const projectHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">New project</span><h2 style="font-size:16px;margin:5px 0">Start a project from a template</h2></div><span class="badge">Creating requires your click</span></div><p class="empty-hint">The project is created inside an approved folder. Preview lists every file first; nothing is written until you create it. Nothing is downloaded.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><select id="projectParent" aria-label="Parent folder" style="${fieldStyle}">${roots.map(r=>`<option value="${r.id}" ${r.id===workspaceSelectedRootId?'selected':''}>${escapeHtml(r.label)} — ${escapeHtml(r.path)}</option>`).join('')}</select><input id="projectName" aria-label="Project name" placeholder="my-app" style="${fieldStyle};min-width:140px"><input id="projectTitle" aria-label="Project title" placeholder="Title (optional)" style="${fieldStyle};min-width:140px"><select id="projectTemplate" aria-label="Template" style="${fieldStyle}">${projectTemplates.map(t=>`<option value="${t.id}">${escapeHtml(t.label)}${t.needsInstall?' (needs install)':''}</option>`).join('')}</select><button class="btn btn-line" id="projectPreview" ${roots.length&&projectTemplates.length?'':'disabled'}>Preview files</button></div><div class="empty-hint" style="margin-top:6px">${projectTemplates.map(t=>`<div><strong>${escapeHtml(t.label)}:</strong> ${escapeHtml(t.description)}</div>`).join('')}</div>${projectDraft?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(projectDraft.title)}</strong><span class="badge ${projectDraft.status==='created'?'badge-green':'badge-amber'}">${escapeHtml(projectDraft.status)}</span></div><div class="kv"><span>Folder</span><span class="mono">${escapeHtml(projectDraft.targetPath)}</span><span>Template</span><span>${escapeHtml(projectDraft.templateLabel)}</span><span>Files</span><span class="mono">${projectDraft.files.map(f=>escapeHtml(f.relativePath)).join('<br>')}</span><span>Next steps</span><span>${projectDraft.nextSteps.map(escapeHtml).join('<br>')}</span>${projectDraft.created?`<span>Git</span><span>${escapeHtml(projectDraft.created.gitNote)}</span>`:''}</div>${projectDraft.status==='draft'?'<button class="btn btn-amber" id="projectCreate" style="margin-top:10px">Create project</button>':''}${projectDraft.created?'<button class="btn btn-line" id="projectOpen" style="margin-top:10px">Open in Local Workspace</button>':''}</article>`:''}</div>`;
   const testAllowed=!!selected?.commandAllowlist?.actions?.includes('test');
-  const loopHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Development loop</span><h2 style="font-size:16px;margin:5px 0">Plan, test and retry until the tests pass</h2></div><span class="badge">Your approval applies the result</span></div><p class="empty-hint">NOVA works in a private copy of this project: it plans a change, applies it to the copy, runs the allowlisted test command, and sends any failures back to the model, up to the attempt limit. When the tests pass, the net change becomes a normal batch below for you to review and approve. Your project is not changed until you apply that batch.</p>${testAllowed?'':'<p class="empty-hint" style="color:var(--amber)">Allowlist the test command for this project first.</p>'}<textarea id="loopRequest" aria-label="Change to make" placeholder="Fix src/math.js so add returns the sum of both numbers" style="width:100%;min-height:70px;${fieldStyle}"></textarea><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center"><select id="loopModel" aria-label="Model" style="${fieldStyle}">${localModels.map(m=>`<option value="${escapeHtml(m.id)}">${escapeHtml(m.name||m.id)}</option>`).join('')||'<option value="">No local Ollama models</option>'}</select><label class="empty-hint" style="padding:0">Attempts <select id="loopAttempts" aria-label="Maximum attempts" style="${fieldStyle}">${[1,2,3,4,5].map(n=>`<option ${n===3?'selected':''}>${n}</option>`).join('')}</select></label><button class="btn btn-amber" id="loopStart" ${selected&&testAllowed&&localModels.length?'':'disabled'}>Start loop</button></div><div class="cap-section-label">Loops for this project</div><div style="display:flex;gap:6px;flex-wrap:wrap">${loops.slice(0,20).map(x=>`<button class="tag-chip workspace-loop" data-id="${x.id}">${escapeHtml(x.request.slice(0,50))} · ${escapeHtml(x.status)}</button>`).join('')||'<span class="empty-hint">No loops yet.</span>'}</div>${loop?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(loop.request)}</strong><span class="badge ${loopBadge(loop.status)}">${escapeHtml(loop.status)}</span></div>${loop.phase?`<p class="empty-hint">Now: ${escapeHtml(loop.phase)}</p>`:''}${loop.error?`<p class="empty-hint">${escapeHtml(loop.error)}</p>`:''}${loop.baseline?`<div style="padding:6px 0"><span class="badge ${loop.baseline.status==='passed'?'badge-green':'badge-red'}">${escapeHtml(loop.baseline.status)}</span> <strong style="font-size:12px">Tests before any change</strong></div>`:''}${(loop.attempts||[]).map(a=>`<details style="padding:6px 0" ${a===loop.attempts[loop.attempts.length-1]?'open':''}><summary><span class="badge ${a.status==='passed'?'badge-green':['tests-failed','apply-failed','plan-failed'].includes(a.status)?'badge-red':'badge-amber'}">${escapeHtml(a.status)}</span> <strong style="font-size:12px">Attempt ${a.number}</strong>${a.plan?` <span class="empty-hint">${escapeHtml(a.plan.summary||'')}</span>`:''}</summary>${a.plan?`<div class="mono" style="font-size:11px;margin:6px 0">${a.plan.operations.map(o=>escapeHtml(o.operation+' '+o.relativePath+(o.toPath?' → '+o.toPath:''))).join('<br>')}</div>`:''}${a.applyError?`<p class="empty-hint">${escapeHtml(a.applyError)}</p>`:''}${(a.syntaxErrors||[]).length?`<pre style="white-space:pre-wrap;font-size:11px">${escapeHtml(a.syntaxErrors.join('\n'))}</pre>`:''}${a.test?`<pre aria-label="Attempt test output" style="white-space:pre-wrap;max-height:200px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px;font-size:10.5px">${escapeHtml(a.test.outputTail||'(no output)')}</pre>`:''}</details>`).join('')}${loop.status==='running'?'<button class="btn btn-line" id="loopCancel" style="margin-top:8px">Cancel loop</button>':''}${loop.batchId?'<button class="btn btn-amber" id="loopReview" style="margin-top:8px">Review the prepared batch</button>':''}</article>`:''}</div>`;
+  const loopHtml=`<div class="panel" style="padding:16px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="eyebrow">Development loop</span><h2 style="font-size:16px;margin:5px 0">Plan, test and retry until the tests pass</h2></div><span class="badge">Your approval applies the result</span></div><p class="empty-hint">Maataa works in a private copy of this project: it plans a change, applies it to the copy, runs the allowlisted test command, and sends any failures back to the model, up to the attempt limit. When the tests pass, the net change becomes a normal batch below for you to review and approve. Your project is not changed until you apply that batch.</p>${testAllowed?'':'<p class="empty-hint" style="color:var(--amber)">Allowlist the test command for this project first.</p>'}<textarea id="loopRequest" aria-label="Change to make" placeholder="Fix src/math.js so add returns the sum of both numbers" style="width:100%;min-height:70px;${fieldStyle}"></textarea><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center"><select id="loopModel" aria-label="Model" style="${fieldStyle}">${localModels.map(m=>`<option value="${escapeHtml(m.id)}">${escapeHtml(m.name||m.id)}</option>`).join('')||'<option value="">No local Ollama models</option>'}</select><label class="empty-hint" style="padding:0">Attempts <select id="loopAttempts" aria-label="Maximum attempts" style="${fieldStyle}">${[1,2,3,4,5].map(n=>`<option ${n===3?'selected':''}>${n}</option>`).join('')}</select></label><button class="btn btn-amber" id="loopStart" ${selected&&testAllowed&&localModels.length?'':'disabled'}>Start loop</button></div><div class="cap-section-label">Loops for this project</div><div style="display:flex;gap:6px;flex-wrap:wrap">${loops.slice(0,20).map(x=>`<button class="tag-chip workspace-loop" data-id="${x.id}">${escapeHtml(x.request.slice(0,50))} · ${escapeHtml(x.status)}</button>`).join('')||'<span class="empty-hint">No loops yet.</span>'}</div>${loop?`<article style="border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(loop.request)}</strong><span class="badge ${loopBadge(loop.status)}">${escapeHtml(loop.status)}</span></div>${loop.phase?`<p class="empty-hint">Now: ${escapeHtml(loop.phase)}</p>`:''}${loop.error?`<p class="empty-hint">${escapeHtml(loop.error)}</p>`:''}${loop.baseline?`<div style="padding:6px 0"><span class="badge ${loop.baseline.status==='passed'?'badge-green':'badge-red'}">${escapeHtml(loop.baseline.status)}</span> <strong style="font-size:12px">Tests before any change</strong></div>`:''}${(loop.attempts||[]).map(a=>`<details style="padding:6px 0" ${a===loop.attempts[loop.attempts.length-1]?'open':''}><summary><span class="badge ${a.status==='passed'?'badge-green':['tests-failed','apply-failed','plan-failed'].includes(a.status)?'badge-red':'badge-amber'}">${escapeHtml(a.status)}</span> <strong style="font-size:12px">Attempt ${a.number}</strong>${a.plan?` <span class="empty-hint">${escapeHtml(a.plan.summary||'')}</span>`:''}</summary>${a.plan?`<div class="mono" style="font-size:11px;margin:6px 0">${a.plan.operations.map(o=>escapeHtml(o.operation+' '+o.relativePath+(o.toPath?' → '+o.toPath:''))).join('<br>')}</div>`:''}${a.applyError?`<p class="empty-hint">${escapeHtml(a.applyError)}</p>`:''}${(a.syntaxErrors||[]).length?`<pre style="white-space:pre-wrap;font-size:11px">${escapeHtml(a.syntaxErrors.join('\n'))}</pre>`:''}${a.test?`<pre aria-label="Attempt test output" style="white-space:pre-wrap;max-height:200px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px;font-size:10.5px">${escapeHtml(a.test.outputTail||'(no output)')}</pre>`:''}</details>`).join('')}${loop.status==='running'?'<button class="btn btn-line" id="loopCancel" style="margin-top:8px">Cancel loop</button>':''}${loop.batchId?'<button class="btn btn-amber" id="loopReview" style="margin-top:8px">Review the prepared batch</button>':''}</article>`:''}</div>`;
   pad.querySelector('.view-head').insertAdjacentHTML('afterend',projectHtml+loopHtml+planHtml+changeHtml+batchHtml+executionHtml+gitHtml+gitAdvancedHtml+securityHtml);
   $('workspaceRootPath').insertAdjacentHTML('afterend','<button class="btn btn-line" id="workspacePickRoot">Choose folder…</button>');
   const request=async(url,body)=>{const response=await fetch(apiUrl(url),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error);return data;};
   $('workspaceApproveRoot').onclick=async()=>{try{const data=await request('/api/workspace/roots',{path:$('workspaceRootPath').value.trim(),label:$('workspaceRootLabel').value.trim()});workspaceSelectedRootId=data.id;await renderWorkspaceView();toast('Local root approved.');}catch(error){toast(error.message);}};
-  if($('workspacePickRoot'))$('workspacePickRoot').onclick=async()=>{try{if(!window.__TAURI__?.core?.invoke)return toast('Native folder selection is available in the NOVA desktop app.');const selectedPath=await window.__TAURI__.core.invoke('pick_local_folder');$('workspaceRootPath').value=selectedPath;}catch(error){toast(typeof error==='string'?error:(error?.message||'Folder selection cancelled.'));}};
+  if($('workspacePickRoot'))$('workspacePickRoot').onclick=async()=>{try{if(!window.__TAURI__?.core?.invoke)return toast('Native folder selection is available in the Maataa desktop app.');const selectedPath=await window.__TAURI__.core.invoke('pick_local_folder');$('workspaceRootPath').value=selectedPath;}catch(error){toast(typeof error==='string'?error:(error?.message||'Folder selection cancelled.'));}};
   if($('loopStart'))$('loopStart').onclick=async()=>{try{const row=await request('/api/workspace/loops',{rootId:workspaceSelectedRootId,modelId:$('loopModel').value,request:$('loopRequest').value.trim(),maxAttempts:Number($('loopAttempts').value)});workspaceSelectedLoopId=row.id;toast('Development loop started.');renderWorkspaceView();}catch(error){toast(error.message);}};
   if($('loopCancel'))$('loopCancel').onclick=async()=>{try{await request('/api/workspace/loops/'+encodeURIComponent(loop.id)+'/cancel',{});toast('Cancelling loop…');setTimeout(renderWorkspaceView,800);}catch(error){toast(error.message);}};
   if($('loopReview'))$('loopReview').onclick=()=>{workspaceSelectedBatchId=loop.batchId;renderWorkspaceView().then(()=>document.getElementById('workspaceBatchChanges')?.scrollIntoView({behavior:'smooth',block:'center'}));};
@@ -5007,7 +5007,7 @@ async function renderNeuronFactoryView(){
   const artifactById=new Map(DB.neuronArtifacts.map(x=>[x.id,x]));
   const card=blueprint=>{const artifact=artifactById.get(blueprint.artifactId),job=DB.backgroundJobs.find(x=>x.id===blueprint.jobId);return `<article class="panel" style="padding:15px;margin-top:10px"><div style="display:flex;justify-content:space-between;gap:10px"><strong>${escapeHtml(blueprint.name)}</strong><span class="badge ${blueprint.status==='trained'?'badge-green':blueprint.status==='awaiting-approval'?'badge-amber':'badge-blue'}">${escapeHtml(blueprint.status)}</span></div><p style="font-size:12px;color:var(--muted);margin:8px 0">${escapeHtml(blueprint.purpose)}</p><div class="mono" style="font-size:10.5px">${escapeHtml(blueprint.kind)} · ${escapeHtml(blueprint.scale)}<br>${escapeHtml(blueprint.truth)}</div>${job&&['queued','running'].includes(job.status)?`<div class="runtime-inline" style="margin-top:10px">Background job ${escapeHtml(job.status)} · ${escapeHtml(job.progress?.phase||'queued')}</div>`:''}${artifact?`<div class="runtime-inline" style="margin-top:10px">Engine: ${escapeHtml(artifact.engine)} · final loss ${Number(artifact.metrics.finalLoss).toPrecision(4)} · ${escapeHtml(artifact.kind==='qubit'?'simulated circuit':'trained tensor')} · ${escapeHtml(artifact.lifecycle||'unreviewed')}</div>`:''}<div style="display:flex;gap:7px;margin-top:10px">${blueprint.status==='awaiting-approval'?`<button class="btn btn-amber neuron-approve" data-id="${blueprint.id}">Approve macro job</button>`:''}${blueprint.status==='ready'?`<button class="btn btn-amber neuron-train" data-id="${blueprint.id}">Queue training</button>`:''}${artifact?.lifecycle==='awaiting-evaluation'?`<button class="btn btn-line neuron-evaluate" data-id="${artifact.id}">Evaluate quality</button>`:''}${artifact?.lifecycle==='awaiting-approval'?`<button class="btn btn-amber neuron-artifact-approve" data-id="${artifact.id}">Approve artifact</button>`:''}</div></article>`};
   const initial=neuronTemplate('tensor');
-  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">Local intelligence</span><h1 class="view-title">Neuron Factory</h1><p class="view-desc">Create purpose-bound dense tensors or train parameterized quantum-circuit simulations. Macro jobs require approval. Qubit artifacts are simulations; NOVA does not claim to create physical qubits.</p></div></div><div class="card-grid cols-3"><div class="panel" style="padding:14px"><strong>${DB.neuronBlueprints.length}</strong><div class="empty-hint">blueprints</div></div><div class="panel" style="padding:14px"><strong>${DB.neuronArtifacts.filter(x=>x.kind==='tensor').length}</strong><div class="empty-hint">tensor artifacts</div></div><div class="panel" style="padding:14px"><strong>${DB.neuronArtifacts.filter(x=>x.kind==='qubit').length}</strong><div class="empty-hint">simulated circuits</div></div></div><div class="panel" style="padding:16px;margin-top:12px"><div class="card-grid cols-2"><label>Name<input id="neuronName" aria-label="Neuron name" value="Purpose neuron" style="display:block;width:100%;margin-top:6px"></label><label>Purpose<input id="neuronPurpose" aria-label="Neuron purpose" value="Detect when both bounded input signals are active." style="display:block;width:100%;margin-top:6px"></label><label>Artifact kind<select id="neuronKind" aria-label="Artifact kind" style="display:block;width:100%;margin-top:6px"><option value="tensor">Tensor network</option><option value="qubit">Qubit circuit simulation</option></select></label><label>Scale<select id="neuronScale" aria-label="Training scale" style="display:block;width:100%;margin-top:6px"><option value="micro">Micro</option><option value="macro">Macro · approval required</option></select></label></div><label style="display:block;margin-top:12px">Training specification<textarea id="neuronSpec" aria-label="Training specification" class="mono" style="display:block;width:100%;min-height:180px;margin-top:6px">${escapeHtml(JSON.stringify(initial,null,2))}</textarea></label><button class="btn btn-amber" id="neuronCreate" style="margin-top:10px">Create blueprint</button></div><div class="cap-section-label">Factory jobs</div>${DB.neuronBlueprints.length?DB.neuronBlueprints.slice().reverse().map(card).join(''):'<p class="empty-hint">No neuron blueprints yet.</p>'}`;
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">Local intelligence</span><h1 class="view-title">Neuron Factory</h1><p class="view-desc">Create purpose-bound dense tensors or train parameterized quantum-circuit simulations. Macro jobs require approval. Qubit artifacts are simulations; Maataa does not claim to create physical qubits.</p></div></div><div class="card-grid cols-3"><div class="panel" style="padding:14px"><strong>${DB.neuronBlueprints.length}</strong><div class="empty-hint">blueprints</div></div><div class="panel" style="padding:14px"><strong>${DB.neuronArtifacts.filter(x=>x.kind==='tensor').length}</strong><div class="empty-hint">tensor artifacts</div></div><div class="panel" style="padding:14px"><strong>${DB.neuronArtifacts.filter(x=>x.kind==='qubit').length}</strong><div class="empty-hint">simulated circuits</div></div></div><div class="panel" style="padding:16px;margin-top:12px"><div class="card-grid cols-2"><label>Name<input id="neuronName" aria-label="Neuron name" value="Purpose neuron" style="display:block;width:100%;margin-top:6px"></label><label>Purpose<input id="neuronPurpose" aria-label="Neuron purpose" value="Detect when both bounded input signals are active." style="display:block;width:100%;margin-top:6px"></label><label>Artifact kind<select id="neuronKind" aria-label="Artifact kind" style="display:block;width:100%;margin-top:6px"><option value="tensor">Tensor network</option><option value="qubit">Qubit circuit simulation</option></select></label><label>Scale<select id="neuronScale" aria-label="Training scale" style="display:block;width:100%;margin-top:6px"><option value="micro">Micro</option><option value="macro">Macro · approval required</option></select></label></div><label style="display:block;margin-top:12px">Training specification<textarea id="neuronSpec" aria-label="Training specification" class="mono" style="display:block;width:100%;min-height:180px;margin-top:6px">${escapeHtml(JSON.stringify(initial,null,2))}</textarea></label><button class="btn btn-amber" id="neuronCreate" style="margin-top:10px">Create blueprint</button></div><div class="cap-section-label">Factory jobs</div>${DB.neuronBlueprints.length?DB.neuronBlueprints.slice().reverse().map(card).join(''):'<p class="empty-hint">No neuron blueprints yet.</p>'}`;
   $('neuronKind').onchange=event=>{$('neuronSpec').value=JSON.stringify(neuronTemplate(event.target.value),null,2);};
   $('neuronCreate').onclick=async()=>{try{const spec=JSON.parse($('neuronSpec').value),body={name:$('neuronName').value,purpose:$('neuronPurpose').value,kind:$('neuronKind').value,scale:$('neuronScale').value,...spec};const response=await fetch(apiUrl('/api/neuron-factory/blueprints'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await response.json();if(!response.ok)throw new Error(data.error);toast(data.status==='awaiting-approval'?'Macro blueprint created for review.':'Micro blueprint ready to train.');renderNeuronFactoryView();}catch(error){toast('Neuron Factory: '+error.message);}};
   $$('.neuron-approve').forEach(button=>button.onclick=async()=>{const response=await fetch(apiUrl('/api/neuron-factory/blueprints/'+encodeURIComponent(button.dataset.id)+'/approve'),{method:'POST'}),data=await response.json();toast(response.ok?'Macro training approved.':data.error);renderNeuronFactoryView();});
@@ -5018,7 +5018,7 @@ async function renderNeuronFactoryView(){
 }
 
 /* ===================== marker: RENDER:VOICE STUDIO ===================== */
-// Characters: personality, face and voice for agents and for NOVA's spoken
+// Characters: personality, face and voice for agents and for Maataa's spoken
 // replies. Voices: a Kokoro blend, a macOS voice, or a VoiceStudio profile.
 let vsSel = null, vsDraft = null, vsCatalog = null, vsChars = [], vsAudio = null;
 const VS_BLANK = () => ({ name:'', tagline:'', personality:'', speakingStyle:'', language:'English', avatarMediaId:null, voice:{ engine:'kokoro', mix:[{voice:'af_heart',weight:1}], speed:1, pitch:0 }, delivery:{ mood:'neutral', auto:true } });
@@ -5031,8 +5031,8 @@ async function renderVoiceStudioView(){
   const speaksAs = getPrefs().replyCharacter || '';
   const k = vsCatalog.kokoro, vs = vsCatalog.voicestudio;
   pad.innerHTML = `
-    <div class="view-head"><div><span class="eyebrow">Create</span><h1 class="view-title">Voice Studio</h1><p class="view-desc">Characters with a personality, a face and a voice. Give one to an agent, or let NOVA speak as one. Characters change how they sound and talk, never what they are allowed to do.</p></div>
-      <label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px">NOVA speaks as<select id="vsSpeaksAs" aria-label="NOVA speaks as"><option value="">Its usual voice</option>${vsChars.map(c => `<option value="${escapeHtml(c.id)}" ${c.id===speaksAs?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select></label></div>
+    <div class="view-head"><div><span class="eyebrow">Create</span><h1 class="view-title">Voice Studio</h1><p class="view-desc">Characters with a personality, a face and a voice. Give one to an agent, or let Maataa speak as one. Characters change how they sound and talk, never what they are allowed to do.</p></div>
+      <label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px">Maataa speaks as<select id="vsSpeaksAs" aria-label="Maataa speaks as"><option value="">Its usual voice</option>${vsChars.map(c => `<option value="${escapeHtml(c.id)}" ${c.id===speaksAs?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select></label></div>
     <div class="card-grid cols-3" style="margin-bottom:14px">
       <div class="panel" style="padding:12px"><div class="empty-hint">Kokoro voices</div><strong style="color:${k.ready?'var(--green)':'var(--amber)'}">${k.ready ? k.voices.length + ' voices ready' : 'Not installed'}</strong><div class="empty-hint" style="font-size:11px">${k.ready ? 'Blend up to three; English, Hindi and more' : escapeHtml((k.missing||[])[0] || 'Double-click "Install Kokoro voices for NOVA.command"')}</div></div>
       <div class="panel" style="padding:12px"><div class="empty-hint">macOS voices</div><strong style="color:${vsCatalog.macos.ready?'var(--green)':'var(--muted)'}">${vsCatalog.macos.ready ? vsCatalog.macos.voices.length + ' voices' : 'Not on this computer'}</strong><div class="empty-hint" style="font-size:11px">Built in, no setup</div></div>
@@ -5042,11 +5042,11 @@ async function renderVoiceStudioView(){
       <div class="panel" style="padding:12px"><button class="btn btn-amber btn-sm" id="vsNew" style="width:100%;margin-bottom:10px">New character</button>
         ${vsChars.length ? vsChars.map(c => `<button class="vs-char ${c.id===vsSel?'active':''}" data-id="${escapeHtml(c.id)}" style="display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:8px;border:1px solid ${c.id===vsSel?'var(--amber)':'var(--line)'};border-radius:10px;background:transparent;color:inherit;margin-bottom:8px;cursor:pointer">
           ${c.avatarMediaId ? `<img src="${mediaUrl(c.avatarMediaId)}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">` : `<span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--panel-2,#1a1e24);font-weight:600">${escapeHtml(c.name.slice(0,1).toUpperCase())}</span>`}
-          <span style="min-width:0"><strong style="font-size:13px">${escapeHtml(c.name)}</strong><div class="empty-hint" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.tagline || c.voiceLabel)}</div>${c.agents.length?`<div class="empty-hint" style="font-size:10.5px">${c.agents.length} agent(s)</div>`:''}</span></button>`).join('') : '<p class="empty-hint">No characters yet. Make one for each agent personality you want.</p>'}
+          <span style="min-width:0"><strong style="font-size:13px">${escapeHtml(c.name)}</strong>${c.builtin?' <span class="mono" style="font-size:9.5px;color:var(--muted)">helper</span>':''}<div class="empty-hint" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.tagline || c.voiceLabel)}</div>${c.agents.length?`<div class="empty-hint" style="font-size:10.5px">${c.agents.length} agent(s)</div>`:''}</span></button>`).join('') : '<p class="empty-hint">No characters yet. Make one for each agent personality you want.</p>'}
       </div>
       <div class="panel" style="padding:16px" id="vsEditor">${vsDraft ? '' : '<p class="empty-hint">Choose a character, or press New character.</p>'}</div>
     </div>`;
-  $('vsSpeaksAs').onchange = e => { setPrefs({ replyCharacter: e.target.value || null }); toast(e.target.value ? 'NOVA will read replies in this character\'s voice.' : 'NOVA uses its usual voice.'); };
+  $('vsSpeaksAs').onchange = e => { setPrefs({ replyCharacter: e.target.value || null }); toast(e.target.value ? 'Maataa will read replies in this character\'s voice.' : 'Maataa uses its usual voice.'); };
   $('vsNew').onclick = () => { vsSel = null; vsDraft = VS_BLANK(); renderVoiceStudioView(); };
   $$('.vs-char').forEach(b => b.onclick = () => { vsSel = b.dataset.id; vsDraft = null; renderVoiceStudioView(); });
   if (vsDraft) renderVsEditor();
@@ -5072,9 +5072,10 @@ function renderVsEditor(){
       </div>
     </div>
     <div class="eyebrow" style="margin:16px 0 8px">Voice</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${[['kokoro','Kokoro blend'],['macos','macOS voice'],['voicestudio','VoiceStudio']].map(([id,l]) => `<button class="btn btn-sm ${v.engine===id?'btn-amber':'btn-line'} vs-engine" data-e="${id}">${l}</button>`).join('')}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${[['default','Usual voice'],['kokoro','Kokoro blend'],['macos','macOS voice'],['voicestudio','VoiceStudio']].map(([id,l]) => `<button class="btn btn-sm ${v.engine===id?'btn-amber':'btn-line'} vs-engine" data-e="${id}">${l}</button>`).join('')}</div>
     <div id="vsVoiceBox">${
-      v.engine === 'kokoro' ? `${(v.mix||[]).map((m,i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap"><select class="vs-mix-voice" data-i="${i}" aria-label="Voice ${i+1}" style="flex:1;min-width:180px">${kOpts(m.voice)}</select><input type="range" class="vs-mix-w" data-i="${i}" min="0" max="100" value="${Math.round(m.weight*100)}" aria-label="Share of voice ${i+1}" style="width:140px"><span class="mono" style="width:40px;font-size:11px">${Math.round(m.weight*100)}%</span>${v.mix.length>1?`<button class="btn btn-ghost btn-sm vs-mix-del" data-i="${i}" aria-label="Remove">×</button>`:''}</div>`).join('')}
+      v.engine === 'default' ? `<p class="empty-hint" style="margin:0">The app's usual voice: a Kokoro voice for the character's language when Kokoro is installed, otherwise the macOS voice. Speed, pitch and delivery still apply.</p>`
+      : v.engine === 'kokoro' ? `${(v.mix||[]).map((m,i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap"><select class="vs-mix-voice" data-i="${i}" aria-label="Voice ${i+1}" style="flex:1;min-width:180px">${kOpts(m.voice)}</select><input type="range" class="vs-mix-w" data-i="${i}" min="0" max="100" value="${Math.round(m.weight*100)}" aria-label="Share of voice ${i+1}" style="width:140px"><span class="mono" style="width:40px;font-size:11px">${Math.round(m.weight*100)}%</span>${v.mix.length>1?`<button class="btn btn-ghost btn-sm vs-mix-del" data-i="${i}" aria-label="Remove">×</button>`:''}</div>`).join('')}
         ${v.mix.length < 3 ? '<button class="btn btn-ghost btn-sm" id="vsMixAdd">+ Blend in another voice</button>' : ''}
         ${k.ready ? '' : '<p class="empty-hint" style="margin:6px 0 0">Kokoro is not installed yet, so previews will fail until you install it.</p>'}`
       : v.engine === 'macos' ? `<select id="vsMac" aria-label="macOS voice" style="width:100%"><option value="">System default</option>${vsCatalog.macos.voices.map(o => `<option value="${escapeHtml(o.id)}" ${o.id===v.macVoice?'selected':''}>${escapeHtml(o.label)}</option>`).join('')}</select>`
@@ -5093,11 +5094,11 @@ function renderVsEditor(){
     <p class="empty-hint" style="margin:8px 0">Write cues in the text to direct a line yourself: ${['shout','whisper','sing','taunt','laugh','angry','sad','joyful','warm','pause'].map(c => `<button class="hf-chip vs-cue" data-c="${c}" style="font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:transparent;color:inherit;cursor:pointer">[${c}]</button>`).join(' ')}. Kokoro and macOS voices act these out with pitch, speed, loudness and effects; real singing is best made in Audio &gt; Song.</p>
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="vsSay" aria-label="Text to preview" placeholder="[warm] Come here, my child. [taunt] Did you really think you could hide? [sing] La la la…" style="flex:1;min-width:220px"><select id="vsPreviewMood" aria-label="Delivery for this preview"><option value="auto">Auto delivery</option>${(vsCatalog.moods||[]).map(m => `<option value="${m.id}">${escapeHtml(m.label)}</option>`).join('')}</select><button class="btn btn-line btn-sm" id="vsPreview">▶ Preview</button></div>
     ${agents.length ? `<div class="eyebrow" style="margin:16px 0 6px">Agents that use this character</div><div style="display:flex;flex-wrap:wrap;gap:6px">${agents.map(a => `<label class="badge" style="display:inline-flex;gap:6px;align-items:center;padding:4px 8px;cursor:pointer"><input type="checkbox" class="vs-agent" value="${escapeHtml(a.id)}" ${owners.includes(a.id)?'checked':''} ${vsSel?'':'disabled'}>${escapeHtml(a.name)}</label>`).join('')}</div>` : ''}
-    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end"><span id="vsMsg" class="empty-hint" style="margin-right:auto"></span>${vsSel ? '<button class="btn btn-ghost btn-sm" id="vsDelete" style="color:var(--red)">Delete</button>' : ''}<button class="btn btn-amber btn-sm" id="vsSave">${vsSel ? 'Save' : 'Create character'}</button></div>`;
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end"><span id="vsMsg" class="empty-hint" style="margin-right:auto"></span>${vsSel ? `<button class="btn btn-ghost btn-sm" id="vsDesign" title="Avatar and personality traits">Look &amp; personality…</button>` : ''}${vsSel && !d.builtin ? '<button class="btn btn-ghost btn-sm" id="vsDelete" style="color:var(--red)">Delete</button>' : ''}<button class="btn btn-amber btn-sm" id="vsSave">${vsSel ? 'Save' : 'Create character'}</button></div>`;
   const read = () => { d.name = $('vsName').value; d.tagline = $('vsTagline').value; d.personality = $('vsPersonality').value; d.speakingStyle = $('vsStyle').value; d.language = $('vsLang').value; d.delivery = { mood: $('vsMood') ? $('vsMood').value : 'neutral', auto: $('vsAuto') ? $('vsAuto').checked : true }; };
   $$('.vs-cue').forEach(b => b.onclick = () => { const i = $('vsSay'); i.value = (i.value ? i.value.trimEnd() + ' ' : '') + '[' + b.dataset.c + '] '; i.focus(); });
   ['vsName','vsTagline','vsPersonality','vsStyle','vsLang'].forEach(id => $(id).oninput = read);
-  $$('.vs-engine').forEach(b => b.onclick = () => { read(); const e = b.dataset.e; d.voice = { engine:e, speed:v.speed, pitch:v.pitch, ...(e==='kokoro'?{mix:v.mix&&v.mix.length?v.mix:[{voice:'af_heart',weight:1}]}:e==='macos'?{macVoice:v.macVoice||''}:{profile:v.profile||'', profileName:v.profileName||''}) }; renderVsEditor(); });
+  $$('.vs-engine').forEach(b => b.onclick = () => { read(); const e = b.dataset.e; d.voice = { engine:e, speed:v.speed, pitch:v.pitch, ...(e==='default'?{}:e==='kokoro'?{mix:v.mix&&v.mix.length?v.mix:[{voice:'af_heart',weight:1}]}:e==='macos'?{macVoice:v.macVoice||''}:{profile:v.profile||'', profileName:v.profileName||''}) }; renderVsEditor(); });
   $$('.vs-mix-voice').forEach(sel => sel.onchange = () => { v.mix[+sel.dataset.i].voice = sel.value; });
   $$('.vs-mix-w').forEach(r => r.oninput = () => { v.mix[+r.dataset.i].weight = Number(r.value)/100; r.nextElementSibling.textContent = r.value + '%'; });
   $$('.vs-mix-del').forEach(b => b.onclick = () => { read(); v.mix.splice(+b.dataset.i, 1); renderVsEditor(); });
@@ -5131,6 +5132,7 @@ function renderVsEditor(){
     } catch (e) { $('vsMsg').textContent = e.message; }
   };
   if ($('vsDelete')) $('vsDelete').onclick = async () => { if ($('vsDelete').dataset.confirm !== '1') { $('vsDelete').dataset.confirm = '1'; $('vsDelete').textContent = 'Press again to delete'; return; } try { await vsJson('/api/characters/' + encodeURIComponent(vsSel), { method:'DELETE' }); if (getPrefs().replyCharacter === vsSel) setPrefs({ replyCharacter: null }); vsSel = null; vsDraft = null; renderVoiceStudioView(); } catch (e) { toast(e.message); } };
+  if ($('vsDesign')) $('vsDesign').onclick = () => { if (window.novaHelper && window.novaHelper.design) window.novaHelper.design(vsSel); };
   if ($('vsFaceRemove')) $('vsFaceRemove').onclick = () => { read(); d.avatarMediaId = null; renderVsEditor(); };
   if ($('vsFace') && vsSel) $('vsFace').onclick = async () => {
     read(); const st = $('vsFaceState'); $('vsFace').disabled = true; st.textContent = 'Starting ComfyUI and drawing…';
@@ -5163,7 +5165,7 @@ function abWhen(t){ if (!t) return '—'; const d = new Date(t); return isNaN(d)
 async function renderAgentBrowserView(){
   const pad = $('agentbrowserView').querySelector('.view-pad');
   pad.innerHTML = `
-    <div class="view-head"><div><span class="eyebrow">Oversight</span><h1 class="view-title">Agent Browser</h1><p class="view-desc">The separate, locked-down browser NOVA's agents use. It reaches only the websites you allow, records every step, and closes when NOVA is halted. It never uses your own browser or your sign-ins.</p></div></div>
+    <div class="view-head"><div><span class="eyebrow">Oversight</span><h1 class="view-title">Agent Browser</h1><p class="view-desc">The separate, locked-down browser Maataa's agents use. It reaches only the websites you allow, records every step, and closes when Maataa is halted. It never uses your own browser or your sign-ins.</p></div></div>
     <div class="card-grid cols-4" id="abStatus"><div class="panel" style="padding:14px"><span class="empty-hint">Checking…</span></div></div>
     <div class="card-grid cols-2" style="margin-top:14px;align-items:start">
       <div class="panel" style="padding:16px">
@@ -5262,10 +5264,10 @@ async function abRefresh(){
 function renderBrowserView(){
   const root = $('browserView').querySelector('.view-pad');
   root.innerHTML = `
-    <div class="view-head"><div><span class="eyebrow">Capabilities</span><h1 class="view-title">Provider Browser</h1><p class="view-desc">Open AI providers in a separate NOVA browser window. Sign in directly with each provider; NOVA never asks for or stores provider passwords.</p></div></div>
+    <div class="view-head"><div><span class="eyebrow">Capabilities</span><h1 class="view-title">Provider Browser</h1><p class="view-desc">Open AI providers in a separate Maataa browser window. Sign in directly with each provider; Maataa never asks for or stores provider passwords.</p></div></div>
     <div class="panel" style="padding:14px;margin-bottom:14px"><div class="eyebrow" style="margin-bottom:8px">Open a secure address</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="providerBrowserUrl" aria-label="Provider address" placeholder="https://your-provider.example" style="flex:1;min-width:240px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:#0c1117"><button class="btn btn-amber" id="providerBrowserOpenCustom"><span data-lucide="external-link" style="width:14px;height:14px"></span>Open</button></div><p class="empty-hint" style="padding:10px 0 0;margin:0">HTTPS addresses are allowed. Local development addresses may use <code>http://localhost</code> or <code>http://127.0.0.1</code>.</p></div>
     <div class="card-grid cols-2">${PROVIDER_BROWSER_SITES.map(site=>`<article class="panel" style="padding:16px"><div style="display:flex;gap:8px;align-items:center"><span data-lucide="${site.icon}" style="width:17px;height:17px;color:var(--amber)"></span><strong>${escapeHtml(site.name)}</strong></div><p style="margin:9px 0 14px;color:var(--muted);font-size:12.5px;line-height:1.45">${escapeHtml(site.description)}</p><button class="btn btn-line provider-browser-launch" data-url="${site.url}">Open ${escapeHtml(site.name)}</button></article>`).join('')}</div>
-    <div class="runtime-inline" style="margin-top:18px">Provider pages run under each provider’s own account and policies. Opening a page does not connect it to NOVA sessions, knowledge, tools, or automations.</div>`;
+    <div class="runtime-inline" style="margin-top:18px">Provider pages run under each provider’s own account and policies. Opening a page does not connect it to Maataa sessions, knowledge, tools, or automations.</div>`;
   $$('.provider-browser-launch').forEach(button => button.onclick = () => openProviderBrowser(button.dataset.url));
   $('providerBrowserOpenCustom').onclick = () => openProviderBrowser($('providerBrowserUrl').value);
   $('providerBrowserUrl').onkeydown = event => { if (event.key === 'Enter') openProviderBrowser(event.currentTarget.value); };
@@ -5547,7 +5549,7 @@ async function refreshEventTotal(){
 }
 function runDiagnostics(silent){
   const checks = [];
-  checks.push({name:'NOVA Runtime backend', ok: backendHealthy, detail: backendHealthy ? 'Connected — persisting to SQLite via the local API.' : 'Cannot reach the NOVA Runtime backend on this origin. Is `node server.js` running?'});
+  checks.push({name:'Maataa Workstation backend', ok: backendHealthy, detail: backendHealthy ? 'Connected — persisting to SQLite via the local API.' : 'Cannot reach the Maataa Workstation backend on this origin. Is `node server.js` running?'});
   checks.push({name:'Ollama inference engine', ok: ollamaStatus.reachable, detail: ollamaStatus.reachable ? ollamaStatus.models.length+' model(s) available at '+ollamaStatus.host+'.' : 'Not reachable at '+(ollamaStatus.host||'—')+'. Real generation is unavailable. Demo replies require explicitly enabling Demo mode in Settings. Run `ollama serve`.'});
   checks.push({name:'Model loaded', ok: !!loadedModel(), detail: loadedModel() ? loadedModel().name+' ('+loadedModel().runtime+')' : 'No model is currently loaded.'});
   checks.push({name:'Knowledge index', ok: DB.knowledgeCollections.every(c=>c.status!=='pending'), detail: DB.knowledgeCollections.filter(c=>c.status==='stale').length+' stale, '+DB.knowledgeCollections.filter(c=>c.status==='pending').length+' pending collection(s).'});
@@ -5777,7 +5779,7 @@ async function drawHelpSupport(body, data){
     const checks = r && r.checks ? `<div class="help-checks">${r.checks.map(c => `<div class="help-check ${c.ok ? 'ok' : c.optional ? 'optional' : 'bad'}"><span data-lucide="${c.ok ? 'check-circle-2' : c.optional ? 'info' : 'alert-triangle'}"></span><div><strong>${escapeHtml(c.label)}</strong><small>${escapeHtml(c.detail)}</small></div>${c.ok ? '' : `<a href="#help/${c.help}">${c.optional ? 'Read more' : 'How to fix'}</a>`}</div>`).join('')}</div>` : '';
     body.innerHTML = `<div class="panel" style="padding:16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><span class="eyebrow">Support report</span><h2 style="font-size:16px;margin:5px 0">Check each part, then copy or save a report</h2></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="tag-chip" style="font-size:11px"><input type="checkbox" id="helpIncludeLog" ${helpIncludeLog ? 'checked' : ''}> Include log tail</label><button class="btn btn-line btn-sm" id="helpRecheck">${helpReportBusy ? 'Checking…' : 'Check again'}</button><button class="btn btn-line btn-sm" id="helpCopyReport" ${r && r.text ? '' : 'disabled'}>Copy report</button><button class="btn btn-amber btn-sm" id="helpSaveReport" ${r && r.text ? '' : 'disabled'}>Save report</button></div></div>
-      ${!r ? '<p class="empty-hint">Checking…</p>' : r.error ? `<p class="empty-hint">Could not make a report: ${escapeHtml(r.error)}. Is the NOVA server running?</p>` : checks}
+      ${!r ? '<p class="empty-hint">Checking…</p>' : r.error ? `<p class="empty-hint">Could not make a report: ${escapeHtml(r.error)}. Is the Maataa server running?</p>` : checks}
       ${r && r.text ? `<details class="help-qa" style="margin-top:12px"><summary>Show the report (${r.recentFailures.length} recent failure${r.recentFailures.length === 1 ? '' : 's'})</summary><pre class="help-report" aria-label="Support report">${escapeHtml(r.text)}</pre></details>` : ''}
       <p style="font-size:11.5px;color:var(--muted);margin-top:10px">The report has versions, engine status, record counts and recent errors. It never includes chats, documents, prompts, media or passwords, and your home folder is shown as ~. Read it before you send it.</p></div>
       ${intro ? `<div class="help-article" style="margin-top:16px">${intro.html}</div>` : ''}`;
@@ -5909,7 +5911,7 @@ function inspSourcesListHtml(s){
       ${src.error?`<div style="color:var(--red);margin-top:4px">${escapeHtml(src.error)}</div>`:''}
       ${src.summary?`<details style="margin-top:6px"><summary style="cursor:pointer;color:var(--muted)">What was read</summary><pre style="white-space:pre-wrap;font-size:11px;margin:6px 0">${escapeHtml(src.summary)}</pre></details>`:''}
       <div style="margin-top:6px"><button class="btn btn-ghost btn-sm insp-src-remove" data-id="${src.id}">Remove from chat</button></div></div>`).join('')
-    : '<div class="empty-hint">Nothing added yet. Use + in the composer to add a folder, files, a web page or a git repository — NOVA reads it and answers from it.</div>'}</div>`;
+    : '<div class="empty-hint">Nothing added yet. Use + in the composer to add a folder, files, a web page or a git repository — Maataa reads it and answers from it.</div>'}</div>`;
 }
 
 /* add menu + small forms */
@@ -5925,7 +5927,7 @@ function openAddForm(kind){
   const labels = { url:['Web page address','https://…','Add page'], git:['Git repository','https://github.com/owner/repo  or  owner/repo  or  ~/path/to/repo','Clone and read'], folder:['Folder path','~/Documents/My project','Add folder'] };
   const [label, ph, go] = labels[kind];
   $('addFormLabel').textContent = label; $('addFormInput').placeholder = ph; $('addFormInput').value = ''; $('addFormGo').textContent = go;
-  $('addFormNote').textContent = kind === 'folder' ? 'NOVA reads the text files (it never changes them) and, with Computer on, may work inside this folder after asking you.' : getPrefs().webAccess ? '' : 'Needs Settings > Privacy > Allow network access.';
+  $('addFormNote').textContent = kind === 'folder' ? 'Maataa reads the text files (it never changes them) and, with Computer on, may work inside this folder after asking you.' : getPrefs().webAccess ? '' : 'Needs Settings > Privacy > Allow network access.';
   setTimeout(() => $('addFormInput').focus(), 0);
 }
 function closeAddForm(){ const f = $('addForm'); if (f) f.classList.remove('open'); }
@@ -5980,7 +5982,7 @@ function onActivityEvent(ev){
   if (ev.type === 'approval.requested'){
     ACTIVITY.approvals = [...ACTIVITY.approvals.filter(a => a.id !== ev.approval.id), ev.approval];
     const s = activeSession();
-    if (!s || s.id !== ev.approval.sessionId || currentView !== 'console') toast('NOVA needs your OK: '+ev.approval.title+' — open Activity.');
+    if (!s || s.id !== ev.approval.sessionId || currentView !== 'console') toast('Maataa needs your OK: '+ev.approval.title+' — open Activity.');
   }
   if (ev.type === 'approval.resolved') ACTIVITY.approvals = ACTIVITY.approvals.filter(a => a.id !== ev.id);
   renderActivityBadge();
@@ -6021,7 +6023,7 @@ function renderActivityDrawer(){
   const jobs = ACTIVITY.jobs.slice(0, 30);
   const icon = st => st === 'done' ? 'check' : st === 'failed' ? 'x' : st === 'cancelled' || st === 'interrupted' ? 'circle-slash' : 'loader';
   d.innerHTML = `<div class="help-drawer-head"><strong>Activity</strong><span style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" id="activityClose">Close</button></span></div>
-    <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Everything NOVA is doing, live. Several things can run at once — keep chatting while they work.</p>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Everything Maataa is doing, live. Several things can run at once — keep chatting while they work.</p>
     ${ACTIVITY.approvals.length ? `<div class="eyebrow" style="margin:8px 0">Waiting for your OK</div>${ACTIVITY.approvals.map(approvalCardHtml).join('')}` : ''}
     ${jobs.length ? jobs.map(j => `<div class="act-job act-${j.status}">
       <div class="act-head"><span class="act-ico" data-lucide="${icon(j.status)}"></span><strong>${escapeHtml(j.title)}</strong><span class="act-time mono">${elapsed(j)}</span></div>
@@ -6148,7 +6150,7 @@ function buildCardHtml(m){
   const b = m.build; const pct = v => v == null ? '—' : Math.round(v*100)+'%';
   const folders = (SOURCES[activeSession()?.id] || []).filter(x => x.kind === 'folder' && x.status === 'ready');
   return `<div class="build-card">
-    <div class="build-imgs"><figure><img src="${apiUrl(b.originalUrl)}" alt="Your image" loading="lazy"><figcaption>Your image</figcaption></figure>${b.previewUrl?`<figure><img src="${apiUrl(b.previewUrl)}" alt="NOVA's page, rendered" loading="lazy"><figcaption>NOVA's page (attempt ${b.best})</figcaption></figure>`:''}</div>
+    <div class="build-imgs"><figure><img src="${apiUrl(b.originalUrl)}" alt="Your image" loading="lazy"><figcaption>Your image</figcaption></figure>${b.previewUrl?`<figure><img src="${apiUrl(b.previewUrl)}" alt="Maataa's page, rendered" loading="lazy"><figcaption>Maataa's page (attempt ${b.best})</figcaption></figure>`:''}</div>
     <div class="build-stats"><span>Looks alike <b>${pct(b.similarity)}</b></span><span>Text matched <b>${pct(b.recall)}</b></span><span>${b.attempts.length} attempt${b.attempts.length===1?'':'s'}</span><span>${b.width}px wide</span></div>
     <div class="build-btns"><a class="btn btn-amber btn-sm" href="${apiUrl(b.htmlUrl)}" target="_blank" rel="noopener">Open page</a><button class="btn btn-line btn-sm build-copy" data-url="${b.htmlUrl}">Copy HTML</button>${folders.length?`<button class="btn btn-line btn-sm build-save" data-id="${b.id}" data-src="${folders[0].id}" data-label="${escapeHtml(folders[0].label)}">Save to ${escapeHtml(folders[0].label)}</button>`:''}</div>
   </div>`;
@@ -6226,10 +6228,10 @@ function saveEditedMessage(){
 let recorder = null, recChunks = [], recStartedAt = 0, recHoldTimer = null, recMode = null, recTick = null;
 async function startRecording(){
   if (recorder) return;
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder){ toast('This window cannot use the microphone. Try NOVA in Safari or Chrome at http://127.0.0.1:8787.'); return; }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder){ toast('This window cannot use the microphone. Try Maataa in Safari or Chrome at http://127.0.0.1:8787.'); return; }
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
-  catch(e){ toast('Microphone blocked: allow it for NOVA in System Settings > Privacy & Security > Microphone.'); return; }
+  catch(e){ toast('Microphone blocked: allow it for Maataa in System Settings > Privacy & Security > Microphone.'); return; }
   const type = ['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
   recorder = new MediaRecorder(stream, type ? {mimeType:type} : {});
   recChunks = []; recStartedAt = Date.now();
@@ -6243,7 +6245,7 @@ async function startRecording(){
 async function stopRecording(send = true){
   if (!recorder) return;
   const r = recorder; recorder = null; clearInterval(recTick);
-  $('micBtn').classList.remove('recording'); $('composer').placeholder = $('composer').dataset.placeholder || 'Message NOVA locally…';
+  $('micBtn').classList.remove('recording'); $('composer').placeholder = $('composer').dataset.placeholder || 'Message Maataa locally…';
   await new Promise(res => { r.onstop = res; r.stop(); });
   r.stream.getTracks().forEach(t => t.stop());
   if (!send || Date.now() - recStartedAt < 500) return;
@@ -6306,8 +6308,8 @@ function quickScreenshot(){
   $('composer').value = 'Take a screenshot and tell me what is on my screen.'; sendMessage();
 }
 
-/* ---------- settings: image engine (ComfyUI, managed by NOVA) ---------- */
-const COMFY_STATE = { stopped:['Stopped','var(--muted)'], starting:['Starting…','var(--amber)'], ready:['Running (started by NOVA)','var(--green)'], external:['Running (started outside NOVA)','var(--green)'], failed:['Not running — see below','var(--red)'], installing:['Installing…','var(--amber)'] };
+/* ---------- settings: image engine (ComfyUI, managed by Maataa) ---------- */
+const COMFY_STATE = { stopped:['Stopped','var(--muted)'], starting:['Starting…','var(--amber)'], ready:['Running (started by Maataa)','var(--green)'], external:['Running (started outside Maataa)','var(--green)'], failed:['Not running — see below','var(--red)'], installing:['Installing…','var(--amber)'] };
 let comfyPoll = null;
 async function fillComfySettings(){
   const box = $('settingsComfy'); if (!box) return;
@@ -6325,9 +6327,9 @@ async function fillComfySettings(){
       <button class="btn btn-ghost btn-sm" id="comfyLogBtn">Show log</button>
     </div>
     ${st.lastError ? `<div class="runtime-inline" style="color:var(--red);white-space:pre-wrap">${escapeHtml(st.lastError)}</div>` : ''}
-    ${st.state==='external' ? '<p class="empty-hint" style="margin:6px 0">NOVA uses this ComfyUI as it is and leaves it running when NOVA quits.</p>' : ''}
-    ${toggle('comfyAuto','Start ComfyUI when needed','NOVA starts it the moment an image, video, song or sound effect needs it, and stops it when NOVA quits.', st.autoStart)}
-    ${toggle('comfyBoot','Start with NOVA','Ready straight away, but uses memory even when you are not making media.', st.startWithNova)}
+    ${st.state==='external' ? '<p class="empty-hint" style="margin:6px 0">Maataa uses this ComfyUI as it is and leaves it running when Maataa quits.</p>' : ''}
+    ${toggle('comfyAuto','Start ComfyUI when needed','Maataa starts it the moment an image, video, song or sound effect needs it, and stops it when Maataa quits.', st.autoStart)}
+    ${toggle('comfyBoot','Start with Maataa','Ready straight away, but uses memory even when you are not making media.', st.startWithNova)}
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)"><div><div style="font-size:12.5px">Stop when idle</div><div style="font-size:11px;color:var(--muted-dim);margin-top:2px">Gives the memory back after a quiet spell. It starts again by itself next time.</div></div>
       <select id="comfyIdle" aria-label="Stop when idle">${[[0,'Never'],[10,'After 10 minutes'],[20,'After 20 minutes'],[60,'After 1 hour']].map(([v,l])=>`<option value="${v}" ${Number(st.idleMinutes)===v?'selected':''}>${l}</option>`).join('')}</select></div>
     <div style="display:flex;gap:8px;align-items:center;padding:8px 0;flex-wrap:wrap"><div style="font-size:12.5px;flex:1;min-width:160px">ComfyUI folder</div><input id="comfyDir" aria-label="ComfyUI folder" value="${escapeHtml(st.dir)}" style="flex:2;min-width:200px"><button class="btn btn-line btn-sm" id="comfyDirSave">Save</button></div>
@@ -6359,16 +6361,16 @@ async function fillConversationSettings(){
   const row = (id, label, hint, on) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)"><div><div style="font-size:12.5px">${label}</div>${hint?`<div style="font-size:11px;color:var(--muted-dim);margin-top:2px">${hint}</div>`:''}</div><button class="toggle ${on?'on':''}" id="${id}" aria-label="${label}"></button></div>`;
   box.innerHTML = `<div class="card-grid cols-2" style="margin-top:16px">
     <div class="panel" style="padding:16px"><div class="eyebrow" style="margin-bottom:12px">Computer</div>
-      ${row('setCompEnabled','Let NOVA use this Mac','Commands, apps, files, clipboard and screen — only in chats where you turn Computer on, and only after you approve each action.', pol.enabled)}
+      ${row('setCompEnabled','Let Maataa use this Mac','Commands, apps, files, clipboard and screen — only in chats where you turn Computer on, and only after you approve each action.', pol.enabled)}
       ${row('setCompScreen','See and control the screen','Screenshots, clicks and typing. Needs Screen Recording and Accessibility permission.', pol.screen)}
       ${row('setCompAutoRead','Don\'t ask for read-only actions','Looking at files, the screen or the clipboard runs without asking. Changes and commands still ask.', pol.autoRead)}
       <div style="font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5">${st ? [(st.accessibility === false ? '⚠ ' : '') + (st.notes||[]).join(' '), 'Approved folders: ' + ((st.workspaceRoots||[]).length ? st.workspaceRoots.map(escapeHtml).join(', ') : 'none yet') + ', plus folders you add to a chat.'].join('<br>') : 'Status unavailable.'}</div>
     </div>
     <div class="panel" style="padding:16px"><div class="eyebrow" style="margin-bottom:12px">Conversation</div>
       ${row('setFollowups','Suggest follow-up questions','Three short suggestions under each reply.', p.followups !== false)}
-      ${row('setMemoryOn','Use memory','Give NOVA the notes below at the start of each chat.', p.memory !== false)}
+      ${row('setMemoryOn','Use memory','Give Maataa the notes below at the start of each chat.', p.memory !== false)}
       ${row('setVoiceAutoSend','Send right after I speak','Otherwise your words wait in the box for you to check.', p.voiceAutoSend !== false)}
-      <div style="margin-top:12px"><div style="font-size:12.5px;margin-bottom:6px">Memory — what NOVA knows about you</div>
+      <div style="margin-top:12px"><div style="font-size:12.5px;margin-bottom:6px">Memory — what Maataa knows about you</div>
         <div id="memoryList">${notes.length ? notes.map(n => `<div class="mem-row"><span>${escapeHtml(n.text)}</span><button class="btn btn-ghost btn-sm mem-del" data-id="${n.id}" aria-label="Delete note">Delete</button></div>`).join('') : '<div class="empty-hint">Nothing yet. Say “remember that …” in a chat, press the brain on a reply, or add a note here.</div>'}</div>
         <div style="display:flex;gap:6px;margin-top:8px"><input id="memoryNew" placeholder="e.g. I shoot on a Sony FX3" style="flex:1;font-size:12.5px;padding:6px 9px"><button class="btn btn-line btn-sm" id="memoryAdd">Add</button></div>
       </div>
@@ -6562,14 +6564,14 @@ init().then(routeHelpHash);
 // search/filter/sort bar, the view and key panels get a "?" help button, and prompt boxes get
 // preset chips. List choices are remembered per view in this browser.
 const VIEW_HELP = {
-  voicestudio:'Characters for your agents and for NOVA itself: a name, a personality and way of speaking, a face (made with ComfyUI) and a voice. Blend up to three Kokoro voices with speed and pitch, use a macOS voice, or a voice from the VoiceStudio app (including your own cloned voice). Give a character to an agent, or let NOVA speak as one.',
-  agentbrowser:'The separate, locked-down browser NOVA\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting NOVA closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
+  voicestudio:'Characters for your agents and for Maataa itself: a name, a personality and way of speaking, a face (made with ComfyUI) and a voice. Blend up to three Kokoro voices with speed and pitch, use a macOS voice, or a voice from the VoiceStudio app (including your own cloned voice). Give a character to an agent, or let Maataa speak as one.',
+  agentbrowser:'The separate, locked-down browser Maataa\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting Maataa closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
   neurons:'Train very small, single-purpose models on this Mac: a tiny neural network from your examples, or a simulated quantum circuit. Create a blueprint, queue training, evaluate the result, then approve it. Your Ollama models are not changed.',
-  console:'Chat with a local model. + adds files, a folder, a web page or a git repo for NOVA to read. Computer lets NOVA use this Mac (it asks first), the mic lets you talk, Voice reads replies aloud. Steps above each reply show what NOVA is doing; the list icon at the top shows everything running.',
+  console:'Chat with a local model. + adds files, a folder, a web page or a git repo for Maataa to read. Computer lets Maataa use this Mac (it asks first), the mic lets you talk, Voice reads replies aloud. Steps above each reply show what Maataa is doing; the list icon at the top shows everything running.',
   sessions:'Every conversation you have had. Search or filter by tag, open one to continue it, or delete what you no longer need.',
   workspace:'Local app development. Approve a folder, then plan changes, run tests, create projects from templates, and let the development loop fix failing tests. Nothing is written to your project until you approve a batch.',
-  models:'Models NOVA can use. Sync from Ollama to see what you have pulled (ollama pull <name>). Qualify for coding runs 18 short trials in a temporary folder; code plans only use models that pass all six checks.',
-  knowledge:'Collections of your documents. Add files or text; NOVA splits and indexes them so chats and skills can cite them. Transcripts from Media can land here too.',
+  models:'Models Maataa can use. Sync from Ollama to see what you have pulled (ollama pull <name>). Qualify for coding runs 18 short trials in a temporary folder; code plans only use models that pass all six checks.',
+  knowledge:'Collections of your documents. Add files or text; Maataa splits and indexes them so chats and skills can cite them. Transcripts from Media can land here too.',
   media:'Generate and edit images, video and audio on this Mac, transcribe recordings, and keep everything with its recipe. Items are also saved to your library folder. Actions on each item: edit an area, remove an object, expand, upscale, enhance speech, translate, add to a board or timeline.',
   boards:'Mood boards, look books and character sheets. Drop in library images and clips, notes and colour swatches; drag to arrange, drag the corner to resize. Save the board as an image into the library.',
   timeline:'Cut a scene: clips and stills in order on the picture track, and voice, music and effects on the sound tracks at the times you choose. Export renders one MP4 into the library.',
@@ -6577,17 +6579,17 @@ const VIEW_HELP = {
   automations:'Run a workflow or skill on a schedule (every N minutes, daily, weekly) or on demand.',
   evaluations:'A fixed benchmark for comparing models on the same tasks.',
   skills:'Sandboxed tools: pre-production writers (Treatment, Shot List, Call Sheet), Translate, Slides, Summarizer and developer tools. Each keeps a history of its outputs.',
-  mcp:'Tool servers NOVA can call: files, git and a web browser. Each call follows the server approval policy; the browser needs network access on.',
+  mcp:'Tool servers Maataa can call: files, git and a web browser. Each call follows the server approval policy; the browser needs network access on.',
   agents:'An agent is a model plus instructions and the skills and tools it may use.',
   workflows:'Chain agents, skills and approval steps into a repeatable process, e.g. brief, treatment, shot list, call sheet.',
   collector:'The Brahmini Knowledge Collector: plans and evidence from the separate Next.js collector app.',
   git:'Read-only git status and history for approved repositories, plus reviewed commit drafts.',
   graph:'How models, skills, tool servers, agents and workflows connect.',
-  browser:'Open provider sites (Claude, ChatGPT, Gemini…) in a separate window, apart from your local NOVA data.',
+  browser:'Open provider sites (Claude, ChatGPT, Gemini…) in a separate window, apart from your local Maataa data.',
   history:'Everything that ran: chats, skills, tool calls, workflows and automations, with timing and results.',
   runtime:'Live CPU, memory and GPU use, and what is loaded right now.',
   trace:'Step-by-step events from recent runs, for troubleshooting.',
-  diagnostics:'Checks that NOVA\'s parts are working, with what to fix when one is not.',
+  diagnostics:'Checks that Maataa\'s parts are working, with what to fix when one is not.',
   settings:'Theme, language, privacy (network access), and NOVA-wide preferences.',
   help:'Guides for every screen, FAQ, troubleshooting, and a support report you can copy or save. Search looks through all of it.',
 };
@@ -6595,7 +6597,7 @@ const PANEL_HELP = {
   _videoPanel:'Add shots with Animate or Upload stills. Camera moves render in seconds with ffmpeg. AI motion animates the first shot: LTX-2 runs on this Mac and adds sound; describe the movement and the sound. Continue from last frame chains clips; Join clips assembles them.',
   _audioPanel:'Voice reads text with macOS voices (add Hindi voices in System Settings > Accessibility > Spoken Content). Sound effects and songs need ComfyUI and the audio models. For a song, describe the idea and press Write lyrics, edit, then Generate; or paste your own lyrics.',
   _filterPanel:'Pick an item and one or more filters. The original is never changed: a new item appears with the settings in its recipe.',
-  _libraryPanel:'Everything NOVA generates is also saved here as normal files, one folder per day, with a .json recipe beside each file.',
+  _libraryPanel:'Everything Maataa generates is also saved here as normal files, one folder per day, with a .json recipe beside each file.',
 };
 const PROMPT_PRESETS = {
   genPrompt:{ Shot:['wide establishing shot','medium shot','close-up','extreme close-up','over-the-shoulder shot','aerial drone shot','low angle','high angle'], Lens:['24mm wide lens','35mm lens','50mm lens','85mm portrait lens','anamorphic lens flare','shallow depth of field'], Light:['golden hour','blue hour','harsh noon sun','neon night','candlelight','soft overcast light','rim light','chiaroscuro'], Style:['cinematic film still','Bollywood song sequence','1970s Hindi film look','documentary realism','film noir','monsoon mood','festival colours','35mm film grain'] },
@@ -6755,7 +6757,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
     const kind = r.shapes && r.shapes.kind;
     if (kind === 'audio') return addon.installed
       ? 'The song\'s latent as a heatmap: one row per channel, time running left to right. Amber is positive, blue negative. It starts as random static; bands and beats appear as the sampler removes the noise.'
-      : 'Songs need NOVA\'s small ComfyUI add-on to draw their tensor.';
+      : 'Songs need Maataa\'s small ComfyUI add-on to draw their tensor.';
     if (kind === 'video') return 'The first frame of the video latent, projected to colour.';
     return 'The latent right now, projected to colour (4 channels mapped to RGB). Early steps are noise; shapes and colours settle as the sampler removes it. The final picture comes from the decoder, so it is sharper than this.';
   }
@@ -6800,7 +6802,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
         <div class="tv-main"><div>
           <div class="tv-frame">${frame}</div>
           <p class="tv-cap">${esc(caption(r, addon))}</p>
-          ${audioNeedsAddon ? '<div class="tv-hint">To see songs and sounds as they form, double-click <b>Add tensor view.command</b> in the brahmini folder. It adds a small NOVA add-on to ComfyUI and restarts it.</div>' : ''}
+          ${audioNeedsAddon ? '<div class="tv-hint">To see songs and sounds as they form, double-click <b>Add tensor view.command</b> in the brahmini folder. It adds a small Maataa add-on to ComfyUI and restarts it.</div>' : ''}
           <div class="tv-shape">${r.shapes && r.shapes.latent ? `Latent <b>${shape(r.shapes.latent)}</b> — ${esc(r.shapes.latentNote)}<br>` : r.shapes && r.shapes.latentNote ? `Latent: ${esc(r.shapes.latentNote)}<br>` : ''}${r.shapes && r.shapes.output ? `Output <b>${shape(r.shapes.output)}</b> — ${esc(r.shapes.outputNote)}<br>` : ''}<span style="color:var(--muted)">${esc(stateTxt)}${running?' · '+secs(r.elapsed):''}</span></div>
         </div><div>${side}</div></div>
         <div class="tv-foot"><a href="/tensors.html" target="_blank" rel="noopener">How this works →</a>${snap.live===false||snap.error?`<span>${esc(snap.error||'Live steps are off.')}</span>`:''}</div>
@@ -6875,13 +6877,26 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   setInterval(refresh, 10000);
 })();
 </script>
-<!-- ===================== NOVA helper: a companion in the corner ===================== -->
+<!-- ===================== Nova helper: a companion in the corner ===================== -->
 <style>
 #novaHelper{position:fixed;right:18px;bottom:44px;z-index:60;font-family:inherit}
 #novaHelper[hidden],#novaHelper [hidden]{display:none!important}
 #novaHelper .hf-face{width:58px;height:58px;border-radius:50%;border:1px solid var(--line);background:radial-gradient(circle at 35% 30%,#2a3140,#14171c);box-shadow:0 6px 24px rgba(0,0,0,.45);cursor:pointer;display:grid;place-items:center;position:relative;padding:0;transition:transform .15s ease}
 #novaHelper .hf-face:hover{transform:scale(1.05)}
 #novaHelper .hf-face img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+#novaHelper .hf-face.squircle,#novaHelper .hf-face.squircle img,#novaHelper .hf-face.squircle .hf-ring{border-radius:30%}
+#novaHelper .hf-face img{transition:transform .08s linear}
+.nd-grid{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px}
+@media (max-width:640px){.nd-grid{grid-template-columns:1fr}}
+.nd-prev{width:120px;height:120px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;margin:0 auto}
+.nd-prev.squircle{border-radius:30%}.nd-prev img{width:100%;height:100%;object-fit:cover}
+.nd-sw{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.nd-sw.on{border-color:var(--ink,#e6e9ec)}
+.nd-opt{font-size:11.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer}
+.nd-opt.on{border-color:var(--amber,#f5a524);background:rgba(245,165,36,.14)}
+.nd-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
+.nd-trait{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;align-items:center;font-size:12px;margin-bottom:4px}
+.nd-trait small{grid-column:2;color:var(--muted);font-size:10.5px;display:flex;justify-content:space-between}
 #novaHelper .hf-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;pointer-events:none;transition:border-color .2s,box-shadow .1s}
 #novaHelper.listening .hf-ring{border-color:#f87171;animation:hfPulse 1.1s ease-in-out infinite}
 #novaHelper.thinking .hf-ring{border-color:var(--amber,#f5a524);border-style:dashed;animation:hfSpin 2.4s linear infinite}
@@ -6913,21 +6928,22 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 </style>
 <div id="novaHelper" hidden>
   <div class="hf-bubble" id="hfBubble" hidden></div>
-  <div class="hf-panel" id="hfPanel" hidden role="dialog" aria-label="NOVA helper">
+  <div class="hf-panel" id="hfPanel" hidden role="dialog" aria-label="Nova helper">
     <div class="hf-head"><strong id="hfName" style="font-size:13px;flex:1">Nova</strong><button class="btn btn-ghost btn-sm" id="hfOptsBtn" aria-label="Helper settings" title="Helper settings">⚙</button><button class="btn btn-ghost btn-sm" id="hfClose" aria-label="Close helper">×</button></div>
     <div class="hf-opts" id="hfOpts" hidden>
       <label style="display:flex;justify-content:space-between;gap:8px">Read answers aloud <input type="checkbox" id="hfSpeak"></label>
       <label style="display:flex;justify-content:space-between;gap:8px">Tell me when something needs attention <input type="checkbox" id="hfNotices"></label>
-      <label style="display:flex;justify-content:space-between;gap:8px;align-items:center">Helper character <select id="hfChar" aria-label="Helper character"><option value="">Nova</option></select></label>
+      <label style="display:flex;justify-content:space-between;gap:8px;align-items:center">Helper character <select id="hfChar" aria-label="Helper character"><option value="nova">Nova</option></select></label>
+      <button class="btn btn-line btn-sm" id="hfDesign" style="justify-self:start">Design look &amp; personality…</button>
       <button class="btn btn-ghost btn-sm" id="hfHide" style="justify-self:start">Hide the helper (bring it back in Settings)</button>
     </div>
     <div class="hf-msgs" id="hfMsgs" aria-live="polite"></div>
     <div class="hf-chips" id="hfChips"></div>
     <div class="hf-input"><button class="hf-mic" id="hfMic" title="Hold to talk; let go to send" aria-label="Hold to talk">🎙</button><input id="hfText" aria-label="Ask the helper" placeholder="Ask how to do something…"><button class="btn btn-amber btn-sm" id="hfSend">Ask</button></div>
   </div>
-  <button class="hf-face" id="hfFace" aria-label="Open the NOVA helper" title="Ask Nova">
+  <button class="hf-face" id="hfFace" aria-label="Open the Nova helper" title="Ask Nova">
     <span class="hf-ring"></span>
-    <svg id="hfSvg" viewBox="0 0 58 58" width="58" height="58" aria-hidden="true"><g class="pupils"><ellipse class="eye" cx="21" cy="24" rx="3.6" ry="4.6" fill="#e6e9ec"/><ellipse class="eye" cx="37" cy="24" rx="3.6" ry="4.6" fill="#e6e9ec"/></g><path id="hfMouth" d="M19 37 Q29 41 39 37" stroke="#f5a524" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>
+    <span id="hfAvatar" style="display:contents"></span>
   </button>
 </div>
 <script>
@@ -6941,19 +6957,19 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   // Walkthroughs: each step opens a screen (or clicks something first) and points at one control.
   const TOURS = [
     { id:'qualify-model', title:'Qualify a model for coding', views:['models','workspace'], steps:[
-      { view:'models', sel:'#modelImportBtn', say:'First press Sync from Ollama, so NOVA knows exactly which version of each model you have.' },
+      { view:'models', sel:'#modelImportBtn', say:'First press Sync from Ollama, so Maataa knows exactly which version of each model you have.' },
       { view:'models', sel:'.model-qualify', say:'Then press Qualify for coding on a model of 7 billion parameters or more. It runs 18 short trials in a temporary folder.' },
-      { view:'models', sel:'#activityBtn', say:'Follow the trials here in Activity. When the card says 6 of 6 passed, NOVA will plan code with that model.' } ] },
+      { view:'models', sel:'#activityBtn', say:'Follow the trials here in Activity. When the card says 6 of 6 passed, Maataa will plan code with that model.' } ] },
     { id:'make-image', title:'Make an image', views:['media','console'], steps:[
       { click:'.nav-item[data-media-tab="image"]', sel:'#genPrompt', say:'Describe the picture here: the subject, the light, the lens, the mood.' },
-      { click:'.nav-item[data-media-tab="image"]', sel:'#genStart', say:'Then press this. If ComfyUI is not running yet, NOVA starts it for you first; the first picture takes a little longer.' } ] },
-    { id:'add-folder', title:'Let NOVA read a folder in chat', views:['console'], steps:[
-      { view:'console', sel:'#addBtn', say:'Press the plus button and choose Add folder. NOVA reads the files so you can ask about them.' },
+      { click:'.nav-item[data-media-tab="image"]', sel:'#genStart', say:'Then press this. If ComfyUI is not running yet, Maataa starts it for you first; the first picture takes a little longer.' } ] },
+    { id:'add-folder', title:'Let Maataa read a folder in chat', views:['console'], steps:[
+      { view:'console', sel:'#addBtn', say:'Press the plus button and choose Add folder. Maataa reads the files so you can ask about them.' },
       { view:'console', sel:'#composer', say:'Then ask your question here, for example: what is in this project, and what is missing?' } ] },
-    { id:'computer', title:'Let NOVA use this Mac', views:['console'], steps:[
-      { view:'console', sel:'#computerToggleBtn', say:'Turn on Computer for this chat. NOVA asks before every single action, and you can allow or deny each one.' } ] },
-    { id:'talk', title:'Talk to NOVA instead of typing', views:['console'], steps:[
-      { view:'console', sel:'#micBtn', say:'Hold the microphone button while you speak, then let go. NOVA turns your voice into text on this Mac.' },
+    { id:'computer', title:'Let Maataa use this Mac', views:['console'], steps:[
+      { view:'console', sel:'#computerToggleBtn', say:'Turn on Computer for this chat. Maataa asks before every single action, and you can allow or deny each one.' } ] },
+    { id:'talk', title:'Talk to Maataa instead of typing', views:['console'], steps:[
+      { view:'console', sel:'#micBtn', say:'Hold the microphone button while you speak, then let go. Maataa turns your voice into text on this Mac.' },
       { view:'console', sel:'#speakToggleBtn', say:'Turn on Voice to hear answers read aloud.' } ] },
     { id:'agent-site', title:'Let agents open a website', views:['agentbrowser'], steps:[
       { view:'agentbrowser', sel:'#abDomain', say:'Type the website agents may visit, for example example dot com.' },
@@ -6965,29 +6981,57 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
       { view:'voicestudio', sel:'#vsPreview', say:'Pick a voice, blend up to three, and press Preview to hear it.' },
       { view:'voicestudio', sel:'#vsSave', say:'Create the character, then tick the agents that should use it.' } ] },
     { id:'comfy', title:'Set up images (ComfyUI)', views:['settings','media'], steps:[
-      { view:'settings', sel:'#comfyPanel', say:'This is the image engine. Install ComfyUI here once; after that NOVA starts and stops it for you.' } ] },
+      { view:'settings', sel:'#comfyPanel', say:'This is the image engine. Install ComfyUI here once; after that Maataa starts and stops it for you.' } ] },
   ];
   window.NOVA_HELPER_TOURS = TOURS;
 
   function setState(s){ root.classList.remove('listening','thinking','talking'); if (s) root.classList.add(s); }
-  function mouth(open){ const o = Math.max(0, Math.min(1, open)); el('hfMouth').setAttribute('d', o < .05 ? 'M19 37 Q29 41 39 37' : `M20 36 Q29 ${36 + 12 * o} 38 36 Q29 ${36 + 4 * o} 20 36 Z`); el('hfMouth').setAttribute('fill', o < .05 ? 'none' : '#f5a524'); }
+  function mouth(open){
+    const o = Math.max(0, Math.min(1, open)), m = el('hfMouth');
+    if (m) { m.setAttribute('d', o < .05 ? 'M19 37 Q29 41 39 37' : `M20 36 Q29 ${36 + 12 * o} 38 36 Q29 ${36 + 4 * o} 20 36 Z`); m.setAttribute('fill', o < .05 ? 'none' : H.mouthColor); }
+    const img = el('hfFace').querySelector('img'); if (img) img.style.transform = o < .05 ? '' : `scale(${1 + o * .05})`;
+  }
+  // The animated face, drawn from the design: colour, background, eyes, shape and an extra.
+  const SKINS = { slate:['#2a3140','#14171c'], midnight:['#1e2a4a','#0b1020'], warm:['#5a3a2a','#2a1a12'], forest:['#24453a','#0f1f1a'], plum:['#4a2a4a','#1f0f1f'] };
+  function faceSvg(f, size = 58, live = true){
+    f = f || {}; const c = f.color || '#f5a524', eye = '#e6e9ec';
+    const eyes = f.eyes === 'happy' ? `<path class="eye" d="M17 26 Q21 20 25 26" stroke="${eye}" stroke-width="2.6" fill="none" stroke-linecap="round"/><path class="eye" d="M33 26 Q37 20 41 26" stroke="${eye}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
+      : f.eyes === 'sleepy' ? `<ellipse class="eye" cx="21" cy="25" rx="3.8" ry="2.2" fill="${eye}"/><ellipse class="eye" cx="37" cy="25" rx="3.8" ry="2.2" fill="${eye}"/>`
+      : f.eyes === 'wide' ? `<ellipse class="eye" cx="21" cy="24" rx="4.4" ry="5.6" fill="${eye}"/><ellipse class="eye" cx="37" cy="24" rx="4.4" ry="5.6" fill="${eye}"/>`
+      : `<ellipse class="eye" cx="21" cy="24" rx="3.6" ry="4.6" fill="${eye}"/><ellipse class="eye" cx="37" cy="24" rx="3.6" ry="4.6" fill="${eye}"/>`;
+    const extra = f.extra === 'glasses' ? `<g stroke="#cbd5e1" stroke-width="1.6" fill="none"><circle cx="21" cy="24" r="6.6"/><circle cx="37" cy="24" r="6.6"/><path d="M27.6 24 H30.4"/></g>`
+      : f.extra === 'headset' ? `<g stroke="#cbd5e1" stroke-width="2" fill="none" stroke-linecap="round"><path d="M9 30 Q9 9 29 9 Q49 9 49 30"/><path d="M10 33 Q12 43 21 43"/></g><rect x="6" y="27" width="5" height="9" rx="2" fill="#cbd5e1"/><rect x="47" y="27" width="5" height="9" rx="2" fill="#cbd5e1"/>`
+      : f.extra === 'bindi' ? `<circle cx="29" cy="15" r="2" fill="${c}"/>` : '';
+    return `<svg ${live ? 'id="hfSvg"' : ''} viewBox="0 0 58 58" width="${size}" height="${size}" aria-hidden="true"><g class="pupils">${eyes}</g>${extra}<path ${live ? 'id="hfMouth"' : ''} d="M19 37 Q29 41 39 37" stroke="${c}" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>`;
+  }
+  function faceBg(f){ const k = SKINS[(f || {}).skin] || SKINS.slate; return `radial-gradient(circle at 35% 30%,${k[0]},${k[1]})`; }
+  function drawAvatar(){
+    const face = el('hfFace'), c = H.char || {}, a = c.avatar || { style:'face', face:{} };
+    const img = face.querySelector('img'); if (img) img.remove();
+    face.classList.toggle('squircle', (a.face || {}).shape === 'squircle');
+    H.mouthColor = (a.face || {}).color || '#f5a524';
+    if (a.style === 'image' && c.avatarMediaId) { el('hfAvatar').innerHTML = ''; const i = document.createElement('img'); i.src = mediaUrl(c.avatarMediaId); i.alt = ''; face.appendChild(i); face.style.background = ''; }
+    else { el('hfAvatar').innerHTML = faceSvg(a.face); face.style.background = faceBg(a.face); }
+  }
   function bubble(text, ms = 9000){ const b = el('hfBubble'); if (H.open || !text) { b.hidden = true; return; } b.textContent = text; b.hidden = false; clearTimeout(b._t); b._t = setTimeout(() => { b.hidden = true; }, ms); }
 
   async function loadChar(){
-    H.charId = prefs().helperCharacter || ''; H.char = null;
+    H.charId = prefs().helperCharacter || 'nova'; H.char = null;
     let list = []; try { list = await (await fetch(apiUrl('/api/characters'))).json(); } catch (_) {}
-    const sel = el('hfChar'); sel.innerHTML = '<option value="">Nova</option>' + list.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join(''); sel.value = H.charId;
-    H.char = list.find(c => c.id === H.charId) || null;
+    if (!Array.isArray(list)) list = [];
+    const nova = list.find(c => c.id === 'nova');
+    const sel = el('hfChar'); sel.innerHTML = `<option value="nova">${escapeHtml(nova ? nova.name : 'Nova')}</option>` + list.filter(c => c.id !== 'nova').map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+    H.char = list.find(c => c.id === H.charId) || nova || null;
+    if (!H.char) H.charId = 'nova';
+    sel.value = H.char ? H.char.id : 'nova';
     el('hfName').textContent = H.char ? H.char.name : 'Nova';
-    const face = el('hfFace');
-    const img = face.querySelector('img'); if (img) img.remove();
-    el('hfSvg').style.display = '';
-    if (H.char && H.char.avatarMediaId) { const i = document.createElement('img'); i.src = mediaUrl(H.char.avatarMediaId); i.alt = ''; face.appendChild(i); el('hfSvg').style.display = 'none'; }
+    el('hfFace').title = 'Ask ' + (H.char ? H.char.name : 'Nova');
+    drawAvatar();
   }
 
   function renderMsgs(){
     const box = el('hfMsgs');
-    if (!H.msgs.length) box.innerHTML = `<div class="hf-msg nova">Hi, I'm ${escapeHtml(H.char ? H.char.name : 'Nova')}. Ask me how to do anything in NOVA, or pick a walkthrough below. I can open screens and show you the way; I don't change anything myself.</div>`;
+    if (!H.msgs.length) box.innerHTML = `<div class="hf-msg nova">Hi, I'm ${escapeHtml(H.char ? H.char.name : 'Nova')}. Ask me how to do anything in Maataa Workstation, or pick a walkthrough below. I can open screens and show you the way; I don't change anything myself.</div>`;
     else box.innerHTML = H.msgs.map((m, i) => `<div class="hf-msg ${m.role === 'user' ? 'me' : 'nova'}">${escapeHtml(m.content)}${m.action ? `<div style="margin-top:6px"><button class="btn btn-amber btn-sm hf-act" data-i="${i}">${m.action.type === 'tour' ? 'Show me' : 'Open ' + escapeHtml(m.action.label || m.action.id)}</button></div>` : ''}${m.sources && m.sources.length ? `<div style="margin-top:4px;font-size:10.5px;color:var(--muted-dim)">From: ${m.sources.slice(0,2).map(s => `<a href="#help/${escapeHtml(String(s.id).split('#')[0])}">${escapeHtml(s.title)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + (H.busy ? '<div class="hf-msg nova">…</div>' : '');
     box.querySelectorAll('.hf-act').forEach(b => b.onclick = () => { const a = H.msgs[+b.dataset.i].action; if (a.type === 'tour') startTour(a.id); else { showView(a.id); } });
     box.scrollTop = box.scrollHeight;
@@ -7022,7 +7066,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   async function say(text){
     stopTalking();
     try {
-      const r = await fetch(apiUrl('/api/voice/speak'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text, ...(H.charId ? { characterId: H.charId } : {}) }) });
+      const r = await fetch(apiUrl('/api/voice/speak'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text, characterId: H.charId || 'nova' }) });
       if (!r.ok) return;
       const a = new Audio(URL.createObjectURL(await r.blob())); H.audio = a;
       try {
@@ -7052,7 +7096,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   async function recStart(){
     if (H.rec) return; stopTalking();
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast('This window cannot use the microphone.'); return; }
-    let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio:true }); } catch (_) { toast('Microphone blocked: allow it for NOVA in System Settings > Privacy & Security > Microphone.'); return; }
+    let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio:true }); } catch (_) { toast('Microphone blocked: allow it for Maataa in System Settings > Privacy & Security > Microphone.'); return; }
     const type = ['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
     H.rec = new MediaRecorder(stream, type ? { mimeType:type } : {}); H.chunks = []; H.recStart = Date.now();
     H.rec.ondataavailable = e => { if (e.data && e.data.size) H.chunks.push(e.data); };
@@ -7071,6 +7115,90 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
       const out = await res.json().catch(() => ({})); if (!res.ok) throw new Error(out.error || ('HTTP ' + res.status));
       setState(''); ask(out.text);
     } catch (e) { setState(''); H.msgs.push({ role:'assistant', content:'I could not hear that: ' + e.message }); renderMsgs(); }
+  }
+
+  // Personality designer: the helper's (or any character's) look and traits, with a live preview.
+  async function design(id){
+    id = id || 'nova';
+    let c, cat;
+    try {
+      c = await (await fetch(apiUrl('/api/characters'))).json().then(l => l.find(x => x.id === id));
+      cat = await (await fetch(apiUrl('/api/characters/designer'))).json();
+    } catch (e) { toast('Could not open the designer: ' + e.message); return; }
+    if (!c) { toast('That character no longer exists.'); return; }
+    const d = JSON.parse(JSON.stringify(c));
+    d.avatar = d.avatar || { style:'face', face:{} }; d.avatar.face = d.avatar.face || {};
+    d.traits = d.traits || { warmth:50, humor:50, formality:50, brevity:50, encouragement:50 };
+    const F = cat.face, T = cat.traits;
+    const summary = () => Object.entries(T).map(([k, t]) => d.traits[k] >= 67 ? t.high : d.traits[k] <= 33 ? t.low : null).filter(Boolean).join('. ') || 'Balanced: no trait leans strongly.';
+    const prevHtml = () => d.avatar.style === 'image' && d.avatarMediaId ? `<img src="${mediaUrl(d.avatarMediaId)}" alt="">` : faceSvg(d.avatar.face, 110, false);
+    const html = () => `<div class="nd-grid">
+      <div style="text-align:center"><div class="nd-prev ${d.avatar.face.shape === 'squircle' ? 'squircle' : ''}" id="ndPrev" style="background:${d.avatar.style === 'image' && d.avatarMediaId ? 'var(--panel2)' : faceBg(d.avatar.face)}">${prevHtml()}</div>
+        <input id="ndName" aria-label="Name" value="${escapeHtml(d.name)}" style="width:100%;margin-top:10px;text-align:center">
+        <button class="btn btn-line btn-sm" id="ndHear" style="margin-top:8px;width:100%">▶ Hear ${escapeHtml(d.name)}</button>
+        <div id="ndMsg" class="empty-hint" style="font-size:11px;margin-top:6px"></div></div>
+      <div>
+        <div class="eyebrow">Look</div>
+        <div class="nd-row"><button class="nd-opt ${d.avatar.style !== 'image' ? 'on' : ''}" data-style="face">Animated face</button><button class="nd-opt ${d.avatar.style === 'image' ? 'on' : ''}" data-style="image">Picture</button></div>
+        ${d.avatar.style === 'image' ? `<div class="nd-row"><input id="ndPrompt" aria-label="Describe the picture" placeholder="Optional: describe the picture" style="flex:1;min-width:160px"><button class="btn btn-line btn-sm" id="ndDraw">Make a picture</button><label class="btn btn-line btn-sm" style="cursor:pointer">Upload<input type="file" id="ndUpload" accept="image/png,image/jpeg,image/webp" hidden></label>${d.avatarMediaId ? '<button class="btn btn-ghost btn-sm" id="ndNoPic">Remove</button>' : ''}</div><p class="empty-hint" style="margin:0 0 10px;font-size:11px">Make a picture draws a portrait with ComfyUI from the name and personality (Maataa starts ComfyUI if needed). While speaking, the picture moves with the voice.</p>`
+        : `<div class="nd-row"><span style="width:84px;font-size:12px">Colour</span>${F.colors.map(x => `<button class="nd-sw ${d.avatar.face.color === x ? 'on' : ''}" data-color="${x}" style="background:${x}" aria-label="Colour ${x}"></button>`).join('')}</div>
+          <div class="nd-row"><span style="width:84px;font-size:12px">Background</span>${F.skins.map(x => `<button class="nd-sw ${d.avatar.face.skin === x ? 'on' : ''}" data-skin="${x}" style="background:${faceBg({ skin:x })}" aria-label="Background ${x}"></button>`).join('')}</div>
+          <div class="nd-row"><span style="width:84px;font-size:12px">Eyes</span>${F.eyes.map(x => `<button class="nd-opt ${d.avatar.face.eyes === x ? 'on' : ''}" data-eyes="${x}">${x}</button>`).join('')}</div>
+          <div class="nd-row"><span style="width:84px;font-size:12px">Shape</span>${F.shapes.map(x => `<button class="nd-opt ${d.avatar.face.shape === x ? 'on' : ''}" data-shape="${x}">${x}</button>`).join('')}</div>
+          <div class="nd-row"><span style="width:84px;font-size:12px">Extra</span>${F.extras.map(x => `<button class="nd-opt ${d.avatar.face.extra === x ? 'on' : ''}" data-extra="${x}">${x}</button>`).join('')}</div>`}
+        <div class="eyebrow" style="margin-top:6px">Personality</div>
+        <div class="nd-row">${Object.entries(cat.presets).map(([k, p]) => `<button class="nd-opt ${d.preset === k ? 'on' : ''}" data-preset="${k}">${escapeHtml(p.label)}</button>`).join('')}</div>
+        ${Object.entries(T).map(([k, t]) => `<div class="nd-trait"><label for="ndT_${k}">${escapeHtml(t.label)}</label><input type="range" id="ndT_${k}" class="nd-t" data-k="${k}" min="0" max="100" value="${d.traits[k]}"><small><span>${escapeHtml(t.low)}</span><span>${escapeHtml(t.high)}</span></small></div>`).join('')}
+        <p class="empty-hint" id="ndSum" style="margin:6px 0 10px;font-size:11.5px"><strong>${escapeHtml(d.name)} will be:</strong> ${escapeHtml(summary())}</p>
+        <label style="font-size:12px">About ${escapeHtml(d.name)}<textarea id="ndAbout" rows="2" style="display:block;width:100%;margin-top:3px">${escapeHtml(d.personality || '')}</textarea></label>
+        <label style="font-size:12px;display:block;margin-top:6px">How ${escapeHtml(d.name)} speaks<textarea id="ndStyle" rows="2" style="display:block;width:100%;margin-top:3px">${escapeHtml(d.speakingStyle || '')}</textarea></label>
+        <div class="card-grid cols-2" style="margin-top:6px"><label style="font-size:12px">Language<input id="ndLang" value="${escapeHtml(d.language || 'English')}" style="display:block;width:100%;margin-top:3px"></label>
+          <label style="font-size:12px">Usual delivery<select id="ndMood" style="display:block;width:100%;margin-top:3px">${cat.moods.map(m => `<option value="${m.id}" ${(d.delivery || {}).mood === m.id ? 'selected' : ''}>${escapeHtml(m.label)}</option>`).join('')}</select></label></div>
+        <p class="empty-hint" style="font-size:11px;margin:8px 0 0">Voice: ${escapeHtml(c.voiceLabel || 'Usual voice')} · <a href="#" id="ndVoice">change it in Voice Studio</a>. Traits shape tone and wording only, never facts, safety rules or what the helper may do.</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">${d.builtin ? '<button class="btn btn-ghost btn-sm" id="ndReset" style="margin-right:auto">Reset to original</button>' : ''}<button class="btn btn-ghost btn-sm" id="ndCancel">Cancel</button><button class="btn btn-amber btn-sm" id="ndSave">Save</button></div>
+      </div></div>`;
+    const read = () => { const g = x => document.getElementById(x); if (!g('ndName')) return; d.name = g('ndName').value.trim() || d.name; d.personality = g('ndAbout').value; d.speakingStyle = g('ndStyle').value; d.language = g('ndLang').value.trim() || 'English'; d.delivery = { ...(d.delivery || {}), mood: g('ndMood').value }; };
+    const payload = () => ({ name:d.name, tagline:d.tagline, personality:d.personality, speakingStyle:d.speakingStyle, language:d.language, traits:d.traits, preset:d.preset || null, avatar:d.avatar, avatarMediaId:d.avatarMediaId || null, voice:d.voice, delivery:d.delivery });
+    const save = async () => { read(); const r = await fetch(apiUrl('/api/characters/' + encodeURIComponent(id)), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload()) }); const out = await r.json().catch(() => ({})); if (!r.ok) throw new Error(out.error || ('HTTP ' + r.status)); return out; };
+    const paint = () => {
+      openActionModal('Design ' + d.name, html());
+      const q = sel => document.querySelectorAll('#actionModalBody ' + sel), g = x => document.getElementById(x), msg = t => { if (g('ndMsg')) g('ndMsg').textContent = t; };
+      q('[data-style]').forEach(b => b.onclick = () => { read(); d.avatar.style = b.dataset.style; paint(); });
+      for (const key of ['color', 'skin', 'eyes', 'shape', 'extra']) q(`[data-${key}]`).forEach(b => b.onclick = () => { read(); d.avatar.face[key] = b.dataset[key]; paint(); });
+      q('[data-preset]').forEach(b => b.onclick = () => { read(); const p = cat.presets[b.dataset.preset]; d.preset = b.dataset.preset; d.traits = { ...p.traits }; d.delivery = { ...(d.delivery || {}), mood: p.mood }; paint(); });
+      q('.nd-t').forEach(r => r.oninput = () => { d.traits[r.dataset.k] = +r.value; d.preset = null; q('[data-preset]').forEach(b => b.classList.remove('on')); g('ndSum').innerHTML = `<strong>${escapeHtml(d.name)} will be:</strong> ${escapeHtml(summary())}`; });
+      g('ndCancel').onclick = closeActionModal;
+      g('ndVoice').onclick = e => { e.preventDefault(); closeActionModal(); try { vsSel = id; vsDraft = null; } catch (_) {} showView('voicestudio'); };
+      g('ndSave').onclick = async () => { try { await save(); closeActionModal(); toast('Saved ' + d.name + '.'); await loadChar(); renderMsgs(); if (typeof currentView !== 'undefined' && currentView === 'voicestudio' && typeof renderVoiceStudioView === 'function') renderVoiceStudioView(); } catch (e) { msg(e.message); } };
+      if (g('ndReset')) g('ndReset').onclick = async () => { if (g('ndReset').dataset.c !== '1') { g('ndReset').dataset.c = '1'; g('ndReset').textContent = 'Press again to reset'; return; } const r = await fetch(apiUrl('/api/characters/nova/reset'), { method:'POST' }); if (r.ok) { closeActionModal(); toast('Nova is back to the original.'); await loadChar(); renderMsgs(); } };
+      g('ndHear').onclick = async () => {
+        read(); msg('Speaking…');
+        try {
+          const r = await fetch(apiUrl('/api/characters/preview'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ character: payload(), text: `Hi, I'm ${d.name}. Ask me how to do anything here, and I'll show you the way.` }) });
+          if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || ('HTTP ' + r.status)); }
+          const a = new Audio(URL.createObjectURL(await r.blob())); await a.play(); msg('');
+        } catch (e) { msg(e.message); }
+      };
+      if (g('ndNoPic')) g('ndNoPic').onclick = () => { read(); d.avatarMediaId = null; paint(); };
+      if (g('ndUpload')) g('ndUpload').onchange = async e => { const f = e.target.files[0]; if (!f) return; read(); msg('Uploading…'); try { const m = await uploadMediaFile(f); d.avatarMediaId = m.id; d.avatar.style = 'image'; paint(); } catch (err) { msg(err.message); } };
+      if (g('ndDraw')) g('ndDraw').onclick = async () => {
+        read(); const prompt = g('ndPrompt').value.trim(); g('ndDraw').disabled = true; msg('Starting ComfyUI and drawing…');
+        try {
+          await save();
+          const jr = await fetch(apiUrl('/api/characters/' + encodeURIComponent(id) + '/face'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(prompt ? { prompt } : {}) });
+          const job = await jr.json(); if (!jr.ok) throw new Error(job.error || ('HTTP ' + jr.status));
+          for (let i = 0; i < 240; i++) {
+            await new Promise(r => setTimeout(r, 2500));
+            const j = await (await fetch(apiUrl('/api/images/jobs/' + encodeURIComponent(job.id)))).json();
+            if ((j.mediaIds || []).length) { d.avatarMediaId = j.mediaIds[0]; d.avatar.style = 'image'; paint(); msg('Picture ready. Press Save to keep it.'); return; }
+            if (j.status === 'failed' || j.status === 'cancelled') throw new Error(j.error || 'The picture failed.');
+            msg('Drawing… ' + (j.progress ? Math.round(j.progress * 100) + '%' : ''));
+          }
+          throw new Error('Still drawing; look in the Library later.');
+        } catch (e) { msg(e.message); if (g('ndDraw')) g('ndDraw').disabled = false; }
+      };
+    };
+    paint();
   }
 
   // Walkthroughs.
@@ -7111,7 +7239,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
     if (!enabled() || !prefs().helperNotices) return;
     const notes = [];
     try { const c = await (await fetch(apiUrl('/api/comfy/status'))).json(); if (c.state === 'failed' && c.lastError) notes.push(['comfy-' + c.lastError.slice(0, 40), 'ComfyUI stopped and could not be restarted. Settings > Image engine shows why.']); } catch (_) {}
-    try { const w = await (await fetch(apiUrl('/api/workbench/snapshot'))).json(); if (w.allowed && w.allowed.kill_switch && w.allowed.kill_switch.halted) notes.push(['halt-' + (w.allowed.kill_switch.since || ''), 'NOVA is halted, so background work and computer actions are paused. Resume it in Workbench when you are ready.']); } catch (_) {}
+    try { const w = await (await fetch(apiUrl('/api/workbench/snapshot'))).json(); if (w.allowed && w.allowed.kill_switch && w.allowed.kill_switch.halted) notes.push(['halt-' + (w.allowed.kill_switch.since || ''), 'Maataa is halted, so background work and computer actions are paused. Resume it in Workbench when you are ready.']); } catch (_) {}
     try { const a = await (await fetch(apiUrl('/api/activity'))).json(); for (const j of (a.jobs || [])) if (j.kind === 'qualify' && j.status !== 'running') notes.push(['job-' + j.id, j.title + (j.status === 'done' ? ' finished. Open Models to see the result.' : ' stopped: ' + (j.error || j.status) + '.')]); } catch (_) {}
     for (const [key, text] of notes) {
       if (H.lastNotice[key]) continue; H.lastNotice[key] = Date.now();
@@ -7131,7 +7259,8 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
     el('hfText').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el('hfSend').click(); } };
     el('hfSpeak').checked = prefs().helperSpeak !== false; el('hfSpeak').onchange = e => { setPrefs({ helperSpeak: e.target.checked }); if (!e.target.checked) stopTalking(); };
     el('hfNotices').checked = Boolean(prefs().helperNotices); el('hfNotices').onchange = e => { setPrefs({ helperNotices: e.target.checked }); H.boot = true; checkNotices(); };
-    el('hfChar').onchange = e => { setPrefs({ helperCharacter: e.target.value || null }); loadChar().then(renderMsgs); };
+    el('hfChar').onchange = e => { setPrefs({ helperCharacter: e.target.value === 'nova' ? null : e.target.value }); loadChar().then(renderMsgs); };
+    el('hfDesign').onclick = () => { openPanel(false); design(H.char ? H.char.id : 'nova'); };
     el('hfHide').onclick = () => { setPrefs({ helperEnabled: false }); openPanel(false); root.hidden = true; toast('Helper hidden. Turn it back on in Settings > Helper.'); };
     const mic = el('hfMic');
     mic.addEventListener('pointerdown', e => { e.preventDefault(); recStart(); });
@@ -7139,12 +7268,12 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
     H.boot = true; loadChar();
     clearInterval(H.noticeTimer); H.noticeTimer = setInterval(checkNotices, 30000); setTimeout(checkNotices, 4000);
   }
-  window.novaHelper = { show(){ setPrefs({ helperEnabled: true }); root.hidden = false; }, hide(){ root.hidden = true; }, reload: loadChar, ask, say };
+  window.novaHelper = { show(){ setPrefs({ helperEnabled: true }); root.hidden = false; }, hide(){ root.hidden = true; }, reload: loadChar, ask, say, design, faceSvg, faceBg };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 300)); else setTimeout(init, 300);
 })();
 </script>
 
-<!-- ===================== Viewer: pictures and pages open inside NOVA ===================== -->
+<!-- ===================== Viewer: pictures and pages open inside Maataa ===================== -->
 <style>
 #novaViewer{position:fixed;inset:0;z-index:80;background:rgba(5,7,10,.92);display:flex;flex-direction:column}
 #novaViewer[hidden]{display:none!important}
@@ -7168,7 +7297,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 (function(){
   'use strict';
   // Links that would open a new browser tab do nothing inside the desktop app's
-  // window, so pictures (and pages NOVA built) open in this viewer instead.
+  // window, so pictures (and pages Maataa built) open in this viewer instead.
   const V = { items: [], i: 0 };
   const $v = id => document.getElementById(id);
   const IMG = /\/api\/media\/[^/]+\/file|\/api\/computer\/shots\/|\/browser\/shots\/|\.(png|jpe?g|gif|webp)(\?|$)/i;

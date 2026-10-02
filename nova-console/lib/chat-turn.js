@@ -50,7 +50,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function persona({ computerOn, roots, screen, today }) {
   const lines = [
-    'You are NOVA, a friendly and capable assistant that runs privately on this person\'s own Mac.',
+    'You are Maataa, a friendly and capable assistant that runs privately on this person\'s own Mac.',
     'Talk like a thoughtful colleague: warm, direct and in plain words. Lead with the answer, keep paragraphs short, and skip filler such as "Certainly!" or "Great question".',
     'If a request is unclear or is missing something you need, ask one short clarifying question instead of guessing. If you are not sure, say so.',
     'Reply in the language the person writes in (for example Hindi when they write in Hindi). Use Markdown only when it helps: lists, tables, code.',
@@ -223,7 +223,7 @@ async function runTurn(deps, body, emit, clientSignal) {
       const src = chatSources.add(store, dataDir, activity, { sessionId, kind: 'folder', path: computer.folderPath(args.path) });
       roots.push(src.origin);
       emit({ type: 'source', source: src });
-      return { ok: true, summary: 'Approved ' + src.origin, output: `The person approved ${src.origin}. Commands and file tools now work there, and NOVA is reading its text files in the background.` };
+      return { ok: true, summary: 'Approved ' + src.origin, output: `The person approved ${src.origin}. Commands and file tools now work there, and Maataa is reading its text files in the background.` };
     };
     const computerOn = Boolean(body.computer) && pol.enabled && canTools;
     if (body.computer && !pol.enabled) job.note('Computer access is off', 'Turn it on in Settings > Computer');
@@ -299,7 +299,7 @@ async function runTurn(deps, body, emit, clientSignal) {
               if (roots.includes(real)) { step.done('Already approved'); messages.push({ role: 'tool', content: real + ' is already approved. Go ahead.' }); continue; }
             }
             // Every computer action is an execution contract: plan → approval → execution → evidence.
-            ctr = contracts.open(store, dataDir, { actor: { type: 'agent', id: model, label: 'NOVA (' + model + ')', onBehalfOf: 'local-operator' }, intent: d.title + (d.detail ? ': ' + d.detail : ''), context: { sessionId, round }, ...computer.contractFor(name, args), plan: { tool: name, args } });
+            ctr = contracts.open(store, dataDir, { actor: { type: 'agent', id: model, label: 'Maataa (' + model + ')', onBehalfOf: 'local-operator' }, intent: d.title + (d.detail ? ': ' + d.detail : ''), context: { sessionId, round }, ...computer.contractFor(name, args), plan: { tool: name, args } });
             const ap = computer.approve(store, { sessionId, tool: name, args, signal, contract: ctr });
             if (ap.info) { contracts.link(store, ctr.id, { approvalId: ap.info.id }); step.update({ waiting: true, approvalId: ap.info.id, detail: d.detail }); emit({ type: 'approval', approval: ap.info }); }
             const decision = await ap.promise;

@@ -3,7 +3,7 @@ id: interface
 title: A tour of the interface
 section: Getting started
 order: 4
-summary: The sidebar, top bar, command palette, inspector, status bar, per-screen help, list tools, and using NOVA in a narrow window or on a phone.
+summary: The sidebar, top bar, command palette, inspector, status bar, per-screen help, list tools, and using Maataa in a narrow window or on a phone.
 keywords: interface layout sidebar rail top bar command palette cmd k inspector status bar help search filter sort phone mobile narrow window keyboard
 views:
 ---
@@ -28,7 +28,7 @@ In the Console, the inspector shows what went into the last answer: **Context** 
 
 ## The status bar
 
-The strip at the bottom shows whether NOVA is local, CPU and memory use, GPU and VRAM where macOS reports them, the last generation speed (tokens per second), time to first token and how many jobs are queued.
+The strip at the bottom shows whether Maataa is local, CPU and memory use, GPU and VRAM where macOS reports them, the last generation speed (tokens per second), time to first token and how many jobs are queued.
 
 ## Help on every screen
 
@@ -40,15 +40,15 @@ The strip at the bottom shows whether NOVA is local, CPU and memory use, GPU and
 
 ## Search, filter and sort
 
-Every longer list (skills, sessions, models, documents, media, history, agents, tool servers) has a search box, a tag filter built from its badges (installed, running, failed…) and a sort. NOVA remembers your choices for each list.
+Every longer list (skills, sessions, models, documents, media, history, agents, tool servers) has a search box, a tag filter built from its badges (installed, running, failed…) and a sort. Maataa remembers your choices for each list.
 
 ## Narrow windows and phones
 
-NOVA adapts to the window:
+Maataa adapts to the window:
 
 - Below about 1,180 pixels wide the Console's inspector becomes a drawer.
 - Below about 820 pixels wide (a small window, or a phone opening `http://<your-mac>:8787` through a tunnel you set up yourself) the sidebar becomes a menu: press ☰ at the top left to open it, and it closes when you pick a screen. The sessions list opens from the button at the top right.
 
 @screen media/phone-menu.jpg "At phone width the sidebar opens from the ☰ button."
 
-> **Important** NOVA listens only on this computer. Do not expose port 8787 to other devices without adding your own authentication; NOVA has no login by design.
+> **Important** Maataa listens only on this computer. Do not expose port 8787 to other devices without adding your own authentication; Maataa has no login by design.

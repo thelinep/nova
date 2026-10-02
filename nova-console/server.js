@@ -125,6 +125,7 @@ const store = new Store(db);
 activity.configure(store);
 // This install's device identity (Ed25519), and contracts a restart left open are sealed as cancelled.
 deviceIdentity.ensure(store, DATA_DIR); contracts.sweep(store, DATA_DIR);
+characters.ensureNova(store); // Nova, the helper, is a built-in character
 comfyManager.configure({ store, dataDir: DATA_DIR, imageGen, activity }); imageGen.setEnsure(() => comfyManager.ensure());
 const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
 const jobEngine = new JobEngine(store, { pollMs: 500 });
@@ -478,6 +479,8 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/helper\/ask$/, handler: async (req, res) => sendJson(res, 200, await helper.ask({ store, ollama, characters }, await readJsonBody(req))) },
   { method: 'GET', pattern: /^\/api\/characters$/, handler: async (_req, res) => sendJson(res, 200, characters.list(store).map(c => ({ ...c, voiceLabel: characters.voiceLabel(c.voice), agents: store.all('agents').filter(a => a.characterId === c.id).map(a => ({ id: a.id, name: a.name })) }))) },
   { method: 'GET', pattern: /^\/api\/characters\/voices$/, handler: async (_req, res) => sendJson(res, 200, { ...(await characters.catalog()), moods: Object.entries(characters.MOODS).map(([id, m]) => ({ id, label: m.label })) }) },
+  { method: 'GET', pattern: /^\/api\/characters\/designer$/, handler: async (_req, res) => sendJson(res, 200, { traits: characters.TRAITS, presets: characters.PRESETS, face: characters.FACE, moods: Object.entries(characters.MOODS).map(([id, m]) => ({ id, label: m.label })) }) },
+  { method: 'POST', pattern: /^\/api\/characters\/nova\/reset$/, handler: async (_req, res) => sendJson(res, 200, characters.resetNova(store)) },
   { method: 'POST', pattern: /^\/api\/characters$/, handler: async (req, res) => sendJson(res, 201, characters.create(store, await readJsonBody(req))) },
   { method: 'PUT', pattern: /^\/api\/characters\/([^/]+)$/, handler: async (req, res, [id]) => sendJson(res, 200, characters.update(store, decodeURIComponent(id), await readJsonBody(req))) },
   { method: 'DELETE', pattern: /^\/api\/characters\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, characters.remove(store, decodeURIComponent(id))) },
@@ -875,7 +878,7 @@ const routes = [
   },
   { method: 'PUT', pattern: /^\/api\/store\/([^/]+)$/, handler: async (req, res, [name]) => { const body = await readJsonBody(req),storeName=decodeURIComponent(name); if (['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts','devices','executionContracts'].includes(storeName)) return sendJson(res,403,{error:'This store is written only by its validated runtime.'}); sendJson(res, 200, store.put(storeName, body)); } },
   { method: 'DELETE', pattern: /^\/api\/store\/([^/]+)\/([^/]+)$/, handler: async (req, res, [name, id]) => { const storeName=decodeURIComponent(name);if(['modelQualifications','neuronBlueprints','neuronRuns','neuronArtifacts','devices','executionContracts'].includes(storeName)) return sendJson(res,403,{error:'This store is runtime-managed and read-only.'}); store.delete(storeName, decodeURIComponent(id)); sendJson(res, 200, { ok: true }); } },
-  { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); contracts._resetHeads(store); deviceIdentity.ensure(store, DATA_DIR); sendJson(res, 200, { ok: true }); } },
+  { method: 'POST', pattern: /^\/api\/store\/_clear-all$/, handler: async (req, res) => { store.clearAll(); contracts._resetHeads(store); deviceIdentity.ensure(store, DATA_DIR); characters.ensureNova(store); sendJson(res, 200, { ok: true }); } },
 
   { method: 'GET', pattern: /^\/api\/ollama\/status$/, handler: async (req, res) => sendJson(res, 200, ollamaStatusCache) },
   { method: 'POST', pattern: /^\/api\/models\/sync$/, handler: async (req, res) => sendJson(res, 200, { models: await syncModelsFromOllama() }) },
@@ -1365,7 +1368,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`NOVA Runtime listening on http://127.0.0.1:${server.address().port}`);
+  console.log(`Maataa Workstation listening on http://127.0.0.1:${server.address().port}`);
   console.log(`  data dir:    ${DATA_DIR}`);
   console.log(`  ollama host: ${ollama.host}`);
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
@@ -1395,17 +1398,17 @@ server.listen(PORT, '127.0.0.1', () => {
   if (resumed) console.log(`  resumed:     ${resumed} in-flight workflow run(s)`);
   // Phase 5: the real automations scheduler + event receiver — starts
   // ticking immediately, independent of any browser tab being open.
-  comfyManager.boot().then(() => console.log('  comfyui:     ' + comfyManager.status().state + (comfyManager.prefs().autoStart ? ' (NOVA starts it when needed)' : ''))).catch(() => {});
+  comfyManager.boot().then(() => console.log('  comfyui:     ' + comfyManager.status().state + (comfyManager.prefs().autoStart ? ' (Maataa starts it when needed)' : ''))).catch(() => {});
   const schedStatus = scheduler.startScheduler(store, ollama);
   console.log(`  scheduler:   ticking every ${schedStatus.tickMs / 1000}s` +
     (schedStatus.lastCatchUp ? ` (rescheduled ${schedStatus.lastCatchUp.rescheduled} overdue automation(s) from startup)` : ''));
 });
 
 function shutdown() {
-  console.log('\nShutting down NOVA Runtime...');
+  console.log('\nShutting down Maataa Workstation...');
   mcpManager.shutdownAll(); // real child MCP server processes — close them, don't orphan
   workspaceRunner.stopAll(); // dev servers and commands run in their own process groups
-  const closing = Promise.all([browser.shutdown().catch(() => {}), comfyManager.shutdown().catch(() => {})]); // agent browser windows, NOVA's own ComfyUI
+  const closing = Promise.all([browser.shutdown().catch(() => {}), comfyManager.shutdown().catch(() => {})]); // agent browser windows, Maataa's own ComfyUI
   const timer = setTimeout(() => process.exit(0), 12000);
   closing.finally(() => server.close(() => { clearTimeout(timer); process.exit(0); }));
 }

@@ -3,7 +3,7 @@ id: agents
 title: Agents
 section: Capabilities
 order: 32
-summary: An agent is a model with instructions and a fixed set of skills and tools. Build one yourself or with NOVA, test it, approve it, and let agents hand work to each other.
+summary: An agent is a model with instructions and a fixed set of skills and tools. Build one yourself or with Maataa, test it, approve it, and let agents hand work to each other.
 keywords: agents build with nova draft test approve discard hand-off delegates tool calling loop instructions system prompt memory scope
 views: agents
 ---
@@ -11,13 +11,13 @@ An agent is a local model plus instructions, the skills and tool servers it may 
 
 @screen media/agents.jpg "Agents: each card shows the model, skills, tools, status and a run box."
 
-## Build an agent with NOVA
+## Build an agent with Maataa
 
-1. Press **Build with NOVA** and describe the goal in a sentence or two, for example "Turn my shoot notes into a call sheet and translate it to Hindi".
+1. Press **Build with Maataa** and describe the goal in a sentence or two, for example "Turn my shoot notes into a call sheet and translate it to Hindi".
 2. Pick a local model (7B or larger drafts much better) and press **Draft agent**.
-3. NOVA drafts a name, instructions, skills, tool servers and agents to hand work to, choosing only what is installed. Anything else it suggested is dropped and listed in the draft's notes, as are placeholder skills and servers that are not connected. It also writes two or three test prompts.
+3. Maataa drafts a name, instructions, skills, tool servers and agents to hand work to, choosing only what is installed. Anything else it suggested is dropped and listed in the draft's notes, as are placeholder skills and servers that are not connected. It also writes two or three test prompts.
 
-@screen media/agents-builder.jpg "Build with NOVA: describe the goal and pick a local model."
+@screen media/agents-builder.jpg "Build with Maataa: describe the goal and pick a local model."
 
 @video media/build-agent.mp4 "Drafting an agent from a goal and running its first test."
 
@@ -51,4 +51,4 @@ Agents listed under **Can hand work to** appear to the model as tools. When it u
 
 ## Agents that work on their own
 
-The agents on this screen run when you ask them. NOVA also has a **multi-agent system** for agents that keep working over time, with their own memory, a shared task list, budgets, tool permissions and a supervisor to escalate to. Its agents appear in Workbench → **Agents**. It is built and tested, but not started from this screen yet. See [Built, not yet in the console](help:developer-preview).
+The agents on this screen run when you ask them. Maataa also has a **multi-agent system** for agents that keep working over time, with their own memory, a shared task list, budgets, tool permissions and a supervisor to escalate to. Its agents appear in Workbench → **Agents**. It is built and tested, but not started from this screen yet. See [Built, not yet in the console](help:developer-preview).

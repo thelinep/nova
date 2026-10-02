@@ -14,7 +14,7 @@
 
 const SKILL_MANIFEST_SCHEMA = {
   $schema: 'http://json-schema.org/draft-07/schema#',
-  title: 'NOVA skill manifest',
+  title: 'Maataa skill manifest',
   type: 'object',
   required: ['entrypoint', 'inputs', 'outputs'],
   properties: {

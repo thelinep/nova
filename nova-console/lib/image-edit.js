@@ -239,7 +239,7 @@ async function upscale(store, dataDir, input, { ffmpeg } = {}) {
   await comfy.ensureReady({ optional: true }); // ffmpeg can upscale without ComfyUI
   const { record, size } = sourceImage(store, dataDir, input.mediaId);
   const factor = Number(input.factor) === 4 ? 4 : 2;
-  if (Math.max(size.width, size.height) * factor > 8192) throw error(`That would be ${size.width * factor}×${size.height * factor}; NOVA keeps upscales to 8192 pixels on the long side. Try 2x.`);
+  if (Math.max(size.width, size.height) * factor > 8192) throw error(`That would be ${size.width * factor}×${size.height * factor}; Maataa keeps upscales to 8192 pixels on the long side. Try 2x.`);
   let info = null;
   try { info = await comfy.status(); } catch (_) {}
   const models = (info && info.reachable && info.upscalers) || [];

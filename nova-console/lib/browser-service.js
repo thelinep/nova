@@ -316,7 +316,7 @@ class BrowserService {
     this.networkCheck(url, policy.id);
 
     const pw = loadPlaywright();
-    if (!pw) throw new BrowserError('The agent browser needs Playwright, which this copy of NOVA does not include. Rebuild the app with Build NOVA app.command, or run npm install in nova-console.', 503, policy.id);
+    if (!pw) throw new BrowserError('The agent browser needs Playwright, which this copy of Maataa does not include. Rebuild the app with Build NOVA app.command, or run npm install in nova-console.', 503, policy.id);
     const executablePath = systemBrowser() || undefined;
     if (!executablePath && playwrightCache.name !== 'playwright') throw new BrowserError('The agent browser uses the Chrome on this computer. Install Google Chrome (or Edge, Brave or Chromium) and try again.', 503, policy.id);
     const context = await pw.chromium.launchPersistentContext(

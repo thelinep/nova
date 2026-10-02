@@ -2,19 +2,19 @@
 id: troubleshooting
 title: Troubleshooting
 ---
-## Starting NOVA
+## Starting Maataa
 
 ### The app will not open, or macOS says it is damaged or from an unidentified developer
 
-The app is not notarized. Right-click it and choose **Open**, or go to **System Settings → Privacy & Security** and choose **Open Anyway**. If it still fails, open the portable folder's **Start NOVA.command** to see the error in Terminal.
+The app is not notarized. Right-click it and choose **Open**, or go to **System Settings → Privacy & Security** and choose **Open Anyway**. If it still fails, open the portable folder's **Start Maataa.command** to see the error in Terminal.
 
 ### The window opens but stays blank or will not load
 
-Wait a few seconds: the window appears once the server answers. If it stays blank, quit NOVA and open it again, then look at the end of `nova-runtime-server.log` in `~/Library/Application Support/com.brahmini.nova-runtime/`.
+Wait a few seconds: the window appears once the server answers. If it stays blank, quit Maataa and open it again, then look at the end of `nova-runtime-server.log` in `~/Library/Application Support/com.brahmini.nova-runtime/`.
 
 ### "Port 8787 is busy" or the server exits straight away
 
-Another NOVA is already running (the app, the portable folder or `npm start`). Quit it, or start browser mode with another port, for example `PORT=8790 npm start`.
+Another Maataa is already running (the app, the portable folder or `npm start`). Quit it, or start browser mode with another port, for example `PORT=8790 npm start`.
 
 ### The bottom of the window or the chat box is cut off
 
@@ -28,7 +28,7 @@ Start Ollama (open the Ollama app or run `ollama serve`), check `OLLAMA_HOST` if
 
 ### No models appear after syncing
 
-Run `ollama list` in Terminal. If it is empty, pull a model, for example `ollama pull llama3.2`. Make sure NOVA and your Terminal use the same Ollama address.
+Run `ollama list` in Terminal. If it is empty, pull a model, for example `ollama pull llama3.2`. Make sure Maataa and your Terminal use the same Ollama address.
 
 ### Chat will not use the model I picked
 
@@ -56,11 +56,11 @@ Open **Settings > Image engine**. If it says not installed, press **Install Comf
 
 ### The first image takes much longer
 
-That is ComfyUI starting (20–60 seconds). Turn on **Start with NOVA** in **Settings > Image engine** to have it ready in advance, at the cost of some memory.
+That is ComfyUI starting (20–60 seconds). Turn on **Start with Maataa** in **Settings > Image engine** to have it ready in advance, at the cost of some memory.
 
 ### A video job was refused for low memory
 
-NOVA stops heavy jobs rather than freeze your Mac. Close other large apps, pick a shorter length or lower resolution, or use Wan instead of LTX-2.
+Maataa stops heavy jobs rather than freeze your Mac. Close other large apps, pick a shorter length or lower resolution, or use Wan instead of LTX-2.
 
 ### Transcription is unavailable
 
@@ -70,7 +70,7 @@ Install whisper.cpp and ffmpeg (the audio setup scripts do this), then check aga
 
 That is the built-in macOS voice. Install Kokoro with **Install Kokoro voices for NOVA.command** for natural voices.
 
-### I cannot find a file NOVA made
+### I cannot find a file Maataa made
 
 Look in `~/Documents/NOVA Library` in that day's folder. If the item says it could not be saved there, check the folder in **Media → Library folder** and that the disk has space.
 
@@ -78,35 +78,35 @@ Look in `~/Documents/NOVA Library` in that day's folder. If the item says it cou
 
 ### "Reading web pages needs network access" or a git clone is refused
 
-Turn on **Settings > Privacy > Allow network access**. Private repositories need git to be signed in on this Mac already; NOVA never asks for passwords. A page that needs JavaScript or a sign-in may have no readable text.
+Turn on **Settings > Privacy > Allow network access**. Private repositories need git to be signed in on this Mac already; Maataa never asks for passwords. A page that needs JavaScript or a sign-in may have no readable text.
 
-### A folder was added but NOVA says it found no readable files
+### A folder was added but Maataa says it found no readable files
 
-NOVA reads text files only and skips `node_modules`, `.git`, build folders and binary files, up to 600 files and about 12 MB. Add the subfolder that holds your notes or code.
+Maataa reads text files only and skips `node_modules`, `.git`, build folders and binary files, up to 600 files and about 12 MB. Add the subfolder that holds your notes or code.
 
-### Computer is on but NOVA only talks
+### Computer is on but Maataa only talks
 
-The model must support tools (for example `qwen2.5` or `llama3.1`); the steps above the reply say when it does not. Also check **Settings > Computer > Let NOVA use this Mac**.
+The model must support tools (for example `qwen2.5` or `llama3.1`); the steps above the reply say when it does not. Also check **Settings > Computer > Let Maataa use this Mac**.
 
 ### Clicks and typing do nothing
 
-Allow NOVA Runtime (or Terminal in browser mode) in **System Settings > Privacy & Security > Accessibility**, then quit and reopen NOVA.
+Allow Maataa Workstation (or Terminal in browser mode) in **System Settings > Privacy & Security > Accessibility**, then quit and reopen Maataa.
 
 ### Screenshots show only the desktop wallpaper
 
-Allow NOVA Runtime (or Terminal) in **System Settings > Privacy & Security > Screen Recording**, then reopen NOVA.
+Allow Maataa Workstation (or Terminal) in **System Settings > Privacy & Security > Screen Recording**, then reopen Maataa.
 
 ### "Outside the approved folders"
 
-Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. NOVA normally asks for the folder itself (press **Allow this folder**); you can also add it with **+ > Add folder**, or type `add folder ~/Desktop` in the message box.
+Commands and file tools only work inside folders you added to the chat or approved in Local Workspace. Maataa normally asks for the folder itself (press **Allow this folder**); you can also add it with **+ > Add folder**, or type `add folder ~/Desktop` in the message box.
 
 ### "Could not check it visually" when building a page from an image
 
-The check renders the page in a browser NOVA can find: Google Chrome, Chromium, Microsoft Edge or Brave. Install one (or set `NOVA_CHROME` to its path) and ask again.
+The check renders the page in a browser Maataa can find: Google Chrome, Chromium, Microsoft Edge or Brave. Install one (or set `NOVA_CHROME` to its path) and ask again.
 
 ### Text from an image has mistakes
 
-Use a sharper or larger screenshot; tiny or blurred text is hard to read. On a Mac NOVA uses Apple's text recognition; if the support report shows "Text in images" as missing, install tesseract (`brew install tesseract`).
+Use a sharper or larger screenshot; tiny or blurred text is hard to read. On a Mac Maataa uses Apple's text recognition; if the support report shows "Text in images" as missing, install tesseract (`brew install tesseract`).
 
 ### A character's preview is silent or fails
 
@@ -122,11 +122,11 @@ The helper uses your local model. Start Ollama and press **Sync from Ollama** in
 
 ### The microphone does not work
 
-Allow NOVA in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
+Allow Maataa in **System Settings > Privacy & Security > Microphone**. Speaking needs whisper.cpp and a speech model (Help: Audio); recordings from Chrome also need ffmpeg (`brew install ffmpeg`).
 
 ### "No whisper speech model is installed yet" although I installed one
 
-Double-click **Add multilingual speech model.command** in the brahmini folder again. Earlier versions put the model only where NOVA started from the folder looks; the app keeps its own data folder. It now links models you already have into the app without downloading them again or using more space. No restart is needed.
+Double-click **Add multilingual speech model.command** in the brahmini folder again. Earlier versions put the model only where Maataa started from the folder looks; the app keeps its own data folder. It now links models you already have into the app without downloading them again or using more space. No restart is needed.
 
 ### A character's shouting, whispering or singing sounds the same as normal speech
 
@@ -134,7 +134,7 @@ Delivery effects need ffmpeg: run `brew install ffmpeg` and press **▶ Preview*
 
 ### Clicking a generated image does nothing
 
-Update to the latest NOVA: images now open in NOVA's own viewer. In older versions the desktop window ignored links that open a new tab.
+Update to the latest Maataa: images now open in Maataa's own viewer. In older versions the desktop window ignored links that open a new tab.
 
 ## Agents, tools and workflows
 
@@ -148,11 +148,11 @@ It is probably waiting at a sign-off step: open Workflows and press **Approve** 
 
 ### An automation did not run
 
-It must be **Enabled**, NOVA must be open at the time, and its model and collections must exist. Check its run history and the **Scheduler** check in Diagnostics.
+It must be **Enabled**, Maataa must be open at the time, and its model and collections must exist. Check its run history and the **Scheduler** check in Diagnostics.
 
 ## Workbench and oversight
 
-### "No installed model is qualified" when NOVA plans code
+### "No installed model is qualified" when Maataa plans code
 
 Open **Models**, press **Sync from Ollama**, then **Qualify for coding** on a model of 7B or larger. Wait until Activity shows the run finished and the card says **6 of 6 passed**. See [Models](help:models#qualify-for-coding).
 
@@ -168,7 +168,7 @@ Small models often fail **several files**, **large folder** or **asks when uncle
 
 The request needs changes to more than one file. Use a model larger than 3.2B, or ask for a change to one file.
 
-### NOVA says it is halted and will not act on my computer
+### Maataa says it is halted and will not act on my computer
 
 Someone pressed **halt** in Workbench. Open Workbench, check the reason under **Allowed**, and press **resume** with your resume passphrase when it is safe.
 
@@ -178,15 +178,15 @@ The passphrase is case-sensitive. On a server started with `NOVA_RESUME_CREDENTI
 
 ### I lost the resume passphrase
 
-Quit NOVA fully. In NOVA's data folder (see [Settings, privacy and your data](help:settings-privacy#where-your-data-lives)), delete the file `.resume-passphrase`. It is hidden, so press ⇧⌘. in Finder to see it. Start NOVA again and press **resume**: it asks you to choose a new passphrase.
+Quit Maataa fully. In Maataa's data folder (see [Settings, privacy and your data](help:settings-privacy#where-your-data-lives)), delete the file `.resume-passphrase`. It is hidden, so press ⇧⌘. in Finder to see it. Start Maataa again and press **resume**: it asks you to choose a new passphrase.
 
 ### "The agent browser needs Playwright"
 
-This copy of NOVA was built without the browser driver. Rebuild the app with **Build NOVA app.command** (it downloads the driver once), or in browser mode run `npm install` in `nova-console`. Nothing else in NOVA needs it.
+This copy of Maataa was built without the browser driver. Rebuild the app with **Build NOVA app.command** (it downloads the driver once), or in browser mode run `npm install` in `nova-console`. Nothing else in Maataa needs it.
 
 ### "The agent browser uses the Chrome on this computer"
 
-Install Google Chrome (or Edge, Brave or Chromium) in Applications, then open **Agent Browser** again. If Chrome is somewhere unusual, set `NOVA_AGENT_CHROME` to its program file before starting NOVA.
+Install Google Chrome (or Edge, Brave or Chromium) in Applications, then open **Agent Browser** again. If Chrome is somewhere unusual, set `NOVA_AGENT_CHROME` to its program file before starting Maataa.
 
 ### The agent browser says it needs network access
 
@@ -198,7 +198,7 @@ The website is not on the allowed list, or the page loads pictures, scripts or f
 
 ### Neuron Factory says training is refused
 
-**Macro** blueprints need **Approve macro job** first, and nothing trains while NOVA is halted (resume it in Workbench). An error about the training specification names the value that is out of range; the limits are in [Neuron Factory](help:neuron-factory#scale).
+**Macro** blueprints need **Approve macro job** first, and nothing trains while Maataa is halted (resume it in Workbench). An error about the training specification names the value that is out of range; the limits are in [Neuron Factory](help:neuron-factory#scale).
 
 ### The setup checklist will not reach 5 / 5
 
@@ -206,7 +206,7 @@ Step 2 needs a model that passed **Qualify for coding**. Step 5 needs a code cha
 
 ### The Workbench strip in the top bar shows "—"
 
-NOVA could not read Workbench's state. It retries after 30 seconds. If it stays, open Workbench to see the error, and make a support report.
+Maataa could not read Workbench's state. It retries after 30 seconds. If it stays, open Workbench to see the error, and make a support report.
 
 ## Local Workspace
 
@@ -220,9 +220,9 @@ A file changed since the batch was checked or applied. Validate the batch again,
 
 ## Disk and performance
 
-### NOVA or the build script says there is not enough space
+### Maataa or the build script says there is not enough space
 
-Packing needs about 3 GB free and video jobs need room for their output. Empty large downloads, old builds in `nova-console/packaging/dist/` or old items in your NOVA Library.
+Packing needs about 3 GB free and video jobs need room for their output. Empty large downloads, old builds in `nova-console/packaging/dist/` or old items in your Maataa Library.
 
 ### Still stuck?
 

@@ -118,7 +118,7 @@ test('support report: coding qualification, kill switch, jobs and optional tools
     assert.equal(c.agentBrowser.optional, true);
     assert.equal(c.dafny.optional, true);
     assert.equal(r.oversight.halted, true);
-    assert.match(r.text, /Kill switch: NOVA is HALTED/);
+    assert.match(r.text, /Kill switch: Maataa is HALTED/);
     assert.match(r.text, /\[(--|ok)\] +Proof checker/);
   } finally { db.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });

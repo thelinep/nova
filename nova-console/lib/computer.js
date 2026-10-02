@@ -68,7 +68,7 @@ function toolSpecs({ screen = true } = {}) {
 /* ------------------------------------------------------------ safety rules */
 
 const BLOCKED = [
-  [/\bsudo\b|\bsu\s+-?\s*\w*\s*$|\bdoas\b/, 'NOVA does not run commands as administrator.'],
+  [/\bsudo\b|\bsu\s+-?\s*\w*\s*$|\bdoas\b/, 'Maataa does not run commands as administrator.'],
   [/\brm\s+(-[a-zA-Z]*\s+)*(\/|~|\$HOME|\/\*|~\/\*)(\s|$)/, 'Deleting your disk or home folder is never allowed.'],
   [/\b(mkfs|diskutil\s+(erase|partition|zero|secureErase)|newfs|fdisk|dd\s+.*of=\/dev)/, 'Disk formatting commands are never allowed.'],
   [/\b(shutdown|reboot|halt)\b|killall\s+(Finder|Dock|loginwindow|WindowServer)/, 'Shutting down or restarting is not allowed from chat.'],
@@ -310,14 +310,14 @@ function describe(name, args) {
     case 'move_file': return { title: 'Move or rename', detail: `${a.from} → ${a.to}` };
     case 'make_folder': return { title: 'Create a folder', detail: a.path };
     case 'move_to_trash': return { title: 'Move to Trash', detail: a.path };
-    case 'use_folder': return { title: 'Let NOVA work in a folder', detail: home(folderPath(a.path)) + (a.reason ? ' — ' + a.reason : '') };
+    case 'use_folder': return { title: 'Let Maataa work in a folder', detail: home(folderPath(a.path)) + (a.reason ? ' — ' + a.reason : '') };
     default: return { title: name, detail: JSON.stringify(a).slice(0, 300) };
   }
 }
 
 // The Workbench kill switch also stops NOVA acting on this computer.
 function halted(store) { try { return typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1'; } catch (_) { return false; } }
-function checkHalt(store) { if (halted(store)) throw error('NOVA is halted (Workbench kill switch), so it will not act on this computer. Resume it in Workbench first.', 423); }
+function checkHalt(store) { if (halted(store)) throw error('Maataa is halted (Workbench kill switch), so it will not act on this computer. Resume it in Workbench first.', 423); }
 function policy(store) { const p = store.get('preferences', 'computer') || {}; return { enabled: p.enabled !== false, autoRead: Boolean(p.autoRead), screen: p.screen !== false }; }
 function setPolicy(store, input = {}) {
   const cur = store.get('preferences', 'computer') || { id: 'computer' };
@@ -403,7 +403,7 @@ async function status() {
   if (!IS_MAC) { out.notes.push('Screen, clipboard and app tools work on macOS only; commands and file tools work here.'); return out; }
   out.screen = true;
   try { out.accessibility = (await run('/usr/bin/osascript', ['-l', 'JavaScript', '-e', 'ObjC.import("ApplicationServices"); $.AXIsProcessTrusted()'])).trim() === 'true'; } catch (_) { out.accessibility = null; }
-  if (out.accessibility === false) out.notes.push('To click and type, allow NOVA Runtime (or Terminal, in browser mode) in System Settings > Privacy & Security > Accessibility.');
+  if (out.accessibility === false) out.notes.push('To click and type, allow Maataa Workstation (or Terminal, in browser mode) in System Settings > Privacy & Security > Accessibility.');
   out.notes.push('To see windows (not only the wallpaper) in screenshots, allow it in System Settings > Privacy & Security > Screen Recording.');
   return out;
 }

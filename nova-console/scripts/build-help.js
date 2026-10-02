@@ -257,10 +257,10 @@ q.addEventListener('input',run);q.addEventListener('keydown',function(e){if(e.ke
 
 function page({ title, body, nav, active, articles }) {
   const side = nav ? `<aside class="side">${SECTIONS.filter(s => articles.some(a => a.section === s)).map(s => `<h4>${esc(s)}</h4>${articles.filter(a => a.section === s).map(a => `<a href="${a.id}.html"${active === a.id ? ' class="on"' : ''}>${esc(a.title)}</a>`).join('')}`).join('')}<h4>More</h4><a href="faq.html"${active === 'faq' ? ' class="on"' : ''}>FAQ</a><a href="troubleshooting.html"${active === 'troubleshooting' ? ' class="on"' : ''}>Troubleshooting</a><a href="support.html"${active === 'support' ? ' class="on"' : ''}>Get support</a></aside>` : '';
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · NOVA Help</title><link rel="stylesheet" href="help.css"><link rel="icon" href="../../public/favicon.svg"></head><body>
-<header class="top"><a class="brand" href="index.html">NOVA <span>Help</span></a><nav><a href="index.html"${active === 'home' ? ' class="on"' : ''}>Guides</a><a href="faq.html"${active === 'faq' ? ' class="on"' : ''}>FAQ</a><a href="troubleshooting.html"${active === 'troubleshooting' ? ' class="on"' : ''}>Troubleshooting</a><a href="support.html"${active === 'support' ? ' class="on"' : ''}>Support</a></nav><div class="search"><input id="q" type="search" placeholder="Search help…" aria-label="Search help"><div id="results" class="results"></div></div></header>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · Maataa Help</title><link rel="stylesheet" href="help.css"><link rel="icon" href="../../public/favicon.svg"></head><body>
+<header class="top"><a class="brand" href="index.html">Maataa <span>Help</span></a><nav><a href="index.html"${active === 'home' ? ' class="on"' : ''}>Guides</a><a href="faq.html"${active === 'faq' ? ' class="on"' : ''}>FAQ</a><a href="troubleshooting.html"${active === 'troubleshooting' ? ' class="on"' : ''}>Troubleshooting</a><a href="support.html"${active === 'support' ? ' class="on"' : ''}>Support</a></nav><div class="search"><input id="q" type="search" placeholder="Search help…" aria-label="Search help"><div id="results" class="results"></div></div></header>
 <div class="layout${nav ? '' : ' solo'}">${side}<main>${body}</main></div>
-<div class="foot">NOVA Runtime · generated from docs/help — the same guides are in NOVA under Help &amp; Support.</div>
+<div class="foot">Maataa Workstation · generated from docs/help — the same guides are in Maataa under Help &amp; Support.</div>
 <script src="search-index.js"></script><script src="search.js"></script></body></html>`;
 }
 
@@ -280,7 +280,7 @@ function buildSite() {
     ...troubleshooting.map(f => ({ t: f.q, s: 'Troubleshooting', u: 'troubleshooting.html#' + f.id, b: f.text })),
   ];
   fs.writeFileSync(path.join(SITE, 'search-index.js'), 'window.NOVA_HELP_INDEX=' + JSON.stringify(index) + ';\n');
-  const home = `<article><h1>NOVA Help</h1><p class="lede">Guides for every part of NOVA, answers to common questions, and what to do when something goes wrong. Everything NOVA does runs on your computer.</p>
+  const home = `<article><h1>Maataa Help</h1><p class="lede">Guides for every part of Maataa, answers to common questions, and what to do when something goes wrong. Everything Maataa does runs on your computer.</p>
 ${SECTIONS.filter(s => articles.some(a => a.section === s)).map(s => `<h2>${esc(s)}</h2><div class="cards">${articles.filter(a => a.section === s).map(a => `<a class="card" href="${a.id}.html">${esc(a.title)}<small>${esc(a.summary)}</small></a>`).join('')}</div>`).join('')}
 <h2>More help</h2><div class="cards"><a class="card" href="faq.html">Frequently asked questions<small>${faq.length} short answers</small></a><a class="card" href="troubleshooting.html">Troubleshooting<small>Problems and fixes, by area</small></a><a class="card" href="support.html">Get support<small>Make a support report and what to include</small></a></div></article>`;
   fs.writeFileSync(path.join(SITE, 'index.html'), page({ title: 'Guides', body: home, nav: false, active: 'home', articles }));
@@ -296,7 +296,7 @@ ${SECTIONS.filter(s => articles.some(a => a.section === s)).map(s => `<h2>${esc(
 <script>if(location.hash){var d=document.getElementById(location.hash.slice(1));if(d&&d.tagName==='DETAILS'){d.open=true;d.scrollIntoView()}}</script>`;
   };
   fs.writeFileSync(path.join(SITE, 'faq.html'), page({ title: 'FAQ', body: qa(faq, 'Frequently asked questions', 'Short answers to the questions people ask most.'), nav: true, active: 'faq', articles }));
-  fs.writeFileSync(path.join(SITE, 'troubleshooting.html'), page({ title: 'Troubleshooting', body: qa(troubleshooting, 'Troubleshooting', 'Find the symptom, then follow the fix. Open Diagnostics in NOVA first: it tells you which part is not working.'), nav: true, active: 'troubleshooting', articles }));
+  fs.writeFileSync(path.join(SITE, 'troubleshooting.html'), page({ title: 'Troubleshooting', body: qa(troubleshooting, 'Troubleshooting', 'Find the symptom, then follow the fix. Open Diagnostics in Maataa first: it tells you which part is not working.'), nav: true, active: 'troubleshooting', articles }));
   const support = articles.find(a => a.id === 'support');
   fs.writeFileSync(path.join(SITE, 'support.html'), page({ title: 'Get support', body: `<article><h1>Get support</h1>${support ? support.html : ''}</article>`, nav: true, active: 'support', articles }));
   return data;
@@ -304,9 +304,9 @@ ${SECTIONS.filter(s => articles.some(a => a.section === s)).map(s => `<h2>${esc(
 
 function buildGuide(data) {
   const md = [
-    '# NOVA Runtime user guide', '',
+    '# Maataa Workstation user guide', '',
     '<!-- Generated by scripts/build-help.js from docs/help/*.md. Edit those files, then run `npm run help:build`. -->', '',
-    'NOVA Runtime is a local AI workspace: chat with local models, search your documents, make images, video and audio, run skills, tools, agents and workflows, and change code in folders you approve. Everything runs on your computer. The same guide is inside NOVA under **Help & Support**, and as pages in `docs/site/`.', '',
+    'Maataa Workstation is a local AI workspace: chat with local models, search your documents, make images, video and audio, run skills, tools, agents and workflows, and change code in folders you approve. Everything runs on your computer. The same guide is inside Maataa under **Help & Support**, and as pages in `docs/site/`.', '',
     '## Contents', '',
     ...data.articles.map(a => `- [${a.title}](#${slug(a.title)})`), '- [Troubleshooting](#troubleshooting)', '- [Frequently asked questions](#frequently-asked-questions)', '',
   ];

@@ -26,7 +26,7 @@ async function transcribeClip(dataDir, buffer, mime = 'audio/webm', language = '
   if (!Buffer.isBuffer(buffer) || buffer.length < 800) throw error('The recording was too short. Hold the mic button while you speak.');
   if (buffer.length > 25 * 1024 * 1024) throw error('Recordings for chat are limited to about 10 minutes.', 413);
   const tools = transcriber.status(dataDir);
-  if (!tools.binary) throw error('Speaking to NOVA needs whisper.cpp: brew install whisper-cpp, then add a speech model (Help > Audio).', 412);
+  if (!tools.binary) throw error('Speaking to Maataa needs whisper.cpp: brew install whisper-cpp, then add a speech model (Help > Audio).', 412);
   const model = transcriber.pickModel(dataDir, language) || transcriber.pickModel(dataDir, 'en');
   if (!model) throw error('No whisper speech model is installed yet. Double-click "Add multilingual speech model.command" in the brahmini folder.', 412);
   const type = String(mime).split(';')[0];

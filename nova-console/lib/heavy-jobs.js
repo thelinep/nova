@@ -30,7 +30,7 @@ function check(store, engine) {
   const busy = running(store);
   if (busy) throw error(`Another image or video job is still running (${busy.settings?.prompt?.slice(0, 60) || busy.id}). Wait for it or cancel it first: two at once can freeze this Mac.`, 409);
   if (engine === 'wan' && totalGb() < 32 && process.env.NOVA_ALLOW_WAN_LOW_RAM !== '1') {
-    throw error(`Wan 2.2 needs about 21 GB of model weights in memory, and this Mac has ${totalGb()} GB. Running it can freeze and restart the Mac, so NOVA does not start it. Use LTX-2 instead (set NOVA_ALLOW_WAN_LOW_RAM=1 to override).`, 412);
+    throw error(`Wan 2.2 needs about 21 GB of model weights in memory, and this Mac has ${totalGb()} GB. Running it can freeze and restart the Mac, so Maataa does not start it. Use LTX-2 instead (set NOVA_ALLOW_WAN_LOW_RAM=1 to override).`, 412);
   }
 }
 

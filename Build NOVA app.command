@@ -1,6 +1,6 @@
 #!/bin/bash
-# Double-click to pack the whole NOVA Runtime into nova-console/packaging/dist/:
-#   - NOVA Runtime.app (Tauri, with its own Node runtime), zipped, and a .dmg when macOS can make one;
+# Double-click to pack Maataa Workstation (codename NOVA) into nova-console/packaging/dist/:
+#   - Maataa Workstation.app (Tauri, with its own Node runtime), zipped, and a .dmg when macOS can make one;
 #   - a portable folder (tar.gz) that starts NOVA in your browser with the same bundled Node.
 # Runs the unit tests first (temporary data only) and stops if any fail. The app is unsigned and
 # not notarized, so it is for this Mac and machines you trust. Takes a few minutes (longer the first time).
@@ -19,7 +19,7 @@ node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a
 VERSION=$(node -p "require('./package.json').version")
 SHA=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo local)
 ARCH=$(uname -m)
-NAME="NOVA-Runtime-$VERSION-$SHA-mac-$ARCH"
+NAME="Maataa-Workstation-$VERSION-$SHA-mac-$ARCH"
 DIST="$NOVA/packaging/dist"
 mkdir -p "$DIST"
 LOG="$DIST/$NAME-build.log"
@@ -68,7 +68,7 @@ if [ ! -f "$PWCORE/package.json" ] || [ "$(node -p "require('$PWCORE/package.jso
 fi
 [ -f "$PWCORE/package.json" ] && echo "   Agent browser driver: playwright-core $(node -p "require('$PWCORE/package.json').version")"
 
-echo "== 3/5 NOVA Runtime.app (Tauri)"
+echo "== 3/5 Maataa Workstation.app (Tauri; engineering codename NOVA)"
 APP=""
 if command -v cargo >/dev/null; then
   if ! cargo tauri --version >/dev/null 2>&1; then
@@ -76,7 +76,7 @@ if command -v cargo >/dev/null; then
     cargo install tauri-cli --version '^2' --locked || echo "   Could not install tauri-cli."
   fi
   if cargo tauri --version >/dev/null 2>&1; then
-    ( cd packaging/tauri && cargo tauri build --bundles app --no-sign ) && APP="$NOVA/packaging/tauri/target/release/bundle/macos/NOVA Runtime.app"
+    ( cd packaging/tauri && cargo tauri build --bundles app --no-sign ) && APP="$NOVA/packaging/tauri/target/release/bundle/macos/Maataa Workstation.app"
   fi
 else
   echo "   Rust (cargo) is not installed, so the .app is skipped. Install it from https://rustup.rs to build the app."
@@ -91,7 +91,7 @@ if [ -n "$APP" ] && [ -d "$APP" ]; then
   echo "== 4/5 Disk image"
   rm -f "$DIST/$NAME.dmg"
   STAGE=$(mktemp -d); cp -R "$APP" "$STAGE/"; ln -s /Applications "$STAGE/Applications"
-  if hdiutil create -volname "NOVA Runtime" -srcfolder "$STAGE" -ov -format UDZO "$DIST/$NAME.dmg" >/dev/null 2>&1; then echo "   → $NAME.dmg"; else echo "   macOS could not make a disk image here; use the .zip."; fi
+  if hdiutil create -volname "Maataa Workstation" -srcfolder "$STAGE" -ov -format UDZO "$DIST/$NAME.dmg" >/dev/null 2>&1; then echo "   → $NAME.dmg"; else echo "   macOS could not make a disk image here; use the .zip."; fi
   rm -rf "$STAGE"
 else
   echo "   App not built; the portable pack below still works."
@@ -99,16 +99,16 @@ else
 fi
 
 echo "== 5/5 Portable folder"
-P=$(mktemp -d)/"NOVA Runtime"
+P=$(mktemp -d)/"Maataa Workstation"
 mkdir -p "$P/node/bin" "$P/scripts" "$P/docs"
 cp -X server.js package.json "$P/" && cp -RX lib skills mcp-servers public "$P/" && cp scripts/kokoro-say.py scripts/install-comfyui-mac.sh "$P/scripts/" && cp docs/NOVA_USER_GUIDE.md "$P/docs/" \
   && cp "$BUNDLED" "$P/node/bin/node" && cp "packaging/portable/Start NOVA.command" packaging/portable/README.txt "$P/" && chmod +x "$P/Start NOVA.command" "$P/node/bin/node" \
   || fail "Could not assemble the portable folder."
 [ -f "$PWCORE/package.json" ] && mkdir -p "$P/node_modules" && cp -R "$PWCORE" "$P/node_modules/playwright-core"
 find "$P" -name .DS_Store -delete
-COPYFILE_DISABLE=1 tar -C "$(dirname "$P")" -czf "$DIST/$NAME-portable.tar.gz" "NOVA Runtime" && echo "   → $NAME-portable.tar.gz"
+COPYFILE_DISABLE=1 tar -C "$(dirname "$P")" -czf "$DIST/$NAME-portable.tar.gz" "Maataa Workstation" && echo "   → $NAME-portable.tar.gz"
 T=$(mktemp -d)
-( cd "$(dirname "$P")" && PORT=0 DATA_DIR="$T" NOVA_LIBRARY_DIR="$T/library" "./NOVA Runtime/node/bin/node" --no-warnings -e "setTimeout(()=>{console.log('   ! no listening event within 20 s');process.exit(1)},20000).unref(); const {server}=require('./NOVA Runtime/server.js'); server.on('listening',()=>{console.log('   Portable pack starts: OK'); process.exit(0)})" ) || echo "   ! The portable pack did not start cleanly; see above."
+( cd "$(dirname "$P")" && PORT=0 DATA_DIR="$T" NOVA_LIBRARY_DIR="$T/library" "./Maataa Workstation/node/bin/node" --no-warnings -e "setTimeout(()=>{console.log('   ! no listening event within 20 s');process.exit(1)},20000).unref(); const {server}=require('./Maataa Workstation/server.js'); server.on('listening',()=>{console.log('   Portable pack starts: OK'); process.exit(0)})" ) || echo "   ! The portable pack did not start cleanly; see above."
 rm -rf "$T"
 rm -rf "$(dirname "$P")"
 

@@ -7,13 +7,13 @@ summary: Use the Help Center, the ? panel on every screen, and the support repor
 keywords: help center support report diagnostics copy save logs contact bug report what to include privacy redacted question mark panel
 views: help
 ---
-## Help inside NOVA
+## Help inside Maataa
 
 - **Help & Support** (System group, or **⌘K** → Help) opens this Help Center: guides, FAQ, troubleshooting and the support report, all searchable and all working offline.
 - The **?** next to each view title opens a short help panel for that screen. **Read the full guide** opens the matching article here.
-- A copy of all this help is in `nova-console/docs/site/index.html`, which opens in any browser without NOVA running.
+- A copy of all this help is in `nova-console/docs/site/index.html`, which opens in any browser without Maataa running.
 
-@screen media/help.jpg "The Help Center inside NOVA."
+@screen media/help.jpg "The Help Center inside Maataa."
 
 @screen media/help-drawer.jpg "The ? panel on Agents, with a link to the full guide."
 
@@ -23,14 +23,14 @@ views: help
 
 1. Open **Help & Support → Support**.
 2. Read the checks at the top: backend, Ollama, coding-qualified models, engines, tool servers, the kill switch and the agent browser. Many problems are solved there, and each red check links to its fix.
-3. Press **Copy report** to copy it, or **Save report** to write it to a file in the NOVA Library `support` folder.
+3. Press **Copy report** to copy it, or **Save report** to write it to a file in the Maataa Library `support` folder.
 4. Read it before you send it, then add what you did, what you expected and what happened.
 
 @screen media/help-support.jpg "The Support tab with its checks and report."
 
 ## What the report contains
 
-- NOVA version, Node version, macOS version and chip.
+- Maataa version, Node version, macOS version and chip.
 - The size of the database and the number of records in each area (not their contents).
 - Ollama status and installed model names; image, video, audio and transcription engine status; connected tool servers.
 - Which models passed **Qualify for coding**, the kill switch state and whether a resume passphrase is set, background job counts, and whether the agent browser and the Dafny proof checker are available.

@@ -9,11 +9,11 @@ views: diagnostics,runtime,trace,history
 ---
 ## Diagnostics
 
-Open **Diagnostics** first whenever something fails. It checks each part separately, so you can tell a NOVA problem from an Ollama problem:
+Open **Diagnostics** first whenever something fails. It checks each part separately, so you can tell a Maataa problem from an Ollama problem:
 
 | Check | What it means |
 | --- | --- |
-| NOVA Runtime backend | The local server. If this fails, nothing else works. |
+| Maataa Workstation backend | The local server. If this fails, nothing else works. |
 | Ollama inference engine | Needed for chat, embeddings, agents and automations. |
 | Model loaded | A synced model is selected and ready. |
 | Knowledge index | Your collections and their indexing state. |
@@ -29,7 +29,7 @@ Press **Run diagnostics** to check again. The command palette (**⌘K**) has **R
 
 ## Runtime
 
-**Runtime** shows the local service, CPU, memory and, where macOS reports it, GPU use. Some values (thermal state, video memory) are not available on every Mac; NOVA shows "unavailable" rather than guessing.
+**Runtime** shows the local service, CPU, memory and, where macOS reports it, GPU use. Some values (thermal state, video memory) are not available on every Mac; Maataa shows "unavailable" rather than guessing.
 
 @screen media/runtime.jpg "Runtime showing the local service and machine resources."
 

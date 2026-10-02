@@ -26,7 +26,7 @@ const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-const DEFAULT_DIR = path.join(os.homedir(), 'Documents', 'NOVA Library');
+const DEFAULT_DIR = path.join(os.homedir(), 'Documents', 'Maataa Library');
 let config = null; // { dir, enabled }
 
 function error(message, statusCode = 400) { return Object.assign(new Error(message), { statusCode }); }

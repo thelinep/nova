@@ -119,15 +119,15 @@ async function buildReport(deps, options = {}) {
 
   const evidence = (() => { try { return require('./contracts').verifyChain(store, dataDir); } catch (e) { return { ok: false, reason: e.message, count: 0 }; } })();
   const checks = [
-    { id: 'backend', label: 'NOVA Runtime backend', ok: true, detail: 'Answering on this computer', help: 'monitoring' },
+    { id: 'backend', label: 'Maataa Workstation backend', ok: true, detail: 'Answering on this computer', help: 'monitoring' },
     { id: 'evidence', label: 'Evidence chain (execution contracts)', ok: Boolean(evidence.ok), detail: evidence.ok ? `${evidence.count} sealed contract(s), every record and signature verified` : 'Not verified: ' + (evidence.reason || 'unknown'), help: 'safety-controls' },
     { id: 'ollama', label: 'Ollama', ok: Boolean(ollama.reachable), detail: ollama.reachable ? `${(ollama.models || []).length} model(s) installed` : 'Not reachable' + (ollama.error ? ' (' + ollama.error + ')' : '') + '. Start Ollama.', help: 'models' },
     (() => {
       const m = (() => { try { return require('./comfy-manager').status(); } catch (_) { return null; } })();
       const canStart = Boolean(m && m.autoStart && (m.installed || m.desktopApp));
-      const detail = image.reachable ? `${(image.checkpoints || []).length} image model(s)${image.device ? ' on ' + image.device : ''}${m && m.managed ? ', started by NOVA' : ''}`
+      const detail = image.reachable ? `${(image.checkpoints || []).length} image model(s)${image.device ? ' on ' + image.device : ''}${m && m.managed ? ', started by Maataa' : ''}`
         : m && m.state === 'failed' && m.lastError ? m.lastError.split('\n')[0]
-        : canStart ? 'Not running; NOVA starts it when a media job needs it'
+        : canStart ? 'Not running; Maataa starts it when a media job needs it'
         : m && !m.installed && !m.desktopApp ? 'Not installed. Settings > Image engine > Install ComfyUI.'
         : 'Not running. Start it in Settings > Image engine.';
       return { id: 'comfy', label: 'ComfyUI (images, songs, sound effects)', ok: Boolean(image.reachable) || (canStart && !(m && m.state === 'failed')), detail, help: 'media-images' };
@@ -136,9 +136,9 @@ async function buildReport(deps, options = {}) {
     { id: 'transcribe', label: 'Transcription', ok: Boolean(transcribe.ready), detail: transcribe.ready ? (transcribe.modelName || 'Ready') : ((transcribe.missing || []).join('; ') || transcribe.error || 'Not set up'), help: 'media-audio' },
     { id: 'tools', label: 'Tool servers', ok: mcp.some(s => s.status === 'connected'), detail: mcp.length ? mcp.filter(s => s.status === 'connected').length + ' of ' + mcp.length + ' connected' : 'None configured', help: 'tools-approvals' },
     { id: 'qualified', label: 'Models qualified for coding', ok: qualified.some(q => q.installed), detail: qualified.filter(q => q.installed).length ? qualified.filter(q => q.installed).map(q => q.model + (q.full ? '' : ' (single-file only)')).join(', ') : 'None yet. Code plans need one: Models → Qualify for coding.', help: 'models' },
-    { id: 'killswitch', label: 'Kill switch', ok: !halted, detail: halted ? 'NOVA is HALTED. Resume it in Workbench' + (resume.set ? '.' : ' (you will be asked to choose a resume passphrase).') : 'Clear' + (resume.set ? ', resume passphrase set' : ''), help: 'workbench' },
+    { id: 'killswitch', label: 'Kill switch', ok: !halted, detail: halted ? 'Maataa is HALTED. Resume it in Workbench' + (resume.set ? '.' : ' (you will be asked to choose a resume passphrase).') : 'Clear' + (resume.set ? ', resume passphrase set' : ''), help: 'workbench' },
     { id: 'jobs', label: 'Background jobs', ok: !(jobs.failed || jobs.timedOut), detail: [jobs.queued + ' queued', jobs.running + ' running', jobs.failed + ' failed', jobs.timedOut + ' timed out'].join(', '), help: 'workbench' },
-    { id: 'agentBrowser', label: 'Agent browser (optional)', ok: agentBrowser === 'ready', optional: true, detail: agentBrowser === 'ready' ? `Ready (${agentEngine.browser}, ${agentEngine.library})` : agentBrowser === 'off' ? 'Turned off (NOVA_BROWSER=0)' : agentEngine.library ? 'Driver included; install Google Chrome to use it' : 'Driver not included in this copy of NOVA; rebuild with Build NOVA app.command', help: 'agent-browser' },
+    { id: 'agentBrowser', label: 'Agent browser (optional)', ok: agentBrowser === 'ready', optional: true, detail: agentBrowser === 'ready' ? `Ready (${agentEngine.browser}, ${agentEngine.library})` : agentBrowser === 'off' ? 'Turned off (NOVA_BROWSER=0)' : agentEngine.library ? 'Driver included; install Google Chrome to use it' : 'Driver not included in this copy of Maataa; rebuild with Build NOVA app.command', help: 'agent-browser' },
     await (async () => { const v = await withTimeout(require('./voicestudio').status(), 3000, { reachable: false }); return { id: 'voicestudio', label: 'VoiceStudio voices (optional)', ok: Boolean(v.reachable), optional: true, detail: v.reachable ? `${(v.voices || []).length} voice profile(s) for Voice Studio characters` : 'Not running; only needed for cloned or designed voices', help: 'voice-studio' }; })(),
     { id: 'dafny', label: 'Proof checker (optional)', ok: dafny, optional: true, detail: dafny ? 'Dafny installed' : 'Dafny not installed; only the correctness pipeline needs it', help: 'developer-preview' },
     (() => { const e = require('./ocr').engines(); return { id: 'ocr', label: 'Text in images', ok: e.length > 0, detail: e.length ? (e[0] === 'apple-vision' ? 'macOS text recognition' : e[0]) : 'Needs macOS or tesseract', help: 'conversation' }; })(),
@@ -168,8 +168,8 @@ async function buildReport(deps, options = {}) {
 
 function toText(r) {
   const L = [];
-  L.push('NOVA support report', `Made ${r.generatedAt}`, '');
-  L.push(`NOVA ${r.nova.version} (${r.nova.mode}), up ${Math.round(r.nova.uptimeSeconds / 60)} min`);
+  L.push('Maataa support report', `Made ${r.generatedAt}`, '');
+  L.push(`Maataa ${r.nova.version} (${r.nova.mode}), up ${Math.round(r.nova.uptimeSeconds / 60)} min`);
   L.push(`${r.system.macOS ? 'macOS ' + r.system.macOS : r.system.platform} ${r.system.arch}, Node ${r.system.node}, ${r.system.cpus} CPUs, ${r.system.memoryGB} GB memory (${r.system.freeMemoryGB} GB free)`);
   L.push(`Data: ${r.data.dataDir} (database ${r.data.databaseSize})${r.data.libraryDir ? ', library ' + r.data.libraryDir : ''}`, '');
   L.push('Checks');

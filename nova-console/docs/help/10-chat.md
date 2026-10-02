@@ -13,21 +13,21 @@ views: console,sessions
 
 1. Press **New session** (or pick one on the left).
 2. Check the model in the model pill at the top right. Click it to choose another synced model.
-3. Type in the box at the bottom and press Enter (Shift+Enter adds a line), or hold the **microphone** and speak. NOVA shows what it is doing step by step above the answer, then the answer streams in. The line under it shows how long the first words took, the speed and the length.
-4. Press the stop button that replaces send to stop a reply. You can type your next message while NOVA is still answering: it is queued and answered next.
+3. Type in the box at the bottom and press Enter (Shift+Enter adds a line), or hold the **microphone** and speak. Maataa shows what it is doing step by step above the answer, then the answer streams in. The line under it shows how long the first words took, the speed and the length.
+4. Press the stop button that replaces send to stop a reply. You can type your next message while Maataa is still answering: it is queued and answered next.
 
-If the selected model is an example record, or Ollama is not running, NOVA says so instead of inventing a reply. **Settings > Demo mode** allows clearly labelled simulated replies for trying the interface.
+If the selected model is an example record, or Ollama is not running, Maataa says so instead of inventing a reply. **Settings > Demo mode** allows clearly labelled simulated replies for trying the interface.
 
 ## Options under the message box
 
-- **+**: add files, a folder, a web page or a git repository for NOVA to read, or ask it to look at your screen. Images you add are shown to the model; reading them needs a vision model, for example `ollama pull llama3.2-vision` or `llava`. See [Add sources, live steps, computer and voice](help:conversation).
-- **Computer**: lets NOVA use this Mac in this chat, asking before every action. **Voice**: reads replies aloud.
-- **Retrieval**: when on, NOVA searches your Knowledge collections for passages that match your message and gives them to the model. Cited passages appear as chips under the answer with their match score.
+- **+**: add files, a folder, a web page or a git repository for Maataa to read, or ask it to look at your screen. Images you add are shown to the model; reading them needs a vision model, for example `ollama pull llama3.2-vision` or `llava`. See [Add sources, live steps, computer and voice](help:conversation).
+- **Computer**: lets Maataa use this Mac in this chat, asking before every action. **Voice**: reads replies aloud.
+- **Retrieval**: when on, Maataa searches your Knowledge collections for passages that match your message and gives them to the model. Cited passages appear as chips under the answer with their match score.
 - **Profile** (Balanced and your saved profiles): switches temperature, top-p, top-k and repeat penalty in one click. The Inference tab of the inspector shows the exact values.
 
 ## Make media from chat
 
-Ask in plain words ("make an image of…", "create a video of…", "write a song about…", "compose background music…", "generate a sound effect of…") or start with `/image`, `/video`, `/song`, `/music`, `/sfx` or `/voice`. NOVA answers with a card: **Generate** runs the job on this computer and shows the result in the chat; **Open in Media** fills in the right Media tab so you can change settings first. An image attached to the message becomes the starting picture. Songs are written by your local model first, then sung by ACE-Step. See [Audio, songs and transcripts](help:media-audio).
+Ask in plain words ("make an image of…", "create a video of…", "write a song about…", "compose background music…", "generate a sound effect of…") or start with `/image`, `/video`, `/song`, `/music`, `/sfx` or `/voice`. Maataa answers with a card: **Generate** runs the job on this computer and shows the result in the chat; **Open in Media** fills in the right Media tab so you can change settings first. An image attached to the message becomes the starting picture. Songs are written by your local model first, then sung by ACE-Step. See [Audio, songs and transcripts](help:media-audio).
 
 ## Fork, snapshot and export
 

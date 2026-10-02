@@ -11,7 +11,7 @@ function enqueueNeuronTraining(store, blueprintId) {
   const blueprint = store.get('neuronBlueprints', String(blueprintId));
   if (!blueprint) throw error('Unknown neuron blueprint.', 404);
   if (blueprint.status !== 'ready') throw error('Blueprint is not ready for training.', 409);
-  if (typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1') throw error('NOVA is halted (Workbench kill switch). Resume it in Workbench before training.', 423);
+  if (typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1') throw error('Maataa is halted (Workbench kill switch). Resume it in Workbench before training.', 423);
   const job = { id: uid('job'), type: 'neuron-training', status: 'queued', blueprintId: blueprint.id, kind: blueprint.kind, scale: blueprint.scale, createdAt: now(), startedAt: null, finishedAt: null, cancelRequestedAt: null, progress: { phase: 'queued', percent: 0 }, result: null, error: null };
   blueprint.status = 'queued'; blueprint.updatedAt = now(); blueprint.jobId = job.id;
   store.put('neuronBlueprints', blueprint); store.put('backgroundJobs', job);

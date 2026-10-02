@@ -85,7 +85,7 @@ function openLog() {
   try { fs.mkdirSync(path.dirname(logFile()), { recursive: true }); } catch (_) {}
   if (logStream) { try { logStream.end(); } catch (_) {} }
   logStream = fs.createWriteStream(logFile(), { flags: 'a' });
-  logStream.write(`\n==== ${now()} NOVA starts ComfyUI ====\n`);
+  logStream.write(`\n==== ${now()} Maataa starts ComfyUI ====\n`);
   return logStream;
 }
 
@@ -99,8 +99,8 @@ async function start({ reason = 'requested' } = {}) {
       else state = 'ready';
       lastError = null; touch(); return status();
     }
-    if (process.env.NOVA_COMFY_AUTOSTART === '0') { lastError = 'Starting ComfyUI is turned off for this NOVA (NOVA_COMFY_AUTOSTART=0).'; throw error(lastError, 503); }
-    if (process.env.COMFYUI_URL) { let p = null; try { p = Number(new URL(process.env.COMFYUI_URL).port || 80); } catch (_) {} if (p !== port()) { lastError = `COMFYUI_URL points to ${process.env.COMFYUI_URL}, so NOVA does not start its own ComfyUI. Start that one, or remove COMFYUI_URL.`; throw error(lastError, 503); } }
+    if (process.env.NOVA_COMFY_AUTOSTART === '0') { lastError = 'Starting ComfyUI is turned off for this Maataa (NOVA_COMFY_AUTOSTART=0).'; throw error(lastError, 503); }
+    if (process.env.COMFYUI_URL) { let p = null; try { p = Number(new URL(process.env.COMFYUI_URL).port || 80); } catch (_) {} if (p !== port()) { lastError = `COMFYUI_URL points to ${process.env.COMFYUI_URL}, so Maataa does not start its own ComfyUI. Start that one, or remove COMFYUI_URL.`; throw error(lastError, 503); } }
     const dir = comfyDir();
     if (!installed(dir)) {
       if (desktopApp()) return startDesktop();
@@ -149,7 +149,7 @@ function onExit(which, code, signal) {
   // It stopped without being asked: restart it, but not in a loop.
   const t = Date.now(); restarts = restarts.filter(x => t - x < RESTART_WINDOW_MS);
   const tail = logTail(8);
-  if (restarts.length >= MAX_RESTARTS) { wanted = false; state = 'failed'; lastError = `ComfyUI stopped ${MAX_RESTARTS} times in 10 minutes, so NOVA stopped restarting it.` + (tail ? ' Last lines of its log:\n' + tail : ''); return; }
+  if (restarts.length >= MAX_RESTARTS) { wanted = false; state = 'failed'; lastError = `ComfyUI stopped ${MAX_RESTARTS} times in 10 minutes, so Maataa stopped restarting it.` + (tail ? ' Last lines of its log:\n' + tail : ''); return; }
   restarts.push(t);
   state = 'starting'; lastError = 'ComfyUI stopped unexpectedly; restarting.';
   setTimeout(() => { if (wanted && !child) start({ reason: 'restart after crash' }).catch(() => {}); }, 2000);
@@ -161,7 +161,7 @@ async function stop({ reason = 'requested' } = {}) {
   clearTimeout(idleTimer);
   const c = child;
   if (!c) { if (state !== 'external') state = 'stopped'; return status(); }
-  if (logStream) logStream.write(`\n==== ${now()} NOVA stops ComfyUI (${reason}) ====\n`);
+  if (logStream) logStream.write(`\n==== ${now()} Maataa stops ComfyUI (${reason}) ====\n`);
   await new Promise(resolve => {
     const done = setTimeout(() => { try { c.kill('SIGKILL'); } catch (_) {} resolve(); }, 10000);
     c.once('exit', () => { clearTimeout(done); resolve(); });
@@ -197,9 +197,9 @@ async function ensure() {
 /** Runs the installer as an Activity job; the log streams into the job's steps. */
 function install({ withVideo = false } = {}) {
   if (deps.platform !== 'darwin') throw error('The ComfyUI installer is for macOS on Apple Silicon.', 501);
-  const script = installer(); if (!script) throw error('The installer is missing from this copy of NOVA.', 500);
+  const script = installer(); if (!script) throw error('The installer is missing from this copy of Maataa.', 500);
   if (installJob) throw error('ComfyUI is already being installed. Follow it in Activity.', 409);
-  const job = deps.activity.start({ kind: 'install', title: 'Installing ComfyUI for NOVA' });
+  const job = deps.activity.start({ kind: 'install', title: 'Installing ComfyUI for Maataa' });
   installJob = job; state = 'installing'; lastError = null;
   const log = openLog(); log.write('installing\n');
   const p = deps.spawnImpl('/bin/bash', [script, ...(withVideo ? [] : ['--no-wan'])], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, COMFY_DIR: comfyDir() } });
@@ -224,10 +224,10 @@ function install({ withVideo = false } = {}) {
 async function boot() {
   // Adopt a ComfyUI that is already running; otherwise start one if asked to.
   if (await findRunning()) { state = 'external'; readyAt = now(); return; }
-  if (prefs().startWithNova && (installed() || desktopApp())) start({ reason: 'start with NOVA' }).catch(() => {});
+  if (prefs().startWithNova && (installed() || desktopApp())) start({ reason: 'start with Maataa' }).catch(() => {});
 }
 
-async function shutdown() { await stop({ reason: 'NOVA is quitting' }); if (logStream) { try { logStream.end(); } catch (_) {} } }
+async function shutdown() { await stop({ reason: 'Maataa is quitting' }); if (logStream) { try { logStream.end(); } catch (_) {} } }
 function _reset() { state = 'stopped'; child = null; wanted = false; lastError = null; restarts = []; startPromise = null; installJob = null; clearTimeout(idleTimer); }
 
 module.exports = { configure, prefs, setPrefs, status, start, stop, restart, ensure, install, boot, shutdown, touch, logTail, findRunning, installed, comfyDir, _reset, PORT };

@@ -20,7 +20,7 @@ test.describe('Help Center', () => {
     await expect(page.locator('.help-qa').first()).toBeVisible();
 
     await page.locator('.help-tab[data-tab="support"]').click();
-    await expect(page.locator('.help-check').first()).toContainText('NOVA Runtime backend');
+    await expect(page.locator('.help-check').first()).toContainText('Maataa Workstation backend');
     await expect(page.locator('#helpCopyReport')).toBeEnabled();
   });
 

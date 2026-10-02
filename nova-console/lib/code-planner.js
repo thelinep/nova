@@ -276,7 +276,7 @@ async function generatePlan(store, scanner, changes, ollama, input, signal, opti
     repairAttempted: Boolean(attempt.repairResponse), requestAnalysis,
   };
   result.acceptanceChecks = acceptanceChecks;
-  result.semanticValidation = { status: 'pending', limitation: 'NOVA verifies exact file effects in the isolated copy. Behavioral claims without an executable check remain manual review items.' };
+  result.semanticValidation = { status: 'pending', limitation: 'Maataa verifies exact file effects in the isolated copy. Behavioral claims without an executable check remain manual review items.' };
   attempt.completedAt = new Date().toISOString(); attempt.proposalId = result.id; attempt.acceptanceChecks = acceptanceChecks;
   store.put('workspacePlanningAttempts', attempt);
   store.put(result.type === 'workspace-change-batch' ? 'workspaceChangeBatches' : 'workspaceChanges', result);

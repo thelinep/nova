@@ -126,7 +126,7 @@ async function run(store,scanner,workspaceChanges,dataDir,input){
   let definition=commandFor(action,root.path,{allowScripts});
   const runId=id(),startedAt=new Date().toISOString();
   const record={id:runId,type:'workspace-command',rootId:root.id,repositoryPath:root.path,action,status:'running',startedAt,finishedAt:null,output:'',outputStart:0,outputLimitBytes:OUTPUT_LIMIT,truncated:false,timedOut:false,cancelRequested:false,workspaceCopy:null,url:null,
-    isolation:{minimalEnvironment:true,processGroup:true,location:definition.readOnly||definition.inPlace?'approved folder':'workspace copy',networkPolicy:definition.network?'package registry access (network preference on)':'inherited-local-host-policy',lifecycleScripts:action==='install'?(allowScripts?'allowed by explicit request':'skipped (--ignore-scripts)'):undefined,dependencyCache:'dedicated per NOVA data directory'}};
+    isolation:{minimalEnvironment:true,processGroup:true,location:definition.readOnly||definition.inPlace?'approved folder':'workspace copy',networkPolicy:definition.network?'package registry access (network preference on)':'inherited-local-host-policy',lifecycleScripts:action==='install'?(allowScripts?'allowed by explicit request':'skipped (--ignore-scripts)'):undefined,dependencyCache:'dedicated per Maataa data directory'}};
   store.put('workspaceRuns',record);
   const registry=isDev?devServers:active;
   registry.set(root.id,{runId,action});
@@ -185,6 +185,6 @@ function stopAll(){
   for(const entry of [...active.values(),...devServers.values()]){if(!entry.child)continue;try{process.platform==='win32'?entry.child.kill('SIGTERM'):process.kill(-entry.child.pid,'SIGTERM');}catch(_){}}
 }
 
-function recoverInterrupted(store){let count=0;for(const record of store.all('workspaceRuns'))if(record.status==='running'){record.status='interrupted';record.finishedAt=new Date().toISOString();record.recovery={reason:'NOVA restarted while the command was active.',resumable:false};store.put('workspaceRuns',record);count++;}return count;}
+function recoverInterrupted(store){let count=0;for(const record of store.all('workspaceRuns'))if(record.status==='running'){record.status='interrupted';record.finishedAt=new Date().toISOString();record.recovery={reason:'Maataa restarted while the command was active.',resumable:false};store.put('workspaceRuns',record);count++;}return count;}
 
 module.exports={allowRepository,run,cancel,getRun,stopAll,recoverInterrupted,commandFor,capture,constants:{OUTPUT_LIMIT,ACTIONS,DEV_MAX_MS,INSTALL_TIMEOUT_MS},_active:active,_devServers:devServers};

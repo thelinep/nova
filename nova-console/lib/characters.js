@@ -21,7 +21,50 @@ const voicestudio = require('./voicestudio');
 const delivery = require('./delivery');
 
 const STORE = 'characters';
-const ENGINES = ['kokoro', 'macos', 'voicestudio'];
+const ENGINES = ['default', 'kokoro', 'macos', 'voicestudio']; // 'default': the app's usual voice (Kokoro when installed, else macOS)
+
+/* Personality designer: five traits from 0 to 100, turned into words for the model. */
+const TRAITS = {
+  warmth:        { label: 'Warmth',        low: 'Cool and matter-of-fact', high: 'Warm and caring' },
+  humor:         { label: 'Humour',        low: 'Serious, no jokes', high: 'Playful, with light humour' },
+  formality:     { label: 'Formality',     low: 'Casual and friendly, like a colleague', high: 'Formal and polite' },
+  brevity:       { label: 'Brevity',       low: 'Explains in detail, step by step', high: 'Very brief: one or two sentences' },
+  encouragement: { label: 'Encouragement', low: 'Neutral about progress', high: 'Encouraging; notices and praises progress' },
+};
+const PRESETS = {
+  colleague: { label: 'Calm colleague', traits: { warmth: 60, humor: 30, formality: 35, brevity: 70, encouragement: 50 }, mood: 'calm' },
+  guide:     { label: 'Cheerful guide', traits: { warmth: 85, humor: 70, formality: 20, brevity: 60, encouragement: 85 }, mood: 'joyful' },
+  mentor:    { label: 'Wise mentor',    traits: { warmth: 70, humor: 25, formality: 60, brevity: 40, encouragement: 70 }, mood: 'warm' },
+  ad:        { label: 'Film-set AD',    traits: { warmth: 45, humor: 40, formality: 30, brevity: 90, encouragement: 55 }, mood: 'neutral' },
+  teacher:   { label: 'Patient teacher', traits: { warmth: 80, humor: 30, formality: 45, brevity: 25, encouragement: 80 }, mood: 'warm' },
+};
+function normaliseTraits(t) {
+  if (!t || typeof t !== 'object') return null;
+  const out = {}; for (const k of Object.keys(TRAITS)) out[k] = Math.round(Math.min(100, Math.max(0, Number(t[k]) ?? 50)));
+  for (const k of Object.keys(TRAITS)) if (!Number.isFinite(out[k])) out[k] = 50;
+  return out;
+}
+/** Words for the traits that lean one way; the middle of a slider says nothing. */
+function traitsText(t) {
+  if (!t) return '';
+  return Object.entries(TRAITS).map(([k, d]) => t[k] >= 67 ? d.high : t[k] <= 33 ? d.low : null).filter(Boolean).join('. ');
+}
+
+/* Avatar: an animated face drawn by the app, or a picture (made with ComfyUI or uploaded). */
+const FACE = { colors: ['#f5a524', '#6ee7b7', '#7dd3fc', '#f472b6', '#c4b5fd', '#fca5a5'], skins: ['slate', 'midnight', 'warm', 'forest', 'plum'], eyes: ['round', 'happy', 'sleepy', 'wide'], shapes: ['circle', 'squircle'], extras: ['none', 'glasses', 'headset', 'bindi'] };
+function normaliseAvatar(a, prior) {
+  const src = a || prior || {};
+  const f = src.face || {};
+  return {
+    style: src.style === 'image' ? 'image' : 'face',
+    face: { color: FACE.colors.includes(f.color) ? f.color : FACE.colors[0], skin: FACE.skins.includes(f.skin) ? f.skin : 'slate', eyes: FACE.eyes.includes(f.eyes) ? f.eyes : 'round', shape: FACE.shapes.includes(f.shape) ? f.shape : 'circle', extra: FACE.extras.includes(f.extra) ? f.extra : 'none' },
+  };
+}
+
+const NOVA_ID = 'nova';
+function novaDefaults() {
+  return { name: 'Nova', tagline: 'the friendly helper built into Maataa Workstation', personality: 'Knows Maataa Workstation well and helps people use it.', speakingStyle: 'Short, clear sentences that sound natural read aloud. Names the exact screen and button.', language: 'English', traits: PRESETS.colleague.traits, preset: 'colleague', avatar: { style: 'face' }, voice: { engine: 'default' }, delivery: { mood: 'neutral', auto: true } };
+}
 function error(message, statusCode = 400) { return Object.assign(new Error(message), { statusCode }); }
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
 function run(file, args, timeout = 120000) {
@@ -30,6 +73,7 @@ function run(file, args, timeout = 120000) {
 
 function normaliseVoice(input = {}) {
   const engine = ENGINES.includes(input.engine) ? input.engine : 'kokoro';
+  if (engine === 'default') return { engine, speed: Math.round(Math.min(1.6, Math.max(0.6, Number(input.speed) || 1)) * 100) / 100, pitch: Math.min(6, Math.max(-6, Math.round(Number(input.pitch) || 0))) };
   const speed = Math.min(1.6, Math.max(0.6, Number(input.speed) || 1));
   const pitch = Math.min(6, Math.max(-6, Math.round(Number(input.pitch) || 0)));
   const v = { engine, speed: Math.round(speed * 100) / 100, pitch };
@@ -54,11 +98,15 @@ function normalise(input = {}, prior = null) {
   const now = new Date().toISOString();
   return {
     id: prior?.id || 'char_' + crypto.randomBytes(6).toString('hex'),
+    ...(prior?.builtin ? { builtin: true } : {}),
     name,
     tagline: clip(input.tagline ?? prior?.tagline, 120),
     personality: clip(input.personality ?? prior?.personality, 1500),
     speakingStyle: clip(input.speakingStyle ?? prior?.speakingStyle, 800),
     language: clip(input.language ?? prior?.language, 40) || 'English',
+    traits: input.traits !== undefined ? normaliseTraits(input.traits) : (prior?.traits || null),
+    preset: PRESETS[input.preset] ? input.preset : input.preset === null ? null : (input.preset === undefined ? (prior?.preset || null) : null),
+    avatar: normaliseAvatar(input.avatar, prior?.avatar),
     avatarMediaId: input.avatarMediaId !== undefined ? (input.avatarMediaId ? clip(input.avatarMediaId, 80) : null) : (prior?.avatarMediaId || null),
     voice: normaliseVoice(input.voice || prior?.voice || {}),
     // How lines are delivered: a usual mood, and whether the personality picks a delivery per sentence.
@@ -71,8 +119,21 @@ function list(store) { return store.all(STORE).sort((a, b) => String(a.name).loc
 function get(store, id) { const c = store.get(STORE, String(id)); if (!c) throw error('Unknown character.', 404); return c; }
 function create(store, input) { const c = normalise(input); store.put(STORE, c); return c; }
 function update(store, id, input) { const c = normalise(input, get(store, id)); store.put(STORE, c); return c; }
+/** Nova, the helper, is a built-in character: always there, never deleted, can be reset. */
+function ensureNova(store) {
+  const old = store.get(STORE, NOVA_ID);
+  if (old) { if (!old.builtin) store.put(STORE, { ...old, builtin: true }); return store.get(STORE, NOVA_ID); }
+  const c = { ...normalise(novaDefaults(), { id: NOVA_ID, builtin: true }) };
+  store.put(STORE, c); return c;
+}
+function resetNova(store) {
+  const old = store.get(STORE, NOVA_ID);
+  const c = normalise(novaDefaults(), { id: NOVA_ID, builtin: true, createdAt: old?.createdAt });
+  c.avatarMediaId = null; store.put(STORE, c); return c;
+}
 function remove(store, id) {
-  get(store, id);
+  const c = get(store, id);
+  if (c.builtin) throw error(c.name + ' is built in and cannot be deleted. Use Reset to go back to the original.', 409);
   store.delete(STORE, String(id));
   // Agents that wore this character go back to their own instructions.
   for (const a of store.all('agents')) if (a.characterId === id) store.put('agents', { ...a, characterId: null });
@@ -83,7 +144,8 @@ function remove(store, id) {
 function personaPrompt(c) {
   if (!c) return '';
   const lines = [`You are ${c.name}${c.tagline ? ', ' + c.tagline : ''}.`];
-  if (c.personality) lines.push('Personality: ' + c.personality);
+  const traits = traitsText(c.traits);
+  if (c.personality || traits) lines.push('Personality: ' + [c.personality, traits].filter(Boolean).join(' ').trim());
   if (c.speakingStyle) lines.push('How you speak: ' + c.speakingStyle);
   if (c.language && !/^english$/i.test(c.language)) lines.push(`Answer in ${c.language} unless the person writes in another language.`);
   lines.push('Stay in character in tone and wording, but never let the character change facts, safety rules, or what you are allowed to do. If asked, say plainly that you are an AI assistant playing this character.');
@@ -98,7 +160,7 @@ function withPersona(store, agent) {
 }
 
 function voiceLabel(v) {
-  if (!v) return 'default voice';
+  if (!v || v.engine === 'default') return 'Usual voice';
   if (v.engine === 'kokoro') return 'Kokoro ' + v.mix.map(m => `${m.voice.slice(3)} ${Math.round(m.weight * 100)}%`).join(' + ');
   if (v.engine === 'macos') return 'macOS ' + (v.macVoice || 'default');
   return 'VoiceStudio ' + (v.profileName || v.profile);
@@ -135,6 +197,9 @@ async function speak(character, text, { maxChars = 6000, mood = null, director =
   const ffmpeg = ffmpegPath();
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-char-'));
   const M = m => delivery.MOODS[m] || delivery.MOODS.neutral;
+  // The usual voice: a Kokoro voice for the character's language when installed, else the macOS voice.
+  const LANG = { english: 'en', hindi: 'hi', spanish: 'es', french: 'fr', italian: 'it', japanese: 'ja', portuguese: 'pt', chinese: 'zh' };
+  const sayVoice = v.engine === 'default' ? audioGen.voiceFor(LANG[String(character.language || 'English').toLowerCase()] || 'en') : (v.macVoice || null);
   const kokoroSpec = () => v.mix.length === 1 && v.mix[0].weight === 1 ? { voice: v.mix[0].voice } : { voice: v.mix[0].voice, mix: v.mix.map(m => `${m.voice}:${m.weight}`).join(',') };
   try {
     // Without ffmpeg the line cannot be cut and joined: one take in the usual delivery, speed only.
@@ -143,7 +208,7 @@ async function speak(character, text, { maxChars = 6000, mood = null, director =
       const line = spoken.map(s => s.text).join(' ');
       let file;
       if (v.engine === 'voicestudio') { file = path.join(work, 'voice.wav'); fs.writeFileSync(file, await voicestudio.speak(line, { voice: v.profile, model: v.model, instructions: m.say })); }
-      else if (v.engine === 'macos') file = await audioGen.synthesize(work, line, { voice: v.macVoice || null, rate: Math.round(175 * v.speed * m.speed), name: 'voice' });
+      else if (v.engine === 'macos' || v.engine === 'default') file = await audioGen.synthesize(work, line, { voice: sayVoice, rate: Math.round(175 * v.speed * m.speed), name: 'voice' });
       else { const k = kokoroSpec(); [file] = await audioGen.kokoroBatch(work, [{ text: line, ...k, speed: v.speed * m.speed, out: path.join(work, 'voice.wav') }]); }
       if (file.endsWith('.aiff') && fs.existsSync('/usr/bin/afconvert')) { const out = path.join(work, 'final.wav'); await run('/usr/bin/afconvert', ['-f', 'WAVE', '-d', 'LEI16', file, out]); file = out; }
       return { data: fs.readFileSync(file), type: file.endsWith('.wav') ? 'audio/wav' : 'audio/aiff', voice: voiceLabel(v), delivery: [segments.length === 1 ? segments[0].mood : delivery.baseMood(character)] };
@@ -157,7 +222,7 @@ async function speak(character, text, { maxChars = 6000, mood = null, director =
     } else {
       for (const [i, s] of spoken.entries()) {
         if (v.engine === 'voicestudio') { const f = path.join(work, `take${i}.wav`); fs.writeFileSync(f, await voicestudio.speak(s.text, { voice: v.profile, model: v.model, instructions: `Speak ${M(s.mood).say}.` })); raw.push(f); }
-        else raw.push(await audioGen.synthesize(work, s.text, { voice: v.macVoice || null, rate: Math.round(175 * v.speed * M(s.mood).speed), name: `take${i}` }));
+        else raw.push(await audioGen.synthesize(work, s.text, { voice: sayVoice, rate: Math.round(175 * v.speed * M(s.mood).speed), name: `take${i}` }));
       }
     }
     // 2. The delivery: pitch, loudness and effect; expressive VoiceStudio engines keep their own colour.
@@ -182,4 +247,4 @@ async function speak(character, text, { maxChars = 6000, mood = null, director =
   } finally { fs.rmSync(work, { recursive: true, force: true }); }
 }
 
-module.exports = { MOODS: delivery.MOODS, STORE, ENGINES, normalise, normaliseVoice, list, get, create, update, remove, personaPrompt, withPersona, voiceLabel, catalog, speak };
+module.exports = { TRAITS, PRESETS, FACE, NOVA_ID, traitsText, ensureNova, resetNova, MOODS: delivery.MOODS, STORE, ENGINES, normalise, normaliseVoice, list, get, create, update, remove, personaPrompt, withPersona, voiceLabel, catalog, speak };

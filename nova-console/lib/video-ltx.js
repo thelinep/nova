@@ -73,11 +73,11 @@ function status() {
   if (!appleSilicon) missing.push('an Apple Silicon Mac (LTX-2 runs on MLX)');
   if (!bin) missing.push('ltx-2-mlx: double-click "Install LTX-2 video for NOVA.command" in the brahmini folder (about 28 GB with weights)');
   const weights = localWeights(m), gemma = gemmaCached();
-  if (bin && (!weights || !gemma)) missing.push(`the LTX-2 weights NOVA uses (${!weights ? 'video model' : ''}${!weights && !gemma ? ' and ' : ''}${!gemma ? 'text encoder' : ''}): double-click "Install LTX-2 video for NOVA.command" again — it downloads only what Fast clips need (about 28 GB in all), not the whole 60 GB repository`);
+  if (bin && (!weights || !gemma)) missing.push(`the LTX-2 weights Maataa uses (${!weights ? 'video model' : ''}${!weights && !gemma ? ' and ' : ''}${!gemma ? 'text encoder' : ''}): double-click "Install LTX-2 video for NOVA.command" again — it downloads only what Fast clips need (about 28 GB in all), not the whole 60 GB repository`);
   const notes = [];
   if (weights && !weights.better) notes.push('Fast clips only. For "Better" (two-stage) clips, run the LTX-2 installer with --better (another 19 GB).');
   notes.push('Rough previews with sound: a few seconds at small sizes. Expect several minutes per clip on a 16 GB Mac.');
-  if (heavy.totalGb() <= 24) notes.push(`On this ${heavy.totalGb()} GB Mac NOVA keeps LTX-2 to 480p, 5 seconds and low-RAM mode, frees other models first, and runs one video job at a time.`);
+  if (heavy.totalGb() <= 24) notes.push(`On this ${heavy.totalGb()} GB Mac Maataa keeps LTX-2 to 480p, 5 seconds and low-RAM mode, frees other models first, and runs one video job at a time.`);
   return { limits: heavy.ltxLimits(), engine: 'ltx-2-mlx', ready: missing.length === 0, binary: bin, model: m, weightsDir: weights ? weights.dir : null, weightsCached: Boolean(weights), modes: weights && weights.better ? MODES : ['distilled'], missing, notes, sizes: Object.keys(SIZES) };
 }
 

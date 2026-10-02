@@ -7,7 +7,7 @@ test.describe('Oversight', () => {
     await expect(page.locator('#wb-strip')).toHaveAttribute('title', /waiting for your decision/);
     await expect(page.locator('#act-text')).toHaveText(/setup: \d \/ 5/);
     await page.goto('/workbench.html');
-    await expect(page.locator('.brand')).toContainText('NOVA Workbench');
+    await expect(page.locator('.brand')).toContainText('Maataa Workbench');
     await expect(page.locator('#p-now')).not.toBeEmpty();
   });
 
@@ -16,7 +16,7 @@ test.describe('Oversight', () => {
     page.on('dialog', d => { popup = true; d.dismiss(); });
     await page.goto('/workbench.html');
     await page.locator('.btn-halt').click();
-    await expect(page.locator('.wb-modal h3')).toHaveText('Halt NOVA');
+    await expect(page.locator('.wb-modal h3')).toHaveText('Halt Maataa');
     await expect(page.locator('.wb-modal input[type=password]')).toHaveCount(1);
     await page.locator('.wb-modal button', { hasText: 'cancel' }).click();
     await expect(page.locator('.wb-modal')).toHaveCount(0);

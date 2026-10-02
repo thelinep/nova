@@ -177,7 +177,7 @@ function start(store, dataDir, deps, id, options = {}) {
 
 function recoverInterrupted(store) {
   let count = 0;
-  for (const record of store.all('media')) if (record.transcription?.status === 'running') { record.transcription = { ...record.transcription, status: 'failed', error: 'NOVA restarted during transcription.' }; store.put('media', record); count++; }
+  for (const record of store.all('media')) if (record.transcription?.status === 'running') { record.transcription = { ...record.transcription, status: 'failed', error: 'Maataa restarted during transcription.' }; store.put('media', record); count++; }
   return count;
 }
 

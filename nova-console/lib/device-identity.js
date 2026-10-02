@@ -33,7 +33,7 @@ const CLASSES = {
 };
 /** Capabilities a device can declare. Desktop adds screen, input, clipboard and app control to the shared list. */
 const CAPABILITIES = {
-  'chat': 'Chat with NOVA',
+  'chat': 'Chat with Maataa',
   'camera.capture': 'Take photos or video',
   'microphone.capture': 'Record sound',
   'screen.capture': 'Take screenshots',

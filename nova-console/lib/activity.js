@@ -113,7 +113,7 @@ function recoverInterrupted() {
   if (!storeRef) return;
   for (const j of storeRef.all('chatJobs')) {
     if (j.status !== 'running') continue;
-    j.status = 'interrupted'; j.error = 'NOVA was closed while this was running.'; j.finishedAt = now();
+    j.status = 'interrupted'; j.error = 'Maataa was closed while this was running.'; j.finishedAt = now();
     j.steps = (j.steps || []).map(s => s.status === 'running' ? { ...s, status: 'cancelled' } : s);
     storeRef.put('chatJobs', j);
   }

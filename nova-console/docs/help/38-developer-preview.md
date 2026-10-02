@@ -3,22 +3,22 @@ id: developer-preview
 title: Built, not yet in the console
 section: Oversight
 order: 38
-summary: Parts of NOVA that are built and tested but not started from the console yet — connectors and the secrets vault, the multi-agent system, the correctness pipeline, autonomy runs and release evidence — and how developers can try them.
+summary: Parts of Maataa that are built and tested but not started from the console yet — connectors and the secrets vault, the multi-agent system, the correctness pipeline, autonomy runs and release evidence — and how developers can try them.
 keywords: developer preview connectors github secrets vault encrypted multi-agent supervisor delegation correctness pipeline constellation router test synthesis semantic vote clover dafny proof autonomy neuron factory release evidence l2 certification demo scripts
 views:
 ---
-These parts of NOVA are complete and covered by tests. They report into [Workbench](help:workbench) and follow the [policies, budgets and kill switch](help:safety-controls). There is no button for them in the console yet. Until there is, developers can run them from NOVA's source folder with the demo scripts below.
+These parts of Maataa are complete and covered by tests. They report into [Workbench](help:workbench) and follow the [policies, budgets and kill switch](help:safety-controls). There is no button for them in the console yet. Until there is, developers can run them from Maataa's source folder with the demo scripts below.
 
 ## Connectors and the secrets vault
 
-- **Connectors** let NOVA act on outside services. The first one is **GitHub**: check who you are signed in as, read a repository, list and create issues, read and open pull requests, read check results, and merge a pull request.
+- **Connectors** let Maataa act on outside services. The first one is **GitHub**: check who you are signed in as, read a repository, list and create issues, read and open pull requests, read check results, and merge a pull request.
 - Each connector has a profile with **scopes** (what it may do), and can be enabled, disabled or revoked.
 - Every action goes through a policy. Actions that need a person wait in Workbench → **Waiting** for **approve** or **deny**.
-- Tokens are kept in the **secrets vault**, encrypted with AES-256-GCM. The key is a file in NOVA's data folder that only your user account can read (`.secret-master-key`). Secrets can be rotated and revoked, and are never shown again after saving.
+- Tokens are kept in the **secrets vault**, encrypted with AES-256-GCM. The key is a file in Maataa's data folder that only your user account can read (`.secret-master-key`). Secrets can be rotated and revoked, and are never shown again after saving.
 
 Try it: `node scripts/connector-demo.js`.
 
-There is also a second, simpler GitHub path for Local Workspace. Prepare a pull request draft under **Git delivery** and review it there. NOVA can then open the pull request with the `gh` command-line tool and check its CI results, using a token saved through NOVA's local `/api/secrets` service. The console has no button for that last step yet. The two connector designs will be combined into one. It uses a pretend GitHub unless you set `GITHUB_TOKEN`, `GITHUB_OWNER` and `GITHUB_REPO`.
+There is also a second, simpler GitHub path for Local Workspace. Prepare a pull request draft under **Git delivery** and review it there. Maataa can then open the pull request with the `gh` command-line tool and check its CI results, using a token saved through Maataa's local `/api/secrets` service. The console has no button for that last step yet. The two connector designs will be combined into one. It uses a pretend GitHub unless you set `GITHUB_TOKEN`, `GITHUB_OWNER` and `GITHUB_REPO`.
 
 ## The multi-agent system
 
@@ -66,7 +66,7 @@ Check with `npm run release:check` (it exits with an error until every gate pass
 
 ## Release evidence
 
-`node scripts/l2-check.js` checks that a release meets NOVA's certification requirements and writes a bundle of the evidence with a fingerprint (hash) of every test result and record, so later changes can be detected. The files in `baseline/` and `docs/release-evidence/` are earlier results.
+`node scripts/l2-check.js` checks that a release meets Maataa's certification requirements and writes a bundle of the evidence with a fingerprint (hash) of every test result and record, so later changes can be detected. The files in `baseline/` and `docs/release-evidence/` are earlier results.
 
 ## Before you run a demo
 

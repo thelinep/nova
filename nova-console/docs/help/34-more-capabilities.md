@@ -3,7 +3,7 @@ id: collector-graph
 title: Collector, Capability Graph and Provider Browser
 section: Capabilities
 order: 34
-summary: See the Brahmini collector's runs inside NOVA, map how everything connects, and open hosted AI providers in a separate window.
+summary: See the Brahmini collector's runs inside Maataa, map how everything connects, and open hosted AI providers in a separate window.
 keywords: collector brahmini capability graph provider browser chatgpt claude gemini perplexity separate window
 views: collector,graph,browser
 ---
@@ -26,5 +26,5 @@ views: collector,graph,browser
 @screen media/browser.jpg "Provider Browser opens provider sites in a separate window."
 
 - Pick a provider card or type an HTTPS address. Local development pages at `http://localhost` or `http://127.0.0.1` also work.
-- Sign in directly on the provider's page. NOVA does not see or store that password, session or key.
-- The provider page stays apart from your NOVA sessions, knowledge, tools, agents and automations. Copy material across deliberately when you want to.
+- Sign in directly on the provider's page. Maataa does not see or store that password, session or key.
+- The provider page stays apart from your Maataa sessions, knowledge, tools, agents and automations. Copy material across deliberately when you want to.

@@ -3,7 +3,7 @@ id: models
 title: Models
 section: Chat and knowledge
 order: 11
-summary: Sync models from Ollama, load and unload them, benchmark speed, and see which models passed NOVA's coding checks.
+summary: Sync models from Ollama, load and unload them, benchmark speed, and see which models passed Maataa's coding checks.
 keywords: models ollama sync load unload benchmark qualification quantization vision embedding pull
 views: models
 ---
@@ -11,7 +11,7 @@ views: models
 
 ## Get models
 
-NOVA uses the models you have in Ollama. To add one, pull it in Terminal, for example:
+Maataa uses the models you have in Ollama. To add one, pull it in Terminal, for example:
 
 ```
 ollama pull llama3.2
@@ -19,7 +19,7 @@ ollama pull qwen2.5:7b
 ollama pull nomic-embed-text
 ```
 
-Then press **Sync from Ollama** in **Models**. NOVA adds or updates a card for each model. The first sync after installing replaces NOVA's example models with your real ones.
+Then press **Sync from Ollama** in **Models**. Maataa adds or updates a card for each model. The first sync after installing replaces Maataa's example models with your real ones.
 
 ## Load, unload and benchmark
 
@@ -29,7 +29,7 @@ Then press **Sync from Ollama** in **Models**. NOVA adds or updates a card for e
 
 ## Qualify for coding
 
-Code plans (in chat and Local Workspace) and the improve-and-test loop only use models that passed NOVA's coding checks, so a model cannot quietly produce broken edits.
+Code plans (in chat and Local Workspace) and the improve-and-test loop only use models that passed Maataa's coding checks, so a model cannot quietly produce broken edits.
 
 1. Press **Sync from Ollama** so the card knows the model's exact version (its digest).
 2. Press **Qualify for coding** on the model's card.
@@ -57,7 +57,7 @@ There are six checks, and each runs three times. All 18 trials must pass:
 | For | Try |
 | --- | --- |
 | Everyday chat | `llama3.2`, `qwen2.5:7b` |
-| Code changes, Build with NOVA | 7B or larger, for example `qwen2.5-coder:7b`, after **Qualify for coding** |
+| Code changes, Build with Maataa | 7B or larger, for example `qwen2.5-coder:7b`, after **Qualify for coding** |
 | Images in chat | `llama3.2-vision`, `llava` |
 | Knowledge indexing | an embedding model such as `nomic-embed-text` |
 

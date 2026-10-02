@@ -313,7 +313,7 @@ function cancel(store, id) {
 
 function recoverInterrupted(store) {
   let count = 0;
-  for (const job of store.all('generationJobs')) if (job.status === 'running') { job.status = 'failed'; job.error = 'NOVA restarted during generation.'; store.put('generationJobs', job); count++; }
+  for (const job of store.all('generationJobs')) if (job.status === 'running') { job.status = 'failed'; job.error = 'Maataa restarted during generation.'; store.put('generationJobs', job); count++; }
   return count;
 }
 

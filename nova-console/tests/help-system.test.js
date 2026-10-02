@@ -127,7 +127,7 @@ test('support report: counts, checks and failures, with private details masked',
 
     const file = support.saveReport(withLog, dir);
     assert.ok(file.startsWith(path.join(dir, 'support')));
-    assert.match(fs.readFileSync(file, 'utf8'), /NOVA support report/);
+    assert.match(fs.readFileSync(file, 'utf8'), /Maataa support report/);
     db.close();
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

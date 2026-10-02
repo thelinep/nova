@@ -229,7 +229,7 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.locator('.msg.assistant .bubble').last()).toContainText('Permissions: read-only');
     await page.getByRole('button', { name: 'Review scan plan' }).click();
     await expect(page.getByText('Conversation scan plan')).toBeVisible();
-    await expect(page.getByText('No writes to local folders; NOVA plan/report store only')).toBeVisible();
+    await expect(page.getByText('No writes to local folders; Maataa plan/report store only')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Run plan' })).toBeVisible();
   });
 
@@ -337,7 +337,7 @@ test.describe('NOVA Console interactions', () => {
     await page.goto('/');
     await page.locator('[data-view="neurons"]').click();
     await expect(page.getByRole('heading', { name: 'Neuron Factory' })).toBeVisible();
-    await expect(page.getByText('NOVA does not claim to create physical qubits.')).toBeVisible();
+    await expect(page.getByText('Maataa does not claim to create physical qubits.')).toBeVisible();
     await page.getByLabel('Neuron name').fill('AND purpose tensor');
     await page.getByLabel('Neuron purpose').fill('Detect when both bounded input signals are active.');
     await page.getByRole('button', { name: 'Create blueprint' }).click();
