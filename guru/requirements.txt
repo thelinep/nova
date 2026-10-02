@@ -7,3 +7,4 @@ safetensors
 gguf>=0.10
 transformers>=4.45
 protobuf
+vidyut==0.4.0  # Maataa AAI derivations (optional; MIT)

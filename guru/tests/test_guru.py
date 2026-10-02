@@ -230,6 +230,19 @@ class SutraTests(unittest.TestCase):
         self.assertEqual(slp1.to_devanagari("ca . iti 6.4.15 .."), "च । इति 6.4.15 ॥")
 
 
+class PrakriyaTests(unittest.TestCase):
+    """Verified derivation pairs (Maataa AAI); skipped when the vidyut engine is not installed."""
+
+    def test_pairs_are_derived_and_cite_sutras(self):
+        from guru import prakriya
+        if not prakriya.available():
+            self.skipTest("pip install vidyut to run")
+        pairs = prakriya.teach_pairs(lakaras=("Lat",), with_steps=1)
+        self.assertIn({"prompt": "\"भू\" धातु (भ्वादिगण, सत्तायाम्) का लट् लकार, प्रथम पुरुष एकवचन (कर्तरि) रूप क्या है?", "answer": "भवति"}, pairs)
+        steps = next(p["answer"] for p in pairs if p["prompt"].startswith("\"भवति\" की पाणिनीय प्रक्रिया"))
+        self.assertIn("6.1.78 एचोऽयवायावः → भव् + अ + ति", steps)
+
+
 def unicodedata_lookup(name):
     import unicodedata
     return unicodedata.lookup(name)

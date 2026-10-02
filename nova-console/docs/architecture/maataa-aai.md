@@ -1,0 +1,86 @@
+# Maataa AAI: Advanced Ancient Intelligence
+
+*Status: v0.1, built into Maataa Workstation. Codename AAI. October 2026.*
+
+## 1. What it is
+
+Maataa AAI is MAATAA's intelligence built on the rule systems of the Indian knowledge tradition. It starts with Panini's grammar, the Aṣṭādhyāyī: about 4,000 rules that generate correct Sanskrit. AAI uses those rules as rules. They derive words step by step and check claims. Neural models are allowed to propose but not to decide.
+
+> **Principle:** Rules derive and check. Models propose. Nothing is called correct unless the rules confirm it.
+
+This follows from MAATAA's own line, "governed intelligence" and "Intelligence for a Higher Good". Its execution contracts already require evidence before an action is accepted. AAI requires the same before a statement is called correct.
+
+## 2. Naming
+
+- **Public name:** *Maataa AAI*, always with "Maataa". In India, "AAI" on its own is widely read as the Airports Authority of India.
+- **Long form:** "Advanced Ancient Intelligence". Use it for the tagline, not as the name.
+- **Before public launch:** do a trademark search for "Maataa AAI" in classes 9 and 42, plus a domain and social-handle check.
+- **Inside the product:** the Workstation rail group is "AAI · Ancient Intelligence", with four screens: Maataa AAI, Ashtadhyayi, Derivation and Lipi.
+
+## 3. Pillars
+
+| Pillar | What it is | Where it lives today |
+| --- | --- | --- |
+| **Texts** | The Ashtadhyayi (3,983 sutras), Dhatupatha (2,229 roots), Unadi, Linganushasana and Phit sutras | `guru/data/panini` (Vidyut, MIT); Workstation `lib/panini-data.json`; allb `data/ashtadhyayi.json` |
+| **Rules engine** | Paninian derivation (prakriya): root + affix → word. Every step names its sutra. | Workstation `lib/aai.js` + `lib/aai_prakriya.py`, using Vidyut's prakriya engine |
+| **Verification** | Sutra citations (does the number exist, is the quote right?), "is this form derivable?", Devanagari orthography | `panini.checkCitations`; `aai.checkForm`; Guru-Panini (P1–P5) |
+| **Learned parts** | Small neurons that learn one rule and must agree with it on every case; the Guru model family | Neuron Factory sutra neurons; `guru/` |
+| **Scripts** | Devanagari, IAST, SLP1, Brahmi, Kharoshthi, Siddham | Guru-Lipi (`guru/lipi.py`); Workstation Lipi |
+| **Grounding (later)** | Veda, Shastra and Purana as retrieval sources with licensed editions, not as model weights | Not built |
+
+## 4. How a question flows
+
+```
+question ─► grounding: exact text of the sutras it mentions
+         ─► model proposes an answer (Guru or any Ollama model)
+         ─► AAI checks every cited sutra (number exists? quoted words are this sutra's?)
+         ─► verdict: citations verified | not verified | contradicted
+```
+
+For word forms there is no model in the loop. The rules derive the forms, and AAI shows each step with its sutra. "Check a form" answers whether the rules derive a claimed form.
+
+## 5. Honesty rules (binding)
+
+1. A form is shown as **derived** only if the rule engine derived it. If the rules give no form, the screen shows a dash, never a guess.
+2. A model's answer is labelled with the model's name. It is marked **verified** only for the parts the rules checked, which today are its sutra citations, and the label says exactly that.
+3. A sutra neuron is approved only if it agrees with its sutra on every case (169 of 169 vowel pairs). It learns its sutra on its own. Which rule wins when several apply is decided by the Ashtadhyayi's order of exceptions, not by the neuron.
+4. Only text with a licence that allows it is included. Meanings and commentaries stay out until a licensed edition is chosen.
+5. Placeholder data is refused by the build, as allb's `build.rs` now does.
+
+## 6. Where AAI sits in the Maataa ecosystem
+
+- **MAATAA (the governed intelligence layer):** AAI is its rules-first reasoning branch.
+- **Maataa Workstation:** the AAI group of screens and the `/api/aai/*` API.
+- **Guru:** MAATAA's own model family. It is trained on AAI-verified pairs (about 11,000 derivation pairs, plus about 18,000 sutra and Dhatupatha pairs), and AAI checks what Guru writes.
+- **Lipi System:** AAI reads and writes the historic scripts through Guru-Lipi.
+- **allb (MAATAA × Siddham runtime):** uses the same real sutra dataset. Next step: derivations at the edge (R4).
+- **Replay + Proof System:** AAI verdicts become evidence records (R1).
+
+## 7. What exists today (v0.1)
+
+- **Ashtadhyayi screen:** find sutras by number, range, pada or words, in any of six scripts, and look up roots in the Dhatupatha.
+- **Derivation screen:** verbs across 11 lakaras, 2 voices and 22 prefixes; nouns in 3 genders; tables of all forms; step-by-step derivations that cite a sutra at each step; "Check a form".
+- **Lipi screen:** six scripts at once. The conversion is checked against all 3,983 sutras.
+- **Maataa AAI screen:** install the engine in one click (or with `AAI - Set up.command`), Ask AAI with checked citations, and a citation checker for any pasted text.
+- **Sutra neurons:** five presets in Neuron Factory: 6.1.77, 6.1.78, 6.1.87, 6.1.88 and 6.1.101.
+- **Guru:** `teach --panini` adds the verified derivation pairs when `vidyut` is installed.
+- **Tests:** unit tests for the engine, conversions, citations and the Ask verdicts, and a browser test that derives भवति and checks a wrong form.
+
+## 8. Roadmap
+
+| # | Step | Why |
+| --- | --- | --- |
+| R1 | Save each Ask and each derivation as a signed evidence record (execution contracts) | Replay and proof; shareable verdicts |
+| R2 | Sandhi and segmentation (Vidyut's sandhi and cheda modules) to check whole sentences a model writes | Verify more than citations |
+| R3 | Anuvṛtti view: what each sutra inherits from earlier sutras | Read sutras as Panini meant them |
+| R4 | Derivations in allb: Vidyut's engine is Rust (MIT) and can compile into allb's WASM, giving `/api/z0/derive` at the edge | One engine across the Workstation, the edge and Siddham devices |
+| R5 | A Guru training loop where AAI checks generated answers and only verified ones are kept | A model that improves only on rule-checked data |
+| R6 | Meanings and commentary from a licensed edition | Explanations, not just text |
+| R7 | Reading Kharoshthi, plus Sharada and Grantha | Full Lipi coverage |
+| R8 | More sutra neurons (savarna 1.1.9, consonant sandhi in 8.4) and a precedence demo | Show how rules interact |
+
+## 9. Licences
+
+- Sutra text, Dhatupatha and derivation engine: Vidyut by ambuda.org, MIT licence (data originally shared by ashtadhyayi.com).
+- Guru training text: Wikipedia, CC BY-SA 4.0, attributed in each model card.
+- AAI code: part of the brahmini monorepo.

@@ -7,7 +7,7 @@ summary: Read Panini's Ashtadhyayi (all 3,983 sutras) and look up roots in the D
 keywords: ashtadhyayi panini sutra sutrapatha dhatupatha dhatu root grammar sanskrit vyakarana adhyaya pada iast slp1 brahmi kharoshthi siddham sandhi अष्टाध्यायी पाणिनि सूत्र धातु
 views: panini
 ---
-**Ashtadhyayi** (Intelligence group) contains the full text of Panini's grammar, all 3,983 sutras from 1.1.1 to 8.4.68, and the Dhatupatha, a list of 2,259 verb roots.
+**Ashtadhyayi** (AAI group) contains the full text of Panini's grammar, all 3,983 sutras from 1.1.1 to 8.4.68, and the Dhatupatha, a list of 2,229 verb roots.
 
 ## Find sutras
 
@@ -36,6 +36,6 @@ Five vowel-sandhi sutras have a **Train a neuron** button: 6.1.77, 6.1.78, 6.1.8
 
 ## Where the text comes from
 
-The text comes from [Vidyut](https://github.com/ambuda-org/vidyut) by ambuda.org, under the MIT licence. Most of it was shared by the author of ashtadhyayi.com. The same data trains Guru, MAATAA's own language models.
+The text comes from [Vidyut](https://github.com/ambuda-org/vidyut) by ambuda.org, under the MIT licence. Most of it was shared by the author of ashtadhyayi.com. The same data trains Guru, MAATAA's own language models, and powers [Maataa AAI](help:maataa-aai).
 
 Only the sutra text is included. Meanings and commentaries are left out because modern translations have their own copyright.

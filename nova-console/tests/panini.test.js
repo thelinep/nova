@@ -19,7 +19,7 @@ test('the Ashtadhyayi is complete, ordered and attributed', () => {
   assert.equal(info.padas.at(-1).count, 68);
   assert.equal(info.source.license, 'MIT');
   assert.match(info.source.attribution, /ambuda\.org/);
-  assert.equal(info.dhatus, 2259);
+  assert.equal(info.dhatus, 2229);
 });
 
 test('known sutras read correctly and missing numbers are explained', () => {

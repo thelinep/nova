@@ -164,4 +164,45 @@ function dhatu(root, limit = 40) {
   return (exact.length ? exact : dhatus.filter(d => key(d.root).replace(/ँ/g, '').startsWith(q))).slice(0, limit);
 }
 
-module.exports = { SCRIPTS, info, get, search, dhatu, fromDeva, show, key, _reset: () => { cache = null; } };
+// --- citations -----------------------------------------------------------------------
+// Same rules as guru/guru/sutra.py check_citations(): finds 1.1.1 / 1/1/1 / १.१.१ and checks
+// that the sutra exists and that words quoted with it (right after it, or right before it
+// in brackets) are its text and not another sutra's.
+const CITE = /(?<![\d.])([1-8])\s*[./।]\s*([1-4])\s*[./।]\s*(\d{1,3})(?![\d.]\d)/g;
+const DEVA_RUN = /^[\s:–—\-("'“‘]*([\u0900-\u097f\u1cd0-\u1cff][\u0900-\u097f\u1cd0-\u1cff\s]*)/u;
+const DEVA_BEFORE = /([\u0900-\u097f\u1cd0-\u1cff][\u0900-\u097f\u1cd0-\u1cff\s]*?)[\s"'”’]*[(\[]\s*$/u;
+const DIGITS = { '०':'0', '१':'1', '२':'2', '३':'3', '४':'4', '५':'5', '६':'6', '७':'7', '८':'8', '९':'9' };
+
+function checkCitations(text) {
+  const { sutras, keys } = load();
+  const src = String(text || '').normalize('NFC').replace(/[०-९]/g, d => DIGITS[d]);
+  const out = [];
+  for (const m of src.matchAll(CITE)) {
+    const id = `${m[1]}.${m[2]}.${Number(m[3])}`, s = load().byId.get(id);
+    const row = { cite: m[0], id, status: 'unknown', quoted: '', expected: s ? s.deva : null, looksLike: null };
+    out.push(row);
+    if (!s) continue;
+    const start = m.index, end = m.index + m[0].length;
+    const bracketed = /[(\[]\s*$/.test(src.slice(Math.max(0, start - 3), start));
+    let quoted, hit;
+    if (bracketed) {
+      const run = src.slice(Math.max(0, start - 160), start).match(DEVA_BEFORE);
+      quoted = run ? run[1].trim().split('\n').pop() : '';
+      const k = key(quoted); hit = kk => !!k && k.endsWith(kk);
+    } else {
+      const run = src.slice(end).match(DEVA_RUN);
+      quoted = run ? run[1].trim().split('\n')[0] : '';
+      const k = key(quoted); hit = kk => !!k && k.startsWith(kk);
+    }
+    row.quoted = quoted;
+    if (quoted && hit(keys[s.index])) { row.status = 'ok'; continue; }
+    let best = null;
+    if (quoted) sutras.forEach((t, i) => { if (keys[i].length >= 4 && hit(keys[i]) && (!best || keys[i].length > keys[best.index].length)) best = t; });
+    if (best) { row.status = 'mismatch'; row.looksLike = `${best.id} ${best.deva}`; } else row.status = 'number';
+  }
+  return out;
+}
+
+function dhatuByCode(code) { return load().dhatus.find(d => d.code === String(code)) || null; }
+
+module.exports = { SCRIPTS, info, get, search, dhatu, dhatuByCode, fromDeva, toDevaText, show, key, checkCitations, _reset: () => { cache = null; } };

@@ -12,7 +12,7 @@ Guru = Guru-LLM + Guru-Dhatu + Guru-Panini + Guru-Lipi (+ Guru-Veda / Guru-Shast
 | --- | --- | --- |
 | **Guru-LLM** (`guru/model.py`) | `GuruForCausalLM`: a decoder-only transformer with RMSNorm, RoPE, grouped-query causal attention and SwiGLU, written from scratch. The tensor layout matches Llama, so it exports to GGUF and runs in Ollama. | Larger sizes on rented GPUs |
 | **Guru-Dhatu** (`guru/tokenizer.py`) | A SentencePiece BPE tokenizer trained on our corpus, with byte fallback and NFC normalisation. Roots listed in `data/dhatus.txt` are kept as whole pieces. | A real root + affix segmenter before BPE |
-| **Guru-Panini** (`guru/panini.py`, `guru/sutra.py`) | A rule checker for Devanagari orthography (rules P1–P5), plus the real texts: all 3,983 Ashtadhyayi sutras, the Dhatupatha (2,259 roots) and the Unadi, Linganushasana and Phit sutras (MIT licence, see below). It filters the training corpus, scores everything Guru writes, and checks sutra citations in it. | Sandhi and grammar rule sets, using the same `verify()` interface |
+| **Guru-Panini** (`guru/panini.py`, `guru/sutra.py`) | A rule checker for Devanagari orthography (rules P1–P5), plus the real texts: all 3,983 Ashtadhyayi sutras, the Dhatupatha (2,229 roots) and the Unadi, Linganushasana and Phit sutras (MIT licence, see below). It filters the training corpus, scores everything Guru writes, and checks sutra citations in it. | Sandhi and grammar rule sets, using the same `verify()` interface |
 | **Guru-Lipi** (`guru/lipi.py`) | Brahmi, Kharoshthi and Siddham ⇄ Devanagari. Guru learns and checks in Devanagari, reads the other three through it at the same token cost, and can answer in any of them. Round trips are exact, except Kharoshthi ai/au and digits, which are reported. | Sharada, Grantha, Tamil-Brahmi, IAST |
 | Guru-Veda / Shastra / Purana | Not built yet. | Grounding knowledge bases (retrieval), not weights |
 
@@ -77,11 +77,12 @@ The whole pipeline was also run end to end: corpus, tokenizer, training, export,
 `data/panini` holds the real texts:
 
 - all 3,983 sutras of the Ashtadhyayi (1.1.1 to 8.4.68);
-- the Dhatupatha (2,259 roots with meaning and gana);
+- the Dhatupatha (2,229 roots with meaning and gana);
 - the Unadi sutras, the Linganushasana, the Phit sutras and the Dhatupatha's gana sutras.
 
 They come from [Vidyut](https://github.com/ambuda-org/vidyut) (ambuda.org) under the MIT licence; most of it was shared by the author of ashtadhyayi.com. Provenance, the commit and file hashes are in `data/panini/SOURCES.md`. Only the sutra text is included, not meanings or commentary, because modern translations have their own copyright.
 
+- **Derivations (Maataa AAI):** with `vidyut` installed (it is in `requirements.txt`), `teach --panini` also adds about 11,000 verified pairs from Vidyut's prakriya engine: present, imperative, imperfect and future forms of every root, and full step-by-step derivations, each step citing its sutra, for the first 300 roots.
 - **Training:** the texts are always part of the corpus, three times over (`--panini-weight`, 0 leaves them out). `teach --panini` adds about 18,000 question/answer pairs built only from the text: a sutra by number, the number of a sutra, the next sutra, and a root's meaning and gana.
 - **Checking:** `check` and `ask` look for citations such as `6.1.77`, `१.१.१` or `वृद्धिरादैच् (1.1.1)`. They report numbers that do not exist (for example 1.1.101, since the first pada ends at 1.1.75) and quotes that belong to a different sutra.
 - **Looking up:**

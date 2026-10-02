@@ -39,6 +39,7 @@ const modelQualifications = require('./lib/model-qualifications');
 const neuronFactory = require('./lib/neuron-factory');
 const panini = require('./lib/panini');
 const sutraNeurons = require('./lib/sutra-neurons');
+const aai = require('./lib/aai');
 const backgroundJobs = require('./lib/background-jobs');
 const artifactGovernance = require('./lib/artifact-governance');
 const prConnectors = require('./lib/pr-connectors');
@@ -128,7 +129,7 @@ activity.configure(store);
 // This install's device identity (Ed25519), and contracts a restart left open are sealed as cancelled.
 deviceIdentity.ensure(store, DATA_DIR); contracts.sweep(store, DATA_DIR);
 characters.ensureNova(store); // Nova, the helper, is a built-in character
-comfyManager.configure({ store, dataDir: DATA_DIR, imageGen, activity }); imageGen.setEnsure(() => comfyManager.ensure());
+aai.configure({ dataDir: DATA_DIR }); comfyManager.configure({ store, dataDir: DATA_DIR, imageGen, activity }); imageGen.setEnsure(() => comfyManager.ensure());
 const browser = new browserService.BrowserService(store, DATA_DIR, desktopSecurity);
 const jobEngine = new JobEngine(store, { pollMs: 500 });
 
@@ -881,6 +882,16 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/neuron-factory\/presets$/, handler: async (_req,res)=>sendJson(res,200,sutraNeurons.list()) },
   { method: 'POST', pattern: /^\/api\/neuron-factory\/presets\/([^/]+)$/, handler: async (_req,res,[id])=>{const input=sutraNeurons.blueprintInput(decodeURIComponent(id));sendJson(res,201,neuronFactory.createBlueprint(store,input,{sutra:input.sutra}));} },
   { method: 'POST', pattern: /^\/api\/neuron-factory\/artifacts\/([^/]+)\/try$/, handler: async (req,res,[id])=>{const artifact=store.get('neuronArtifacts',decodeURIComponent(id));if(!artifact)return sendJson(res,404,{error:'Unknown neuron artifact.'});const blueprint=store.get('neuronBlueprints',artifact.blueprintId),body=await readJsonBody(req);sendJson(res,200,sutraNeurons.tryPair(artifact,blueprint?.sutra,body.first,body.second));} },
+  { method: 'GET', pattern: /^\/api\/aai$/, handler: async (_req,res)=>sendJson(res,200,await aai.status()) },
+  { method: 'POST', pattern: /^\/api\/aai\/engine\/install$/, handler: async (_req,res)=>sendJson(res,202,aai.startInstall({killSwitch:workbenchKillSwitch})) },
+  { method: 'POST', pattern: /^\/api\/aai\/derive\/verb$/, handler: async (req,res)=>sendJson(res,200,await aai.deriveVerb(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/paradigm\/verb$/, handler: async (req,res)=>sendJson(res,200,await aai.paradigm(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/derive\/noun$/, handler: async (req,res)=>sendJson(res,200,await aai.deriveNoun(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/paradigm\/noun$/, handler: async (req,res)=>sendJson(res,200,await aai.declension(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/check-form$/, handler: async (req,res)=>sendJson(res,200,await aai.checkForm(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/lipi$/, handler: async (req,res)=>sendJson(res,200,aai.lipi(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/aai\/check-citations$/, handler: async (req,res)=>{const body=await readJsonBody(req);sendJson(res,200,panini.checkCitations(body.text||''));} },
+  { method: 'POST', pattern: /^\/api\/aai\/ask$/, handler: async (req,res)=>{const body=await readJsonBody(req);sendJson(res,200,await aai.ask({ollama,question:body.question,model:body.model,killSwitch:workbenchKillSwitch}));} },
   { method: 'GET', pattern: /^\/api\/panini$/, handler: async (_req,res)=>sendJson(res,200,panini.info()) },
   { method: 'GET', pattern: /^\/api\/panini\/sutras$/, handler: async (req,res)=>{const u=new URL(req.url,'http://x');sendJson(res,200,panini.search(u.searchParams.get('q')||'',{script:u.searchParams.get('script')||'devanagari'}));} },
   { method: 'GET', pattern: /^\/api\/panini\/sutras\/([^/]+)$/, handler: async (req,res,[id])=>{const u=new URL(req.url,'http://x'),s=panini.get(decodeURIComponent(id),u.searchParams.get('script')||'devanagari');s?sendJson(res,200,s):sendJson(res,404,{error:`There is no sutra ${decodeURIComponent(id)}.`});} },

@@ -381,4 +381,26 @@ test.describe('NOVA Console interactions', () => {
     await page.locator('article', { hasText: 'यण् sandhi neuron (6.1.77)' }).getByRole('button', { name: 'Ask the neuron' }).click();
     await expect(page.locator('.sutra-try-out')).toContainText('sutra 6.1.77: य् ✓');
   });
+
+  test('Maataa AAI derives a word with a sutra at every step, checks forms and converts scripts', async ({ page, request }) => {
+    const status = await (await request.get('/api/aai')).json();
+    await page.goto('/');
+    await page.locator('[data-view="aai"]').click();
+    await expect(page.getByRole('heading', { name: 'Maataa AAI' })).toBeVisible();
+    await expect(page.getByText('nothing is called correct unless the rules confirm it')).toBeVisible();
+    await page.getByLabel('Text to check').fill('6.1.87 इको यणचि');
+    await page.getByRole('button', { name: 'Check citations' }).click();
+    await expect(page.getByText('quoted words belong to another sutra')).toBeVisible();
+    await page.locator('[data-view="lipi"]').click();
+    await expect(page.locator('#lipiView')).toContainText('guruḥ śiṣyaṃ jñānaṃ dadāti');
+    test.skip(!status.engine.installed, 'derivation engine not installed on this computer');
+    await page.locator('[data-view="derivation"]').click();
+    await page.getByRole('button', { name: 'Show all forms' }).click();
+    await page.locator('.aai-cell', { hasText: 'भवति' }).click();
+    await expect(page.getByText('Derived by rule')).toBeVisible();
+    await expect(page.locator('.aai-steps')).toContainText('एचोऽयवायावः');
+    await page.getByLabel('Form to check').fill('भवाति');
+    await page.getByRole('button', { name: 'Check', exact: true }).click();
+    await expect(page.getByText('Not derived')).toBeVisible();
+  });
 });

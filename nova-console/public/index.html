@@ -423,6 +423,18 @@
 .preset-chip:hover,.preset-chip:focus-visible{border-color:var(--ink);outline:none}
 
 /* Media: tabs + helper rail; app-wide help drawer */
+.aai-banner{padding:14px;margin-bottom:12px;border-color:var(--amber-line)}
+.aai-tile{display:flex;flex-direction:column;gap:5px;align-items:flex-start;text-align:left;padding:14px;cursor:pointer;color:inherit;font:inherit}
+.aai-tile span{color:var(--muted-dim);font-size:12.5px}
+.aai-answer{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.aai-answer-text{white-space:pre-wrap;margin:8px 0;font-size:14px;line-height:1.6}
+.aai-grid td,.aai-grid th{text-align:center}
+.aai-grid tbody th{font-size:13px;color:var(--muted);font-weight:500;white-space:nowrap}
+.aai-cell{background:none;border:0;color:inherit;font-size:17px;cursor:pointer;padding:4px 6px;border-radius:6px}
+.aai-cell:hover{background:var(--amber-soft,rgba(255,170,60,.12))}
+.aai-form{font-size:24px}
+.aai-steps{margin:8px 0 0 18px;font-size:13px;line-height:1.9}
+.aai-step-result{font-size:15px;margin-right:6px}
 .panini-padas{display:grid;gap:6px;margin-top:10px}
 .panini-padas-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .panini-padas-row>.mono{width:16px;color:var(--muted)}
@@ -832,8 +844,14 @@ a.nav-item { color: inherit; text-decoration: none; }
       <div class="nav-label rail-text">Intelligence</div>
       <button class="nav-item" data-view="models"><span data-lucide="cpu"></span><span class="rail-text">Models</span></button>
       <button class="nav-item" data-view="knowledge"><span data-lucide="database"></span><span class="rail-text">Knowledge</span></button>
-      <button class="nav-item" data-view="panini"><span data-lucide="scroll-text"></span><span class="rail-text">Ashtadhyayi</span></button>
       <button class="nav-item" data-view="retrieval"><span data-lucide="flask-conical"></span><span class="rail-text">Retrieval Lab</span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label rail-text">AAI · Ancient Intelligence</div>
+      <button class="nav-item" data-view="aai"><span data-lucide="sparkles"></span><span class="rail-text">Maataa AAI</span></button>
+      <button class="nav-item" data-view="panini"><span data-lucide="scroll-text"></span><span class="rail-text">Ashtadhyayi</span></button>
+      <button class="nav-item" data-view="derivation"><span data-lucide="git-commit-horizontal"></span><span class="rail-text">Derivation</span></button>
+      <button class="nav-item" data-view="lipi"><span data-lucide="languages"></span><span class="rail-text">Lipi</span></button>
     </div>
     <div class="nav-group">
       <div class="nav-label rail-text">Operations</div>
@@ -977,6 +995,9 @@ a.nav-item { color: inherit; text-decoration: none; }
       <!-- ===================== KNOWLEDGE ===================== -->
       <section id="knowledgeView" class="view"><div class="view-pad"><!-- VIEW:knowledge --></div></section>
       <section id="paniniView" class="view"><div class="view-pad"><!-- VIEW:panini --></div></section>
+      <section id="aaiView" class="view"><div class="view-pad"><!-- VIEW:aai --></div></section>
+      <section id="derivationView" class="view"><div class="view-pad"><!-- VIEW:derivation --></div></section>
+      <section id="lipiView" class="view"><div class="view-pad"><!-- VIEW:lipi --></div></section>
       <!-- ===================== RETRIEVAL LAB ===================== -->
       <section id="mediaView" class="view"><div class="view-pad"><!-- VIEW:media --></div></section>
       <section id="boardsView" class="view"><div class="view-pad"><!-- VIEW:boards --></div></section>
@@ -1178,8 +1199,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1589,7 +1610,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', media:'Media', boards:'Boards', timeline:'Timeline',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
@@ -1652,7 +1673,7 @@ function showView(name){
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
@@ -5101,6 +5122,122 @@ async function createSutraNeuron(preset){
     toast(`${d.name} is ready to train in Neuron Factory.`);showView('neurons');}catch(e){toast('Sutra neuron: '+e.message);}
 }
 
+// ── Maataa AAI (Advanced Ancient Intelligence) ───────────────────────────────────────
+// Rules derive and check (lib/aai.js + Vidyut's prakriya engine); models propose; nothing is
+// called correct unless the rules confirm it.
+const AAI = { status:null, ask:null, asking:false, verb:{ root:'भू', code:'01.0001', lakara:'Lat', prayoga:'Kartari', pada:'', prefix:'' }, noun:{ stem:'राम', linga:'Pum' }, tab:'verb', table:null, derivation:null, check:null, lipi:'गुरुः शिष्यं ज्ञानं ददाति।', lipiOut:null };
+const AAI_ROWS = { Prathama:'प्रथम', Madhyama:'मध्यम', Uttama:'उत्तम', Dvitiya:'द्वितीया', Trtiya:'तृतीया', Caturthi:'चतुर्थी', Panchami:'पञ्चमी', Sasthi:'षष्ठी', Saptami:'सप्तमी', Sambodhana:'सम्बोधन' };
+const AAI_COLS = { Eka:'एकवचन', Dvi:'द्विवचन', Bahu:'बहुवचन' };
+async function aaiPost(path, body){ const r=await fetch(apiUrl(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); const d=await r.json().catch(()=>({})); if(!r.ok) throw Object.assign(new Error(d.error||'Request failed'),{status:r.status}); return d; }
+async function aaiStatus(force){ if(!AAI.status||force) AAI.status=await paniniFetch('/api/aai'); return AAI.status; }
+function aaiEngineBanner(st){
+  if (st.engine.installed) return '';
+  const inst=st.install||{};
+  return `<div class="panel aai-banner"><strong>The derivation engine is not installed yet.</strong><p class="panini-sub" style="margin:6px 0">Derivations use Vidyut's prakriya engine (MIT licence, about 3 MB). Installing puts it in Maataa's own folder; nothing else on this Mac changes. You can also double-click <b>AAI - Set up.command</b> in the brahmini folder.</p>${inst.state==='running'?`<div class="panini-sub">Installing… ${escapeHtml(inst.log?.slice(-1)[0]||'')}</div>`:`<button class="btn btn-amber aai-install">Install derivation engine</button>`}${inst.state==='failed'?`<div class="panini-sub" style="color:var(--red);margin-top:6px">Install failed: ${escapeHtml(inst.error||'')}</div>`:''}</div>`;
+}
+function aaiWireInstall(rerender){
+  $$('.aai-install').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await aaiPost('/api/aai/engine/install');toast('Installing the derivation engine…');const poll=async()=>{const st=await aaiStatus(true);if(st.install.state==='running'){setTimeout(poll,1500);}else{toast(st.engine.installed?'The derivation engine is ready.':'Install failed: '+(st.install.error||''));}rerender();};setTimeout(poll,1200);}catch(e){toast(e.message);b.disabled=false;}});
+}
+function aaiVerdict(v){ return v==='citations-verified'?'<span class="badge badge-green">Citations verified</span>':v==='contradicted'?'<span class="badge badge-red">Contradicted by the sutras</span>':'<span class="badge badge-amber">Not verified</span>'; }
+function aaiCitations(list){
+  if(!list?.length) return '';
+  const label={ok:'quoted correctly',number:'number exists; no text quoted',unknown:'no such sutra',mismatch:'quoted words belong to another sutra'};
+  return `<table class="panini-table" data-no-list-tools style="margin-top:8px"><thead><tr><th>Cited</th><th>Check</th><th>Real text</th></tr></thead><tbody>${list.map(c=>`<tr><td><button class="panini-id mono aai-sutra" data-id="${escapeHtml(c.id)}">${escapeHtml(c.id)}</button></td><td><span class="badge ${c.status==='ok'?'badge-green':c.status==='number'?'badge-blue':'badge-red'}">${escapeHtml(label[c.status]||c.status)}</span>${c.looksLike?`<div class="panini-sub">That text is ${escapeHtml(c.looksLike)}</div>`:''}</td><td>${escapeHtml(c.expected||'—')}</td></tr>`).join('')}</tbody></table>`;
+}
+
+async function renderAaiView(){
+  const pad=$('aaiView').querySelector('.view-pad');
+  let st; try{ st=await aaiStatus(true); }catch(e){ pad.innerHTML=`<p class="empty-hint">Maataa AAI could not load: ${escapeHtml(e.message)}</p>`; return; }
+  try{ if(!DB.sutraNeuronPresets) DB.sutraNeuronPresets=await paniniFetch('/api/neuron-factory/presets'); }catch(_){ DB.sutraNeuronPresets=[]; }
+  const models=usableModels().filter(m=>m.runtime==='ollama'), guru=models.filter(m=>/^guru-maataa/.test(m.name));
+  const chosen=AAI.model&&models.some(m=>m.name===AAI.model)?AAI.model:(guru[0]||models[0])?.name||'';
+  const a=AAI.ask;
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · Advanced Ancient Intelligence</span><h1 class="view-title">Maataa AAI</h1><p class="view-desc">${escapeHtml(st.principle)}</p></div></div>
+  ${aaiEngineBanner(st)}
+  <div class="card-grid cols-3" data-no-list-tools>
+    <button class="panel aai-tile" data-go="panini"><strong>Ashtadhyayi</strong><span>${st.texts.total.toLocaleString()} sutras · ${st.texts.dhatus.toLocaleString()} roots</span></button>
+    <button class="panel aai-tile" data-go="derivation"><strong>Derivation</strong><span>${st.engine.installed?`Rule engine ready · Vidyut ${escapeHtml(st.engine.version||'')}`:'Engine not installed'}</span></button>
+    <button class="panel aai-tile" data-go="lipi"><strong>Lipi</strong><span>Devanagari · IAST · Brahmi · Kharoshthi · Siddham</span></button>
+    <button class="panel aai-tile" data-go="neurons"><strong>Sutra neurons</strong><span>${DB.sutraNeuronPresets.length} rules you can train in Neuron Factory</span></button>
+    <button class="panel aai-tile" data-go="models"><strong>Guru</strong><span>${guru.length?guru.map(m=>escapeHtml(m.name)).join(', '):'No guru-maataa model in Ollama yet'}</span></button>
+    <div class="panel aai-tile"><strong>Licences</strong><span>${st.licences.map(escapeHtml).join('<br>')}</span></div>
+  </div>
+  <div class="cap-section-label">Ask AAI</div>
+  <div class="panel" style="padding:14px">
+    <p class="panini-sub" style="margin:0 0 8px">A model answers, given the exact text of the sutras your question mentions. AAI then checks every sutra the answer cites. Only what the sutras confirm is marked verified; the model's explanation itself is not checked by rule. For word forms, use Derivation, where the rules do the work.</p>
+    <textarea id="aaiQuestion" aria-label="Question for AAI" style="width:100%;min-height:70px" placeholder="For example: भवति में 6.1.78 कैसे लगता है?">${escapeHtml(AAI.question||'')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap"><label>Model <select id="aaiModel" aria-label="Model for AAI">${models.length?models.map(m=>`<option ${m.name===chosen?'selected':''}>${escapeHtml(m.name)}</option>`).join(''):'<option value="">No Ollama model yet</option>'}</select></label><button class="btn btn-amber" id="aaiAsk" ${AAI.asking||!models.length?'disabled':''}>${AAI.asking?'Asking…':'Ask'}</button></div>
+    ${a?`<div class="aai-answer"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${aaiVerdict(a.verdict)}<span class="panini-sub">proposed by ${escapeHtml(a.model)} · ${(a.durationMs/1000).toFixed(1)} s</span></div><div class="aai-answer-text">${escapeHtml(a.answer)}</div><p class="panini-sub">${escapeHtml(a.explanation)}</p>${aaiCitations(a.citations)}${a.grounding.length?`<details style="margin-top:8px"><summary class="panini-sub">Sutra texts given to the model (${a.grounding.length})</summary>${a.grounding.map(g=>`<div class="panini-sub"><button class="panini-id mono aai-sutra" data-id="${g.id}">${g.id}</button> ${escapeHtml(g.text)}</div>`).join('')}</details>`:''}</div>`:''}
+  </div>
+  <div class="cap-section-label">Check sutra citations in any text</div>
+  <div class="panel" style="padding:14px"><textarea id="aaiCiteText" aria-label="Text to check" style="width:100%;min-height:60px" placeholder="Paste text that cites sutras, for example from another AI: 6.1.87 इको यणचि …">${escapeHtml(AAI.citeText||'')}</textarea><button class="btn btn-line" id="aaiCiteGo" style="margin-top:8px">Check citations</button><div id="aaiCiteOut">${AAI.citeOut?(AAI.citeOut.length?aaiCitations(AAI.citeOut):'<p class="panini-sub">No sutra numbers found.</p>'):''}</div></div>`;
+  aaiWireInstall(renderAaiView);
+  $$('#aaiView .aai-tile[data-go]').forEach(b=>b.onclick=()=>showView(b.dataset.go));
+  $$('#aaiView .aai-sutra').forEach(b=>b.onclick=()=>openSutra(b.dataset.id));
+  $('aaiAsk').onclick=async()=>{AAI.question=$('aaiQuestion').value;AAI.model=$('aaiModel').value;AAI.asking=true;renderAaiView();try{AAI.ask=await aaiPost('/api/aai/ask',{question:AAI.question,model:AAI.model});}catch(e){toast('AAI: '+e.message);}AAI.asking=false;renderAaiView();};
+  $('aaiCiteGo').onclick=async()=>{AAI.citeText=$('aaiCiteText').value;try{AAI.citeOut=await aaiPost('/api/aai/check-citations',{text:AAI.citeText});}catch(e){toast(e.message);}renderAaiView();};
+}
+
+function aaiGrid(t, onCell){
+  const rowName=r=>AAI_ROWS[r]||r;
+  return `<table class="panini-table aai-grid" data-no-list-tools><thead><tr><th></th>${t.columns.map(c=>`<th>${AAI_COLS[c]||c}</th>`).join('')}</tr></thead><tbody>${t.rows.map((r,i)=>`<tr><th>${rowName(r)}</th>${t.columns.map((c,j)=>`<td><button class="aai-cell" data-row="${r}" data-col="${c}" title="Show how the rules derive it">${t.grid[i][j].length?t.grid[i][j].map(escapeHtml).join('<br>'):'<span class="panini-sub">—</span>'}</button></td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+function aaiSteps(d){
+  if(!d) return '';
+  return d.forms.length?d.forms.map(f=>`<div class="panel" style="padding:12px;margin-top:8px"><div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><span class="aai-form">${escapeHtml(f.text)}</span><span class="badge badge-green">Derived by rule</span><span class="panini-sub">${f.steps.length} steps</span></div><ol class="aai-steps">${f.steps.map(s=>`<li><span class="aai-step-result">${escapeHtml(s.result)}</span> ${s.source==='Ashtadhyayi'?`<button class="panini-id mono aai-sutra" data-id="${escapeHtml(s.code)}">${escapeHtml(s.code)}</button> <span class="panini-sub">${escapeHtml(s.sutra||'')}</span>`:`<span class="mono panini-sub">${escapeHtml(s.sourceName)} ${escapeHtml(s.code)}</span>`}</li>`).join('')}</ol></div>`).join(''):'<p class="panini-sub">The rules derive no form for this choice.</p>';
+}
+
+async function renderDerivationView(){
+  const pad=$('derivationView').querySelector('.view-pad');
+  let st; try{ st=await aaiStatus(); }catch(e){ pad.innerHTML=`<p class="empty-hint">${escapeHtml(e.message)}</p>`; return; }
+  const c=st.choices, v=AAI.verb, n=AAI.noun;
+  const opts=(map,sel,blank)=>`${blank?`<option value="">${blank}</option>`:''}${Object.entries(map).map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${escapeHtml(l)}</option>`).join('')}`;
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · Prakriya</span><h1 class="view-title">Derivation</h1><p class="view-desc">Panini's rules derive the word step by step, and every step names its sutra. Choose a form in the table to see its derivation.</p></div></div>
+  ${aaiEngineBanner(st)}
+  <div class="media-tabs" role="tablist" aria-label="Derivation"><button class="media-tab ${AAI.tab==='verb'?'active':''}" data-tab="verb" role="tab" aria-selected="${AAI.tab==='verb'}">Verb (तिङन्त)</button><button class="media-tab ${AAI.tab==='noun'?'active':''}" data-tab="noun" role="tab" aria-selected="${AAI.tab==='noun'}">Noun (सुबन्त)</button></div>
+  ${AAI.tab==='verb'?`<div class="panel" style="padding:14px"><div class="card-grid cols-3">
+    <label>Root (धातु)<input id="aaiRoot" aria-label="Root" value="${escapeHtml(v.root)}" style="display:block;width:100%;margin-top:6px"></label>
+    <label>Dhatupatha entry<select id="aaiCode" aria-label="Dhatupatha entry" style="display:block;width:100%;margin-top:6px"><option value="${escapeHtml(v.code)}">${escapeHtml(v.code)}</option></select></label>
+    <label>Prefix (उपसर्ग)<select id="aaiPrefix" aria-label="Prefix" style="display:block;width:100%;margin-top:6px"><option value="">none</option>${c.prefixes.map(p=>`<option value="${p.slp1}" ${p.slp1===v.prefix?'selected':''}>${escapeHtml(p.text)}</option>`).join('')}</select></label>
+    <label>Tense or mood (लकार)<select id="aaiLakara" aria-label="Lakara" style="display:block;width:100%;margin-top:6px">${opts(c.lakaras,v.lakara)}</select></label>
+    <label>Voice (प्रयोग)<select id="aaiPrayoga" aria-label="Prayoga" style="display:block;width:100%;margin-top:6px">${opts(c.prayogas,v.prayoga)}</select></label>
+    <label>Pada<select id="aaiPada" aria-label="Pada" style="display:block;width:100%;margin-top:6px">${opts(c.padas,v.pada,'as the root takes')}</select></label>
+  </div><button class="btn btn-amber" id="aaiShow" style="margin-top:10px" ${st.engine.installed?'':'disabled'}>Show all forms</button></div>`
+  :`<div class="panel" style="padding:14px"><div class="card-grid cols-3"><label>Stem (प्रातिपदिक)<input id="aaiStem" aria-label="Stem" value="${escapeHtml(n.stem)}" style="display:block;width:100%;margin-top:6px"></label><label>Gender (लिङ्ग)<select id="aaiLinga" aria-label="Linga" style="display:block;width:100%;margin-top:6px">${opts(c.lingas,n.linga)}</select></label></div><button class="btn btn-amber" id="aaiShow" style="margin-top:10px" ${st.engine.installed?'':'disabled'}>Show all forms</button></div>`}
+  <div id="aaiTable" style="margin-top:10px">${AAI.table&&AAI.table.kind===(AAI.tab==='verb'?'verb-paradigm':'noun-paradigm')?`${AAI.table.dhatu?`<p class="panini-sub">${escapeHtml(AAI.table.dhatu.root)} · ${escapeHtml(AAI.table.dhatu.meaning)} · ${escapeHtml(AAI.table.dhatu.ganaName||'')}गण · ${escapeHtml(AAI.table.dhatu.code)}</p>`:`<p class="panini-sub">${escapeHtml(AAI.table.stem)} · ${escapeHtml(c.lingas[AAI.table.request.linga])}</p>`}${aaiGrid(AAI.table)}
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:200px">Check a form (for example one another AI gave you)<input id="aaiCheck" aria-label="Form to check" value="${escapeHtml(AAI.checkText||'')}" style="display:block;width:100%;margin-top:6px"></label><button class="btn btn-line" id="aaiCheckGo">Check</button></div>
+    ${AAI.check?`<p style="margin-top:8px">${AAI.check.derivable?`<span class="badge badge-green">Derivable</span> ${escapeHtml(AAI.check.claim)} is ${AAI.check.where.map(w=>`${AAI_ROWS[w.row]||w.row} ${AAI_COLS[w.column]}`).join(', ')}.`:`<span class="badge badge-red">Not derived</span> The rules do not give ${escapeHtml(AAI.check.claim)} for this choice.`}</p>`:''}`:''}</div>
+  <div id="aaiSteps">${AAI.derivation&&AAI.derivation.kind===AAI.tab?aaiSteps(AAI.derivation):''}</div>`;
+  aaiWireInstall(renderDerivationView);
+  $$('#derivationView .media-tab').forEach(b=>b.onclick=()=>{AAI.tab=b.dataset.tab;AAI.derivation=null;AAI.check=null;renderDerivationView();});
+  $$('#derivationView .aai-sutra').forEach(b=>b.onclick=()=>openSutra(b.dataset.id));
+  const verbBody=()=>({code:$('aaiCode').value,lakara:$('aaiLakara').value,prayoga:$('aaiPrayoga').value,pada:$('aaiPada').value||null,prefixes:$('aaiPrefix').value?[$('aaiPrefix').value]:[]});
+  const saveVerb=()=>{v.root=$('aaiRoot').value.trim();v.code=$('aaiCode').value;v.lakara=$('aaiLakara').value;v.prayoga=$('aaiPrayoga').value;v.pada=$('aaiPada').value;v.prefix=$('aaiPrefix').value;};
+  if(AAI.tab==='verb'){
+    const fillCodes=async()=>{const root=$('aaiRoot').value.trim();if(!root)return;try{const rows=await paniniFetch('/api/panini/dhatus?root='+encodeURIComponent(root));const sel=$('aaiCode');if(!rows.length){sel.innerHTML='<option value="">not in the Dhatupatha</option>';return;}sel.innerHTML=rows.map(d=>`<option value="${d.code}" ${d.code===v.code?'selected':''}>${escapeHtml(d.root)} · ${escapeHtml(d.meaning)} · ${escapeHtml(d.ganaName)} (${d.code})</option>`).join('');}catch(_){}};
+    fillCodes(); $('aaiRoot').onchange=()=>{v.code='';fillCodes();};
+    $('aaiShow').onclick=async()=>{saveVerb();if(!v.code)return toast('Choose a Dhatupatha entry.');try{AAI.table=await aaiPost('/api/aai/paradigm/verb',verbBody());AAI.derivation=null;AAI.check=null;}catch(e){toast(e.message);}renderDerivationView();};
+  } else {
+    $('aaiShow').onclick=async()=>{n.stem=$('aaiStem').value.trim();n.linga=$('aaiLinga').value;try{AAI.table=await aaiPost('/api/aai/paradigm/noun',{stem:n.stem,linga:n.linga});AAI.derivation=null;AAI.check=null;}catch(e){toast(e.message);}renderDerivationView();};
+  }
+  $$('#derivationView .aai-cell').forEach(b=>b.onclick=async()=>{try{
+    const t=AAI.table; AAI.derivation=t.kind==='verb-paradigm'?{...(await aaiPost('/api/aai/derive/verb',{...t.request,purusha:b.dataset.row,vacana:b.dataset.col})),kind:'verb'}:{...(await aaiPost('/api/aai/derive/noun',{stem:t.request.stem,linga:t.request.linga,vibhakti:b.dataset.row,vacana:b.dataset.col})),kind:'noun'};
+    renderDerivationView(); setTimeout(()=>$('aaiSteps')?.scrollIntoView({behavior:'smooth',block:'start'}),50);
+  }catch(e){toast(e.message);}});
+  const cg=$('aaiCheckGo'); if(cg) cg.onclick=async()=>{AAI.checkText=$('aaiCheck').value.trim();const t=AAI.table;try{AAI.check=await aaiPost('/api/aai/check-form',t.kind==='verb-paradigm'?{...t.request,form:AAI.checkText}:{stem:t.request.stem,linga:t.request.linga,form:AAI.checkText});}catch(e){toast(e.message);}renderDerivationView();};
+}
+
+async function renderLipiView(){
+  const pad=$('lipiView').querySelector('.view-pad');
+  const out=AAI.lipiOut, rows=[['devanagari','Devanagari',''],['iast','IAST',''],['slp1','SLP1','mono'],['brahmi','Brahmi',"font-family:'Noto Sans Brahmi',var(--font-sans)"],['kharoshthi','Kharoshthi (right to left)',"font-family:'Noto Sans Kharoshthi',var(--font-sans);direction:rtl"],['siddham','Siddham',"font-family:'Noto Sans Siddham',var(--font-sans)"]];
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · Lipi</span><h1 class="view-title">Lipi</h1><p class="view-desc">Type Devanagari, Brahmi or Siddham (Latin letters are read as SLP1) and see it in every script at once. The same conversion Guru uses, checked on all 3,983 sutras.</p></div></div>
+  <div class="panel" style="padding:14px"><textarea id="lipiText" aria-label="Text to convert" style="width:100%;min-height:80px;font-size:18px">${escapeHtml(AAI.lipi)}</textarea><button class="btn btn-amber" id="lipiGo" style="margin-top:8px">Convert</button></div>
+  ${out?`<div style="margin-top:10px">${rows.map(([k,l,style])=>`<div class="panel panini-sutra"><span class="mono panini-sub" style="min-width:150px">${l}</span><div class="panini-text ${style==='mono'?'mono':''}" style="flex:1;${style==='mono'?'':style}">${escapeHtml(out[k])}</div><button class="btn btn-line lipi-copy" data-k="${k}">Copy</button></div>`).join('')}<p class="panini-sub" style="margin-top:8px">Kharoshthi has no ai/au: they are written as e/o plus the length mark (Guru convention), and its digits stay in Devanagari. If letters show as boxes, install the free Noto Sans Brahmi, Kharoshthi or Siddham font.</p></div>`:''}`;
+  $('lipiGo').onclick=async()=>{AAI.lipi=$('lipiText').value;try{AAI.lipiOut=await aaiPost('/api/aai/lipi',{text:AAI.lipi});}catch(e){toast(e.message);}renderLipiView();};
+  $$('.lipi-copy').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(out[b.dataset.k]);toast('Copied.');});
+  if(!out){ try{AAI.lipiOut=await aaiPost('/api/aai/lipi',{text:AAI.lipi});renderLipiView();}catch(_){} }
+}
+
 function neuronTemplate(kind){
   return kind==='qubit'
     ? {config:{qubits:2,layers:2,epochs:80,learningRate:0.3,seed:11},targetDistribution:[0,0,0,1]}
@@ -6685,7 +6822,10 @@ init().then(routeHelpHash);
 const VIEW_HELP = {
   voicestudio:'Characters for your agents and for Maataa itself: a name, a personality and way of speaking, a face (made with ComfyUI) and a voice. Blend up to three Kokoro voices with speed and pitch, use a macOS voice, or a voice from the VoiceStudio app (including your own cloned voice). Give a character to an agent, or let Maataa speak as one.',
   agentbrowser:'The separate, locked-down browser Maataa\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting Maataa closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
-  panini:'Panini\'s Ashtadhyayi: all 3,983 sutras and the Dhatupatha\'s 2,259 roots. Type a number (6.1.77), a range (6.1.77-6.1.80), a pada (6.1) or words in any script, and choose the script to read in. Sutra numbers in Neuron Factory link here.',
+  aai:'Maataa AAI (Advanced Ancient Intelligence): rules derive and check, models propose, and nothing is called correct unless Panini\'s rules confirm it. Install the derivation engine here, ask questions whose sutra citations are checked, and open the Ashtadhyayi, Derivation and Lipi tools.',
+  derivation:'Derive Sanskrit words step by step with Panini\'s rules: choose a root, tense or mood (lakara) and voice for verbs, or a stem and gender for nouns. Every step names the sutra that made it. Check a form to see whether the rules derive it.',
+  lipi:'Convert text between Devanagari, IAST, SLP1, Brahmi, Kharoshthi and Siddham. Type Devanagari, Brahmi, Siddham, or Latin letters read as SLP1.',
+  panini:'Panini\'s Ashtadhyayi: all 3,983 sutras and the Dhatupatha\'s 2,229 roots. Type a number (6.1.77), a range (6.1.77-6.1.80), a pada (6.1) or words in any script, and choose the script to read in. Sutra numbers in Neuron Factory link here.',
   neurons:'Train very small, single-purpose models on this Mac: a tiny neural network from your examples, or a simulated quantum circuit. Create a blueprint, queue training, evaluate the result, then approve it. Your Ollama models are not changed.',
   console:'Chat with a local model. + adds files, a folder, a web page or a git repo for Maataa to read. Computer lets Maataa use this Mac (it asks first), the mic lets you talk, Voice reads replies aloud. Steps above each reply show what Maataa is doing; the list icon at the top shows everything running.',
   sessions:'Every conversation you have had. Search or filter by tag, open one to continue it, or delete what you no longer need.',
@@ -6751,7 +6891,7 @@ function enhanceLists(view){
   const viewName = view.id.replace(/View$/, '');
   let n = 0;
   view.querySelectorAll(LIST_SELECTOR).forEach(list => {
-    if (list.closest('.list-tools')) return;
+    if (list.closest('.list-tools') || list.closest('[data-no-list-tools]')) return;
     const items = [...list.children];
     if (items.length < (list.matches('.card-grid') ? 6 : 4)) return;
     const key = viewName + ':' + (list.id || list.dataset.list || ('list' + n)); n++;

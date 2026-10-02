@@ -144,6 +144,14 @@ def main(argv=None):
                     f.write(open(args.pairs, encoding="utf-8").read().rstrip("\n") + "\n")
                 for r in teach_pairs():
                     f.write(json.dumps(r, ensure_ascii=False) + "\n")
+                from . import prakriya
+                if prakriya.available():
+                    extra = prakriya.teach_pairs()
+                    for r in extra:
+                        f.write(json.dumps(r, ensure_ascii=False) + "\n")
+                    print(f"Added {len(extra):,} verified derivation pairs (Maataa AAI).")
+                else:
+                    print("Tip: pip install vidyut adds verified derivation pairs (Maataa AAI).")
         if not pairs:
             sys.exit("Give --pairs FILE, --panini, or both.")
         train(args.size, DATA, out_for(args.size, True), tok_path, minutes=args.minutes, sft=pairs, init_from=base, device=args.device, eval_every=50); return

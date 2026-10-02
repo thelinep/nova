@@ -108,6 +108,8 @@ def find(query, limit=20):
 def dhatus():
     out = []
     for code, dhatu, artha in _rows("dhatupatha"):
+        if dhatu.strip() in ("", "-"):  # 30 rows hold the places of the gana sutras, not roots
+            continue
         gana = int(code.split(".")[0])
         out.append({"code": code, "gana": gana, "gana_name": GANAS.get(gana, ""), "slp1": dhatu,
                     "deva": slp1.to_devanagari(dhatu), "artha": slp1.to_devanagari(artha), "artha_slp1": artha})

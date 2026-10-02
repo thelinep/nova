@@ -10,7 +10,7 @@ These files are copied unchanged from **Vidyut** by ambuda.org (`vidyut-prakriya
 | File | What it is | Entries | SHA-256 |
 | --- | --- | --- | --- |
 | `sutrapatha.tsv` | Ashtadhyayi, 1.1.1 to 8.4.68 | 3,983 | `f2ff7987…7e87c` |
-| `dhatupatha.tsv` | Dhatupatha: code, root with markers and svaras, meaning | 2,259 | `bb2013ea…ba380` |
+| `dhatupatha.tsv` | Dhatupatha: code, root with markers and svaras, meaning | 2,229 roots (plus 30 rows marking where the gana sutras go) | `bb2013ea…ba380` |
 | `unadipatha.tsv` | Unadi sutras | 748 | `ff2ededa…aa5c6` |
 | `linganushasanam.tsv` | Linganushasanam | 189 | `04286806…8776f` |
 | `phit-sutras.tsv` | Phit sutras | 87 | `1f0bf844…d3f98` |
