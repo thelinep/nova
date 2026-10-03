@@ -13,11 +13,11 @@ test('the seed data is well formed: no errors, every script referenced', () => {
   assert.ok(data.records.every(r => ['source', 'general'].includes(r.basis)));
 });
 
-test('the tensor has the four axes and the default shape 11 × 11 × 6 × 4', () => {
+test('the tensor has the four axes and the default shape 11 × 11 × 6 × 5', () => {
   const t = hkdm.build();
-  assert.deepEqual(t.shape, [11, 11, 6, 4]);
+  assert.deepEqual(t.shape, [11, 11, 6, 5]);
   assert.equal(t.axes.alpha.values[0].label, '3500 BCE – 3000 BCE');
-  assert.deepEqual(t.axes.delta.values.map(v => v.id), ['ltr', 'rtl', 'ttb', 'boustrophedon']);
+  assert.deepEqual(t.axes.delta.values.map(v => v.id), ['ltr', 'rtl', 'ttb', 'boustrophedon', 'unfixed']);
   assert.equal(hkdm.build({ bin: 100 }).shape[0], 55);
   assert.throws(() => hkdm.build({ bin: 7 }), /bin/);
 });
@@ -70,7 +70,7 @@ test('lineage gaps use first established records; both Brahmi hypotheses are kep
 test('exports: the dense tensor agrees with the sparse cells, and the CSV has every record', () => {
   const x = hkdm.exportTensor();
   assert.equal(x.format, 'hkdm-tensor/1');
-  assert.deepEqual(x.shape, [11, 11, 6, 4]);
+  assert.deepEqual(x.shape, [11, 11, 6, 5]);
   let sum = 0; for (const a of x.dense) for (const b of a) for (const c of b) for (const d of c) sum += d;
   assert.equal(sum, x.sparse.reduce((n, c) => n + c.count, 0));
   for (const c of x.sparse) { const [i, j, k, l] = c.at; assert.equal(x.dense[i][j][k][l], c.count); }
@@ -78,4 +78,21 @@ test('exports: the dense tensor agrees with the sparse cells, and the CSV has ev
   assert.equal(csv.trim().split('\n').length, hkdm.load().records.length + 1);
   assert.match(csv, /^id,script,from,to,beta,gamma,delta,confidence,basis,note,reference/);
   assert.equal(hkdm.exportCsv({ basis: 'source' }).trim().split('\n').length, hkdm.load().records.filter(r => r.basis === 'source').length + 1);
+});
+
+test('Omniglot cross-checks: every script named exists, disagreements are kept, and they shape the data', () => {
+  const s = hkdm.summary();
+  assert.ok(s.crossChecks.length >= 15);
+  assert.ok(s.crossChecks.every(c => ['agree', 'partial', 'differ'].includes(c.verdict) && c.wikipedia && c.omniglot));
+  assert.ok(s.crossChecks.some(c => c.script === 'devanagari' && c.verdict === 'differ'));
+  // Where the sources differ on Devanagari's parent, both links are debated.
+  const dev = hkdm.gaps().filter(e => e.child === 'devanagari');
+  assert.deepEqual(dev.map(e => e.parent).sort(), ['gupta', 'siddham']);
+  assert.ok(dev.every(e => e.confidence === 'debated'));
+  // Proto-Sinaitic sits between Egyptian and Phoenician; its direction is not yet fixed.
+  assert.ok(hkdm.gaps().some(e => e.parent === 'egyptian' && e.child === 'proto-sinaitic'));
+  assert.deepEqual(hkdm.cell({ delta: 'unfixed' }).map(r => r.script), ['proto-sinaitic']);
+  // Sharada's start follows Omniglot's earliest inscription.
+  assert.equal(hkdm.load().records.find(r => r.id === 'sha-stone-ltr').from, 774);
+  assert.ok(hkdm.load().scripts.find(x => x.id === 'sharada').refs.some(u => /omniglot\.com/.test(u)));
 });

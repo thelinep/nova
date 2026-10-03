@@ -7,7 +7,7 @@
  *                   palm-leaf, papyrus, leather, silk, paper
  *   γ  architecture logographic, abjad, alphabet, abugida, featural,
  *                   undeciphered
- *   δ  direction    ltr, rtl, ttb (columns), boustrophedon
+ *   δ  direction    ltr, rtl, ttb (columns), boustrophedon, unfixed (mixed)
  *
  * What a cell holds: the scripts attested with that substrate, architecture
  * and direction during that epoch. The tensor value is their count; every
@@ -82,6 +82,12 @@ function validate(data = load()) {
     if (!scripts.has(e.parent) || !scripts.has(e.child)) issues.push({ level: 'error', where: at, message: 'Lineage names an unknown script.' });
     if (!CONFIDENCE.includes(e.confidence)) issues.push({ level: 'error', where: at, message: 'Confidence must be established or debated.' });
     if (!e.ref) issues.push({ level: 'error', where: at, message: 'A lineage link needs a reference.' });
+  }
+  for (const c of data.crossChecks || []) {
+    const at = `cross-check ${c.script}: ${c.topic}`;
+    if (!scripts.has(c.script)) issues.push({ level: 'error', where: at, message: 'Cross-check names an unknown script.' });
+    if (!['agree', 'partial', 'differ'].includes(c.verdict)) issues.push({ level: 'error', where: at, message: 'Verdict must be agree, partial or differ.' });
+    if (!c.wikipedia || !c.omniglot) issues.push({ level: 'error', where: at, message: 'A cross-check states what each source says.' });
   }
   for (const g of gaps(data)) if (g.gap != null && g.gap < 0) issues.push({ level: 'warning', where: `${g.parent} → ${g.child}`, message: `The child's first established record is ${-g.gap} years older than the parent's.` });
   return issues;
@@ -183,7 +189,7 @@ function summary(opts = {}) {
     axes: t.axes, shape: t.shape, cellsTotal: t.shape.reduce((a, b) => a * b, 1), cellsNonZero: t.cells.size,
     scripts: data.scripts.map(s => ({ ...s, records: records.filter(r => r.script === s.id).length })),
     counts: { scripts: data.scripts.length, records: records.length, allRecords: data.records.length, established: records.filter(r => r.confidence === 'established').length, debated: records.filter(r => r.confidence === 'debated').length, fromSource: records.filter(r => r.basis === 'source').length, general: records.filter(r => r.basis === 'general').length },
-    lineage: gaps(data), issues,
+    lineage: gaps(data), crossChecks: (data.crossChecks || []).map(c => ({ ...c, scriptName: data.scripts.find(s => s.id === c.script)?.name })), issues,
   };
 }
 

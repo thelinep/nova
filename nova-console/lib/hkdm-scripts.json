@@ -2,138 +2,1375 @@
   "format": "hkdm-scripts/1",
   "title": "HKDM script tensor: seed data",
   "status": "draft",
-  "note": "Compiled on 2026-10-03 from the reference pages listed with each script. Records with basis 'source' state a fact found on that page; records with basis 'general' are general knowledge not yet checked against a page. Every record still needs review by an epigraphist before it is cited.",
+  "note": "Compiled on 2026-10-03 from the reference pages listed with each script, and cross-checked the same day against Omniglot where it has a page. Records with basis 'source' state a fact found on a listed page; records with basis 'general' are general knowledge not yet checked against a page. Every record still needs review by an epigraphist before it is cited.",
   "axes": {
-    "alpha": { "symbol": "α", "name": "Epoch", "hi": "युग", "unit": "year (negative = BCE)", "from": -3500, "to": 2000, "bin": 500 },
-    "beta": { "symbol": "β", "name": "Substrate", "hi": "माध्यम", "values": [
-      ["clay", "Clay (tablets, pottery, brick)", "मिट्टी"],
-      ["stone", "Stone", "पत्थर"],
-      ["metal", "Metal (copper plate, bronze, iron, coins)", "धातु"],
-      ["bone-shell", "Bone and shell", "हड्डी और सीप"],
-      ["wood-bamboo", "Wood and bamboo", "लकड़ी और बाँस"],
-      ["birch-bark", "Birch bark", "भूर्जपत्र"],
-      ["palm-leaf", "Palm leaf", "ताड़पत्र"],
-      ["papyrus", "Papyrus", "पपाइरस"],
-      ["leather", "Leather and parchment", "चर्म"],
-      ["silk", "Silk", "रेशम"],
-      ["paper", "Paper", "काग़ज़"]
-    ] },
-    "gamma": { "symbol": "γ", "name": "Information architecture", "hi": "सूचना-संरचना", "values": [
-      ["logographic", "Logographic, mixed with sound signs (logo-syllabic, logo-consonantal, morphosyllabic)", "लोगोग्राफ़िक (मिश्र)"],
-      ["abjad", "Abjad (consonants only)", "अब्जद"],
-      ["alphabet", "Alphabet (consonants and vowels)", "वर्णमाला"],
-      ["abugida", "Abugida (consonant with inherent vowel, vowel signs)", "आबुगिडा"],
-      ["featural", "Featural (letter shapes encode sound features)", "लक्षण-आधारित"],
-      ["undeciphered", "Undeciphered", "अपठित"]
-    ] },
-    "delta": { "symbol": "δ", "name": "Direction", "hi": "दिशा", "values": [
-      ["ltr", "Left to right", "बाएँ से दाएँ"],
-      ["rtl", "Right to left", "दाएँ से बाएँ"],
-      ["ttb", "Top to bottom in columns", "ऊपर से नीचे, स्तंभों में"],
-      ["boustrophedon", "Boustrophedon (alternating lines)", "बूस्ट्रोफ़ेडन (हल-चाल)"]
-    ] }
+    "alpha": {
+      "symbol": "α",
+      "name": "Epoch",
+      "hi": "युग",
+      "unit": "year (negative = BCE)",
+      "from": -3500,
+      "to": 2000,
+      "bin": 500
+    },
+    "beta": {
+      "symbol": "β",
+      "name": "Substrate",
+      "hi": "माध्यम",
+      "values": [
+        [
+          "clay",
+          "Clay (tablets, pottery, brick)",
+          "मिट्टी"
+        ],
+        [
+          "stone",
+          "Stone",
+          "पत्थर"
+        ],
+        [
+          "metal",
+          "Metal (copper plate, bronze, iron, coins)",
+          "धातु"
+        ],
+        [
+          "bone-shell",
+          "Bone and shell",
+          "हड्डी और सीप"
+        ],
+        [
+          "wood-bamboo",
+          "Wood and bamboo",
+          "लकड़ी और बाँस"
+        ],
+        [
+          "birch-bark",
+          "Birch bark",
+          "भूर्जपत्र"
+        ],
+        [
+          "palm-leaf",
+          "Palm leaf",
+          "ताड़पत्र"
+        ],
+        [
+          "papyrus",
+          "Papyrus",
+          "पपाइरस"
+        ],
+        [
+          "leather",
+          "Leather and parchment",
+          "चर्म"
+        ],
+        [
+          "silk",
+          "Silk",
+          "रेशम"
+        ],
+        [
+          "paper",
+          "Paper",
+          "काग़ज़"
+        ]
+      ]
+    },
+    "gamma": {
+      "symbol": "γ",
+      "name": "Information architecture",
+      "hi": "सूचना-संरचना",
+      "values": [
+        [
+          "logographic",
+          "Logographic, mixed with sound signs (logo-syllabic, logo-consonantal, morphosyllabic)",
+          "लोगोग्राफ़िक (मिश्र)"
+        ],
+        [
+          "abjad",
+          "Abjad (consonants only)",
+          "अब्जद"
+        ],
+        [
+          "alphabet",
+          "Alphabet (consonants and vowels)",
+          "वर्णमाला"
+        ],
+        [
+          "abugida",
+          "Abugida (consonant with inherent vowel, vowel signs)",
+          "आबुगिडा"
+        ],
+        [
+          "featural",
+          "Featural (letter shapes encode sound features)",
+          "लक्षण-आधारित"
+        ],
+        [
+          "undeciphered",
+          "Undeciphered",
+          "अपठित"
+        ]
+      ]
+    },
+    "delta": {
+      "symbol": "δ",
+      "name": "Direction",
+      "hi": "दिशा",
+      "values": [
+        [
+          "ltr",
+          "Left to right",
+          "बाएँ से दाएँ"
+        ],
+        [
+          "rtl",
+          "Right to left",
+          "दाएँ से बाएँ"
+        ],
+        [
+          "ttb",
+          "Top to bottom in columns",
+          "ऊपर से नीचे, स्तंभों में"
+        ],
+        [
+          "boustrophedon",
+          "Boustrophedon (alternating lines)",
+          "बूस्ट्रोफ़ेडन (हल-चाल)"
+        ],
+        [
+          "unfixed",
+          "Direction not yet fixed (mixed)",
+          "दिशा अनिश्चित (मिश्र)"
+        ]
+      ]
+    }
   },
   "scripts": [
-    { "id": "cuneiform", "name": "Cuneiform", "hi": "क्यूनिफ़ॉर्म", "region": "Mesopotamia", "refs": ["https://en.wikipedia.org/wiki/Cuneiform"] },
-    { "id": "egyptian", "name": "Egyptian hieroglyphs", "hi": "मिस्री चित्रलिपि", "region": "Egypt", "refs": ["https://en.wikipedia.org/wiki/Egyptian_hieroglyphs"] },
-    { "id": "indus", "name": "Indus script", "hi": "सिंधु लिपि", "region": "Indus valley", "refs": ["https://en.wikipedia.org/wiki/Indus_script"] },
-    { "id": "chinese", "name": "Chinese characters", "hi": "चीनी अक्षर", "region": "China", "refs": ["https://en.wikipedia.org/wiki/Chinese_characters"] },
-    { "id": "phoenician", "name": "Phoenician", "hi": "फ़ीनिशियन", "region": "Levant", "refs": ["https://en.wikipedia.org/wiki/Phoenician_alphabet"] },
-    { "id": "aramaic", "name": "Aramaic", "hi": "अरामी", "region": "Near East, Persian empire", "refs": ["https://en.wikipedia.org/wiki/Aramaic_alphabet"] },
-    { "id": "greek", "name": "Greek", "hi": "यूनानी", "region": "Greece", "refs": ["https://en.wikipedia.org/wiki/Greek_alphabet"] },
-    { "id": "kharoshthi", "name": "Kharoshthi", "hi": "खरोष्ठी", "region": "Gandhara, Central Asia", "refs": ["https://en.wikipedia.org/wiki/Kharosthi"] },
-    { "id": "brahmi", "name": "Brahmi", "hi": "ब्राह्मी", "region": "South Asia", "refs": ["https://en.wikipedia.org/wiki/Brahmi_script"] },
-    { "id": "tamil-brahmi", "name": "Tamil-Brahmi", "hi": "तमिल-ब्राह्मी", "region": "Tamil country, Sri Lanka", "refs": ["https://en.wikipedia.org/wiki/Tamil-Brahmi"] },
-    { "id": "gupta", "name": "Gupta script", "hi": "गुप्त लिपि", "region": "North India", "refs": ["https://en.wikipedia.org/wiki/Gupta_Brahmi_script"] },
-    { "id": "grantha", "name": "Pallava and Grantha", "hi": "पल्लव और ग्रंथ", "region": "South India", "refs": ["https://en.wikipedia.org/wiki/Grantha_script"] },
-    { "id": "siddham", "name": "Siddham", "hi": "सिद्धम्", "region": "North India, then East Asia", "refs": ["https://en.wikipedia.org/wiki/Siddha%E1%B9%83_script"] },
-    { "id": "sharada", "name": "Sharada", "hi": "शारदा", "region": "Kashmir and the north-west", "refs": ["https://en.wikipedia.org/wiki/Sharada_script"] },
-    { "id": "devanagari", "name": "Nagari and Devanagari", "hi": "नागरी और देवनागरी", "region": "South Asia", "refs": ["https://en.wikipedia.org/wiki/Devanagari_script"] },
-    { "id": "hangul", "name": "Hangul", "hi": "हांगुल", "region": "Korea", "refs": ["https://en.wikipedia.org/wiki/Hangul"] }
+    {
+      "id": "cuneiform",
+      "name": "Cuneiform",
+      "hi": "क्यूनिफ़ॉर्म",
+      "region": "Mesopotamia",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Cuneiform",
+        "https://www.omniglot.com/writing/cuneiform.htm"
+      ]
+    },
+    {
+      "id": "egyptian",
+      "name": "Egyptian hieroglyphs",
+      "hi": "मिस्री चित्रलिपि",
+      "region": "Egypt",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Egyptian_hieroglyphs",
+        "https://www.omniglot.com/writing/egyptian.htm"
+      ]
+    },
+    {
+      "id": "indus",
+      "name": "Indus script",
+      "hi": "सिंधु लिपि",
+      "region": "Indus valley",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Indus_script"
+      ]
+    },
+    {
+      "id": "chinese",
+      "name": "Chinese characters",
+      "hi": "चीनी अक्षर",
+      "region": "China",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Chinese_characters"
+      ]
+    },
+    {
+      "id": "proto-sinaitic",
+      "name": "Proto-Sinaitic",
+      "hi": "प्रोटो-सिनाइटिक",
+      "region": "Sinai, Egypt, Canaan",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Proto-Sinaitic_script",
+        "https://www.omniglot.com/writing/protosinaitc.htm"
+      ]
+    },
+    {
+      "id": "phoenician",
+      "name": "Phoenician",
+      "hi": "फ़ीनिशियन",
+      "region": "Levant",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Phoenician_alphabet",
+        "https://www.omniglot.com/writing/phoenician.htm"
+      ]
+    },
+    {
+      "id": "aramaic",
+      "name": "Aramaic",
+      "hi": "अरामी",
+      "region": "Near East, Persian empire",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Aramaic_alphabet",
+        "https://www.omniglot.com/writing/aramaic.htm"
+      ]
+    },
+    {
+      "id": "greek",
+      "name": "Greek",
+      "hi": "यूनानी",
+      "region": "Greece",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Greek_alphabet",
+        "https://www.omniglot.com/writing/greek.htm"
+      ]
+    },
+    {
+      "id": "kharoshthi",
+      "name": "Kharoshthi",
+      "hi": "खरोष्ठी",
+      "region": "Gandhara, Central Asia",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Kharosthi",
+        "https://www.omniglot.com/writing/kharosthi.htm"
+      ]
+    },
+    {
+      "id": "brahmi",
+      "name": "Brahmi",
+      "hi": "ब्राह्मी",
+      "region": "South Asia",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Brahmi_script",
+        "https://www.omniglot.com/writing/brahmi.htm"
+      ]
+    },
+    {
+      "id": "tamil-brahmi",
+      "name": "Tamil-Brahmi",
+      "hi": "तमिल-ब्राह्मी",
+      "region": "Tamil country, Sri Lanka",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Tamil-Brahmi",
+        "https://www.omniglot.com/writing/tamil.htm"
+      ]
+    },
+    {
+      "id": "gupta",
+      "name": "Gupta script",
+      "hi": "गुप्त लिपि",
+      "region": "North India",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Gupta_Brahmi_script",
+        "https://www.omniglot.com/writing/gupta.htm"
+      ]
+    },
+    {
+      "id": "grantha",
+      "name": "Pallava and Grantha",
+      "hi": "पल्लव और ग्रंथ",
+      "region": "South India",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Grantha_script",
+        "https://www.omniglot.com/writing/grantha.htm",
+        "https://www.omniglot.com/writing/pallava.htm"
+      ]
+    },
+    {
+      "id": "siddham",
+      "name": "Siddham",
+      "hi": "सिद्धम्",
+      "region": "North India, then East Asia",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Siddha%E1%B9%83_script",
+        "https://www.omniglot.com/writing/siddham.htm"
+      ]
+    },
+    {
+      "id": "sharada",
+      "name": "Sharada",
+      "hi": "शारदा",
+      "region": "Kashmir and the north-west",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Sharada_script",
+        "https://www.omniglot.com/writing/sharda.htm"
+      ]
+    },
+    {
+      "id": "devanagari",
+      "name": "Nagari and Devanagari",
+      "hi": "नागरी और देवनागरी",
+      "region": "South Asia",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Devanagari_script",
+        "https://www.omniglot.com/writing/devanagari.htm"
+      ]
+    },
+    {
+      "id": "hangul",
+      "name": "Hangul",
+      "hi": "हांगुल",
+      "region": "Korea",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Hangul"
+      ]
+    },
+    {
+      "id": "latin",
+      "name": "Latin",
+      "hi": "लैटिन",
+      "region": "Italy, then Europe and worldwide",
+      "refs": [
+        "https://en.wikipedia.org/wiki/History_of_the_Latin_script",
+        "https://www.omniglot.com/writing/latin.htm"
+      ]
+    },
+    {
+      "id": "arabic",
+      "name": "Arabic",
+      "hi": "अरबी",
+      "region": "Arabia, then West Asia and beyond",
+      "refs": [
+        "https://en.wikipedia.org/wiki/History_of_the_Arabic_alphabet"
+      ]
+    },
+    {
+      "id": "tibetan",
+      "name": "Tibetan",
+      "hi": "तिब्बती",
+      "region": "Tibet, Himalaya",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Tibetan_script"
+      ]
+    }
   ],
   "records": [
-    { "id": "cun-clay-ttb", "script": "cuneiform", "from": -3300, "to": -2280, "beta": "clay", "gamma": "logographic", "delta": "ttb", "confidence": "established", "basis": "source", "note": "First documents in the Uruk IV period, c. 3300 BCE, written in vertical columns until the signs were rotated c. 2294–2270 BCE." },
-    { "id": "cun-clay-ltr", "script": "cuneiform", "from": -2280, "to": 80, "beta": "clay", "gamma": "logographic", "delta": "ltr", "confidence": "established", "basis": "source", "note": "After the rotation, horizontal left to right. Latest firmly dateable tablet: Uruk, 79/80 CE." },
-    { "id": "cun-stone-ttb", "script": "cuneiform", "from": -3300, "to": -1500, "beta": "stone", "gamma": "logographic", "delta": "ttb", "confidence": "established", "basis": "source", "note": "The vertical style stayed on monumental stone stelae until the middle of the 2nd millennium BCE." },
-
-    { "id": "egy-stone-rtl", "script": "egyptian", "from": -3250, "to": 394, "beta": "stone", "gamma": "logographic", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Logo-consonantal. Right to left was preferred. Last known inscription: the Graffito of Esmet-Akhom at Philae, 394 CE." },
-    { "id": "egy-stone-ltr", "script": "egyptian", "from": -3250, "to": 394, "beta": "stone", "gamma": "logographic", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Left to right also occurs; the way the signs face shows the reading order." },
-    { "id": "egy-stone-bou", "script": "egyptian", "from": -3250, "to": 394, "beta": "stone", "gamma": "logographic", "delta": "boustrophedon", "confidence": "established", "basis": "source", "note": "Boustrophedon is attested." },
-    { "id": "egy-papyrus-rtl", "script": "egyptian", "from": -2600, "to": 394, "beta": "papyrus", "gamma": "logographic", "delta": "rtl", "confidence": "established", "basis": "general", "note": "Cursive hieroglyphs on papyrus for religious literature (material from the source; the date range is general knowledge)." },
-    { "id": "egy-wood-rtl", "script": "egyptian", "from": -2600, "to": 394, "beta": "wood-bamboo", "gamma": "logographic", "delta": "rtl", "confidence": "established", "basis": "general", "note": "Cursive hieroglyphs on wood (material from the source; the date range is general knowledge)." },
-
-    { "id": "ind-stone-rtl", "script": "indus", "from": -2800, "to": -1900, "beta": "stone", "gamma": "undeciphered", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Stamp seals (soapstone). Predominantly right to left: signs are compressed on the left, as if the writer ran out of space." },
-    { "id": "ind-clay-rtl", "script": "indus", "from": -2800, "to": -1900, "beta": "clay", "gamma": "undeciphered", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Pottery inscriptions and clay seal impressions from c. 2800–2600 BCE onward; terracotta." },
-    { "id": "ind-metal-rtl", "script": "indus", "from": -2800, "to": -1900, "beta": "metal", "gamma": "undeciphered", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Copper plates, tools and weapons." },
-    { "id": "ind-stone-bou", "script": "indus", "from": -2800, "to": -1900, "beta": "stone", "gamma": "undeciphered", "delta": "boustrophedon", "confidence": "established", "basis": "source", "note": "Some boustrophedon examples." },
-
-    { "id": "chi-bone-ttb", "script": "chinese", "from": -1250, "to": -1050, "beta": "bone-shell", "gamma": "logographic", "delta": "ttb", "confidence": "established", "basis": "source", "note": "Oracle bone inscriptions, Late Shang, c. 1250–1050 BCE. Morphosyllabic. Columns top to bottom, ordered right to left." },
-    { "id": "chi-bronze-ttb", "script": "chinese", "from": -1250, "to": -200, "beta": "metal", "gamma": "logographic", "delta": "ttb", "confidence": "established", "basis": "general", "note": "Inscriptions on bronze ritual vessels from the Shang onward (the end date is general knowledge)." },
-    { "id": "chi-bamboo-ttb", "script": "chinese", "from": -500, "to": 300, "beta": "wood-bamboo", "gamma": "logographic", "delta": "ttb", "confidence": "established", "basis": "general", "note": "Bamboo and wood slips (material from the source; the date range is general knowledge)." },
-    { "id": "chi-silk-ttb", "script": "chinese", "from": -300, "to": 300, "beta": "silk", "gamma": "logographic", "delta": "ttb", "confidence": "established", "basis": "general", "note": "Writing on silk (material from the source; the date range is general knowledge)." },
-    { "id": "chi-paper-ttb", "script": "chinese", "from": 100, "to": 1950, "beta": "paper", "gamma": "logographic", "delta": "ttb", "confidence": "established", "basis": "source", "note": "Paper as a writing medium from the 1st century CE; vertical columns until the 20th century." },
-    { "id": "chi-paper-ltr", "script": "chinese", "from": 1900, "to": 2000, "beta": "paper", "gamma": "logographic", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Horizontal left to right became predominant in the 20th century." },
-
-    { "id": "pho-stone-rtl", "script": "phoenician", "from": -1050, "to": -146, "beta": "stone", "gamma": "abjad", "delta": "rtl", "confidence": "established", "basis": "source", "note": "c. 1050–146 BCE. Oldest inscription: the Ahiram sarcophagus, Byblos, c. 1000 BCE. The first script with a fixed writing direction." },
-
-    { "id": "ara-stone-rtl", "script": "aramaic", "from": -800, "to": 600, "beta": "stone", "gamma": "abjad", "delta": "rtl", "confidence": "established", "basis": "source", "note": "800 BCE to 600 CE; the written medium of the Persian empire from c. 500 BCE." },
-    { "id": "ara-leather-rtl", "script": "aramaic", "from": -500, "to": -300, "beta": "leather", "gamma": "abjad", "delta": "rtl", "confidence": "established", "basis": "general", "note": "Administrative documents from Bactria on leather (material from the source; the dates are general knowledge)." },
-
-    { "id": "gre-clay-rtl", "script": "greek", "from": -740, "to": -500, "beta": "clay", "gamma": "alphabet", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Oldest substantial inscriptions c. 740/730 BCE (Dipylon vase, cup of Nestor). Originally mostly right to left, like Phoenician." },
-    { "id": "gre-stone-bou", "script": "greek", "from": -700, "to": -450, "beta": "stone", "gamma": "alphabet", "delta": "boustrophedon", "confidence": "established", "basis": "general", "note": "For a time boustrophedon was common (the source states the practice; the date range is general knowledge)." },
-    { "id": "gre-stone-ltr", "script": "greek", "from": -450, "to": 2000, "beta": "stone", "gamma": "alphabet", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Left to right became the norm in the classical period." },
-
-    { "id": "kha-stone-rtl", "script": "kharoshthi", "from": -260, "to": 200, "beta": "stone", "gamma": "abugida", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Edicts of Ashoka at Shahbazgarhi and Mansehra. Developed in Gandhara between the 5th and 3rd centuries BCE." },
-    { "id": "kha-birch-rtl", "script": "kharoshthi", "from": 1, "to": 300, "beta": "birch-bark", "gamma": "abugida", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Gandharan Buddhist texts on birch bark from the 1st century CE." },
-    { "id": "kha-wood-rtl", "script": "kharoshthi", "from": 200, "to": 400, "beta": "wood-bamboo", "gamma": "abugida", "delta": "rtl", "confidence": "established", "basis": "source", "note": "Wooden tablets from Niya, 3rd century CE." },
-    { "id": "kha-wood-late", "script": "kharoshthi", "from": 400, "to": 650, "beta": "wood-bamboo", "gamma": "abugida", "delta": "rtl", "confidence": "debated", "basis": "source", "note": "Some evidence that it survived until the 7th century in Khotan and Niya." },
-
-    { "id": "bra-stone-ltr", "script": "brahmi", "from": -260, "to": 400, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Earliest indisputably dated: the rock edicts of Ashoka, c. 250–232 BCE. Usually left to right." },
-    { "id": "bra-clay-early", "script": "brahmi", "from": -550, "to": -350, "beta": "clay", "gamma": "abugida", "delta": "ltr", "confidence": "debated", "basis": "source", "note": "Potsherds from Anuradhapura dated 6th to early 4th century BCE; controversial (Falk questions some readings)." },
-    { "id": "bra-metal-ltr", "script": "brahmi", "from": -260, "to": 400, "beta": "metal", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Metal plates and coins are among the attested surfaces (the date range follows the stone record)." },
-    { "id": "bra-metal-rtl", "script": "brahmi", "from": -300, "to": -200, "beta": "metal", "gamma": "abugida", "delta": "rtl", "confidence": "established", "basis": "general", "note": "An early coin from Eran runs right to left, as in Aramaic (the fact is from the source; its date is general knowledge)." },
-
-    { "id": "tbr-stone-ltr", "script": "tamil-brahmi", "from": -300, "to": 100, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Cave entrances and stone beds; dated 3rd century BCE to 1st century CE. Adds signs for ṉ ṟ ṛ ḷ." },
-    { "id": "tbr-clay-ltr", "script": "tamil-brahmi", "from": -300, "to": 100, "beta": "clay", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Potsherds and jar burials." },
-    { "id": "tbr-clay-early", "script": "tamil-brahmi", "from": -500, "to": -300, "beta": "clay", "gamma": "abugida", "delta": "ltr", "confidence": "debated", "basis": "source", "note": "Earlier dates (5th–4th century BCE) proposed from Sri Lankan finds; contested." },
-
-    { "id": "gup-stone-ltr", "script": "gupta", "from": 320, "to": 600, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Allahabad pillar inscription c. 350 CE; sometimes called Late Brahmi." },
-    { "id": "gup-metal-ltr", "script": "gupta", "from": 320, "to": 600, "beta": "metal", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Iron pillars and Gupta gold coins (Bayana hoard)." },
-
-    { "id": "gra-stone-ltr", "script": "grantha", "from": 350, "to": 2000, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Pallava script from the 4th century CE; Grantha on temple inscriptions; still used in religious contexts." },
-    { "id": "gra-metal-ltr", "script": "grantha", "from": 350, "to": 1500, "beta": "metal", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "general", "note": "Copper plates (material from the source; the end date is general knowledge)." },
-    { "id": "gra-palm-ltr", "script": "grantha", "from": 700, "to": 1900, "beta": "palm-leaf", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "general", "note": "Palm leaves (material from the source; the date range is general knowledge)." },
-
-    { "id": "sid-stone-ltr", "script": "siddham", "from": 550, "to": 1100, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "From the Gupta script in the late 6th century; the main script of North India by the 7th; replaced by Nagari by about the 11th." },
-    { "id": "sid-metal-ltr", "script": "siddham", "from": 550, "to": 1100, "beta": "metal", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Copper-plate land grants (tāmra-paṭṭa)." },
-    { "id": "sid-palm-ltr", "script": "siddham", "from": 550, "to": 1100, "beta": "palm-leaf", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Palm-leaf sutras. The Hōryū-ji Heart Sutra, 7th–8th century, may be the earliest extant Sanskrit manuscript of that text." },
-    { "id": "sid-paper-japan", "script": "siddham", "from": 806, "to": 2000, "beta": "paper", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Brought to Japan by Kūkai in 806; written with a brush in Shingon, Tendai and Shugendō to this day." },
-
-    { "id": "sha-stone-ltr", "script": "sharada", "from": 750, "to": 1204, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "Widespread in the 8th–12th centuries in Kashmir and the north-west; last known inscription 1204 CE." },
-    { "id": "sha-birch-ltr", "script": "sharada", "from": 800, "to": 1900, "beta": "birch-bark", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "general", "note": "Birch-bark manuscripts; later kept for religious use by Kashmiri Pandits (general knowledge)." },
-
-    { "id": "dev-stone-early", "script": "devanagari", "from": 50, "to": 400, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "debated", "basis": "source", "note": "Nāgarī variants recognisably close to Devanāgarī are attested from the 1st-century Rudradaman inscriptions (an early-development claim)." },
-    { "id": "dev-stone-ltr", "script": "devanagari", "from": 600, "to": 2000, "beta": "stone", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "In regular use by the 7th century; early Devanāgarī in the Kutila inscription, 992 CE; modern form by about 1000 CE." },
-    { "id": "dev-clay-ltr", "script": "devanagari", "from": 1217, "to": 1217, "beta": "clay", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "source", "note": "An inscribed brick from Uttar Pradesh, 1217 CE (British Museum)." },
-    { "id": "dev-metal-ltr", "script": "devanagari", "from": 700, "to": 1300, "beta": "metal", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "general", "note": "Copper-plate grants (general knowledge)." },
-    { "id": "dev-palm-ltr", "script": "devanagari", "from": 1000, "to": 1600, "beta": "palm-leaf", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "general", "note": "Palm-leaf manuscripts (general knowledge)." },
-    { "id": "dev-paper-ltr", "script": "devanagari", "from": 1300, "to": 2000, "beta": "paper", "gamma": "abugida", "delta": "ltr", "confidence": "established", "basis": "general", "note": "Paper manuscripts and, later, print (general knowledge)." },
-
-    { "id": "han-paper-ttb", "script": "hangul", "from": 1443, "to": 1950, "beta": "paper", "gamma": "featural", "delta": "ttb", "confidence": "debated", "basis": "source", "note": "Announced 1443–44, published 1446 (Hunminjeongeum). Columns top to bottom, right to left. Whether it is 'featural' is debated." },
-    { "id": "han-paper-ltr", "script": "hangul", "from": 1900, "to": 2000, "beta": "paper", "gamma": "featural", "delta": "ltr", "confidence": "debated", "basis": "source", "note": "Horizontal left to right dominant since the 20th century. 'Featural' is debated." }
+    {
+      "id": "cun-clay-ttb",
+      "script": "cuneiform",
+      "from": -3300,
+      "to": -2280,
+      "beta": "clay",
+      "gamma": "logographic",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "source",
+      "note": "First documents in the Uruk IV period, c. 3300 BCE, written in vertical columns until the signs were rotated c. 2294–2270 BCE."
+    },
+    {
+      "id": "cun-clay-ltr",
+      "script": "cuneiform",
+      "from": -2280,
+      "to": 80,
+      "beta": "clay",
+      "gamma": "logographic",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "After the rotation, horizontal left to right. Latest firmly dateable tablet: Uruk, 79/80 CE."
+    },
+    {
+      "id": "cun-stone-ttb",
+      "script": "cuneiform",
+      "from": -3300,
+      "to": -1500,
+      "beta": "stone",
+      "gamma": "logographic",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "source",
+      "note": "The vertical style stayed on monumental stone stelae until the middle of the 2nd millennium BCE."
+    },
+    {
+      "id": "egy-stone-rtl",
+      "script": "egyptian",
+      "from": -3250,
+      "to": 394,
+      "beta": "stone",
+      "gamma": "logographic",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Logo-consonantal. Right to left was preferred. Last known inscription: the Graffito of Esmet-Akhom at Philae, 394 CE."
+    },
+    {
+      "id": "egy-stone-ltr",
+      "script": "egyptian",
+      "from": -3250,
+      "to": 394,
+      "beta": "stone",
+      "gamma": "logographic",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Left to right also occurs; the way the signs face shows the reading order."
+    },
+    {
+      "id": "egy-stone-bou",
+      "script": "egyptian",
+      "from": -3250,
+      "to": 394,
+      "beta": "stone",
+      "gamma": "logographic",
+      "delta": "boustrophedon",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Boustrophedon is attested."
+    },
+    {
+      "id": "egy-papyrus-rtl",
+      "script": "egyptian",
+      "from": -2600,
+      "to": 394,
+      "beta": "papyrus",
+      "gamma": "logographic",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Cursive hieroglyphs on papyrus for religious literature (material from the source; the date range is general knowledge)."
+    },
+    {
+      "id": "egy-wood-rtl",
+      "script": "egyptian",
+      "from": -2600,
+      "to": 394,
+      "beta": "wood-bamboo",
+      "gamma": "logographic",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Cursive hieroglyphs on wood (material from the source; the date range is general knowledge)."
+    },
+    {
+      "id": "ind-stone-rtl",
+      "script": "indus",
+      "from": -2800,
+      "to": -1900,
+      "beta": "stone",
+      "gamma": "undeciphered",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Stamp seals (soapstone). Predominantly right to left: signs are compressed on the left, as if the writer ran out of space."
+    },
+    {
+      "id": "ind-clay-rtl",
+      "script": "indus",
+      "from": -2800,
+      "to": -1900,
+      "beta": "clay",
+      "gamma": "undeciphered",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Pottery inscriptions and clay seal impressions from c. 2800–2600 BCE onward; terracotta."
+    },
+    {
+      "id": "ind-metal-rtl",
+      "script": "indus",
+      "from": -2800,
+      "to": -1900,
+      "beta": "metal",
+      "gamma": "undeciphered",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Copper plates, tools and weapons."
+    },
+    {
+      "id": "ind-stone-bou",
+      "script": "indus",
+      "from": -2800,
+      "to": -1900,
+      "beta": "stone",
+      "gamma": "undeciphered",
+      "delta": "boustrophedon",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Some boustrophedon examples."
+    },
+    {
+      "id": "chi-bone-ttb",
+      "script": "chinese",
+      "from": -1250,
+      "to": -1050,
+      "beta": "bone-shell",
+      "gamma": "logographic",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Oracle bone inscriptions, Late Shang, c. 1250–1050 BCE. Morphosyllabic. Columns top to bottom, ordered right to left."
+    },
+    {
+      "id": "chi-bronze-ttb",
+      "script": "chinese",
+      "from": -1250,
+      "to": -200,
+      "beta": "metal",
+      "gamma": "logographic",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Inscriptions on bronze ritual vessels from the Shang onward (the end date is general knowledge)."
+    },
+    {
+      "id": "chi-bamboo-ttb",
+      "script": "chinese",
+      "from": -500,
+      "to": 300,
+      "beta": "wood-bamboo",
+      "gamma": "logographic",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Bamboo and wood slips (material from the source; the date range is general knowledge)."
+    },
+    {
+      "id": "chi-silk-ttb",
+      "script": "chinese",
+      "from": -300,
+      "to": 300,
+      "beta": "silk",
+      "gamma": "logographic",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Writing on silk (material from the source; the date range is general knowledge)."
+    },
+    {
+      "id": "chi-paper-ttb",
+      "script": "chinese",
+      "from": 100,
+      "to": 1950,
+      "beta": "paper",
+      "gamma": "logographic",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Paper as a writing medium from the 1st century CE; vertical columns until the 20th century."
+    },
+    {
+      "id": "chi-paper-ltr",
+      "script": "chinese",
+      "from": 1900,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "logographic",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Horizontal left to right became predominant in the 20th century."
+    },
+    {
+      "id": "pho-stone-rtl",
+      "script": "phoenician",
+      "from": -1050,
+      "to": -146,
+      "beta": "stone",
+      "gamma": "abjad",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "c. 1050–146 BCE. Oldest inscription: the Ahiram sarcophagus, Byblos, c. 1000 BCE. The first script with a fixed writing direction."
+    },
+    {
+      "id": "ara-stone-rtl",
+      "script": "aramaic",
+      "from": -800,
+      "to": 600,
+      "beta": "stone",
+      "gamma": "abjad",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "800 BCE to 600 CE; the written medium of the Persian empire from c. 500 BCE."
+    },
+    {
+      "id": "ara-leather-rtl",
+      "script": "aramaic",
+      "from": -500,
+      "to": -300,
+      "beta": "leather",
+      "gamma": "abjad",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Administrative documents from Bactria on leather (material from the source; the dates are general knowledge)."
+    },
+    {
+      "id": "gre-clay-rtl",
+      "script": "greek",
+      "from": -740,
+      "to": -500,
+      "beta": "clay",
+      "gamma": "alphabet",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Oldest substantial inscriptions c. 740/730 BCE (Dipylon vase, cup of Nestor). Originally mostly right to left, like Phoenician."
+    },
+    {
+      "id": "gre-stone-bou",
+      "script": "greek",
+      "from": -700,
+      "to": -450,
+      "beta": "stone",
+      "gamma": "alphabet",
+      "delta": "boustrophedon",
+      "confidence": "established",
+      "basis": "general",
+      "note": "For a time boustrophedon was common (the source states the practice; the date range is general knowledge)."
+    },
+    {
+      "id": "gre-stone-ltr",
+      "script": "greek",
+      "from": -450,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "alphabet",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Left to right became the norm in the classical period."
+    },
+    {
+      "id": "kha-stone-rtl",
+      "script": "kharoshthi",
+      "from": -260,
+      "to": 200,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Edicts of Ashoka at Shahbazgarhi and Mansehra. Developed in Gandhara between the 5th and 3rd centuries BCE."
+    },
+    {
+      "id": "kha-birch-rtl",
+      "script": "kharoshthi",
+      "from": 1,
+      "to": 300,
+      "beta": "birch-bark",
+      "gamma": "abugida",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Gandharan Buddhist texts on birch bark from the 1st century CE."
+    },
+    {
+      "id": "kha-wood-rtl",
+      "script": "kharoshthi",
+      "from": 200,
+      "to": 400,
+      "beta": "wood-bamboo",
+      "gamma": "abugida",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Wooden tablets from Niya, 3rd century CE."
+    },
+    {
+      "id": "kha-wood-late",
+      "script": "kharoshthi",
+      "from": 400,
+      "to": 650,
+      "beta": "wood-bamboo",
+      "gamma": "abugida",
+      "delta": "rtl",
+      "confidence": "debated",
+      "basis": "source",
+      "note": "Some evidence that it survived until the 7th century in Khotan and Niya."
+    },
+    {
+      "id": "bra-stone-ltr",
+      "script": "brahmi",
+      "from": -260,
+      "to": 400,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Earliest indisputably dated: the rock edicts of Ashoka, c. 250–232 BCE. Usually left to right."
+    },
+    {
+      "id": "bra-clay-early",
+      "script": "brahmi",
+      "from": -550,
+      "to": -350,
+      "beta": "clay",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "debated",
+      "basis": "source",
+      "note": "Potsherds from Anuradhapura dated 6th to early 4th century BCE; controversial (Falk questions some readings)."
+    },
+    {
+      "id": "bra-metal-ltr",
+      "script": "brahmi",
+      "from": -260,
+      "to": 400,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Metal plates and coins are among the attested surfaces (the date range follows the stone record)."
+    },
+    {
+      "id": "bra-metal-rtl",
+      "script": "brahmi",
+      "from": -300,
+      "to": -200,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "general",
+      "note": "An early coin from Eran runs right to left, as in Aramaic (the fact is from the source; its date is general knowledge)."
+    },
+    {
+      "id": "tbr-stone-ltr",
+      "script": "tamil-brahmi",
+      "from": -300,
+      "to": 100,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Cave entrances and stone beds; dated 3rd century BCE to 1st century CE. Adds signs for ṉ ṟ ṛ ḷ."
+    },
+    {
+      "id": "tbr-clay-ltr",
+      "script": "tamil-brahmi",
+      "from": -300,
+      "to": 100,
+      "beta": "clay",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Potsherds and jar burials."
+    },
+    {
+      "id": "tbr-clay-early",
+      "script": "tamil-brahmi",
+      "from": -500,
+      "to": -300,
+      "beta": "clay",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "debated",
+      "basis": "source",
+      "note": "Earlier dates (5th–4th century BCE) proposed from Sri Lankan finds; contested."
+    },
+    {
+      "id": "gup-stone-ltr",
+      "script": "gupta",
+      "from": 320,
+      "to": 600,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Allahabad pillar inscription c. 350 CE; sometimes called Late Brahmi."
+    },
+    {
+      "id": "gup-metal-ltr",
+      "script": "gupta",
+      "from": 320,
+      "to": 600,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Iron pillars and Gupta gold coins (Bayana hoard)."
+    },
+    {
+      "id": "gra-stone-ltr",
+      "script": "grantha",
+      "from": 350,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Pallava script from the 4th century CE; Grantha on temple inscriptions; still used in religious contexts."
+    },
+    {
+      "id": "gra-metal-ltr",
+      "script": "grantha",
+      "from": 350,
+      "to": 1500,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Copper plates (material from the source; the end date is general knowledge)."
+    },
+    {
+      "id": "gra-palm-ltr",
+      "script": "grantha",
+      "from": 700,
+      "to": 1900,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Palm leaves (material from the source; the date range is general knowledge)."
+    },
+    {
+      "id": "sid-stone-ltr",
+      "script": "siddham",
+      "from": 550,
+      "to": 1100,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "From the Gupta script in the late 6th century; the main script of North India by the 7th; replaced by Nagari by about the 11th."
+    },
+    {
+      "id": "sid-metal-ltr",
+      "script": "siddham",
+      "from": 550,
+      "to": 1100,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Copper-plate land grants (tāmra-paṭṭa)."
+    },
+    {
+      "id": "sid-palm-ltr",
+      "script": "siddham",
+      "from": 550,
+      "to": 1100,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Palm-leaf sutras. The Hōryū-ji Heart Sutra, 7th–8th century, may be the earliest extant Sanskrit manuscript of that text."
+    },
+    {
+      "id": "sid-paper-japan",
+      "script": "siddham",
+      "from": 806,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Brought to Japan by Kūkai in 806; written with a brush in Shingon, Tendai and Shugendō to this day."
+    },
+    {
+      "id": "sha-stone-ltr",
+      "script": "sharada",
+      "from": 774,
+      "to": 1204,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Developed in the second half of the 8th century; earliest known inscription 774 CE (Omniglot); widespread in Kashmir and the north-west until the 12th century; last known inscription 1204 CE."
+    },
+    {
+      "id": "sha-birch-ltr",
+      "script": "sharada",
+      "from": 800,
+      "to": 1900,
+      "beta": "birch-bark",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Birch-bark manuscripts; later kept for religious use by Kashmiri Pandits (general knowledge)."
+    },
+    {
+      "id": "dev-stone-early",
+      "script": "devanagari",
+      "from": 50,
+      "to": 400,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "debated",
+      "basis": "source",
+      "note": "Nāgarī variants recognisably close to Devanāgarī are attested from the 1st-century Rudradaman inscriptions (an early-development claim)."
+    },
+    {
+      "id": "dev-stone-ltr",
+      "script": "devanagari",
+      "from": 600,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "In regular use by the 7th century; early Devanāgarī in the Kutila inscription, 992 CE; modern form by about 1000 CE."
+    },
+    {
+      "id": "dev-clay-ltr",
+      "script": "devanagari",
+      "from": 1217,
+      "to": 1217,
+      "beta": "clay",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "An inscribed brick from Uttar Pradesh, 1217 CE (British Museum)."
+    },
+    {
+      "id": "dev-metal-ltr",
+      "script": "devanagari",
+      "from": 700,
+      "to": 1300,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Copper-plate grants (general knowledge)."
+    },
+    {
+      "id": "dev-palm-ltr",
+      "script": "devanagari",
+      "from": 1000,
+      "to": 1600,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Palm-leaf manuscripts (general knowledge)."
+    },
+    {
+      "id": "dev-paper-ltr",
+      "script": "devanagari",
+      "from": 1300,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Paper manuscripts and, later, print (general knowledge)."
+    },
+    {
+      "id": "han-paper-ttb",
+      "script": "hangul",
+      "from": 1443,
+      "to": 1950,
+      "beta": "paper",
+      "gamma": "featural",
+      "delta": "ttb",
+      "confidence": "debated",
+      "basis": "source",
+      "note": "Announced 1443–44, published 1446 (Hunminjeongeum). Columns top to bottom, right to left. Whether it is 'featural' is debated."
+    },
+    {
+      "id": "han-paper-ltr",
+      "script": "hangul",
+      "from": 1900,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "featural",
+      "delta": "ltr",
+      "confidence": "debated",
+      "basis": "source",
+      "note": "Horizontal left to right dominant since the 20th century. 'Featural' is debated."
+    },
+    {
+      "id": "cun-wood-ltr",
+      "script": "cuneiform",
+      "from": -1000,
+      "to": -500,
+      "beta": "wood-bamboo",
+      "gamma": "logographic",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Wax-coated wooden boards were also written on (material from Omniglot; the date range and direction are general knowledge)."
+    },
+    {
+      "id": "pro-stone-unf",
+      "script": "proto-sinaitic",
+      "from": -1850,
+      "to": -1550,
+      "beta": "stone",
+      "gamma": "abjad",
+      "delta": "unfixed",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Rock carvings, statuettes, stelae and a sphinx at Serabit el-Khadim; road-side rock at Wadi el-Hol. Mixed directions. Dated mid-19th (early date) to mid-16th century BCE (late date); the date is debated. Acrophonic letters adapted from Egyptian signs."
+    },
+    {
+      "id": "lat-stone-rtl",
+      "script": "latin",
+      "from": -600,
+      "to": -250,
+      "beta": "stone",
+      "gamma": "alphabet",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Old Latin could be written right to left, as Etruscan and early Greek were. Earliest Latin inscriptions 6th century BCE (Omniglot)."
+    },
+    {
+      "id": "lat-stone-bou",
+      "script": "latin",
+      "from": -600,
+      "to": -250,
+      "beta": "stone",
+      "gamma": "alphabet",
+      "delta": "boustrophedon",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Old Latin could also be written boustrophedon."
+    },
+    {
+      "id": "lat-stone-ltr",
+      "script": "latin",
+      "from": -250,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "alphabet",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "From the middle Republic on, almost always left to right (the start year is approximate)."
+    },
+    {
+      "id": "lat-paper-ltr",
+      "script": "latin",
+      "from": 1200,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "alphabet",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Paper manuscripts and print (general knowledge)."
+    },
+    {
+      "id": "arb-stone-rtl",
+      "script": "arabic",
+      "from": 512,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "abjad",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "First known text in the Arabic alphabet: the Zabad inscription, 512 CE. From Nabataean Aramaic; the an-Namāra inscription (328 CE) is still Nabataean script, with letter joining."
+    },
+    {
+      "id": "arb-leather-rtl",
+      "script": "arabic",
+      "from": 650,
+      "to": 1000,
+      "beta": "leather",
+      "gamma": "abjad",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Early Qur'an manuscripts on parchment (general knowledge)."
+    },
+    {
+      "id": "arb-paper-rtl",
+      "script": "arabic",
+      "from": 800,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abjad",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Paper manuscripts and print (general knowledge)."
+    },
+    {
+      "id": "tib-paper-ltr",
+      "script": "tibetan",
+      "from": 640,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Finalized in the 630s or 640s (source); left to right, syllables separated by the tsek. The substrate (paper, pecha books) is general knowledge."
+    }
   ],
   "lineage": [
-    { "parent": "egyptian", "child": "phoenician", "via": "Proto-Sinaitic", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Phoenician_alphabet" },
-    { "parent": "phoenician", "child": "aramaic", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Phoenician_alphabet" },
-    { "parent": "phoenician", "child": "greek", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Greek_alphabet" },
-    { "parent": "aramaic", "child": "kharoshthi", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Kharosthi" },
-    { "parent": "aramaic", "child": "brahmi", "confidence": "debated", "note": "The leading hypothesis, not settled for lack of direct evidence.", "ref": "https://en.wikipedia.org/wiki/Brahmi_script" },
-    { "parent": "indus", "child": "brahmi", "confidence": "debated", "note": "A minority hypothesis; the evidence is called insufficient.", "ref": "https://en.wikipedia.org/wiki/Brahmi_script" },
-    { "parent": "brahmi", "child": "tamil-brahmi", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Tamil-Brahmi" },
-    { "parent": "brahmi", "child": "gupta", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Brahmi_script" },
-    { "parent": "brahmi", "child": "grantha", "via": "Pallava", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Grantha_script" },
-    { "parent": "gupta", "child": "siddham", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Siddha%E1%B9%83_script" },
-    { "parent": "gupta", "child": "sharada", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Gupta_Brahmi_script" },
-    { "parent": "siddham", "child": "devanagari", "confidence": "established", "ref": "https://en.wikipedia.org/wiki/Gupta_Brahmi_script" }
+    {
+      "parent": "egyptian",
+      "child": "proto-sinaitic",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Proto-Sinaitic_script"
+    },
+    {
+      "parent": "proto-sinaitic",
+      "child": "phoenician",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Proto-Sinaitic_script"
+    },
+    {
+      "parent": "phoenician",
+      "child": "aramaic",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Phoenician_alphabet"
+    },
+    {
+      "parent": "phoenician",
+      "child": "greek",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Greek_alphabet"
+    },
+    {
+      "parent": "aramaic",
+      "child": "kharoshthi",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Kharosthi",
+      "note": "Wikipedia: a clear dependency on Aramaic with extensive modifications. Omniglot: 'possibly' derived from Aramaic."
+    },
+    {
+      "parent": "aramaic",
+      "child": "brahmi",
+      "confidence": "debated",
+      "note": "The leading hypothesis, not settled for lack of direct evidence.",
+      "ref": "https://en.wikipedia.org/wiki/Brahmi_script"
+    },
+    {
+      "parent": "indus",
+      "child": "brahmi",
+      "confidence": "debated",
+      "note": "A minority hypothesis; the evidence is called insufficient.",
+      "ref": "https://en.wikipedia.org/wiki/Brahmi_script"
+    },
+    {
+      "parent": "brahmi",
+      "child": "tamil-brahmi",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Tamil-Brahmi"
+    },
+    {
+      "parent": "brahmi",
+      "child": "gupta",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Brahmi_script"
+    },
+    {
+      "parent": "brahmi",
+      "child": "grantha",
+      "via": "Pallava",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Grantha_script"
+    },
+    {
+      "parent": "gupta",
+      "child": "siddham",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Siddha%E1%B9%83_script"
+    },
+    {
+      "parent": "gupta",
+      "child": "sharada",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Gupta_Brahmi_script"
+    },
+    {
+      "parent": "siddham",
+      "child": "devanagari",
+      "confidence": "debated",
+      "ref": "https://en.wikipedia.org/wiki/Gupta_Brahmi_script",
+      "note": "Sources differ: Wikipedia (Gupta script) says Siddham produced Devanagari; Omniglot derives Devanagari from Nāgarī, an eastern Gupta variant, which later replaced Siddham."
+    },
+    {
+      "parent": "gupta",
+      "child": "devanagari",
+      "via": "Nāgarī",
+      "confidence": "debated",
+      "note": "Omniglot's account; see the Siddham link for the other.",
+      "ref": "https://www.omniglot.com/writing/devanagari.htm"
+    },
+    {
+      "parent": "greek",
+      "child": "latin",
+      "via": "Etruscan",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/History_of_the_Latin_script"
+    },
+    {
+      "parent": "aramaic",
+      "child": "arabic",
+      "via": "Nabataean",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/History_of_the_Arabic_alphabet"
+    },
+    {
+      "parent": "gupta",
+      "child": "tibetan",
+      "confidence": "established",
+      "note": "Late Gupta script of Nepal and North India is the most likely model.",
+      "ref": "https://en.wikipedia.org/wiki/Tibetan_script"
+    }
+  ],
+  "crossChecks": [
+    {
+      "script": "cuneiform",
+      "topic": "Latest use",
+      "wikipedia": "Latest firmly dateable tablet 79/80 CE",
+      "omniglot": "About 75 CE (an astrological text)",
+      "verdict": "agree",
+      "note": "Within five years."
+    },
+    {
+      "script": "cuneiform",
+      "topic": "Substrates",
+      "wikipedia": "Clay; stone for monuments",
+      "omniglot": "Clay; also wax-coated wooden boards, stone and metal",
+      "verdict": "partial",
+      "note": "Omniglot adds wooden boards and metal; a wooden-board record was added (basis general)."
+    },
+    {
+      "script": "egyptian",
+      "topic": "Dates",
+      "wikipedia": "c. 3250 BCE to 394 CE (Graffito of Esmet-Akhom)",
+      "omniglot": "From 3400 BCE; last dated inscription 396 CE at Philae",
+      "verdict": "differ",
+      "note": "Both ends differ slightly; the records keep Wikipedia's dates."
+    },
+    {
+      "script": "proto-sinaitic",
+      "topic": "Dates",
+      "wikipedia": "Mid-19th to mid-16th century BCE, early and late dates debated",
+      "omniglot": "Developed 1900–1700 BCE; Serabit el-Khadim sample c. 1500 BCE",
+      "verdict": "partial",
+      "note": "Overlapping ranges."
+    },
+    {
+      "script": "phoenician",
+      "topic": "Dates and origin",
+      "wikipedia": "c. 1050–146 BCE; from Proto-Sinaitic",
+      "omniglot": "Earliest inscriptions c. 1000 BCE; from Proto-Canaanite",
+      "verdict": "agree",
+      "note": "Proto-Canaanite and Proto-Sinaitic are treated together on Omniglot."
+    },
+    {
+      "script": "aramaic",
+      "topic": "Dates",
+      "wikipedia": "800 BCE to 600 CE",
+      "omniglot": "Adapted from Phoenician in the 8th century BCE (early variant late 10th–early 9th); used until about 600 CE",
+      "verdict": "agree",
+      "note": ""
+    },
+    {
+      "script": "greek",
+      "topic": "Earliest inscriptions",
+      "wikipedia": "c. 740/730 BCE",
+      "omniglot": "About 800 BCE (Crete)",
+      "verdict": "differ",
+      "note": "The records keep 740 BCE."
+    },
+    {
+      "script": "greek",
+      "topic": "When left to right became standard",
+      "wikipedia": "The classical period",
+      "omniglot": "Early 4th century BCE, with the eastern Ionic alphabet",
+      "verdict": "differ",
+      "note": "The left-to-right record starts at 450 BCE; Omniglot points later, about 400 BCE."
+    },
+    {
+      "script": "latin",
+      "topic": "Earliest inscriptions and direction",
+      "wikipedia": "Old Latin right to left or boustrophedon; left to right from the middle Republic",
+      "omniglot": "From Etruscan in the 7th century BCE; earliest inscriptions 6th century BCE",
+      "verdict": "agree",
+      "note": "Omniglot does not discuss direction."
+    },
+    {
+      "script": "kharoshthi",
+      "topic": "Origin and end",
+      "wikipedia": "Developed 5th–3rd century BCE; clear dependency on Aramaic; possibly to the 7th century in Khotan and Niya",
+      "omniglot": "Invented in the 3rd century BCE; 'possibly' from Aramaic; out of use in Gandhara by the 4th century CE; possibly to the 7th in Khotan",
+      "verdict": "partial",
+      "note": "Omniglot is more cautious about the Aramaic link."
+    },
+    {
+      "script": "brahmi",
+      "topic": "Earliest date",
+      "wikipedia": "Indisputably dated: Ashoka c. 250–232 BCE; earlier potsherds controversial",
+      "omniglot": "Appeared before 500 BCE; Ashokan inscriptions c. 270–232 BCE",
+      "verdict": "differ",
+      "note": "Omniglot supports an early date that Wikipedia calls controversial; the early record stays 'debated'."
+    },
+    {
+      "script": "brahmi",
+      "topic": "Origin",
+      "wikipedia": "Aramaic leading but unsettled; Indus a minority view",
+      "omniglot": "Possibly modelled on Aramaic or Phoenician; alternatively from the Indus script",
+      "verdict": "agree",
+      "note": "Both treat the origin as open."
+    },
+    {
+      "script": "tamil-brahmi",
+      "topic": "Earliest date",
+      "wikipedia": "3rd century BCE to 1st century CE; 5th–4th century BCE claims contested",
+      "omniglot": "Earliest Tamil inscriptions about 500 BCE",
+      "verdict": "differ",
+      "note": "Omniglot supports the early date; the early record stays 'debated'."
+    },
+    {
+      "script": "gupta",
+      "topic": "Dates and materials",
+      "wikipedia": "4th–6th century; iron and stone pillars, gold coins",
+      "omniglot": "320–550 CE; iron and stone pillars, gold coins",
+      "verdict": "agree",
+      "note": ""
+    },
+    {
+      "script": "grantha",
+      "topic": "Start",
+      "wikipedia": "Pallava script from the 4th century CE",
+      "omniglot": "Pallava 3rd–5th century; Grantha emerging in the 5th century",
+      "verdict": "agree",
+      "note": ""
+    },
+    {
+      "script": "siddham",
+      "topic": "Japan",
+      "wikipedia": "Brought by Kūkai in 806",
+      "omniglot": "Brought by Kūkai in 806; used by Shingon Buddhists",
+      "verdict": "agree",
+      "note": ""
+    },
+    {
+      "script": "sharada",
+      "topic": "Dates",
+      "wikipedia": "8th–12th century; last inscription 1204",
+      "omniglot": "Second half of the 8th century; earliest inscription 774; to the 12th century",
+      "verdict": "agree",
+      "note": "The stone record now starts at 774 CE."
+    },
+    {
+      "script": "devanagari",
+      "topic": "Origin and dates",
+      "wikipedia": "Regular use by the 7th century; modern form by about 1000; via Siddham (Gupta script page)",
+      "omniglot": "From Nāgarī, an eastern Gupta variant, in the 8th century; modern-looking by the 10th; replacing Siddham about 1200",
+      "verdict": "differ",
+      "note": "The two lineage links are both marked debated."
+    }
   ]
 }

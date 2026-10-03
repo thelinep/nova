@@ -387,7 +387,8 @@ test.describe('NOVA Console interactions', () => {
     await page.locator('[data-view="hkdm"]').click();
     await expect(page.getByRole('heading', { name: 'Lipi Tensor' })).toBeVisible();
     await expect(page.getByText('Draft data.')).toBeVisible();
-    await expect(page.getByText('shape 11 × 11 × 6 × 4')).toBeVisible();
+    await expect(page.getByText('shape 11 × 11 × 6 × 5')).toBeVisible();
+    await expect(page.locator('#hkdmView')).toContainText('Cross-check with Omniglot');
     await page.getByLabel('Columns').selectOption('gamma');
     await page.getByLabel('Filter delta').selectOption('rtl');
     const cell = page.locator('.hk-cell[data-r="0"][data-c="abugida"]');
@@ -397,9 +398,9 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.locator('#hkRecs')).not.toContainText('Brahmi');
     await expect(page.locator('#hkRecs a[href*="wikipedia.org/wiki/Kharosthi"]').first()).toBeVisible();
     await page.getByLabel('Confidence').selectOption('established');
-    await expect(page.locator('#hkdmView')).toContainText('48 established · 0 debated');
+    await expect(page.locator('#hkdmView')).toContainText('58 established · 0 debated');
     const tensor = await page.evaluate(async () => (await fetch('/api/hkdm/export/tensor?confidence=established')).json());
-    expect(tensor.shape).toEqual([11, 11, 6, 4]);
+    expect(tensor.shape).toEqual([11, 11, 6, 5]);
     expect(tensor.filters.confidence).toBe('established');
   });
 
