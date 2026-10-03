@@ -25,18 +25,21 @@ not a claim that Guru-Code or autonomous agent execution is production-ready.
 | 1. Exact-model coding gate | Use a named Ollama model only when its current digest has passed the required coding workflow and clarification, timeout and cancellation controls | Implemented in `nova-console/lib/model-qualifications.js` and `nova-console/lib/code-planner.js`; explicit selection fails closed and preserves automatic selection when no model is named. |
 | 2. Guru-Code data/evaluation foundation | Versioned task format, provenance fields, train-only SFT export and target-free held-out fixture checks | Implemented in `guru/data/coding/`, `guru/guru/coding.py` and `guru/CODING.md`. The data is five tiny synthetic examples, not a representative corpus or capability benchmark. |
 | 3. One-project Coding Studio | Readiness check, selected model, bounded request, reviewable proposal, existing validation/approval/apply/rollback flow, Guru readiness and read-only team status | Implemented in `nova-console/public/index.html`; help is in `nova-console/docs/help/41-coding-studio.md`; deterministic browser coverage is in `nova-console/e2e/coding-studio.spec.js`. |
-| 4. Independent Agent Studio | Dispatch independent agents for bounded coding work; turn each result into a validated proposal; keep every result pending human review; allow writes only through Maataa's approved batch flow | Not implemented. The current Studio reports agent and task evidence read-only and explains that dispatch/review are unavailable. The existing bridge returns plain text and completes tasks directly, so wiring it into code work now would bypass a trustworthy proposal-review state. |
+| 4. Independent Agent Studio | Dispatch independent agents for bounded coding work; turn each result into a validated proposal; keep every result pending human review; allow writes only through Maataa's approved batch flow | Safety primitives implemented but not wired into the Studio. `nova-console/lib/coding-agent-result.js` validates a strict bounded proposal contract; `AgentTasks` now has pending/accepted/rejected review states; `AgentJobBridge` can use optional reviewed-result and halt hooks. No Coding Studio dispatch route or browser review flow is enabled, and no code task is yet dispatched by this workstation. The Studio correctly continues to report execution and result review unavailable. |
 | 5. Guru-Code capability release | Train, export and qualify a dedicated code model against representative held-out tasks | Open gate. There is no trained Guru-Code checkpoint or established coding capability in this checkout. Requires provenance- and license-reviewed data, adequate model/context capacity, training compute, execution-based correctness/security evaluations and Maataa qualification of the exact exported digest. |
 
 ## Independent Agent Studio acceptance gates
 
 1. Define a structured agent result contract that contains a bounded summary and
    project-relative file proposals; reject malformed output, path escapes and
-   output beyond declared size limits.
+   output beyond declared size limits. **Implemented as a validation-only
+   module; no dispatch consumes it yet.**
 2. Convert agent proposals into the existing `workspaceChangeBatches`
    validation flow. An agent result must never write project files directly.
 3. Add distinct pending-human-review, accepted, rejected and needs-revision
    states. Do not mark a successful agent result as approved or applied.
+   **Pending, accepted and rejected ledger states are implemented; needs-revision
+   and Studio/API actions are not.**
 4. Require the existing local operator policy, active kill-switch state,
    assigned agent permissions and budget checks before dispatch; record
    cancellation, usage, provenance and audit evidence.
@@ -59,14 +62,25 @@ not a claim that Guru-Code or autonomous agent execution is production-ready.
 - Never treat SFT export success, an example-set pass or a model's `Guru-Code`
   label as proof of capability.
 
+The 2026-10-04 environment audit found no Guru-Code checkpoint or encoded code
+corpus; SentencePiece and the GGUF Python package are missing. The host is
+CPU-only with installed PyTorch below the repository's declared minimum. The
+two training examples and three held-out synthetic examples validate plumbing,
+not capability. Closing these gates requires owner-provided rights-reviewed
+data plus suitable training resources; Maataa's separate 18-trial exact-digest
+qualification must also pass on a real imported artifact.
+
 ## Validation evidence for this increment
 
 - Fresh local runs on 2026-10-04, after the stale-response fix:
-  - `npm test` in `nova-console`: 725 passed, 3 skipped, 0 failed (728 total).
+  - `npm test` in `nova-console`, after the agent-result safety primitives:
+    741 passed, 3 skipped, 0 failed (744 total).
   - `npm run test:ui` in `nova-console`: 56 passed, 1 skipped, 0 failed (57
     total), including delayed readiness and delayed proposal response coverage.
   - `python3 -m unittest discover -s tests -p 'test_coding.py' -v` in `guru`:
     7 passed.
+  - Focused agent contract, lifecycle and bridge tests: 28 contract/task tests
+    passed in a combined run; the bridge suite separately passed 20/20.
   - Full Guru suite: 27 total, 23 passed, 2 skipped, 2 errored because
     `sentencepiece` is unavailable; both errors are tokenizer-dependent tests.
 - The first Node run in the restricted sandbox failed local-listener tests with

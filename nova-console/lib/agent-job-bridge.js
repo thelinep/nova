@@ -55,6 +55,17 @@ class AgentJobBridge {
     this.tools = deps.tools || null;
     this.budgets = deps.budgets || null;
     this.executor = deps.executor;
+    if (deps.resultHandler != null && typeof deps.resultHandler !== 'function') {
+      throw new AgentJobBridgeError('resultHandler must be a function', 'bad_result_handler');
+    }
+    this.resultHandler = deps.resultHandler || null;
+    if (this.resultHandler && typeof this.tasks.awaitResultReview !== 'function') {
+      throw new AgentJobBridgeError('result review lifecycle is unavailable', 'review_lifecycle_unavailable');
+    }
+    if (deps.isHalted != null && typeof deps.isHalted !== 'function') {
+      throw new AgentJobBridgeError('isHalted must be a function', 'bad_halt_check');
+    }
+    this.isHalted = deps.isHalted || null;
     this.audit = typeof deps.audit === 'function' ? deps.audit : null;
     this.registered = false;
   }
@@ -76,6 +87,7 @@ class AgentJobBridge {
       throw new AgentJobBridgeError('task has no assignee', 'no_assignee');
     }
 
+    this._assertDispatchAllowed();
     this.tasks.start(taskId, actorId || task.assignee_id);
 
     const job = this.jobEngine.enqueue(JOB_KIND, { taskId }, {
@@ -165,8 +177,20 @@ class AgentJobBridge {
     };
 
     let result;
+    let reviewProposal = null;
     try {
+      // Check again after dequeue, immediately before dispatch. A runtime may
+      // be halted after startTask enqueues the job.
+      this._assertDispatchAllowed();
       result = await this.executor(executorCtx);
+      if (this.resultHandler) {
+        const proposal = await this.resultHandler(result, {
+          task: executorCtx.task,
+          agent: executorCtx.agent,
+          jobId: ctx.jobId,
+        });
+        reviewProposal = validateReviewProposal(proposal, result);
+      }
     } catch (e) {
       if (ctx.cancelled) {
         this.tasks.cancel(taskId, agent.id, 'cancelled via job engine');
@@ -192,9 +216,53 @@ class AgentJobBridge {
       } catch { /* budget over-charge does not abort the task */ }
     }
 
+    if (this.resultHandler) {
+      // Completion is deliberately replaced with a pending human-review
+      // state. The proposal carries the validated workspace batch reference;
+      // the original executor response and usage remain attached for review
+      // and budget/audit traceability.
+      try {
+        this.tasks.awaitResultReview(taskId, reviewProposal, agent.id);
+      } catch (e) {
+        // If the review transition itself failed before changing state, close
+        // the running task as failed. Never fall through to generic complete.
+        try {
+          if (this.tasks.get(taskId)?.state === 'running') {
+            this.tasks.fail(taskId, 'result_review_transition_failed: ' + String(e.message || e), agent.id);
+          }
+        } catch { /* preserve the original transition failure */ }
+        this._audit('task_result_review_failed', {
+          task_id: taskId,
+          job_id: ctx.jobId,
+          batch_id: reviewProposal.batchId,
+          error: String(e.message || e),
+        });
+        throw new AgentJobBridgeError('Could not submit the coding result for human review.', 'review_transition_failed');
+      }
+      this._audit('task_result_review_requested', {
+        task_id: taskId,
+        job_id: ctx.jobId,
+        batch_id: reviewProposal.batchId,
+      });
+      return reviewProposal;
+    }
+
     this.tasks.complete(taskId, result, agent.id);
     this._audit('task_completed', { task_id: taskId, job_id: ctx.jobId });
     return result;
+  }
+
+  _assertDispatchAllowed() {
+    if (!this.isHalted) return;
+    let halted;
+    try { halted = this.isHalted(); }
+    catch (cause) {
+      throw new AgentJobBridgeError('global halt state could not be verified; dispatch blocked', 'halt_check_unavailable');
+    }
+    if (typeof halted !== 'boolean') {
+      throw new AgentJobBridgeError('global halt check returned an invalid state; dispatch blocked', 'bad_halt_state');
+    }
+    if (halted) throw new AgentJobBridgeError('runtime is halted; agent dispatch blocked', 'runtime_halted');
   }
 
   _audit(action, data) {
@@ -206,6 +274,31 @@ class AgentJobBridge {
 
 function safeParse(s) {
   try { return JSON.parse(s || 'null'); } catch { return null; }
+}
+
+function validateReviewProposal(proposal, executorResult) {
+  if (!proposal || typeof proposal !== 'object' || Array.isArray(proposal)) {
+    throw new AgentJobBridgeError('result handler must return a structured proposal object', 'bad_review_proposal');
+  }
+  if (typeof proposal.batchId !== 'string' || !proposal.batchId.trim()) {
+    throw new AgentJobBridgeError('result handler proposal must include a batchId', 'bad_review_proposal');
+  }
+  let serialized;
+  try {
+    serialized = JSON.stringify({
+      ...proposal,
+      batchId: proposal.batchId.trim(),
+      executorResult,
+      usage: executorResult && typeof executorResult === 'object' ? executorResult.usage : undefined,
+    });
+  } catch {
+    throw new AgentJobBridgeError('result handler proposal and executor result must be serializable', 'bad_review_proposal');
+  }
+  if (typeof serialized !== 'string') {
+    throw new AgentJobBridgeError('result handler proposal and executor result must be serializable', 'bad_review_proposal');
+  }
+  try { return JSON.parse(serialized); }
+  catch { throw new AgentJobBridgeError('result handler proposal could not be normalized', 'bad_review_proposal'); }
 }
 
 module.exports = { AgentJobBridge, AgentJobBridgeError, JOB_KIND };

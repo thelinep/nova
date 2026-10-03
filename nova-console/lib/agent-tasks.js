@@ -5,9 +5,10 @@ const crypto = require('node:crypto');
 const nowIso = () => new Date().toISOString();
 const uid = (p) => `${p}_${crypto.randomUUID()}`;
 
-const STATES = ['queued', 'assigned', 'running', 'completed', 'failed', 'cancelled'];
+const STATES = ['queued', 'assigned', 'running', 'awaiting_result_review', 'completed', 'accepted', 'rejected', 'failed', 'cancelled'];
 const EVENT_KINDS = [
-  'created', 'assigned', 'started', 'completed', 'failed',
+  'created', 'assigned', 'started', 'result_submitted_for_review',
+  'result_accepted', 'result_rejected', 'completed', 'failed',
   'cancelled', 'handed_off',
 ];
 
@@ -27,7 +28,8 @@ class AgentTaskError extends Error {
  * A task has:
  *   - a creator
  *   - a current assignee (nullable)
- *   - a state from { queued, assigned, running, completed, failed, cancelled }
+ *   - a state from { queued, assigned, running, awaiting_result_review,
+ *     completed, accepted, rejected, failed, cancelled }
  *   - an append-only event log
  *
  * Handoff is a specific transition: running/assigned → assigned to a new
@@ -171,10 +173,78 @@ class AgentTasks {
     return next;
   }
 
+  /**
+   * Record an executor result for local review. This deliberately leaves the
+   * task open in awaiting_result_review; it does not complete the task or
+   * approve/apply any workspace change batch.
+   */
+  awaitResultReview(taskId, result, actorId) {
+    const row = this._require(taskId);
+    if (row.state !== 'running') {
+      throw new AgentTaskError('task is not running', 'not_running');
+    }
+    const resultJson = result == null ? null : JSON.stringify(result);
+    const next = this.store.agentTasksUpdate(taskId, {
+      state: 'awaiting_result_review',
+      result_json: resultJson,
+      updated_at: nowIso(),
+    });
+    this._event(taskId, 'result_submitted_for_review', {
+      actor_id: actorId || null,
+      payload: { result_sha256: resultJson == null ? null : crypto.createHash('sha256').update(resultJson).digest('hex') },
+    });
+    this._audit('result_submitted_for_review', { task_id: taskId });
+    return next;
+  }
+
+  /** Record an explicit, terminal local acceptance decision. */
+  acceptResult(taskId, actorId, reason) {
+    return this._reviewResult(taskId, 'accepted', actorId, reason);
+  }
+
+  /** Record an explicit, terminal local rejection decision. */
+  rejectResult(taskId, actorId, reason) {
+    return this._reviewResult(taskId, 'rejected', actorId, reason);
+  }
+
+  _reviewResult(taskId, decision, actorId, reason) {
+    const row = this._require(taskId);
+    if (row.state !== 'awaiting_result_review') {
+      throw new AgentTaskError('task is not awaiting result review', 'not_awaiting_result_review');
+    }
+    if (typeof actorId !== 'string' || !actorId.trim()) {
+      throw new AgentTaskError('review actor required', 'bad_review_actor');
+    }
+    if (typeof reason !== 'string' || !reason.trim()) {
+      throw new AgentTaskError('review reason required', 'bad_review_reason');
+    }
+    const reviewedAt = nowIso();
+    const next = this.store.agentTasksUpdate(taskId, {
+      state: decision,
+      ended_at: reviewedAt,
+      updated_at: reviewedAt,
+    });
+    // The event log is append-only. Keep the decision, actor, reason, and
+    // digest of the reviewed result together as immutable terminal evidence.
+    this._event(taskId, decision === 'accepted' ? 'result_accepted' : 'result_rejected', {
+      actor_id: actorId.trim(),
+      reason: reason.trim(),
+      payload: {
+        decision,
+        result_sha256: row.result_json == null ? null : crypto.createHash('sha256').update(row.result_json).digest('hex'),
+      },
+    });
+    this._audit('result_' + decision, { task_id: taskId, actor_id: actorId.trim(), reason: reason.trim() });
+    return next;
+  }
+
   fail(taskId, error, actorId) {
     const row = this._require(taskId);
-    if (row.state === 'completed' || row.state === 'cancelled') {
+    if (row.state === 'completed' || row.state === 'accepted' || row.state === 'rejected' || row.state === 'cancelled') {
       throw new AgentTaskError('task is already closed', 'closed');
+    }
+    if (row.state === 'awaiting_result_review') {
+      throw new AgentTaskError('task is awaiting result review', 'review_pending');
     }
     const next = this.store.agentTasksUpdate(taskId, {
       state: 'failed',
@@ -192,8 +262,11 @@ class AgentTasks {
 
   cancel(taskId, actorId, reason) {
     const row = this._require(taskId);
-    if (row.state === 'completed' || row.state === 'cancelled' || row.state === 'failed') {
+    if (row.state === 'completed' || row.state === 'accepted' || row.state === 'rejected' || row.state === 'cancelled' || row.state === 'failed') {
       throw new AgentTaskError('task is already closed', 'closed');
+    }
+    if (row.state === 'awaiting_result_review') {
+      throw new AgentTaskError('task is awaiting result review', 'review_pending');
     }
     const next = this.store.agentTasksUpdate(taskId, {
       state: 'cancelled',
@@ -209,8 +282,11 @@ class AgentTasks {
 
   handoff(taskId, toAgentId, actorId, reason) {
     const row = this._require(taskId);
-    if (row.state === 'completed' || row.state === 'cancelled' || row.state === 'failed') {
+    if (row.state === 'completed' || row.state === 'accepted' || row.state === 'rejected' || row.state === 'cancelled' || row.state === 'failed') {
       throw new AgentTaskError('task is closed', 'closed');
+    }
+    if (row.state === 'awaiting_result_review') {
+      throw new AgentTaskError('task is awaiting result review', 'review_pending');
     }
     const target = this.registry.get(toAgentId);
     if (!target) throw new AgentTaskError('target agent not found', 'target_not_found');
@@ -312,8 +388,11 @@ class AgentTasks {
   }
 
   _requireOpen(row) {
-    if (row.state === 'completed' || row.state === 'cancelled' || row.state === 'failed') {
+    if (row.state === 'completed' || row.state === 'accepted' || row.state === 'rejected' || row.state === 'cancelled' || row.state === 'failed') {
       throw new AgentTaskError('task is closed', 'closed');
+    }
+    if (row.state === 'awaiting_result_review') {
+      throw new AgentTaskError('task is awaiting result review', 'review_pending');
     }
   }
 

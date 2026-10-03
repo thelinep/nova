@@ -69,6 +69,8 @@ function setup(opts) {
     memory: opts.memory || null,
     tools: opts.tools || null,
     budgets: opts.budgets || null,
+    resultHandler: opts.resultHandler,
+    isHalted: opts.isHalted,
     audit: opts.audit || null,
   });
   bridge.register();
@@ -256,6 +258,123 @@ test('11 budget_charged_on_success', async () => {
   assert.equal(bucket.kinds.tokens.used, 250);
   assert.equal(bucket.kinds.usd.used, 0.5);
   assert.equal(bucket.kinds.jobs.used, 1);
+  cleanup(env);
+});
+
+test('11a configured coding result waits for human review and retains executor result and usage', async () => {
+  const env = fresh();
+  const registry = env.registry;
+  const tasks = env.tasks;
+  const budgetEngine = new BudgetEngine(env.store);
+  const budgets = new AgentBudgets({ store: env.store, registry, budgetEngine });
+  const worker = registry.create({ name: 'coding-worker', role: 'worker' });
+  const planner = registry.create({ name: 'coding-planner', role: 'planner' });
+  budgets.setForAgent(worker.id, { tokens: 1000, jobs: 5 });
+  const task = tasks.create({ title: 'propose a bounded change', creatorId: planner.id, assigneeId: worker.id });
+  const executorResult = { output: 'raw model response', usage: { tokens: 125, usd: 0.02 } };
+  const audit = [];
+  let handlerContext;
+  const bridge = new AgentJobBridge(env.store, {
+    registry, tasks, jobEngine: env.jobEngine, budgets, audit: event => audit.push(event),
+    executor: async () => executorResult,
+    resultHandler: async (result, context) => {
+      handlerContext = context;
+      assert.deepEqual(result, executorResult);
+      return { kind: 'coding-proposal', batchId: 'batch_review_1', proposal: { summary: 'Change one file' } };
+    },
+  });
+  bridge.register();
+  await bridge.startTask(task.id, worker.id);
+  env.jobEngine.start();
+  await waitFor(() => tasks.get(task.id).state === 'awaiting_result_review', 3000);
+
+  const row = tasks.get(task.id);
+  const result = JSON.parse(row.result_json);
+  assert.equal(row.state, 'awaiting_result_review');
+  assert.equal(row.ended_at, null);
+  assert.equal(result.batchId, 'batch_review_1');
+  assert.equal(result.proposal.summary, 'Change one file');
+  assert.deepEqual(result.executorResult, executorResult);
+  assert.deepEqual(result.usage, executorResult.usage);
+  assert.equal(handlerContext.task.id, task.id);
+  assert.equal(handlerContext.agent.id, worker.id);
+  assert.ok(tasks.events(task.id).some(event => event.kind === 'result_submitted_for_review'));
+  assert.ok(audit.some(event => event.action === 'agent_job.task_result_review_requested' && event.batch_id === 'batch_review_1'));
+  assert.ok(!audit.some(event => event.action === 'agent_job.task_completed'));
+  const usage = budgetEngine.usage({ type: 'agent', id: worker.id });
+  const bucket = Object.values(usage)[0];
+  assert.equal(bucket.kinds.tokens.used, 125);
+  assert.equal(bucket.kinds.jobs.used, 1);
+  cleanup(env);
+});
+
+test('11b malformed configured result fails the task instead of completing it', async () => {
+  const s = setup({
+    executor: async () => ({ output: 'untrusted' }),
+    resultHandler: async () => ({ proposal: { summary: 'missing batch id' } }),
+  });
+  let completeCalled = false;
+  const originalComplete = s.env.tasks.complete.bind(s.env.tasks);
+  s.env.tasks.complete = (...args) => { completeCalled = true; return originalComplete(...args); };
+  await s.bridge.startTask(s.task.id, s.worker.id);
+  s.env.jobEngine.start();
+  await waitFor(() => s.env.tasks.get(s.task.id).state === 'failed', 3000);
+  assert.equal(completeCalled, false);
+  assert.match(s.env.tasks.get(s.task.id).error, /must include a batchId/);
+  cleanup(s.env);
+});
+
+test('11c configured result handler requires a result-review lifecycle', () => {
+  const env = fresh();
+  const tasks = Object.create(env.tasks);
+  tasks.awaitResultReview = undefined;
+  assert.throws(() => new AgentJobBridge(env.store, {
+    registry: env.registry, tasks, jobEngine: env.jobEngine,
+    executor: async () => ({}), resultHandler: async () => ({ batchId: 'batch_1' }),
+  }), error => error.code === 'review_lifecycle_unavailable');
+  cleanup(env);
+});
+
+test('11c2 result-review transition failure never falls through to generic completion', async () => {
+  const s = setup({
+    executor: async () => ({ output: 'raw' }),
+    resultHandler: async () => ({ batchId: 'batch_review_failure' }),
+  });
+  s.env.tasks.awaitResultReview = () => { throw new Error('review transition unavailable'); };
+  let completeCalled = false;
+  const originalComplete = s.env.tasks.complete.bind(s.env.tasks);
+  s.env.tasks.complete = (...args) => { completeCalled = true; return originalComplete(...args); };
+  await s.bridge.startTask(s.task.id, s.worker.id);
+  s.env.jobEngine.start();
+  await waitFor(() => s.env.tasks.get(s.task.id).state === 'failed', 3000);
+  assert.equal(completeCalled, false);
+  assert.match(s.env.tasks.get(s.task.id).error, /result_review_transition_failed/);
+  cleanup(s.env);
+});
+
+test('11d global halt blocks queued dispatch immediately before executor call', async () => {
+  const env = fresh();
+  const worker = env.registry.create({ name: 'halt-worker', role: 'worker' });
+  const planner = env.registry.create({ name: 'halt-planner', role: 'planner' });
+  const task = env.tasks.create({ title: 'halt check', creatorId: planner.id, assigneeId: worker.id });
+  let halted = false;
+  let executorRan = false;
+  const bridge = new AgentJobBridge(env.store, {
+    registry: env.registry, tasks: env.tasks, jobEngine: env.jobEngine,
+    executor: async () => { executorRan = true; return {}; },
+    isHalted: () => halted,
+  });
+  bridge.register();
+  await bridge.startTask(task.id, worker.id);
+  halted = true;
+  env.jobEngine.start();
+  await waitFor(() => env.tasks.get(task.id).state === 'failed', 3000);
+  assert.equal(executorRan, false);
+  assert.match(env.tasks.get(task.id).error, /runtime is halted/);
+
+  const second = env.tasks.create({ title: 'already halted', creatorId: planner.id, assigneeId: worker.id });
+  await assert.rejects(() => bridge.startTask(second.id, worker.id), error => error.code === 'runtime_halted');
+  assert.equal(env.tasks.get(second.id).state, 'assigned');
   cleanup(env);
 });
 

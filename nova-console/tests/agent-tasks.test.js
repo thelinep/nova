@@ -76,6 +76,70 @@ test('5 full_lifecycle_to_completion', () => {
   cleanup(env);
 });
 
+test('5a execution_result_waits_for_explicit_local_review', () => {
+  const env = fresh();
+  const planner = env.registry.create({ name: 'planner', role: 'planner' });
+  const worker = env.registry.create({ name: 'worker', role: 'worker' });
+  const task = env.tasks.create({ title: 'propose change', creatorId: planner.id, assigneeId: worker.id });
+  env.tasks.start(task.id, worker.id);
+
+  const result = { summary: 'Draft only', changes: [{ relativePath: 'src/a.js' }] };
+  const pending = env.tasks.awaitResultReview(task.id, result, worker.id);
+  assert.equal(pending.state, 'awaiting_result_review');
+  assert.deepEqual(JSON.parse(pending.result_json), result);
+  assert.equal(pending.ended_at, null, 'a pending review has not ended the task');
+  assert.equal(env.tasks.events(task.id).at(-1).kind, 'result_submitted_for_review');
+  assert.equal(env.store.agentTasksList({ state: 'completed' }).length, 0);
+  cleanup(env);
+});
+
+test('5b result_review_requires_actor_reason_and_terminal_decision_is_immutable', () => {
+  const env = fresh();
+  const planner = env.registry.create({ name: 'planner', role: 'planner' });
+  const worker = env.registry.create({ name: 'worker', role: 'worker' });
+  const task = env.tasks.create({ title: 'propose change', creatorId: planner.id, assigneeId: worker.id });
+  env.tasks.start(task.id, worker.id);
+  const pending = env.tasks.awaitResultReview(task.id, { summary: 'Draft' }, worker.id);
+
+  assert.throws(() => env.tasks.acceptResult(task.id, '', 'looks good'), (e) => e.code === 'bad_review_actor');
+  assert.throws(() => env.tasks.acceptResult(task.id, 'local-operator', '  '), (e) => e.code === 'bad_review_reason');
+  assert.equal(env.tasks.get(task.id).state, 'awaiting_result_review', 'invalid decisions leave the pending result unchanged');
+
+  const accepted = env.tasks.acceptResult(task.id, 'local-operator', 'Reviewed the proposal and checks');
+  assert.equal(accepted.state, 'accepted');
+  assert.equal(accepted.result_json, pending.result_json, 'review preserves the exact submitted result');
+  assert.ok(accepted.ended_at);
+  const evidence = env.tasks.events(task.id).at(-1);
+  assert.equal(evidence.kind, 'result_accepted');
+  assert.equal(evidence.actor_id, 'local-operator');
+  assert.equal(evidence.reason, 'Reviewed the proposal and checks');
+  assert.equal(JSON.parse(evidence.payload_json).decision, 'accepted');
+  assert.throws(() => env.tasks.rejectResult(task.id, 'local-operator', 'changed mind'), (e) => e.code === 'not_awaiting_result_review');
+  assert.equal(env.tasks.events(task.id).filter((e) => e.kind === 'result_accepted' || e.kind === 'result_rejected').length, 1);
+  assert.equal(env.store.agentTasksList({ state: 'completed' }).length, 0, 'review acceptance is distinct from execution completion');
+  cleanup(env);
+});
+
+test('5c rejection_records_terminal_review_without_workspace_effects', () => {
+  const env = fresh();
+  const planner = env.registry.create({ name: 'planner', role: 'planner' });
+  const worker = env.registry.create({ name: 'worker', role: 'worker' });
+  const task = env.tasks.create({ title: 'propose change', creatorId: planner.id, assigneeId: worker.id });
+  env.tasks.start(task.id, worker.id);
+  env.tasks.awaitResultReview(task.id, { summary: 'Draft' }, worker.id);
+
+  const rejected = env.tasks.rejectResult(task.id, 'local-operator', 'Proposal omitted an acceptance criterion');
+  assert.equal(rejected.state, 'rejected');
+  const evidence = env.tasks.events(task.id).at(-1);
+  assert.equal(evidence.kind, 'result_rejected');
+  assert.equal(evidence.actor_id, 'local-operator');
+  assert.equal(evidence.reason, 'Proposal omitted an acceptance criterion');
+  assert.equal(JSON.parse(evidence.payload_json).decision, 'rejected');
+  assert.throws(() => env.tasks.complete(task.id, { ok: true }, worker.id), (e) => e.code === 'not_in_progress');
+  assert.equal(env.tasks.get(task.id).state, 'rejected');
+  cleanup(env);
+});
+
 test('6 fail_records_error', () => {
   const env = fresh();
   const a = env.registry.create({ name: 'a', role: 'planner' });
