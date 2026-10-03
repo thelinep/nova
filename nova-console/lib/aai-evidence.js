@@ -32,7 +32,7 @@ const panini = require('./panini');
 
 const STORE = 'aaiEvidence';
 const FORMAT = 'maataa-aai-evidence/1';
-const KINDS = ['derive-verb', 'derive-noun', 'check-form', 'ask'];
+const KINDS = ['derive-verb', 'derive-noun', 'check-form', 'ask', 'check-sentence', 'sandhi'];
 const { canonical, sha256 } = devices;
 
 function error(message, statusCode = 400, code) { return Object.assign(new Error(message), { statusCode, code }); }
@@ -48,6 +48,8 @@ function resultHash(result) { return sha256(canonical(stable(result))); }
 function verdictOf(kind, r) {
   if (kind === 'ask') return r.verdict;
   if (kind === 'check-form') return r.derivable ? 'derivable' : 'not-derived';
+  if (kind === 'check-sentence') return r.ok ? (r.verdict || 'verified') : (r.verdict || 'sandhi-violation');
+  if (kind === 'sandhi') return r.text ? 'joined' : 'failed';
   return r.forms && r.forms.length ? 'derived' : 'no-form';
 }
 
@@ -55,6 +57,8 @@ function intentOf(kind, request, r) {
   if (kind === 'derive-verb') return `Derive ${r.dhatu?.root || request.code} (${request.code}) · ${request.lakara} · ${request.purusha} ${request.vacana}`;
   if (kind === 'derive-noun') return `Derive ${r.stem || request.stem} · ${request.linga} · ${request.vibhakti} ${request.vacana}`;
   if (kind === 'check-form') return `Check the form ${r.claim} against ${request.stem ? 'the stem ' + request.stem : 'root ' + request.code + ' ' + (request.lakara || 'Lat')}`;
+  if (kind === 'check-sentence') return `Check sentence sandhi: ${String(r.sentence || request.sentence || '').slice(0, 160)}`;
+  if (kind === 'sandhi') return `Join padas: ${request.left} + ${request.right}`;
   return `Ask AAI (${r.model}): ${String(r.question || '').slice(0, 160)}`;
 }
 
@@ -78,6 +82,17 @@ function checksFor(kind, r) {
     const cells = (r.table?.grid || []).reduce((n, row) => n + row.reduce((m, cell) => m + cell.length, 0), 0);
     return [{ name: 'the rules derived the full table', ok: cells > 0, detail: `${cells} forms` }];
   }
+  if (kind === 'check-sentence') {
+    const junctures = r.junctures || [];
+    return junctures.length ? junctures.map(j => ({
+      name: `juncture ${j.left} + ${j.right}`,
+      ok: j.status !== 'violation',
+      detail: j.note || j.rule?.name || 'valid'
+    })) : [{ name: 'sentence verified', ok: true, detail: 'no sandhi junctures' }];
+  }
+  if (kind === 'sandhi') {
+    return [{ name: `sandhi rule ${r.rule?.id || ''}`, ok: !!r.text, detail: r.rule?.name || 'joined' }];
+  }
   const list = stepChecks(r.forms);
   return list.length ? list : [{ name: 'the rule engine answered', ok: true, detail: 'no form for this choice' }];
 }
@@ -85,6 +100,8 @@ function checksFor(kind, r) {
 function summaryOf(kind, r, verdict) {
   if (kind === 'ask') return `${verdict}: ${(r.citations || []).length} citation(s) checked`;
   if (kind === 'check-form') return `${verdict}: ${r.claim}`;
+  if (kind === 'check-sentence') return `${verdict}: ${r.summary || ''}`;
+  if (kind === 'sandhi') return `${verdict}: ${r.left} + ${r.right} → ${r.text}`;
   return `${verdict}: ${(r.forms || []).map(f => f.text).join(', ') || '—'}`;
 }
 
@@ -164,6 +181,11 @@ function verifyBundle(b) {
     const again = panini.checkCitations(String(b.result?.answer || ''));
     const same = canonical(again.map(x => [x.id, x.status])) === canonical((b.result?.citations || []).map(x => [x.id, x.status]));
     add('citations checked again by rule give the same result', same, `${again.length} citation(s)`);
+  } else if (kind === 'check-sentence') {
+    const sandhi = require('./sandhi');
+    const again = sandhi.checkSentence(String(b.result?.sentence || ''));
+    const same = again.verdict === b.result?.verdict && again.violations === b.result?.violations;
+    add('sentence sandhi re-evaluated gives identical verdict', same, `${again.junctures?.length || 0} junctures`);
   } else if (kind === 'derive-verb' || kind === 'derive-noun') {
     const bad = stepChecks(b.result?.forms).filter(x => !x.ok);
     add('every cited sutra exists in this edition', bad.length === 0, bad.map(x => x.detail).join('; '));
@@ -181,6 +203,16 @@ async function replay(store, aai, id) {
     const again = panini.checkCitations(String(rec.result.answer || ''));
     const agree = canonical(again.map(x => [x.id, x.status])) === canonical((rec.result.citations || []).map(x => [x.id, x.status]));
     return { id, kind: rec.kind, reproduced: null, citationsAgree: agree, detail: agree ? 'The model is not run again (its answers vary). Its citations, checked again by rule, give the same result.' : 'The citations, checked again by rule, now give a different result.' };
+  }
+  if (rec.kind === 'check-sentence') {
+    const fresh = aai.checkSentence(req.sentence || rec.result?.sentence);
+    const reproduced = resultHash(fresh) === c.observation.outputSha256;
+    return { id, kind: rec.kind, reproduced, verdictThen: rec.verdict, verdictNow: verdictOf(rec.kind, fresh), detail: reproduced ? 'Sentence checked again, rules give exactly the same verdict.' : 'The sentence check differs.' };
+  }
+  if (rec.kind === 'sandhi') {
+    const fresh = aai.sandhiJoin(req.left, req.right, req.options);
+    const reproduced = resultHash(fresh) === c.observation.outputSha256;
+    return { id, kind: rec.kind, reproduced, verdictThen: rec.verdict, verdictNow: verdictOf(rec.kind, fresh), detail: reproduced ? 'Sandhi joined again, rules give exactly the same result.' : 'The sandhi result differs.' };
   }
   const fresh = rec.kind === 'derive-verb' ? await aai.deriveVerb(req) : rec.kind === 'derive-noun' ? await aai.deriveNoun(req) : await aai.checkForm(req);
   const engineNow = await aai.engineInfo().catch(() => null);

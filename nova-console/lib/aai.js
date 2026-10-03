@@ -237,4 +237,42 @@ async function ask({ ollama, question, model, killSwitch }) {
   };
 }
 
-module.exports = { configure, status, engineInfo, startInstall, deriveVerb, paradigm, deriveNoun, declension, checkForm, lipi, ask, LAKARAS, PREFIXES, _run: run, _reset: () => { pythonCache = null; engineCache = null; install = { state: 'idle', log: [], startedAt: null, finishedAt: null, error: null }; } };
+const sandhi = require('./sandhi');
+
+function sandhiJoin(left, right, options) {
+  return sandhi.join(left, right, options);
+}
+
+function sandhiSplit(compound, options) {
+  return sandhi.split(compound, options);
+}
+
+function checkSentence(sentenceText) {
+  return sandhi.checkSentence(sentenceText);
+}
+
+module.exports = {
+  configure,
+  status,
+  engineInfo,
+  startInstall,
+  deriveVerb,
+  paradigm,
+  deriveNoun,
+  declension,
+  checkForm,
+  lipi,
+  ask,
+  sandhi,
+  sandhiJoin,
+  sandhiSplit,
+  checkSentence,
+  LAKARAS,
+  PREFIXES,
+  _run: run,
+  _reset: () => {
+    pythonCache = null;
+    engineCache = null;
+    install = { state: 'idle', log: [], startedAt: null, finishedAt: null, error: null };
+  }
+};
