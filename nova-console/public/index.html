@@ -442,6 +442,10 @@
 .hk-cell:disabled{cursor:default;color:var(--muted-dim);border-color:transparent}
 .hk-cell.sel{outline:2px solid var(--amber);outline-offset:1px}
 .hk-rec{padding:12px;margin-top:8px}
+.hk-tree{list-style:none;margin:4px 0 0 0;padding-left:18px;border-left:1px solid var(--line)}
+.hk-tree-root{padding-left:0;border-left:0}
+.hk-tree li{margin:5px 0}
+.hk-tree-name{font-weight:600}
 .hk-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
 .hk-controls label{font-size:12.5px;color:var(--muted)}
 .hk-controls select{display:block;margin-top:4px}
@@ -5288,7 +5292,19 @@ async function renderHkdmView(){
   const basis=r=>r.basis==='source'?'<span class="badge badge-blue">from the source page</span>':'<span class="badge">general knowledge, unchecked</span>';
   const val=(k,id)=>{const v=sum.axes[k].values.find(x=>x.id===id);return v?escapeHtml(v.hi||v.label):escapeHtml(id);};
   const recs=HK.recs?`<div class="cap-section-label">Records behind the cell</div>${HK.recs.length?HK.recs.map(r=>`<div class="panel hk-rec"><div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><strong>${escapeHtml(r.scriptHi||'')} · ${escapeHtml(r.scriptName||r.script)}</strong><span class="panini-sub">${escapeHtml(r.from<0?(-r.from)+' BCE':r.from+' CE')} – ${escapeHtml(r.to<0?(-r.to)+' BCE':r.to+' CE')}</span>${conf(r)}${basis(r)}</div><div class="panini-sub" style="margin-top:4px">${val('beta',r.beta)} · ${val('gamma',r.gamma)} · ${val('delta',r.delta)}</div><p style="margin:6px 0 0;font-size:13.5px">${escapeHtml(r.note)}</p>${r.refs.map(u=>`<a class="panini-sub" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(decodeURIComponent(u.replace(/^https:\/\//,'')))}</a>`).join(' ')}</div>`).join(''):'<p class="panini-sub">No record in this cell.</p>'}`:'';
-  const lineage=`<table class="panini-table" data-no-list-tools><thead><tr><th>From</th><th>To</th><th>First attested</th><th>Gap</th><th></th></tr></thead><tbody>${sum.lineage.map(e=>{const s=id=>sum.scripts.find(x=>x.id===id);const y=v=>v==null?'—':v<0?(-v)+' BCE':v+' CE';return `<tr><td>${escapeHtml(s(e.parent)?.hi||e.parent)}</td><td>${escapeHtml(s(e.child)?.hi||e.child)}${e.via?` <span class="panini-sub">via ${escapeHtml(e.via)}</span>`:''}</td><td class="panini-sub">${y(e.parentFirst)} → ${y(e.childFirst)}</td><td class="mono">${e.gap==null?'—':e.gap+' y'}</td><td>${e.confidence==='established'?'<span class="badge badge-green">established</span>':`<span class="badge badge-amber" title="${escapeHtml(e.note||'')}">debated</span>`} <a class="panini-sub" href="${escapeHtml(e.ref)}" target="_blank" rel="noopener">source</a></td></tr>`;}).join('')}</tbody></table><p class="panini-sub" style="margin-top:6px">Gap = years between the first established records of the two scripts; debated early claims are left out.</p>`;
+  // Lineage as a family tree: each script sits under its first established parent (else its first debated one);
+  // other proposed parents are listed beside it. Scripts with no link are listed at the end.
+  const lineage=(()=>{const name=id=>{const x=sum.scripts.find(s=>s.id===id);return x?`${escapeHtml(x.hi)} · ${escapeHtml(x.name)}`:escapeHtml(id);};const y=v=>v==null?'—':v<0?(-v)+' BCE':v+' CE';
+    const links=sum.lineage, primary=new Map();
+    for(const e of links){const cur=primary.get(e.child);if(!cur||(cur.confidence!=='established'&&e.confidence==='established'))primary.set(e.child,e);}
+    const kids=new Map();for(const e of primary.values()){if(!kids.has(e.parent))kids.set(e.parent,[]);kids.get(e.parent).push(e);}
+    for(const list of kids.values())list.sort((a,b)=>(a.childFirst??0)-(b.childFirst??0));
+    const inTree=new Set([...primary.keys()]);const roots=[...new Set(links.map(e=>e.parent))].filter(id=>!inTree.has(id));
+    const node=(e,seen)=>{const id=e.child;if(seen.has(id))return '';seen.add(id);const others=links.filter(x=>x.child===id&&x!==e);
+      return `<li><span class="hk-tree-name">${name(id)}</span> ${e.via?`<span class="panini-sub">via ${escapeHtml(e.via)}</span> `:''}${e.confidence==='established'?'':`<span class="badge badge-amber" title="${escapeHtml(e.note||'')}">debated</span> `}<span class="panini-sub mono">${y(e.childFirst)}${e.gap!=null?` · +${e.gap} y`:''}</span> <a class="panini-sub" href="${escapeHtml(e.ref)}" target="_blank" rel="noopener">source</a>${others.length?`<div class="panini-sub">also proposed: ${others.map(o=>`${name(o.parent)} (${escapeHtml(o.confidence)}${o.note?': '+escapeHtml(o.note):''})`).join('; ')}</div>`:''}${e.confidence!=='established'&&e.note?`<div class="panini-sub">${escapeHtml(e.note)}</div>`:''}${kids.has(id)?`<ul class="hk-tree">${kids.get(id).map(k=>node(k,seen)).join('')}</ul>`:''}</li>`;};
+    const seen=new Set();const tree=roots.map(r=>`<li><span class="hk-tree-name">${name(r)}</span> <span class="panini-sub mono">${y(links.find(e=>e.parent===r)?.parentFirst)}</span>${kids.has(r)?`<ul class="hk-tree">${kids.get(r).map(k=>node(k,seen)).join('')}</ul>`:''}</li>`).join('');
+    const linked=new Set([...links.map(e=>e.parent),...links.map(e=>e.child)]);const lone=sum.scripts.filter(s=>!linked.has(s.id));
+    return `<ul class="hk-tree hk-tree-root" aria-label="Script lineage">${tree}</ul>${lone.length?`<p class="panini-sub" style="margin-top:8px">No lineage link in the data: ${lone.map(s=>escapeHtml(s.name)).join(' · ')}</p>`:''}<p class="panini-sub" style="margin-top:6px">${links.length} links between ${linked.size} scripts. Each script sits under its first established parent; +years = gap between the first established records.</p>`;})();
   pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · HKDM</span><h1 class="view-title">Lipi Tensor</h1><p class="view-desc">T(α, β, γ, δ): epoch × substrate × information architecture × direction. Each cell counts the scripts that sourced records place there; open a cell to see the records. Nothing is inferred: an empty cell means no record, not "never happened".</p></div></div>
   <div class="panel aai-banner"><strong>Draft data.</strong> <span class="panini-sub">${escapeHtml(sum.note)}</span></div>
   <div class="card-grid cols-3" style="margin-bottom:12px">

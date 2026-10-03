@@ -231,7 +231,8 @@
       "region": "Gandhara, Central Asia",
       "refs": [
         "https://en.wikipedia.org/wiki/Kharosthi",
-        "https://www.omniglot.com/writing/kharosthi.htm"
+        "https://www.omniglot.com/writing/kharosthi.htm",
+        "https://en.wikipedia.org/wiki/Indo-Greek_Kingdom"
       ]
     },
     {
@@ -266,8 +267,8 @@
     },
     {
       "id": "grantha",
-      "name": "Pallava and Grantha",
-      "hi": "पल्लव और ग्रंथ",
+      "name": "Grantha",
+      "hi": "ग्रंथ",
       "region": "South India",
       "refs": [
         "https://en.wikipedia.org/wiki/Grantha_script",
@@ -282,7 +283,8 @@
       "region": "North India, then East Asia",
       "refs": [
         "https://en.wikipedia.org/wiki/Siddha%E1%B9%83_script",
-        "https://www.omniglot.com/writing/siddham.htm"
+        "https://www.omniglot.com/writing/siddham.htm",
+        "https://en.wikipedia.org/wiki/Siddham_script"
       ]
     },
     {
@@ -340,6 +342,197 @@
       "region": "Tibet, Himalaya",
       "refs": [
         "https://en.wikipedia.org/wiki/Tibetan_script"
+      ]
+    },
+    {
+      "id": "bhattiprolu",
+      "name": "Bhattiprolu",
+      "hi": "भट्टिप्रोलु",
+      "region": "Andhra (Krishna delta)",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Bhattiprolu_script"
+      ]
+    },
+    {
+      "id": "kadamba",
+      "name": "Kadamba",
+      "hi": "कदम्ब",
+      "region": "Karnataka, Andhra",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Kadamba_script"
+      ]
+    },
+    {
+      "id": "telugu-kannada",
+      "name": "Telugu-Kannada",
+      "hi": "तेलुगु-कन्नड",
+      "region": "Andhra, Karnataka",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Telugu-Kannada_alphabet"
+      ]
+    },
+    {
+      "id": "pallava",
+      "name": "Pallava",
+      "hi": "पल्लव",
+      "region": "South India, then Southeast Asia",
+      "refs": [
+        "https://www.omniglot.com/writing/pallava.htm",
+        "https://en.wikipedia.org/wiki/Indian_copper_plate_inscriptions"
+      ]
+    },
+    {
+      "id": "tamil",
+      "name": "Tamil",
+      "hi": "तमिल",
+      "region": "Tamil country",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Tamil_script",
+        "https://www.omniglot.com/writing/tamil.htm"
+      ]
+    },
+    {
+      "id": "malayalam",
+      "name": "Malayalam",
+      "hi": "मलयालम",
+      "region": "Kerala",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Malayalam_script"
+      ]
+    },
+    {
+      "id": "sinhala",
+      "name": "Sinhala",
+      "hi": "सिंहल",
+      "region": "Sri Lanka",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Sinhala_script"
+      ]
+    },
+    {
+      "id": "gaudi",
+      "name": "Gaudi",
+      "hi": "गौड़ी",
+      "region": "Eastern India",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Gaudi_script"
+      ]
+    },
+    {
+      "id": "bengali-assamese",
+      "name": "Bengali–Assamese",
+      "hi": "बांग्ला-असमिया",
+      "region": "Bengal, Assam, Manipur",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Bengali%E2%80%93Assamese_script"
+      ]
+    },
+    {
+      "id": "odia",
+      "name": "Odia",
+      "hi": "ओड़िया",
+      "region": "Odisha",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Odia_script"
+      ]
+    },
+    {
+      "id": "gujarati",
+      "name": "Gujarati",
+      "hi": "गुजराती",
+      "region": "Gujarat",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Gujarati_script"
+      ]
+    },
+    {
+      "id": "landa",
+      "name": "Laṇḍā",
+      "hi": "लंडा",
+      "region": "Punjab, Sindh",
+      "refs": [
+        "https://en.wikipedia.org/wiki/La%E1%B9%87%E1%B8%8D%C4%81_scripts"
+      ]
+    },
+    {
+      "id": "gurmukhi",
+      "name": "Gurmukhi",
+      "hi": "गुरमुखी",
+      "region": "Punjab",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Gurmukhi"
+      ]
+    },
+    {
+      "id": "meitei",
+      "name": "Meitei Mayek",
+      "hi": "मीतै मयेक",
+      "region": "Manipur",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Meitei_script"
+      ]
+    },
+    {
+      "id": "phags-pa",
+      "name": "ʼPhags-pa",
+      "hi": "फग्स-पा",
+      "region": "Yuan China",
+      "refs": [
+        "https://en.wikipedia.org/wiki/%CA%BCPhags-pa_script"
+      ]
+    },
+    {
+      "id": "kawi",
+      "name": "Kawi",
+      "hi": "कवि",
+      "region": "Java, Bali, Sumatra",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Kawi_script"
+      ]
+    },
+    {
+      "id": "javanese",
+      "name": "Javanese",
+      "hi": "जावानी",
+      "region": "Java",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Javanese_script"
+      ]
+    },
+    {
+      "id": "baybayin",
+      "name": "Baybayin",
+      "hi": "बायबायिन",
+      "region": "Philippines",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Baybayin"
+      ]
+    },
+    {
+      "id": "khmer",
+      "name": "Khmer",
+      "hi": "ख्मेर",
+      "region": "Cambodia",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Khmer_script"
+      ]
+    },
+    {
+      "id": "thai",
+      "name": "Thai",
+      "hi": "थाई",
+      "region": "Thailand",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Thai_script"
+      ]
+    },
+    {
+      "id": "burmese",
+      "name": "Burmese",
+      "hi": "बर्मी",
+      "region": "Myanmar",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Burmese_alphabet"
       ]
     }
   ],
@@ -1164,6 +1357,501 @@
         "https://en.wikipedia.org/wiki/Paper_history",
         "https://en.wikipedia.org/wiki/Pecha"
       ]
+    },
+    {
+      "id": "kha-metal-rtl",
+      "script": "kharoshthi",
+      "from": -180,
+      "to": 10,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Bilingual coins: Greek on the obverse, Kharoshthi Prakrit on the reverse, issued by Indo-Greek kings from Apollodotus I (c. 180 BCE); the kingdom lasted to about 10 CE. The first bilingual coins (Pantaleon, Agathocles) used Brahmi.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Indo-Greek_Kingdom"
+      ]
+    },
+    {
+      "id": "kha-leather-rtl",
+      "script": "kharoshthi",
+      "from": 200,
+      "to": 400,
+      "beta": "leather",
+      "gamma": "abugida",
+      "delta": "rtl",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Documents on leather from Niya (general knowledge; the pages opened mention only wood for Niya)."
+    },
+    {
+      "id": "bra-metal-coins",
+      "script": "brahmi",
+      "from": -185,
+      "to": -170,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "The first Indo-Greek bilingual coins, of Pantaleon and Agathocles (c. 185–170 BCE), carry Brahmi legends.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Indo-Greek_Kingdom"
+      ]
+    },
+    {
+      "id": "sid-paper-ttb",
+      "script": "siddham",
+      "from": 806,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "source",
+      "note": "In East Asia Siddham was usually written left to right, but occasionally in the Chinese manner, top to bottom in columns (Wikipedia, Siddhaṃ script).",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Siddham_script"
+      ]
+    },
+    {
+      "id": "sid-paper-china",
+      "script": "siddham",
+      "from": 600,
+      "to": 850,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Buddhist texts carried to China along the Silk Road were written in Siddham; supply to Japan was cut by the purges of foreign religions in the mid-9th century (source). The substrate and start are general knowledge.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Siddham_script"
+      ]
+    },
+    {
+      "id": "bht-stone-ltr",
+      "script": "bhattiprolu",
+      "from": -300,
+      "to": -1,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Inscriptions on stone relic caskets (and a crystal casket) at Bhattiprolu, 3rd–1st century BCE. gh, j, m, l and s differ radically from Ashokan Brahmi; the inherent vowel is discarded."
+    },
+    {
+      "id": "kad-stone-ltr",
+      "script": "kadamba",
+      "from": 325,
+      "to": 1000,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Under the Kadamba dynasty (325–550) Brahmi became shorter and rounder; distinct by the 5th century; evolved into Telugu-Kannada by the 10th."
+    },
+    {
+      "id": "kad-metal-ltr",
+      "script": "kadamba",
+      "from": 325,
+      "to": 1000,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Copper-plate inscriptions in Kadamba script."
+    },
+    {
+      "id": "tka-metal-ltr",
+      "script": "telugu-kannada",
+      "from": 650,
+      "to": 1400,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Used between the 7th and 11th centuries on copper plates; Telugu and Kannada separated between 1100 and 1400."
+    },
+    {
+      "id": "pal-stone-ltr",
+      "script": "pallava",
+      "from": 300,
+      "to": 800,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Based on Brahmi; developed c. 3rd–5th century; stone monuments were the main medium, in South India and Southeast Asia (Omniglot)."
+    },
+    {
+      "id": "pal-metal-ltr",
+      "script": "pallava",
+      "from": 350,
+      "to": 800,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Some of the earliest authenticated copper plates were issued by Pallava kings in the 4th century.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Indian_copper_plate_inscriptions"
+      ]
+    },
+    {
+      "id": "tam-palm-ltr",
+      "script": "tamil",
+      "from": 800,
+      "to": 2000,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "The Chola-Pallava script replaced Vaṭṭeḻuttu in the north from the 8th century and evolved into modern Tamil. Palm leaves were the main medium; scribes avoided piercing them, so the puḷḷi fell out of regular use."
+    },
+    {
+      "id": "mal-palm-ltr",
+      "script": "malayalam",
+      "from": 1150,
+      "to": 2000,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Earliest form in the 12th-century Vaishikatantram; systematised by the 13th; current form 16th century from Vaṭṭeḻuttu, Kolezhuttu and Grantha (source). The palm-leaf substrate is general knowledge."
+    },
+    {
+      "id": "sin-palm-ltr",
+      "script": "sinhala",
+      "from": 750,
+      "to": 2000,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Medieval Sinhala emerged around 750 CE; written on dried palm leaves, which split along straight lines, so round shapes were preferred."
+    },
+    {
+      "id": "sin-stone-ltr",
+      "script": "sinhala",
+      "from": 750,
+      "to": 1815,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Royal documents on stone until the fall of the Kandyan Kingdom in 1815."
+    },
+    {
+      "id": "gau-palm-ltr",
+      "script": "gaudi",
+      "from": 900,
+      "to": 1400,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Current from the 10th to the 14th century; the Aṣṭasāhasrikā Prajñāpāramitā in ink on palm leaves."
+    },
+    {
+      "id": "gau-metal-ltr",
+      "script": "gaudi",
+      "from": 900,
+      "to": 1400,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Silver coins of the Harikela kingdom."
+    },
+    {
+      "id": "ben-paper-ltr",
+      "script": "bengali-assamese",
+      "from": 1400,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Differentiated from Gaudi in the 14th–15th centuries; first significant typeset book 1778 (source). Paper before print is general knowledge. Also the official script for Meitei (Manipuri)."
+    },
+    {
+      "id": "odi-palm-ltr",
+      "script": "odia",
+      "from": 1300,
+      "to": 2000,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Modern form from the 14th century, when palm-leaf manuscript culture became dominant; Wikipedia attributes the curved tops to palm leaves tearing along straight lines."
+    },
+    {
+      "id": "guj-paper-ltr",
+      "script": "gujarati",
+      "from": 1591,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Earliest known manuscript: Adi Parva, 1591–92; the headline was abandoned in the 17th–19th centuries, when it was the bankers', merchants' and traders' script (source). The substrate is general knowledge."
+    },
+    {
+      "id": "lan-paper-ltr",
+      "script": "landa",
+      "from": 1000,
+      "to": 1900,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Evolved from Sharada in the 10th century as mercantile shorthand in Punjab and Sindh, often without full vowels (source). The substrate and end are general knowledge."
+    },
+    {
+      "id": "gur-stone-ltr",
+      "script": "gurmukhi",
+      "from": 1470,
+      "to": 1490,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Proto-Gurmukhi writing c. 1470–1490 on the tomb of Rae Feroze."
+    },
+    {
+      "id": "gur-paper-ltr",
+      "script": "gurmukhi",
+      "from": 1530,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Standardized by Guru Angad around 1530–1535; manuscripts since the 1500s."
+    },
+    {
+      "id": "mei-metal-ltr",
+      "script": "meitei",
+      "from": 568,
+      "to": 1709,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "debated",
+      "basis": "source",
+      "note": "First known from 6th-century coins and copper plates (reign of Ura Konthouba, c. 568–653); in use until the early 18th century, when Bengali script replaced it. Scholars disagree significantly on when it developed."
+    },
+    {
+      "id": "mei-paper-ltr",
+      "script": "meitei",
+      "from": 1980,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "A modernised version approved for schools in 1980; in Unicode since 2009."
+    },
+    {
+      "id": "phg-stone-ttb",
+      "script": "phags-pa",
+      "from": 1269,
+      "to": 1368,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Designed by the Tibetan monk ʼPhags-pa in 1269 for Kublai Khan; written vertically, columns left to right; used for about a century under the Yuan (a Christian tombstone at Quanzhou, 1314)."
+    },
+    {
+      "id": "phg-metal-ttb",
+      "script": "phags-pa",
+      "from": 1269,
+      "to": 1368,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ttb",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Seals and currency."
+    },
+    {
+      "id": "kaw-stone-ltr",
+      "script": "kawi",
+      "from": 763,
+      "to": 1600,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Earliest: the Kesongo stone, 763 CE; stone inscriptions form the bulk of the corpus, to the 16th century."
+    },
+    {
+      "id": "kaw-metal-ltr",
+      "script": "kawi",
+      "from": 763,
+      "to": 1600,
+      "beta": "metal",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Plates and foils of lead-bronze, copper and gold."
+    },
+    {
+      "id": "kaw-palm-ltr",
+      "script": "kawi",
+      "from": 763,
+      "to": 1600,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Everyday writing on palm leaf (lontar); the Tanjung Tanah manuscript, 1379–1387."
+    },
+    {
+      "id": "jav-palm-ltr",
+      "script": "javanese",
+      "from": 1400,
+      "to": 1900,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Evolved from Kawi in the 14th–15th centuries; lontar palm leaves."
+    },
+    {
+      "id": "jav-paper-ltr",
+      "script": "javanese",
+      "from": 1500,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Daluang (local paper) in the 16th–17th centuries, European paper dominant by the 19th."
+    },
+    {
+      "id": "bay-palm-ltr",
+      "script": "baybayin",
+      "from": 1500,
+      "to": 1700,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Traditionally written on palm leaves with a stylus or on bamboo with a knife (source); the date range is general knowledge."
+    },
+    {
+      "id": "bay-paper-ltr",
+      "script": "baybayin",
+      "from": 1591,
+      "to": 1800,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Oldest dated documents 1591 and 1599 (Archivo General de Indias); the Doctrina Christiana printed in 1593; ink on paper in the Spanish period."
+    },
+    {
+      "id": "khm-stone-ltr",
+      "script": "khmer",
+      "from": 611,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Adapted from Pallava; oldest dated Khmer inscription, Angkor Borei, 611 CE; stelae throughout the former Khmer Empire."
+    },
+    {
+      "id": "khm-palm-ltr",
+      "script": "khmer",
+      "from": 1200,
+      "to": 2000,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "Palm-leaf manuscripts in the Khom style (source mentions them; the date range is general knowledge)."
+    },
+    {
+      "id": "tha-stone-ltr",
+      "script": "thai",
+      "from": 1283,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "general",
+      "note": "From Old Khmer via Sukhothai; traditionally dated 1283. The Ram Khamhaeng inscription (1292) is questioned by many scholars; some date the earliest Thai to 1219 (source). Stone as substrate is general knowledge."
+    },
+    {
+      "id": "bur-stone-ltr",
+      "script": "burmese",
+      "from": 1035,
+      "to": 2000,
+      "beta": "stone",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Earliest evidence 1035 (an 18th-century casting of an older inscription points to 984); square forms because petroglyphs were a main medium."
+    },
+    {
+      "id": "bur-palm-ltr",
+      "script": "burmese",
+      "from": 1600,
+      "to": 2000,
+      "beta": "palm-leaf",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Rounded cursive forms from the 17th century with wider use of palm leaves, which a stylus would rip with straight lines."
+    },
+    {
+      "id": "bur-paper-ltr",
+      "script": "burmese",
+      "from": 1600,
+      "to": 2000,
+      "beta": "paper",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "established",
+      "basis": "source",
+      "note": "Folded paper books (parabaik) from the 17th century."
     }
   ],
   "lineage": [
@@ -1225,13 +1913,6 @@
       "ref": "https://en.wikipedia.org/wiki/Brahmi_script"
     },
     {
-      "parent": "brahmi",
-      "child": "grantha",
-      "via": "Pallava",
-      "confidence": "established",
-      "ref": "https://en.wikipedia.org/wiki/Grantha_script"
-    },
-    {
       "parent": "gupta",
       "child": "siddham",
       "confidence": "established",
@@ -1278,6 +1959,161 @@
       "confidence": "established",
       "note": "Late Gupta script of Nepal and North India is the most likely model.",
       "ref": "https://en.wikipedia.org/wiki/Tibetan_script"
+    },
+    {
+      "parent": "brahmi",
+      "child": "bhattiprolu",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Bhattiprolu_script",
+      "note": "Mauryan Brahmi travelled to Bhattiprolu soon after the 3rd century BCE; Salomon suggests it was first made for a Dravidian language."
+    },
+    {
+      "parent": "brahmi",
+      "child": "kadamba",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Kadamba_script"
+    },
+    {
+      "parent": "kadamba",
+      "child": "telugu-kannada",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Telugu-Kannada_alphabet"
+    },
+    {
+      "parent": "brahmi",
+      "child": "pallava",
+      "confidence": "established",
+      "ref": "https://www.omniglot.com/writing/pallava.htm"
+    },
+    {
+      "parent": "pallava",
+      "child": "grantha",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Grantha_script"
+    },
+    {
+      "parent": "pallava",
+      "child": "tamil",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Tamil_script",
+      "via": "Chola-Pallava"
+    },
+    {
+      "parent": "tamil-brahmi",
+      "child": "tamil",
+      "confidence": "debated",
+      "ref": "https://en.wikipedia.org/wiki/Tamil_script",
+      "via": "Vaṭṭeḻuttu",
+      "note": "Vaṭṭeḻuttu was replaced in the north by Chola-Pallava from the 8th century; its share in modern Tamil is partial."
+    },
+    {
+      "parent": "grantha",
+      "child": "malayalam",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Malayalam_script",
+      "note": "With Vaṭṭeḻuttu and Kolezhuttu in its 16th-century form."
+    },
+    {
+      "parent": "brahmi",
+      "child": "sinhala",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Sinhala_script"
+    },
+    {
+      "parent": "grantha",
+      "child": "sinhala",
+      "confidence": "debated",
+      "ref": "https://en.wikipedia.org/wiki/Sinhala_script",
+      "note": "Medieval Sinhala (c. 750) is thought to derive from Grantha."
+    },
+    {
+      "parent": "pallava",
+      "child": "khmer",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Khmer_script"
+    },
+    {
+      "parent": "khmer",
+      "child": "thai",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Thai_script",
+      "via": "Sukhothai"
+    },
+    {
+      "parent": "pallava",
+      "child": "kawi",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Kawi_script"
+    },
+    {
+      "parent": "kawi",
+      "child": "javanese",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Javanese_script"
+    },
+    {
+      "parent": "kawi",
+      "child": "baybayin",
+      "confidence": "debated",
+      "ref": "https://en.wikipedia.org/wiki/Baybayin",
+      "note": "Possibly via Buginese; Scott favours a South Sulawesi ancestor (Old Makassar); Wade points to Cham."
+    },
+    {
+      "parent": "pallava",
+      "child": "burmese",
+      "confidence": "debated",
+      "ref": "https://en.wikipedia.org/wiki/Burmese_alphabet",
+      "note": "From Pyu, Old Mon, or directly from a South Indian script (Kadamba or Pallava)."
+    },
+    {
+      "parent": "siddham",
+      "child": "gaudi",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Gaudi_script"
+    },
+    {
+      "parent": "gaudi",
+      "child": "bengali-assamese",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Bengali%E2%80%93Assamese_script"
+    },
+    {
+      "parent": "gaudi",
+      "child": "odia",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Gaudi_script"
+    },
+    {
+      "parent": "devanagari",
+      "child": "gujarati",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Gujarati_script",
+      "via": "Nāgarī"
+    },
+    {
+      "parent": "sharada",
+      "child": "landa",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/La%E1%B9%87%E1%B8%8D%C4%81_scripts"
+    },
+    {
+      "parent": "landa",
+      "child": "gurmukhi",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/Gurmukhi"
+    },
+    {
+      "parent": "gupta",
+      "child": "meitei",
+      "confidence": "debated",
+      "ref": "https://en.wikipedia.org/wiki/Meitei_script",
+      "note": "A Brahmic abugida of the Gupta lineage; its origins and date are debated."
+    },
+    {
+      "parent": "tibetan",
+      "child": "phags-pa",
+      "confidence": "established",
+      "ref": "https://en.wikipedia.org/wiki/%CA%BCPhags-pa_script"
     }
   ],
   "crossChecks": [

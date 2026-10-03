@@ -599,14 +599,14 @@ Each record is one attestation: a script, a span of years, a substrate, an archi
 | **established** or **debated** | Whether scholars agree. Debated claims, such as the early Anuradhapura potsherds for Brahmi or Hangul as a "featural" script, are kept and marked. |
 | **from the source page** or **general knowledge, unchecked** | Whether the fact was found on the script's reference page, or is general knowledge not yet checked against a page. |
 
-> **Note** The seed data (20 scripts, 65 records; 57 from a source page, 8 still general knowledge) is a **draft**. Each record still needs review by an epigraphist before it is cited.
+> **Note** The seed data (41 scripts, 105 records; 88 from a source page, 17 still general knowledge) is a **draft**. Each record still needs review by an epigraphist before it is cited.
 
 ### Use it
 
 1. Choose the **rows** and **columns** (any two axes). The other two axes are summed, or fixed with their filters.
 2. Use **Confidence: established only** or **Basis: from a source page only** to see what holds without debated or unchecked records.
 3. Choose a cell to see the records behind it, with links to their sources.
-4. **Lineage** lists which script descends from which, with the years between their first established records. Both hypotheses for the origin of Brahmi (Aramaic, Indus) are shown, both marked debated.
+4. **Lineage** shows the family tree: each script sits under its first established parent, with other proposed parents beside it and the years between first established records. Both hypotheses for the origin of Brahmi (Aramaic, Indus) are shown, both marked debated.
 5. **Cross-check with Omniglot** compares each script's main reference with its Omniglot page: 18 topics, marked agree, partly or differ. Where they differ, both sides are shown and the records say which one they follow.
 6. **Download tensor (JSON)** gives the dense count tensor (shape 11 × 11 × 6 × 5) and the sparse cells with their scripts and record ids. **Download records (CSV)** gives every record with its reference.
 

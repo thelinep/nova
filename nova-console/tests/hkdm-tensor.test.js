@@ -38,8 +38,8 @@ test('cells hold what the records say, and nothing else', () => {
 test('a projection counts distinct scripts and sums over the free axes', () => {
   const p = hkdm.project({ rows: 'alpha', cols: 'gamma' });
   const row = p.rowValues.findIndex(v => v.id === '0'), col = p.colValues.findIndex(v => v.id === 'abugida');
-  assert.deepEqual(p.scripts[row][col], ['brahmi', 'devanagari', 'grantha', 'gupta', 'kharoshthi', 'sharada', 'tamil-brahmi']);
-  assert.equal(p.matrix[row][col], 7, 'includes the debated early Devanagari and Sharada records');
+  assert.deepEqual(p.scripts[row][col], ['brahmi', 'devanagari', 'grantha', 'gupta', 'kadamba', 'kharoshthi', 'pallava', 'sharada', 'tamil-brahmi']);
+  assert.equal(p.matrix[row][col], 9, 'includes the debated early Devanagari and Sharada records');
   // Fixing δ = rtl leaves only Kharoshthi among abugidas in 0–500 CE.
   const rtl = hkdm.project({ rows: 'alpha', cols: 'gamma', filter: { delta: 'rtl' } });
   assert.deepEqual(rtl.scripts[row][col], ['kharoshthi']);
@@ -100,7 +100,7 @@ test('Omniglot cross-checks: every script named exists, disagreements are kept, 
 test('checked records carry their own references, and general knowledge is the minority', () => {
   const data = hkdm.load();
   const general = data.records.filter(r => r.basis === 'general');
-  assert.ok(general.length <= 8, `${general.length} general records`);
+  assert.ok(general.length / data.records.length < 0.2, `${general.length} of ${data.records.length} records are general knowledge`);
   for (const id of ['chi-bamboo-ttb', 'ara-leather-rtl', 'arb-leather-rtl', 'lat-paper-ltr', 'tib-paper-ltr']) {
     const r = data.records.find(x => x.id === id);
     assert.equal(r.basis, 'source', id);
@@ -111,4 +111,19 @@ test('checked records carry their own references, and general knowledge is the m
   assert.match(aram.refs[0], /Khalili/);
   // A source that contradicts another is kept as a debated record.
   assert.equal(data.records.find(r => r.id === 'sha-birch-early').confidence, 'debated');
+});
+
+test('the Brahmic family: southern, northern and Southeast Asian branches, with debated links kept', () => {
+  const g = hkdm.gaps(), has = (a, b) => g.find(e => e.parent === a && e.child === b);
+  for (const [a, b] of [['brahmi', 'pallava'], ['pallava', 'grantha'], ['pallava', 'khmer'], ['khmer', 'thai'], ['pallava', 'kawi'], ['kawi', 'javanese'], ['siddham', 'gaudi'], ['gaudi', 'bengali-assamese'], ['gaudi', 'odia'], ['sharada', 'landa'], ['landa', 'gurmukhi'], ['kadamba', 'telugu-kannada'], ['tibetan', 'phags-pa']])
+    assert.equal(has(a, b)?.confidence, 'established', `${a} > ${b}`);
+  for (const [a, b] of [['kawi', 'baybayin'], ['pallava', 'burmese'], ['gupta', 'meitei']]) assert.equal(has(a, b)?.confidence, 'debated', `${a} > ${b}`);
+  assert.equal(has('brahmi', 'grantha'), undefined, 'Grantha now descends through Pallava');
+  // Meitei Mayek is its own script, not part of Bengali-Assamese.
+  assert.equal(has('gaudi', 'meitei'), undefined);
+  // Siddham was occasionally written in columns in East Asia; Kharoshthi appears on Indo-Greek coins.
+  assert.ok(hkdm.cell({ beta: 'paper', delta: 'ttb' }).some(r => r.script === 'siddham'));
+  assert.ok(hkdm.cell({ alpha: '-500', beta: 'metal', delta: 'rtl' }).some(r => r.id === 'kha-metal-rtl'));
+  // Bhattiprolu: the letters that differ are gh, j, m, l and s.
+  assert.match(hkdm.load().records.find(r => r.id === 'bht-stone-ltr').note, /gh, j, m, l and s/);
 });

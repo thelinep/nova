@@ -395,10 +395,10 @@ test.describe('NOVA Console interactions', () => {
     await expect(cell).toHaveText('1');
     await cell.click();
     await expect(page.locator('#hkRecs')).toContainText('Kharoshthi');
-    await expect(page.locator('#hkRecs')).not.toContainText('Brahmi');
+    await expect(page.locator('#hkRecs')).not.toContainText('ब्राह्मी · Brahmi');
     await expect(page.locator('#hkRecs a[href*="wikipedia.org/wiki/Kharosthi"]').first()).toBeVisible();
     await page.getByLabel('Confidence').selectOption('established');
-    await expect(page.locator('#hkdmView')).toContainText('58 established · 0 debated');
+    await expect(page.locator('#hkdmView')).toContainText('97 established · 0 debated');
     const tensor = await page.evaluate(async () => (await fetch('/api/hkdm/export/tensor?confidence=established')).json());
     expect(tensor.shape).toEqual([11, 11, 6, 5]);
     expect(tensor.filters.confidence).toBe('established');
