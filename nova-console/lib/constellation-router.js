@@ -66,15 +66,20 @@ class ConstellationRouter {
 
   async _runProvider(provider, problem, context) {
     const startedAt = Date.now();
+    let timer;
     try {
+      const timeoutMs = (context && context.timeoutMs) || this.defaultTimeoutMs;
       const code = await Promise.race([
         provider.generate(problem, context),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('provider_timeout')), context.timeoutMs || this.defaultTimeoutMs)),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error('provider_timeout')), timeoutMs);
+        }),
       ]);
       return { ok: true, provider: provider.id, code, elapsed_ms: Date.now() - startedAt };
     } catch (e) {
       return { ok: false, provider: provider.id, error: String(e.message || e), elapsed_ms: Date.now() - startedAt };
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 
