@@ -41,6 +41,7 @@ const panini = require('./lib/panini');
 const sutraNeurons = require('./lib/sutra-neurons');
 const aai = require('./lib/aai');
 const aaiEvidence = require('./lib/aai-evidence');
+const hkdm = require('./lib/hkdm-tensor');
 const backgroundJobs = require('./lib/background-jobs');
 const artifactGovernance = require('./lib/artifact-governance');
 const prConnectors = require('./lib/pr-connectors');
@@ -130,6 +131,16 @@ activity.configure(store);
 // This install's device identity (Ed25519), and contracts a restart left open are sealed as cancelled.
 deviceIdentity.ensure(store, DATA_DIR); contracts.sweep(store, DATA_DIR);
 characters.ensureNova(store); // Nova, the helper, is a built-in character
+// Query options for the HKDM tensor routes: epoch bin size and record filters.
+function hkdmOpts(req) {
+  const q = new URL(req.url, 'http://x').searchParams;
+  const o = {};
+  if (q.get('bin')) o.bin = Number(q.get('bin'));
+  if (['established', 'debated'].includes(q.get('confidence'))) o.confidence = q.get('confidence');
+  if (['source', 'general'].includes(q.get('basis'))) o.basis = q.get('basis');
+  return o;
+}
+function hkdmFilter(q) { const f = {}; for (const k of hkdm.AXIS_KEYS) if (q.get(k)) f[k] = q.get(k); return f; }
 // R1: every AAI derivation, form check and Ask answer is sealed as a signed evidence record
 // (lib/aai-evidence.js). A failure to seal never hides the answer; it is reported with it.
 async function sealAai(body, kind, request, result) {
@@ -901,6 +912,12 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/aai\/lipi$/, handler: async (req,res)=>sendJson(res,200,aai.lipi(await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/aai\/check-citations$/, handler: async (req,res)=>{const body=await readJsonBody(req);sendJson(res,200,panini.checkCitations(body.text||''));} },
   { method: 'POST', pattern: /^\/api\/aai\/ask$/, handler: async (req,res)=>{const body=await readJsonBody(req);const r=await aai.ask({ollama,question:body.question,model:body.model,killSwitch:workbenchKillSwitch});sendJson(res,200,await sealAai(body,'ask',{question:r.question,model:r.model},r));} },
+  // HKDM script tensor T(α, β, γ, δ) (lib/hkdm-tensor.js): read-only views of the sourced records.
+  { method: 'GET', pattern: /^\/api\/hkdm$/, handler: async (req,res)=>sendJson(res,200,hkdm.summary(hkdmOpts(req))) },
+  { method: 'GET', pattern: /^\/api\/hkdm\/projection$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,hkdm.project({rows:q.get('rows')||'alpha',cols:q.get('cols')||'beta',filter:hkdmFilter(q),...hkdmOpts(req)}));} },
+  { method: 'GET', pattern: /^\/api\/hkdm\/cell$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,hkdm.cell(hkdmFilter(q),hkdmOpts(req)));} },
+  { method: 'GET', pattern: /^\/api\/hkdm\/export\/tensor$/, handler: async (req,res)=>{res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':'attachment; filename="hkdm-tensor.json"'});res.end(JSON.stringify(hkdm.exportTensor(hkdmOpts(req))));} },
+  { method: 'GET', pattern: /^\/api\/hkdm\/export\/records\.csv$/, handler: async (req,res)=>{res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="hkdm-records.csv"'});res.end(hkdm.exportCsv(hkdmOpts(req)));} },
   { method: 'GET', pattern: /^\/api\/aai\/evidence$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,aaiEvidence.list(store,{limit:q.get('limit'),kind:q.get('kind')}));} },
   { method: 'POST', pattern: /^\/api\/aai\/evidence\/verify$/, handler: async (req,res)=>sendJson(res,200,aaiEvidence.verifyBundle(await readJsonBody(req))) },
   { method: 'GET', pattern: /^\/api\/aai\/evidence\/([^/]+)\/bundle$/, handler: async (_req,res,[id])=>{const b=aaiEvidence.bundle(store,DATA_DIR,decodeURIComponent(id));res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="aai-evidence-${b.contract.evidence.seq}.json"`});res.end(JSON.stringify(b,null,2));} },

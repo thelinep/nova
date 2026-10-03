@@ -435,6 +435,16 @@
 .aai-form{font-size:24px}
 .aai-steps{margin:8px 0 0 18px;font-size:13px;line-height:1.9}
 .aai-step-result{font-size:15px;margin-right:6px}
+.hk-heat td,.hk-heat th{text-align:center;padding:4px 6px}
+.hk-heat tbody th{text-align:left;font-weight:500;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.hk-heat thead th{font-size:12px;font-weight:500;color:var(--muted);vertical-align:bottom}
+.hk-cell{min-width:38px;height:30px;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit;font-size:13px;cursor:pointer;background:transparent}
+.hk-cell:disabled{cursor:default;color:var(--muted-dim);border-color:transparent}
+.hk-cell.sel{outline:2px solid var(--amber);outline-offset:1px}
+.hk-rec{padding:12px;margin-top:8px}
+.hk-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.hk-controls label{font-size:12.5px;color:var(--muted)}
+.hk-controls select{display:block;margin-top:4px}
 .panini-padas{display:grid;gap:6px;margin-top:10px}
 .panini-padas-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .panini-padas-row>.mono{width:16px;color:var(--muted)}
@@ -852,6 +862,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item" data-view="panini"><span data-lucide="scroll-text"></span><span class="rail-text">Ashtadhyayi</span></button>
       <button class="nav-item" data-view="derivation"><span data-lucide="git-commit-horizontal"></span><span class="rail-text">Derivation</span></button>
       <button class="nav-item" data-view="lipi"><span data-lucide="languages"></span><span class="rail-text">Lipi</span></button>
+      <button class="nav-item" data-view="hkdm"><span data-lucide="box"></span><span class="rail-text">Lipi Tensor</span></button>
     </div>
     <div class="nav-group">
       <div class="nav-label rail-text">Operations</div>
@@ -998,6 +1009,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <section id="aaiView" class="view"><div class="view-pad"><!-- VIEW:aai --></div></section>
       <section id="derivationView" class="view"><div class="view-pad"><!-- VIEW:derivation --></div></section>
       <section id="lipiView" class="view"><div class="view-pad"><!-- VIEW:lipi --></div></section>
+      <section id="hkdmView" class="view"><div class="view-pad"><!-- VIEW:hkdm --></div></section>
       <!-- ===================== RETRIEVAL LAB ===================== -->
       <section id="mediaView" class="view"><div class="view-pad"><!-- VIEW:media --></div></section>
       <section id="boardsView" class="view"><div class="view-pad"><!-- VIEW:boards --></div></section>
@@ -1199,8 +1211,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1610,7 +1622,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', media:'Media', boards:'Boards', timeline:'Timeline',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
@@ -1673,7 +1685,7 @@ function showView(name){
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
@@ -5250,6 +5262,61 @@ async function renderDerivationView(){
     renderDerivationView(); setTimeout(()=>$('aaiSteps')?.scrollIntoView({behavior:'smooth',block:'start'}),50);
   }catch(e){toast(e.message);}});
   const cg=$('aaiCheckGo'); if(cg) cg.onclick=async()=>{AAI.checkText=$('aaiCheck').value.trim();const t=AAI.table;try{AAI.check=await aaiPost('/api/aai/check-form',t.kind==='verb-paradigm'?{...t.request,form:AAI.checkText}:{stem:t.request.stem,linga:t.request.linga,form:AAI.checkText});}catch(e){toast(e.message);}renderDerivationView();};
+}
+
+// ── HKDM script tensor T(α, β, γ, δ) ─────────────────────────────────────────────────
+// lib/hkdm-tensor.js: epoch × substrate × information architecture × direction. A cell counts the
+// scripts that sourced records place there; opening it shows those records.
+const HK = { rows:'alpha', cols:'beta', filter:{}, confidence:'all', basis:'all', bin:500, sel:null, recs:null };
+const HK_AXES = { alpha:'α युग · Epoch', beta:'β माध्यम · Substrate', gamma:'γ सूचना-संरचना · Architecture', delta:'δ दिशा · Direction' };
+function hkQuery(extra){ const q=new URLSearchParams(); q.set('bin',HK.bin); if(HK.confidence!=='all')q.set('confidence',HK.confidence); if(HK.basis!=='all')q.set('basis',HK.basis); for(const [k,v] of Object.entries(extra||{})) if(v!=null&&v!=='') q.set(k,v); return q.toString(); }
+function hkFree(){ return ['alpha','beta','gamma','delta'].filter(k=>k!==HK.rows&&k!==HK.cols); }
+async function renderHkdmView(){
+  const pad=$('hkdmView').querySelector('.view-pad');
+  for(const k of Object.keys(HK.filter)) if(!hkFree().includes(k)) delete HK.filter[k];
+  let sum, proj;
+  try{ [sum,proj]=await Promise.all([paniniFetch('/api/hkdm?'+hkQuery()), paniniFetch('/api/hkdm/projection?'+hkQuery({rows:HK.rows,cols:HK.cols,...HK.filter}))]); }
+  catch(e){ pad.innerHTML=`<p class="empty-hint">The tensor could not load: ${escapeHtml(e.message)}</p>`; return; }
+  const c=sum.counts, errors=sum.issues.filter(i=>i.level==='error'), warnings=sum.issues.filter(i=>i.level==='warning');
+  const axSel=(id,val)=>`<select id="${id}" aria-label="${id==='hkRows'?'Rows':'Columns'}">${Object.entries(HK_AXES).map(([k,l])=>`<option value="${k}" ${k===val?'selected':''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+  const freeSel=k=>`<label>${escapeHtml(HK_AXES[k])}<select class="hk-filter" data-axis="${k}" aria-label="Filter ${k}"><option value="">all (summed)</option>${sum.axes[k].values.map(v=>`<option value="${escapeHtml(v.id)}" ${HK.filter[k]===v.id?'selected':''}>${escapeHtml(v.hi||v.label)}</option>`).join('')}</select></label>`;
+  const shade=n=>n?`background:color-mix(in srgb, var(--amber) ${Math.round(12+68*n/Math.max(1,proj.max))}%, transparent)`:'';
+  const head=v=>`<span title="${escapeHtml(v.label)}">${escapeHtml(v.hi||v.label)}</span>`;
+  const isSel=(r,col)=>HK.sel&&HK.sel.r===r&&HK.sel.c===col;
+  const table=`<div style="overflow-x:auto"><table class="panini-table hk-heat" data-no-list-tools aria-label="Tensor projection"><thead><tr><th></th>${proj.colValues.map(v=>`<th>${head(v)}</th>`).join('')}</tr></thead><tbody>${proj.rowValues.map((rv,i)=>`<tr><th>${head(rv)}</th>${proj.colValues.map((cv,j)=>{const n=proj.matrix[i][j];return `<td><button class="hk-cell ${isSel(rv.id,cv.id)?'sel':''}" data-r="${escapeHtml(rv.id)}" data-c="${escapeHtml(cv.id)}" style="${shade(n)}" ${n?'':'disabled'} title="${escapeHtml(proj.scripts[i][j].join(', ')||'no record')}" aria-label="${escapeHtml(rv.label)}, ${escapeHtml(cv.label)}: ${n} scripts">${n||'·'}</button></td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const conf=r=>r.confidence==='established'?'<span class="badge badge-green">established</span>':'<span class="badge badge-amber">debated</span>';
+  const basis=r=>r.basis==='source'?'<span class="badge badge-blue">from the source page</span>':'<span class="badge">general knowledge, unchecked</span>';
+  const val=(k,id)=>{const v=sum.axes[k].values.find(x=>x.id===id);return v?escapeHtml(v.hi||v.label):escapeHtml(id);};
+  const recs=HK.recs?`<div class="cap-section-label">Records behind the cell</div>${HK.recs.length?HK.recs.map(r=>`<div class="panel hk-rec"><div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><strong>${escapeHtml(r.scriptHi||'')} · ${escapeHtml(r.scriptName||r.script)}</strong><span class="panini-sub">${escapeHtml(r.from<0?(-r.from)+' BCE':r.from+' CE')} – ${escapeHtml(r.to<0?(-r.to)+' BCE':r.to+' CE')}</span>${conf(r)}${basis(r)}</div><div class="panini-sub" style="margin-top:4px">${val('beta',r.beta)} · ${val('gamma',r.gamma)} · ${val('delta',r.delta)}</div><p style="margin:6px 0 0;font-size:13.5px">${escapeHtml(r.note)}</p>${r.refs.map(u=>`<a class="panini-sub" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(decodeURIComponent(u.replace(/^https:\/\//,'')))}</a>`).join(' ')}</div>`).join(''):'<p class="panini-sub">No record in this cell.</p>'}`:'';
+  const lineage=`<table class="panini-table" data-no-list-tools><thead><tr><th>From</th><th>To</th><th>First attested</th><th>Gap</th><th></th></tr></thead><tbody>${sum.lineage.map(e=>{const s=id=>sum.scripts.find(x=>x.id===id);const y=v=>v==null?'—':v<0?(-v)+' BCE':v+' CE';return `<tr><td>${escapeHtml(s(e.parent)?.hi||e.parent)}</td><td>${escapeHtml(s(e.child)?.hi||e.child)}${e.via?` <span class="panini-sub">via ${escapeHtml(e.via)}</span>`:''}</td><td class="panini-sub">${y(e.parentFirst)} → ${y(e.childFirst)}</td><td class="mono">${e.gap==null?'—':e.gap+' y'}</td><td>${e.confidence==='established'?'<span class="badge badge-green">established</span>':`<span class="badge badge-amber" title="${escapeHtml(e.note||'')}">debated</span>`} <a class="panini-sub" href="${escapeHtml(e.ref)}" target="_blank" rel="noopener">source</a></td></tr>`;}).join('')}</tbody></table><p class="panini-sub" style="margin-top:6px">Gap = years between the first established records of the two scripts; debated early claims are left out.</p>`;
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · HKDM</span><h1 class="view-title">Lipi Tensor</h1><p class="view-desc">T(α, β, γ, δ): epoch × substrate × information architecture × direction. Each cell counts the scripts that sourced records place there; open a cell to see the records. Nothing is inferred: an empty cell means no record, not "never happened".</p></div></div>
+  <div class="panel aai-banner"><strong>Draft data.</strong> <span class="panini-sub">${escapeHtml(sum.note)}</span></div>
+  <div class="card-grid cols-3" style="margin-bottom:12px">
+    <div class="panel" style="padding:14px"><strong>${c.scripts} scripts · ${c.records} records</strong><div class="empty-hint">${c.established} established · ${c.debated} debated</div></div>
+    <div class="panel" style="padding:14px"><strong>${c.fromSource} from a source page</strong><div class="empty-hint">${c.general} general knowledge, not yet checked</div></div>
+    <div class="panel" style="padding:14px"><strong>${sum.cellsNonZero.toLocaleString()} of ${sum.cellsTotal.toLocaleString()} cells filled</strong><div class="empty-hint">shape ${sum.shape.join(' × ')} · ${errors.length?`<span style="color:var(--red)">${errors.length} data errors</span>`:'data valid'}${warnings.length?` · ${warnings.length} warning(s)`:''}</div></div>
+  </div>
+  <div class="panel" style="padding:14px"><div class="hk-controls">
+    <label>Rows${axSel('hkRows',HK.rows)}</label><label>Columns${axSel('hkCols',HK.cols)}</label>
+    ${hkFree().map(freeSel).join('')}
+    <label>Confidence<select id="hkConf" aria-label="Confidence"><option value="all" ${HK.confidence==='all'?'selected':''}>all records</option><option value="established" ${HK.confidence==='established'?'selected':''}>established only</option></select></label>
+    <label>Basis<select id="hkBasis" aria-label="Basis"><option value="all" ${HK.basis==='all'?'selected':''}>all records</option><option value="source" ${HK.basis==='source'?'selected':''}>from a source page only</option></select></label>
+    <label>Epoch size<select id="hkBin" aria-label="Epoch size">${[100,250,500,1000].map(b=>`<option value="${b}" ${HK.bin===b?'selected':''}>${b} years</option>`).join('')}</select></label>
+  </div>
+  <p class="panini-sub" style="margin:10px 0 6px">${proj.scriptsInView} scripts in this view. Darker = more scripts. Hover a cell for their names; choose it for the records.</p>
+  ${table}
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><a class="btn btn-line btn-sm" style="text-decoration:none" href="${apiUrl('/api/hkdm/export/tensor?'+hkQuery())}" download>Download tensor (JSON)</a><a class="btn btn-line btn-sm" style="text-decoration:none" href="${apiUrl('/api/hkdm/export/records.csv?'+hkQuery())}" download>Download records (CSV)</a></div></div>
+  <div id="hkRecs">${recs}</div>
+  <div class="cap-section-label">Lineage</div><div class="panel" style="padding:14px">${lineage}</div>
+  ${warnings.length?`<details style="margin-top:10px"><summary class="panini-sub">Data warnings (${warnings.length})</summary>${warnings.map(w=>`<div class="panini-sub">${escapeHtml(w.where)}: ${escapeHtml(w.message)}</div>`).join('')}</details>`:''}`;
+  const rerender=()=>{HK.sel=null;HK.recs=null;renderHkdmView();};
+  $('hkRows').onchange=e=>{HK.rows=e.target.value;if(HK.cols===HK.rows)HK.cols=['alpha','beta','gamma','delta'].find(k=>k!==HK.rows);rerender();};
+  $('hkCols').onchange=e=>{HK.cols=e.target.value;if(HK.cols===HK.rows)HK.rows=['alpha','beta','gamma','delta'].find(k=>k!==HK.cols);rerender();};
+  $$('#hkdmView .hk-filter').forEach(sel=>sel.onchange=()=>{if(sel.value)HK.filter[sel.dataset.axis]=sel.value;else delete HK.filter[sel.dataset.axis];rerender();});
+  $('hkConf').onchange=e=>{HK.confidence=e.target.value;rerender();};
+  $('hkBasis').onchange=e=>{HK.basis=e.target.value;rerender();};
+  $('hkBin').onchange=e=>{HK.bin=Number(e.target.value);if(HK.rows==='alpha'||HK.cols==='alpha'||HK.filter.alpha){delete HK.filter.alpha;}rerender();};
+  $$('#hkdmView .hk-cell:not([disabled])').forEach(b=>b.onclick=async()=>{try{HK.sel={r:b.dataset.r,c:b.dataset.c};HK.recs=await paniniFetch('/api/hkdm/cell?'+hkQuery({...HK.filter,[HK.rows]:b.dataset.r,[HK.cols]:b.dataset.c}));renderHkdmView();setTimeout(()=>$('hkRecs')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}catch(e){toast(e.message);}});
 }
 
 async function renderLipiView(){

@@ -17,6 +17,7 @@ Maataa Workstation is a local AI workspace: chat with local models, search your 
 - [Knowledge and Retrieval Lab](#knowledge-and-retrieval-lab)
 - [Maataa AAI](#maataa-aai)
 - [Ashtadhyayi](#ashtadhyayi)
+- [Lipi Tensor (HKDM)](#lipi-tensor-hkdm)
 - [Automations and Evaluations](#automations-and-evaluations)
 - [Add sources, live steps, computer and voice](#add-sources-live-steps-computer-and-voice)
 - [Images](#images)
@@ -457,7 +458,7 @@ Turn on **Retrieval** under the Console's message box. Maataa adds the best pass
 
 **Maataa AAI** (the AAI group) works on one principle: **rules derive and check, models propose, and nothing is called correct unless the rules confirm it.**
 
-The group has four screens:
+The group has five screens:
 
 | Screen | What it does |
 | --- | --- |
@@ -465,6 +466,7 @@ The group has four screens:
 | [Ashtadhyayi](#ashtadhyayi) | All 3,983 sutras and the Dhatupatha |
 | **Derivation** | Panini's rules derive a word step by step |
 | **Lipi** | Convert text between six scripts |
+| [Lipi Tensor](#lipi-tensor-hkdm) | Writing systems on four axes: epoch, substrate, architecture, direction |
 
 ### Install the derivation engine (once)
 
@@ -572,6 +574,40 @@ Five vowel-sandhi sutras have a **Train a neuron** button: 6.1.77, 6.1.78, 6.1.8
 The text comes from [Vidyut](https://github.com/ambuda-org/vidyut) by ambuda.org, under the MIT licence. Most of it was shared by the author of ashtadhyayi.com. The same data trains Guru, MAATAA's own language models, and powers [Maataa AAI](#maataa-aai).
 
 Only the sutra text is included. Meanings and commentaries are left out because modern translations have their own copyright.
+
+## Lipi Tensor (HKDM)
+
+*The HKDM script tensor T(α, β, γ, δ) puts writing systems on four axes (epoch, substrate, information architecture, direction). Each cell opens to its sourced records.*
+
+**Lipi Tensor** (AAI group) is the HKDM script tensor **T(α, β, γ, δ)**. It places writing systems on four axes:
+
+| Axis | What it is | Values |
+| --- | --- | --- |
+| **α Epoch** | When | 500-year bins from 3500 BCE to 2000 CE (100, 250 or 1,000 also possible) |
+| **β Substrate** | What it was written on | clay, stone, metal, bone and shell, wood and bamboo, birch bark, palm leaf, papyrus, leather, silk, paper |
+| **γ Information architecture** | How the signs encode language | logographic (mixed), abjad, alphabet, abugida, featural, undeciphered |
+| **δ Direction** | Which way it runs | left to right, right to left, top to bottom in columns, boustrophedon |
+
+A cell counts the scripts that **records** place there. Nothing is inferred: an empty cell means there is no record yet, not that it never happened.
+
+### Records
+
+Each record is one attestation: a script, a span of years, a substrate, an architecture, a direction and a note. Every record carries two labels:
+
+| Label | Meaning |
+| --- | --- |
+| **established** or **debated** | Whether scholars agree. Debated claims, such as the early Anuradhapura potsherds for Brahmi or Hangul as a "featural" script, are kept and marked. |
+| **from the source page** or **general knowledge, unchecked** | Whether the fact was found on the script's reference page, or is general knowledge not yet checked against a page. |
+
+> **Note** The seed data (16 scripts, 54 records) is a **draft**. Each record still needs review by an epigraphist before it is cited.
+
+### Use it
+
+1. Choose the **rows** and **columns** (any two axes). The other two axes are summed, or fixed with their filters.
+2. Use **Confidence: established only** or **Basis: from a source page only** to see what holds without debated or unchecked records.
+3. Choose a cell to see the records behind it, with links to their sources.
+4. **Lineage** lists which script descends from which, with the years between their first established records. Both hypotheses for the origin of Brahmi (Aramaic, Indus) are shown, both marked debated.
+5. **Download tensor (JSON)** gives the dense count tensor (shape 11 × 11 × 6 × 4) and the sparse cells with their scripts and record ids. **Download records (CSV)** gives every record with its reference.
 
 ## Automations and Evaluations
 

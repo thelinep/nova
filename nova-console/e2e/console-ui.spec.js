@@ -382,6 +382,27 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.locator('.sutra-try-out')).toContainText('sutra 6.1.77: य् ✓');
   });
 
+  test('Lipi Tensor shows T(α, β, γ, δ) as a heatmap and opens a cell to its sourced records', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-view="hkdm"]').click();
+    await expect(page.getByRole('heading', { name: 'Lipi Tensor' })).toBeVisible();
+    await expect(page.getByText('Draft data.')).toBeVisible();
+    await expect(page.getByText('shape 11 × 11 × 6 × 4')).toBeVisible();
+    await page.getByLabel('Columns').selectOption('gamma');
+    await page.getByLabel('Filter delta').selectOption('rtl');
+    const cell = page.locator('.hk-cell[data-r="0"][data-c="abugida"]');
+    await expect(cell).toHaveText('1');
+    await cell.click();
+    await expect(page.locator('#hkRecs')).toContainText('Kharoshthi');
+    await expect(page.locator('#hkRecs')).not.toContainText('Brahmi');
+    await expect(page.locator('#hkRecs a[href*="wikipedia.org/wiki/Kharosthi"]').first()).toBeVisible();
+    await page.getByLabel('Confidence').selectOption('established');
+    await expect(page.locator('#hkdmView')).toContainText('48 established · 0 debated');
+    const tensor = await page.evaluate(async () => (await fetch('/api/hkdm/export/tensor?confidence=established')).json());
+    expect(tensor.shape).toEqual([11, 11, 6, 4]);
+    expect(tensor.filters.confidence).toBe('established');
+  });
+
   test('Maataa AAI derives a word with a sutra at every step, checks forms and converts scripts', async ({ page, request }) => {
     const status = await (await request.get('/api/aai')).json();
     await page.goto('/');

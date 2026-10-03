@@ -9,7 +9,7 @@ views: aai,derivation,lipi
 ---
 **Maataa AAI** (the AAI group) works on one principle: **rules derive and check, models propose, and nothing is called correct unless the rules confirm it.**
 
-The group has four screens:
+The group has five screens:
 
 | Screen | What it does |
 | --- | --- |
@@ -17,6 +17,7 @@ The group has four screens:
 | [Ashtadhyayi](help:ashtadhyayi) | All 3,983 sutras and the Dhatupatha |
 | **Derivation** | Panini's rules derive a word step by step |
 | **Lipi** | Convert text between six scripts |
+| [Lipi Tensor](help:lipi-tensor) | Writing systems on four axes: epoch, substrate, architecture, direction |
 
 ## Install the derivation engine (once)
 

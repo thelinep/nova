@@ -15,7 +15,7 @@ This follows from MAATAA's own line, "governed intelligence" and "Intelligence f
 - **Public name:** *Maataa AAI*, always with "Maataa". In India, "AAI" on its own is widely read as the Airports Authority of India.
 - **Long form:** "Advanced Ancient Intelligence". Use it for the tagline, not as the name.
 - **Before public launch:** do a trademark search for "Maataa AAI" in classes 9 and 42, plus a domain and social-handle check.
-- **Inside the product:** the Workstation rail group is "AAI · Ancient Intelligence", with four screens: Maataa AAI, Ashtadhyayi, Derivation and Lipi.
+- **Inside the product:** the Workstation rail group is "AAI · Ancient Intelligence", with five screens: Maataa AAI, Ashtadhyayi, Derivation, Lipi and Lipi Tensor.
 
 ## 3. Pillars
 
@@ -26,6 +26,7 @@ This follows from MAATAA's own line, "governed intelligence" and "Intelligence f
 | **Verification** | Sutra citations (does the number exist, is the quote right?), "is this form derivable?", Devanagari orthography | `panini.checkCitations`; `aai.checkForm`; Guru-Panini (P1–P5) |
 | **Learned parts** | Small neurons that learn one rule and must agree with it on every case; the Guru model family | Neuron Factory sutra neurons; `guru/` |
 | **Scripts** | Devanagari, IAST, SLP1, Brahmi, Kharoshthi, Siddham | Guru-Lipi (`guru/lipi.py`); Workstation Lipi |
+| **Script tensor** | Writing systems on four axes (epoch, substrate, architecture, direction), every cell backed by sourced records | Workstation Lipi Tensor (`lib/hkdm-tensor.js`) |
 | **Grounding (later)** | Veda, Shastra and Purana as retrieval sources with licensed editions, not as model weights | Not built |
 
 ## 4. How a question flows
@@ -73,6 +74,7 @@ For word forms there is no model in the loop. The rules derive the forms, and AA
   - **Replay:** derivations and form checks are run again and must give the same result hash. For Ask, the model isn't run again; its citations are checked again by rule.
   - **Export:** one JSON file (`maataa-aai-evidence/1`) with the contract, the result and the device's public key. Anyone can check it offline: the result hash, the record hash, the key fingerprint, the signature, and the citation or step checks redone from the sutra text. Its position in the chain can only be checked on the sealing workstation.
   - **API:** `GET /api/aai/evidence`, `GET /api/aai/evidence/:id`, `GET /api/aai/evidence/:id/bundle`, `POST /api/aai/evidence/:id/replay`, `POST /api/aai/evidence/verify`; the chain is checked by `GET /api/contracts/verify`. Pass `"evidence": false` to skip sealing for one request.
+- **Lipi Tensor (HKDM):** the script tensor T(α, β, γ, δ), epoch × substrate × information architecture × direction (`lib/hkdm-tensor.js`, data in `lib/hkdm-scripts.json`). The seed data holds 16 scripts and 54 records, each marked established or debated, and from a source page or general knowledge. It is a draft for an epigraphist to review. The screen shows any two axes as a heatmap and opens each cell to its records. It also shows lineage with the gaps between first attestations, and exports the dense tensor (JSON, 11 × 11 × 6 × 4) and the records (CSV). API: `GET /api/hkdm`, `/api/hkdm/projection`, `/api/hkdm/cell`, `/api/hkdm/export/tensor`, `/api/hkdm/export/records.csv`.
 - **Tests:** unit tests for the engine, conversions, citations and the Ask verdicts; evidence tests (sealing, failed citations, tamper detection in exported files, chain breaks, replay of verb, noun and form-check results); and a browser test that derives भवति, checks a wrong form, replays the sealed record, verifies the chain and verifies an exported file.
 
 ## 8. Roadmap
