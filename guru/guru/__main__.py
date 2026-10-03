@@ -7,6 +7,8 @@
   prepare    build + tokenizer + encode
   train      train a size (nano, mini, small, base-1b, 7b)
   teach      instruction-tune a trained model on question/answer pairs (JSONL)
+  code-data  validate experimental coding tasks and export the train split for teach
+  code-eval  score JSON proposal outputs against held-out coding fixtures
   ask        let a trained model continue text or answer
   check      run Guru-Panini on a piece of text (script and Ashtadhyayi citations)
   sutra      show Ashtadhyayi sutras by number, or find them by words
@@ -38,6 +40,13 @@ def main(argv=None):
     tr = sub.add_parser("train"); tr.add_argument("--size", default="nano"); tr.add_argument("--minutes", type=float); tr.add_argument("--tokens", type=float)
     tr.add_argument("--micro-bs", type=int); tr.add_argument("--resume", action="store_true"); tr.add_argument("--device"); tr.add_argument("--eval-every", type=int, default=200); tr.add_argument("--lr", type=float); tr.add_argument("--compile", action="store_true")
     te = sub.add_parser("teach"); te.add_argument("--size", default="nano"); te.add_argument("--pairs", default=""); te.add_argument("--panini", action="store_true", help="add question/answer pairs built from the Ashtadhyayi and Dhatupatha"); te.add_argument("--minutes", type=float, default=20); te.add_argument("--device")
+    cd = sub.add_parser("code-data", help="validate Guru-Code tasks and write Guru teach-compatible training pairs")
+    cd.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
+    cd.add_argument("--sft-out", default=os.path.join(OUT, "guru-code-sft.jsonl"))
+    ce = sub.add_parser("code-eval", help="score held-out Guru-Code proposal JSONL (does not execute code)")
+    ce.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
+    ce.add_argument("--predictions", required=True, help="JSONL records with id and output (output is a JSON string)")
+    ce.add_argument("--out", default="", help="optional JSON report path")
     a = sub.add_parser("ask"); a.add_argument("text"); a.add_argument("--size", default="nano"); a.add_argument("--instruct", action="store_true"); a.add_argument("--tokens", type=int, default=120); a.add_argument("--temperature", type=float, default=0.8); a.add_argument("--script", default="devanagari", choices=["devanagari", "brahmi", "kharoshthi", "siddham"])
     ch = sub.add_parser("check"); ch.add_argument("text")
     su = sub.add_parser("sutra"); su.add_argument("query", nargs="+", help="a number like 1.1.1, a range like 1.1.1-1.1.10, or words to find"); su.add_argument("--script", default="devanagari", choices=["devanagari", "iast", "slp1", "brahmi", "kharoshthi", "siddham"])
@@ -53,6 +62,32 @@ def main(argv=None):
     tok_path = os.path.join(DATA, "guru-dhatu.model")
     out_for = lambda size, instruct=False: os.path.join(OUT, PRESETS[size]["name"] + ("-instruct" if instruct else ""))
 
+    if args.cmd == "code-data":
+        from .coding import read_tasks, write_sft, CodingDataError
+        try:
+            tasks = read_tasks(args.tasks)
+            count = write_sft(tasks, args.sft_out)
+        except (CodingDataError, OSError) as exc:
+            raise SystemExit(str(exc))
+        print(f"Validated {len(tasks)} tasks; wrote {count} train examples to {args.sft_out}")
+        print("Experimental data only. Eval fixtures are excluded from the SFT output.")
+        return
+    if args.cmd == "code-eval":
+        from .coding import read_tasks, read_predictions, evaluate, CodingDataError
+        try:
+            tasks = read_tasks(args.tasks)
+            if not any(r["split"] == "eval" for r in tasks):
+                raise SystemExit("No held-out eval tasks found.")
+            report = evaluate(tasks, read_predictions(args.predictions))
+        except (CodingDataError, OSError) as exc:
+            raise SystemExit(str(exc))
+        rendered = json.dumps(report, ensure_ascii=False, indent=2)
+        print(rendered)
+        if args.out:
+            os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+            with open(args.out, "w", encoding="utf-8") as f:
+                f.write(rendered + "\n")
+        return
     if args.cmd == "sizes":
         for k in PRESETS:
             cfg = preset(k)

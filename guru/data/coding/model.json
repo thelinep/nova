@@ -1,0 +1,27 @@
+{
+  "schema_version": "guru-code-metadata-v1",
+  "model_family": "Guru-Code",
+  "status": "experimental-scaffolding-only",
+  "trained_checkpoint": null,
+  "coding_capability_established": false,
+  "initial_fixture_language": "Python",
+  "maataa_minimum_context_tokens": 4096,
+  "verified_context_tokens": null,
+  "training_fixture": {
+    "path": "tasks.jsonl",
+    "included_splits": ["train"],
+    "example_count": 2,
+    "provenance": "Original hand-authored synthetic fixtures; pipeline smoke use only."
+  },
+  "held_out_evaluation": {
+    "path": "tasks.jsonl",
+    "split": "eval",
+    "example_count": 3,
+    "certifies_capability": false
+  },
+  "notes": [
+    "No Guru-Code trained checkpoint is supplied by this scaffold.",
+    "Existing Guru checkpoints are not thereby qualified for coding.",
+    "A dedicated rights-reviewed code corpus, training, and broad independent evaluation remain required."
+  ]
+}

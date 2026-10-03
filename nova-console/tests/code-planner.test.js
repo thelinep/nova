@@ -8,6 +8,7 @@ const productionPlanner = require('../lib/code-planner');
 const planner = { ...productionPlanner, plan: (...args) => productionPlanner.plan(...args.slice(0, 5), { ...args[5], qualificationBypass: true }) };
 const scanner = require('../lib/workspace-scanner');
 const changes = require('../lib/workspace-changes');
+const qualifications = require('../lib/model-qualifications');
 
 function store() {
   const state = new Map();
@@ -71,6 +72,49 @@ test('planner rejects demo models, unavailable models, unsafe paths, and malform
   await assert.rejects(() => planner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'demo', request: 'Change x in a.js to y' }), /Demo models cannot/);
   assert.throws(() => planner.validate({ changes: [{ relativePath: '../x', find: 'a', replacement: 'b' }] }), /unsafe path/);
   assert.throws(() => planner.extractJson('not json'), /did not return/);
+});
+
+test('explicit planner model is the model used and an unqualified choice never falls back', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-plan-explicit-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'a.js'), 'const value = 1;\n');
+    const db = store();
+    const root = scanner.approveRoot(db, { path: dir });
+    const chosenDigest = 'd'.repeat(64);
+    const fallbackDigest = 'e'.repeat(64);
+    db.put('models', { id: 'chosen:latest', name: 'chosen:latest', runtime: 'ollama' });
+    db.put('models', { id: 'fallback:latest', name: 'fallback:latest', runtime: 'ollama' });
+    for (const capability of qualifications.CAPABILITIES) {
+      for (let trial = 1; trial <= 3; trial++) {
+        qualifications.recordResult(db, { digest: fallbackDigest, capability, trial, runId: `${capability}-fallback-${trial}`, status: 'passed' });
+      }
+    }
+    let calls = [];
+    const ollama = {
+      status: async () => ({ reachable: true, models: [
+        { name: 'chosen:latest', digest: chosenDigest, details: { parameter_size: '8B' } },
+        { name: 'fallback:latest', digest: fallbackDigest, details: { parameter_size: '8B' } },
+      ] }),
+      show: async model => { calls.push(['show', model]); return metadata(); },
+      chatFull: async model => { calls.push(['chat', model]); return { message: { content: '{"summary":"Update value","acceptanceCriteria":[{"description":"a.js contains value 2"}],"changes":[{"relativePath":"a.js","find":"value = 1","replacement":"value = 2"}]}' } }; },
+    };
+
+    const preview = await productionPlanner.preview(db, scanner, ollama, { rootId: root.id, modelId: 'chosen:latest', request: 'Change value in a.js to 2' });
+    assert.equal(preview.ready, false);
+    assert.match(preview.blocker, /chosen:latest.*not qualified.*single-file/i);
+    assert.equal(calls.length, 0, 'preview does not inspect an unqualified chosen model');
+
+    for (const capability of qualifications.CAPABILITIES) {
+      for (let trial = 1; trial <= 3; trial++) {
+        qualifications.recordResult(db, { digest: chosenDigest, capability, trial, runId: `${capability}-chosen-${trial}`, status: 'passed' });
+      }
+    }
+    const result = await productionPlanner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'chosen:latest', request: 'Change value in a.js to 2' });
+    assert.equal(result.planner.modelId, 'chosen:latest');
+    assert.deepEqual(calls, [['show', 'chosen:latest'], ['chat', 'chosen:latest']]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('repository context budget preserves output room and caps large-context models', () => {

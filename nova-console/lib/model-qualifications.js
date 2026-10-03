@@ -76,6 +76,36 @@ function selectModel(store, models, capability, preferredName = 'llama3:latest')
   return { model: selected, qualification: getByDigest(store, selected.digest)?.capabilities?.[capability] };
 }
 
+/**
+ * Select exactly the model the user named. Unlike selectModel's automatic
+ * mode, this never falls back to another qualified model: a visible model
+ * choice must be the model sent to Ollama or planning fails closed.
+ */
+function selectExplicitModel(store, models, capability, modelName) {
+  const requested = String(modelName || '').trim();
+  if (!requested) throw error('Choose a model for this coding task.', 400);
+  const selected = (models || []).find(model => model.id === requested || model.name === requested);
+  if (!selected) {
+    throw error(`Selected model "${requested}" is not installed in Ollama. Refresh the model list or choose an installed model.`, 412);
+  }
+  if (!/^(sha256:)?[a-f0-9]{64}$/i.test(String(selected.digest || ''))) {
+    throw error(`Selected model "${requested}" has no current Ollama digest, so Maataa cannot verify its coding qualification. Refresh the model list and qualify that model.`, 412);
+  }
+
+  const missing = [];
+  for (const control of ['clarification', 'timeout', 'cancellation']) {
+    if (!isQualified(store, selected.digest, control)) missing.push(control);
+  }
+  if (!isQualified(store, selected.digest, capability)) missing.push(capability);
+  if (missing.length) {
+    throw error(`Selected model "${requested}" is not qualified for ${capability} (${missing.join(', ')} checks missing or failed). Open Models and run "Qualify for coding" on this exact installed model.`, 412);
+  }
+  if (capability !== 'single-file' && restrictedSmallModel(selected)) {
+    throw error(`Selected model "${requested}" is at or below 3.2B parameters and is restricted to single-file coding. Choose a larger qualified model or reduce the task scope.`, 412);
+  }
+  return { model: selected, qualification: getByDigest(store, selected.digest)?.capabilities?.[capability] };
+}
+
 function summary(store, digest) {
   const record = getByDigest(store, digest);
   return {
@@ -86,4 +116,4 @@ function summary(store, digest) {
   };
 }
 
-module.exports = { MIN_TRIALS, CAPABILITIES, restrictedSmallModel, capabilityForFixture, recordResult, getByDigest, isQualified, assertQualified, selectModel, summary };
+module.exports = { MIN_TRIALS, CAPABILITIES, restrictedSmallModel, capabilityForFixture, recordResult, getByDigest, isQualified, assertQualified, selectModel, selectExplicitModel, summary };

@@ -132,6 +132,22 @@
   .eyebrow{font:10.5px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted-dim);}
   .view-title{font-size:22px;font-weight:700;margin:4px 0 0;letter-spacing:-.01em;text-wrap:balance;}
   .view-desc{color:var(--muted);font-size:13px;margin-top:4px;max-width:58ch;}
+  .coding-studio-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  .coding-studio-field{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  .coding-studio-field label{font-size:12px;font-weight:600;color:var(--ink-dim);}
+  .coding-studio-field input,.coding-studio-field select,.coding-studio-field textarea{width:100%;min-width:0;background:var(--bg-wash);border:1px solid var(--line);border-radius:7px;padding:10px 11px;color:var(--ink);font:13px var(--font-ui);}
+  .coding-studio-field textarea{min-height:132px;resize:vertical;line-height:1.5;}
+  .coding-studio-field input:focus-visible,.coding-studio-field select:focus-visible,.coding-studio-field textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+  .coding-studio-span{grid-column:1/-1;}
+  .coding-studio-state{padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--bg-wash);font-size:12.5px;line-height:1.5;}
+  .coding-studio-state[data-tone="good"]{border-color:#5fd39a55;background:var(--green-soft);}
+  .coding-studio-state[data-tone="bad"]{border-color:#e2645c55;background:var(--red-soft);}
+  .coding-studio-meta{display:flex;gap:8px 18px;flex-wrap:wrap;color:var(--muted);font-size:11.5px;}
+  .coding-studio-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .coding-studio-code{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:12px;color:var(--ink-dim);font:11px/1.5 var(--font-mono);}
+  .coding-studio-check{display:flex;align-items:flex-start;gap:8px;color:var(--muted);font-size:12px;line-height:1.45;}
+  .coding-studio-check input{margin-top:3px;accent-color:var(--amber);}
+  @media(max-width:640px){.coding-studio-form{grid-template-columns:minmax(0,1fr)}.coding-studio-span{grid-column:auto}.coding-studio-actions .btn{width:100%;justify-content:center}}
 
   .statusbar{display:flex;align-items:center;gap:16px;border-top:1px solid var(--line);background:#0b0e13;padding:0 16px;font:10.5px var(--font-mono);color:var(--muted-dim);overflow-x:auto;white-space:nowrap;}
   .statusbar .seg{display:flex;align-items:center;gap:6px;flex:none;}
@@ -636,6 +652,8 @@
   @media(max-width:520px){
     #privacyPillTop{display:none;}
     #modelStatusPill{max-width:46vw;}
+    .topbar-right{gap:5px;}
+    #act-text{display:none;}
   }
 
 /* ---------- Help Center ---------- */
@@ -868,6 +886,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <div class="nav-label rail-text">Workspace</div>
       <button class="nav-item active" data-view="console"><span data-lucide="messages-square"></span><span class="rail-text">Console</span></button>
       <button class="nav-item" data-view="sessions"><span data-lucide="history"></span><span class="rail-text">Sessions</span></button>
+      <button class="nav-item" data-view="codingstudio"><span data-lucide="code-xml"></span><span class="rail-text">Coding Studio</span></button>
       <button class="nav-item" data-view="workspace"><span data-lucide="folder-search-2"></span><span class="rail-text">Local Workspace</span></button>
     </div>
     <div class="nav-group">
@@ -1022,6 +1041,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <!-- ===================== SESSIONS ===================== -->
       <section id="sessionsView" class="view"><div class="view-pad"><!-- VIEW:sessions --></div></section>
       <section id="workspaceView" class="view"><div class="view-pad"><!-- VIEW:workspace --></div></section>
+      <section id="codingstudioView" class="view"><div class="view-pad"><!-- VIEW:codingstudio --></div></section>
       <!-- ===================== MODELS ===================== -->
       <section id="modelsView" class="view"><div class="view-pad"><!-- VIEW:models --></div></section>
       <!-- ===================== KNOWLEDGE ===================== -->
@@ -1233,8 +1253,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1644,7 +1664,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', codingstudio:'Coding Studio', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
@@ -1707,7 +1727,7 @@ function showView(name){
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, codingstudio:renderCodingStudioView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
@@ -4983,6 +5003,152 @@ let workspaceSelectedProjectId = null;
 let workspaceRunPoll = null;
 let workspaceSelectedLoopId = null;
 let workspaceLoopPoll = null;
+let codingStudioState = { rootId:null, modelId:null, request:'', brahmiComments:true, readiness:null, proposal:null, error:'', busy:'' };
+let codingStudioRevision = 0;
+function codingStudioTaskText(){
+  const request=String(codingStudioState.request||'').trim();
+  return codingStudioState.brahmiComments
+    ? request+'\n\nLanguage guidance: Keep programming syntax, keywords, and identifiers conventional. Write code comments and explanatory text in Brahmi where supported; if you cannot produce correct Brahmi, preserve code correctness and say so in the proposal.'
+    : request+'\n\nLanguage guidance: Keep programming syntax, keywords, identifiers, comments, and explanations conventional and readable.';
+}
+function codingStudioCapabilities(record){
+  const caps=record?.capabilities||{};
+  return ['single-file','multi-file','large-context','clarification','timeout','cancellation'].filter(name=>caps[name]?.qualified);
+}
+function codingStudioReason(value){
+  const labels={agent_job_bridge_not_registered:'the agent job bridge is not connected',agent_result_review_state_not_implemented:'agent result review is not available yet'};
+  return labels[value]||String(value||'unavailable').replaceAll('_',' ');
+}
+async function renderCodingStudioView(){
+  const pad=$('codingstudioView').querySelector('.view-pad');
+  let roots=[],qualifications=[],team=null,loadError='';
+  try{
+    const [rootsResponse,qualificationResponse,teamResponse]=await Promise.all([
+      fetch(apiUrl('/api/workspace/roots')),
+      fetch(apiUrl('/api/model-qualifications')),
+      fetch(apiUrl('/api/agents/team')),
+    ]);
+    if(rootsResponse.ok)roots=await rootsResponse.json();else loadError='Approved projects could not be loaded.';
+    if(qualificationResponse.ok)qualifications=await qualificationResponse.json();
+    if(teamResponse.ok)team=await teamResponse.json();
+  }catch(_){loadError='Maataa could not load project or readiness information. Refresh the Studio and try again.';}
+  if(!roots.some(root=>root.id===codingStudioState.rootId))codingStudioState.rootId=roots[0]?.id||null;
+  const localModels=(DB.models||[]).filter(model=>model.runtime==='ollama'&&!model.example);
+  if(!localModels.some(model=>model.id===codingStudioState.modelId))codingStudioState.modelId=localModels[0]?.id||null;
+  const qualificationsByDigest=new Map(qualifications.map(record=>[String(record.digest||'').replace(/^sha256:/i,''),record]));
+  const selectedModel=localModels.find(model=>model.id===codingStudioState.modelId);
+  const rootOptions=roots.map(root=>`<option value="${escapeHtml(root.id)}" ${root.id===codingStudioState.rootId?'selected':''}>${escapeHtml(root.label||root.path)} — ${escapeHtml(root.path)}</option>`).join('');
+  const modelOptions=localModels.map(model=>{
+    const record=qualificationsByDigest.get(String(model.digest||'').replace(/^sha256:/i,''));
+    const passed=codingStudioCapabilities(record).length;
+    const qualificationText=passed===6?'6/6 coding checks':passed?`${passed}/6 coding checks`:'not qualified';
+    return `<option value="${escapeHtml(model.id)}" ${model.id===codingStudioState.modelId?'selected':''}>${escapeHtml(model.name||model.id)} · ${qualificationText}</option>`;
+  }).join('');
+  const selectedQualification=selectedModel&&qualificationsByDigest.get(String(selectedModel.digest||'').replace(/^sha256:/i,''));
+  const qualifiedCapabilities=codingStudioCapabilities(selectedQualification);
+  const modelSummary=selectedModel
+    ? `<span><strong>${escapeHtml(selectedModel.name||selectedModel.id)}</strong></span><span>${qualifiedCapabilities.length}/6 coding checks qualified</span><span>${selectedModel.digest?'Digest tracked':'Digest missing — cannot verify this model version'}</span>`
+    : '<span>No installed Ollama model is available. Sync a local model in Models.</span>';
+  const readiness=codingStudioState.readiness;
+  const ready=!!readiness?.ready;
+  const readinessHtml=readiness
+    ? `<div id="studioReadiness" class="coding-studio-state" data-tone="${ready?'good':'bad'}" role="status" aria-live="polite"><strong>${ready?'Ready for a code proposal':'This task is blocked'}</strong><div style="margin-top:4px">${escapeHtml(ready?`Maataa selected ${readiness.selectedModel?.name||selectedModel?.name||codingStudioState.modelId} for ${readiness.requiredWorkflow||'coding'}.`:(readiness.blocker||readiness.clarification||'Maataa could not confirm model readiness.'))}</div>${readiness.plannedFiles?.length?`<div class="coding-studio-meta" style="margin-top:8px"><span>Planned files: ${readiness.plannedFiles.map(escapeHtml).join(', ')}</span>${readiness.repositoryScope?`<span>Context: ${readiness.repositoryScope.presentedFiles.length} of ${readiness.repositoryScope.observedFiles} observed files</span>`:''}</div>`:''}</div>`
+    : `<div id="studioReadiness" class="coding-studio-state" role="status" aria-live="polite">Choose an approved project, a local model and a specific request, then check readiness. This read-only check does not change project files.</div>`;
+  const proposal=codingStudioState.proposal;
+  const proposalChanges=proposal?(proposal.changes||[]).map(change=>`<div style="padding:8px 0;border-top:1px solid var(--line-soft)"><strong>${escapeHtml(change.relativePath||change.path||'Proposed file')}</strong><div class="empty-hint">${escapeHtml(change.impact||change.operation||'Proposed change')}</div>${change.diff?`<pre class="coding-studio-code">${escapeHtml(change.diff)}</pre>`:''}</div>`).join(''):'';
+  let teamHtml;
+  if(!team){
+    teamHtml='<div class="coding-studio-state" role="status">Multi-agent readiness is unavailable. This Studio does not offer agent execution.</div>';
+  }else{
+    const controls=team.controls||{};
+    const gates=[];
+    gates.push(controls.execution_available?'Agent execution available':'Agent execution unavailable: '+codingStudioReason(controls.execution_reason));
+    gates.push(controls.human_result_review_available?'Human result review available':'Human result review unavailable: '+codingStudioReason(controls.human_result_review_reason));
+    if(controls.runtime_halted)gates.push('Agent runtime is halted.');
+    teamHtml=`<div class="coding-studio-state" role="status"><strong>Team status · read-only</strong><div class="coding-studio-meta" style="margin-top:6px"><span>${(team.agents||[]).length} agent profiles</span><span>${(team.tasks||[]).length} recorded tasks</span></div><div style="margin-top:6px">${gates.map(escapeHtml).join('<br>')}</div><div class="empty-hint" style="margin-top:6px">No task can be dispatched or approved from this Studio.</div></div>`;
+  }
+  const guruHtml='<div class="coding-studio-state" role="status"><strong>Guru-Code · experimental, not ready</strong><div style="margin-top:4px">This checkout has no trained Guru-Code checkpoint or established coding results. Guru-Code becomes selectable only when installed in Ollama and qualified by Maataa. Other qualified local models can be used meanwhile.</div><div class="empty-hint" style="margin-top:6px">Code syntax and identifiers stay conventional. Brahmi comments and explanations are an experimental opt-in.</div></div>';
+  const noRoots=!roots.length;
+  const noModels=!localModels.length;
+  pad.innerHTML=`<div class="view-head"><div><h1 class="view-title">Coding Studio</h1><p class="view-desc">Give one approved local project a bounded coding task. Inspect the exact proposal in Local Workspace; Maataa checks it before you approve any write.</p></div></div>
+    ${loadError?`<div class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(loadError)}</div>`:''}
+    ${noRoots?`<section class="panel" style="padding:18px;margin-bottom:14px"><h2 style="font-size:16px;margin:0 0 6px">Approve a project to begin</h2><p class="empty-hint">Coding Studio only works inside a folder you have approved in Local Workspace.</p><button type="button" class="btn btn-line" id="studioOpenWorkspace">Open Local Workspace</button></section>`:''}
+    <section class="panel" style="padding:18px;margin-bottom:14px" aria-labelledby="studioTaskTitle"><h2 id="studioTaskTitle" style="font-size:16px;margin:0 0 14px">Project and task</h2>
+      <div class="coding-studio-form">
+        <div class="coding-studio-field"><label for="studioRoot">Approved project</label><select id="studioRoot" ${noRoots?'disabled':''}><option value="">${noRoots?'No approved projects':'Choose a project'}</option>${rootOptions}</select></div>
+        <div class="coding-studio-field"><label for="studioModel">Local coding model</label><select id="studioModel" ${noModels?'disabled':''}><option value="">${noModels?'No installed Ollama models':'Choose a model'}</option>${modelOptions}</select><div class="coding-studio-meta" id="studioModelSummary">${modelSummary}</div>${noModels?'<button type="button" class="btn btn-ghost" id="studioOpenModels" style="align-self:flex-start;padding-left:0">Open Models</button>':''}</div>
+        <div class="coding-studio-field coding-studio-span"><label for="studioRequest">What should change?</label><textarea id="studioRequest" maxlength="4000" placeholder="Name the file and the behavior. For example: In src/feature.js, change enabled to true so the feature is active by default." ${noRoots||noModels?'disabled':''}>${escapeHtml(codingStudioState.request)}</textarea><div class="empty-hint">Be specific about the target file and expected behavior. Maataa sends bounded project context to the selected model.</div></div>
+        <label class="coding-studio-check coding-studio-span"><input id="studioBrahmiComments" type="checkbox" ${codingStudioState.brahmiComments?'checked':''} ${noRoots||noModels?'disabled':''}><span><strong style="color:var(--ink-dim)">Brahmi comments and explanations</strong> <span class="badge">Experimental</span><br>Keep code syntax, keywords and identifiers conventional. Ask for Brahmi only in comments and explanatory text; the model may not support this reliably yet.</span></label>
+        <div class="coding-studio-actions coding-studio-span"><button type="button" class="btn btn-line" id="studioCheckReadiness" ${noRoots||noModels||codingStudioState.busy?'disabled':''}>${codingStudioState.busy==='preview'?'Checking…':'Check readiness'}</button><button type="button" class="btn btn-amber" id="studioCreateProposal" ${!ready||noRoots||noModels||codingStudioState.busy?'disabled':''}>${codingStudioState.busy==='plan'?'Preparing proposal…':'Create proposal'}</button></div>
+        <div class="coding-studio-span">${readinessHtml}</div>
+        ${codingStudioState.error?`<div id="studioError" class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(codingStudioState.error)}<div class="empty-hint" style="margin-top:5px">Your project was not changed. Correct the request or refresh readiness before trying again.</div></div>`:''}
+      </div>
+    </section>
+    ${proposal?`<section class="panel" id="studioProposal" style="padding:18px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div><h2 style="font-size:16px;margin:0 0 5px">Proposal ready for review</h2><div class="empty-hint">${escapeHtml(proposal.summary||proposal.impact||'Maataa prepared a code-change proposal.')}</div></div><span class="badge badge-amber">${escapeHtml(proposal.status||'draft')}</span></div><div class="coding-studio-meta" style="margin:10px 0"><span>Model: ${escapeHtml(proposal.modelId||selectedModel?.name||codingStudioState.modelId||'selected local model')}</span><span>Files: ${(proposal.changes||proposal.orderedFiles||[]).length}</span><span>No project write has occurred</span></div>${proposalChanges}<div class="coding-studio-actions" style="margin-top:12px"><button type="button" class="btn btn-amber" id="studioReviewProposal">Review exact diff and checks in Local Workspace</button><span class="empty-hint">The proposal must pass checks and receive your approval before Maataa can apply it.</span></div></section>`:''}
+    <section class="panel" style="padding:18px;margin-bottom:14px"><h2 style="font-size:16px;margin:0 0 12px">Model readiness</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px">${guruHtml}<div class="coding-studio-state"><strong>Selected Ollama model</strong><div class="coding-studio-meta" style="margin-top:6px">${modelSummary}</div><div class="empty-hint" style="margin-top:6px">Maataa checks digest qualification, workflow size, model template and context for this exact request.</div></div></div></section>
+    <section class="panel" style="padding:18px;margin-bottom:14px"><h2 style="font-size:16px;margin:0 0 12px">Multi-agent team</h2>${teamHtml}</section>`;
+  if(window.lucide)lucide.createIcons();
+  if($('studioOpenWorkspace'))$('studioOpenWorkspace').onclick=()=>showView('workspace');
+  if($('studioOpenModels'))$('studioOpenModels').onclick=()=>showView('models');
+  const invalidate=()=>{
+    codingStudioRevision++;
+    codingStudioState.rootId=$('studioRoot')?.value||null;
+    codingStudioState.modelId=$('studioModel')?.value||null;
+    codingStudioState.request=$('studioRequest')?.value||'';
+    codingStudioState.brahmiComments=!!$('studioBrahmiComments')?.checked;
+    codingStudioState.readiness=null;codingStudioState.proposal=null;codingStudioState.error='';codingStudioState.busy='';
+    const status=$('studioReadiness');if(status){status.dataset.tone='';status.textContent='Inputs changed. Check readiness again before creating a proposal.';}
+    const create=$('studioCreateProposal');if(create)create.disabled=true;
+    const check=$('studioCheckReadiness');if(check)check.disabled=!codingStudioState.rootId||!codingStudioState.modelId||!codingStudioState.request.trim();
+    $('studioProposal')?.remove();$('studioError')?.remove();
+  };
+  ['studioRoot','studioModel','studioRequest','studioBrahmiComments'].forEach(id=>{const el=$(id);if(el)el.addEventListener(el.tagName==='TEXTAREA'?'input':'change',invalidate);});
+  const runJson=async(url,body)=>{
+    const response=await fetch(apiUrl(url),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await response.json().catch(()=>({error:'Maataa returned an unreadable response.'}));
+    if(!response.ok)throw new Error(data.error||`Request failed (${response.status}).`);
+    return data;
+  };
+  if($('studioCheckReadiness'))$('studioCheckReadiness').onclick=async()=>{
+    codingStudioState.rootId=$('studioRoot').value||null;codingStudioState.modelId=$('studioModel').value||null;codingStudioState.request=$('studioRequest').value;codingStudioState.brahmiComments=$('studioBrahmiComments').checked;
+    const revision=++codingStudioRevision;
+    codingStudioState.error='';codingStudioState.proposal=null;
+    if(!codingStudioState.rootId||!codingStudioState.modelId||!codingStudioState.request.trim()){codingStudioState.error='Choose an approved project and model, then describe the file and behavior to change.';return renderCodingStudioView();}
+    codingStudioState.busy='preview';await renderCodingStudioView();
+    try{
+      const preview=await runJson('/api/workspace/code-plan/preview',{rootId:codingStudioState.rootId,modelId:codingStudioState.modelId,request:codingStudioTaskText()});
+      if(revision!==codingStudioRevision)return;
+      codingStudioState.readiness=preview;
+      if(preview.selectedModel?.id&&preview.selectedModel.id!==codingStudioState.modelId)throw new Error('Maataa returned a different model than the one selected. Planning is blocked to protect your model choice.');
+      if(!preview.ready)codingStudioState.error=preview.blocker||preview.clarification||'This model or request is not ready for code planning.';
+    }catch(error){if(revision!==codingStudioRevision)return;codingStudioState.readiness={ready:false,blocker:error.message};codingStudioState.error=error.message;}
+    finally{if(revision===codingStudioRevision){codingStudioState.busy='';await renderCodingStudioView();}}
+  };
+  if($('studioCreateProposal'))$('studioCreateProposal').onclick=async()=>{
+    if(!codingStudioState.readiness?.ready)return;
+    codingStudioState.rootId=$('studioRoot').value||null;codingStudioState.modelId=$('studioModel').value||null;codingStudioState.request=$('studioRequest').value;codingStudioState.brahmiComments=$('studioBrahmiComments').checked;
+    const revision=++codingStudioRevision;
+    codingStudioState.busy='plan';codingStudioState.error='';await renderCodingStudioView();
+    try{
+      const proposal=await runJson('/api/workspace/code-plan',{rootId:codingStudioState.rootId,modelId:codingStudioState.modelId,request:codingStudioTaskText()});
+      if(revision!==codingStudioRevision)return;
+      if(proposal.modelId&&proposal.modelId!==codingStudioState.modelId)throw new Error('Maataa returned a proposal from a different model than the one selected. The proposal was not opened for review.');
+      codingStudioState.proposal=proposal;
+    }catch(error){
+      if(revision!==codingStudioRevision)return;
+      codingStudioState.readiness={ready:false,blocker:error.message};
+      codingStudioState.error=/changed|stale|source/i.test(error.message)?'The project changed after readiness was checked. Review the latest files and check readiness again. '+error.message:error.message;
+    }finally{if(revision===codingStudioRevision){codingStudioState.busy='';await renderCodingStudioView();}}
+  };
+  if($('studioReviewProposal'))$('studioReviewProposal').onclick=()=>{
+    const proposal=codingStudioState.proposal;if(!proposal)return;
+    workspaceSelectedRootId=proposal.rootId||codingStudioState.rootId;
+    if(proposal.type==='workspace-change-batch'||proposal.orderedFiles||Array.isArray(proposal.changes)&&proposal.changes.length>1)workspaceSelectedBatchId=proposal.id;
+    else workspaceSelectedChangeId=proposal.id;
+    showView('workspace');
+    setTimeout(()=>[...document.querySelectorAll('.workspace-batch,.workspace-change')].find(node=>node.dataset.id===proposal.id)?.scrollIntoView({behavior:'smooth',block:'center'}),500);
+  };
+}
 function workspaceBytes(bytes){ return bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KB':(bytes/1048576).toFixed(1)+' MB'; }
 function workspaceCitation(item){ return `<button class="tag-chip workspace-citation" data-citation="${escapeHtml(item.citation)}" title="Copy file citation">${escapeHtml(item.relativePath)}:${item.line||1}</button>`; }
 async function renderWorkspaceView(){
@@ -5423,6 +5589,7 @@ function neuronTemplate(kind){
     : {config:{inputSize:2,hiddenSize:4,outputSize:1,epochs:250,learningRate:0.08,seed:7},examples:[{input:[0,0],target:[0]},{input:[0,1],target:[0]},{input:[1,0],target:[0]},{input:[1,1],target:[1]}]};
 }
 
+const sutraTryResults = new Map();
 async function renderNeuronFactoryView(){
   const pad=$('neuronsView').querySelector('.view-pad');
   try{const [blueprints,artifacts,jobs]=await Promise.all([idbAll('neuronBlueprints'),idbAll('neuronArtifacts'),idbAll('backgroundJobs')]);DB.neuronBlueprints=blueprints;DB.neuronArtifacts=artifacts;DB.backgroundJobs=jobs;}catch(_){}
@@ -5433,7 +5600,7 @@ async function renderNeuronFactoryView(){
   const sutraBits=(blueprint,artifact)=>{if(!blueprint.sutra)return '';const ev=artifact&&evaluationById.get(artifact.lastEvaluationId),ag=ev?.measured?.ruleAgreement;
     return `<div class="sutra-badge"><span class="badge badge-amber">Sutra</span><button class="panini-id mono sutra-open" data-id="${escapeHtml(blueprint.sutra.id)}" title="Open in Ashtadhyayi">${escapeHtml(blueprint.sutra.id)}</button><span style="font-size:15px">${escapeHtml(blueprint.sutra.text)}</span></div>`
       +(ag?`<div class="panini-sub" style="margin-top:4px;color:${ag.correct===ag.total?'var(--green)':'var(--amber)'}">Agrees with the sutra on ${ag.correct} of ${ag.total} vowel pairs${ag.wrong?.length?' · e.g. '+escapeHtml(ag.wrong.slice(0,3).map(w=>`${w.first}+${w.second}: neuron ${w.neuron}, sutra ${w.sutra}`).join('; ')):''}</div>`:'')
-      +(artifact?`<div class="sutra-try"><span>Try:</span><select class="sutra-first" aria-label="First vowel">${SUTRA_VOWELS.map(v=>`<option ${v==='इ'?'selected':''}>${v}</option>`).join('')}</select><span>+</span><select class="sutra-second" aria-label="Second vowel">${SUTRA_VOWELS.map(v=>`<option ${v==='अ'?'selected':''}>${v}</option>`).join('')}</select><button class="btn btn-line sutra-try-btn" data-id="${artifact.id}">Ask the neuron</button><span class="sutra-try-out mono"></span></div>`:'')
+      +(artifact?`<div class="sutra-try"><span>Try:</span><select class="sutra-first" aria-label="First vowel">${SUTRA_VOWELS.map(v=>`<option ${v==='इ'?'selected':''}>${v}</option>`).join('')}</select><span>+</span><select class="sutra-second" aria-label="Second vowel">${SUTRA_VOWELS.map(v=>`<option ${v==='अ'?'selected':''}>${v}</option>`).join('')}</select><button class="btn btn-line sutra-try-btn" data-id="${artifact.id}">Ask the neuron</button><span class="sutra-try-out mono">${escapeHtml(sutraTryResults.get(artifact.id)||'')}</span></div>`:'')
       +`<p class="panini-sub" style="margin-top:6px">It learns this sutra on its own. When several rules apply, the Ashtadhyayi's order of exceptions decides which one wins (for example 6.1.101 over 6.1.77 for इ + इ), not the neuron.</p>`;};
   const card=blueprint=>{const artifact=artifactById.get(blueprint.artifactId),job=DB.backgroundJobs.find(x=>x.id===blueprint.jobId);return `<article class="panel" style="padding:15px;margin-top:10px"><div style="display:flex;justify-content:space-between;gap:10px"><strong>${escapeHtml(blueprint.name)}</strong><span class="badge ${blueprint.status==='trained'?'badge-green':blueprint.status==='awaiting-approval'?'badge-amber':'badge-blue'}">${escapeHtml(blueprint.status)}</span></div><p style="font-size:12px;color:var(--muted);margin:8px 0">${escapeHtml(blueprint.purpose)}</p>${sutraBits(blueprint,artifact)}<div class="mono" style="font-size:10.5px">${escapeHtml(blueprint.kind)} · ${escapeHtml(blueprint.scale)}<br>${escapeHtml(blueprint.truth)}</div>${job&&['queued','running'].includes(job.status)?`<div class="runtime-inline" style="margin-top:10px">Background job ${escapeHtml(job.status)} · ${escapeHtml(job.progress?.phase||'queued')}</div>`:''}${artifact?`<div class="runtime-inline" style="margin-top:10px">Engine: ${escapeHtml(artifact.engine)} · final loss ${Number(artifact.metrics.finalLoss).toPrecision(4)} · ${escapeHtml(artifact.kind==='qubit'?'simulated circuit':'trained tensor')} · ${escapeHtml(artifact.lifecycle||'unreviewed')}</div>`:''}<div style="display:flex;gap:7px;margin-top:10px">${blueprint.status==='awaiting-approval'?`<button class="btn btn-amber neuron-approve" data-id="${blueprint.id}">Approve macro job</button>`:''}${blueprint.status==='ready'?`<button class="btn btn-amber neuron-train" data-id="${blueprint.id}">Queue training</button>`:''}${artifact?.lifecycle==='awaiting-evaluation'?`<button class="btn btn-line neuron-evaluate" data-id="${artifact.id}">Evaluate quality</button>`:''}${artifact?.lifecycle==='awaiting-approval'?`<button class="btn btn-amber neuron-artifact-approve" data-id="${artifact.id}">Approve artifact</button>`:''}</div></article>`};
   const initial=neuronTemplate('tensor');
@@ -5441,7 +5608,7 @@ async function renderNeuronFactoryView(){
   $('neuronKind').onchange=event=>{$('neuronSpec').value=JSON.stringify(neuronTemplate(event.target.value),null,2);};
   $$('.sutra-preset').forEach(button=>button.onclick=async()=>{button.disabled=true;const r=await fetch(apiUrl('/api/neuron-factory/presets/'+encodeURIComponent(button.dataset.preset)),{method:'POST'}),d=await r.json();toast(r.ok?d.name+' is ready to train.':d.error);renderNeuronFactoryView();});
   $$('#neuronsView .sutra-open').forEach(button=>button.onclick=()=>openSutra(button.dataset.id));
-  $$('.sutra-try-btn').forEach(button=>button.onclick=async()=>{const row=button.closest('.sutra-try'),out=row.querySelector('.sutra-try-out');try{const r=await fetch(apiUrl('/api/neuron-factory/artifacts/'+encodeURIComponent(button.dataset.id)+'/try'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({first:row.querySelector('.sutra-first').value,second:row.querySelector('.sutra-second').value})}),d=await r.json();if(!r.ok)throw new Error(d.error);out.textContent=`neuron: ${d.neuron} · sutra ${d.sutraId}: ${d.sutra} ${d.agrees?'✓':'✗ differs'}`;}catch(e){out.textContent=e.message;}});
+  $$('.sutra-try-btn').forEach(button=>button.onclick=async()=>{const row=button.closest('.sutra-try'),artifactId=button.dataset.id;try{const r=await fetch(apiUrl('/api/neuron-factory/artifacts/'+encodeURIComponent(artifactId)+'/try'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({first:row.querySelector('.sutra-first').value,second:row.querySelector('.sutra-second').value})}),d=await r.json();if(!r.ok)throw new Error(d.error);sutraTryResults.set(artifactId,`neuron: ${d.neuron} · sutra ${d.sutraId}: ${d.sutra} ${d.agrees?'✓':'✗ differs'}`);}catch(e){sutraTryResults.set(artifactId,e.message);}renderNeuronFactoryView();});
   $('neuronCreate').onclick=async()=>{try{const spec=JSON.parse($('neuronSpec').value),body={name:$('neuronName').value,purpose:$('neuronPurpose').value,kind:$('neuronKind').value,scale:$('neuronScale').value,...spec};const response=await fetch(apiUrl('/api/neuron-factory/blueprints'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await response.json();if(!response.ok)throw new Error(data.error);toast(data.status==='awaiting-approval'?'Macro blueprint created for review.':'Micro blueprint ready to train.');renderNeuronFactoryView();}catch(error){toast('Neuron Factory: '+error.message);}};
   $$('.neuron-approve').forEach(button=>button.onclick=async()=>{const response=await fetch(apiUrl('/api/neuron-factory/blueprints/'+encodeURIComponent(button.dataset.id)+'/approve'),{method:'POST'}),data=await response.json();toast(response.ok?'Macro training approved.':data.error);renderNeuronFactoryView();});
   $$('.neuron-train').forEach(button=>button.onclick=async()=>{button.disabled=true;button.textContent='Queueing…';const response=await fetch(apiUrl('/api/neuron-factory/blueprints/'+encodeURIComponent(button.dataset.id)+'/train'),{method:'POST'}),data=await response.json();toast(response.ok?'Training moved to a managed background job.':data.error);renderNeuronFactoryView();if(response.ok){setTimeout(renderNeuronFactoryView,300);setTimeout(renderNeuronFactoryView,900);}});

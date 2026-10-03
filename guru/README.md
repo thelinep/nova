@@ -55,6 +55,26 @@ python -m guru teach --size nano --pairs data/teach.jsonl               # {"prom
 python -m guru export --size nano --ollama guru-maataa-nano
 ```
 
+### Experimental Guru-Code path
+
+`CODING.md` documents an experimental task-data contract and offline evaluator.
+The checked-in fixtures are original, hand-authored examples; held-out eval
+rows have no target answers and are excluded from `code-data` SFT export.
+
+```bash
+python -m guru code-data
+python -m guru teach --size nano --pairs out/guru-code-sft.jsonl
+python -m guru code-eval --predictions out/guru-code-predictions.jsonl
+```
+
+This is pipeline scaffolding, **not evidence that a current Guru checkpoint is
+a capable coding model**. The evaluator checks strict proposal JSON, basic
+relative paths, Python syntax and shallow fixture rubrics; it does not execute
+generated code. Guru-Code needs a dedicated provenance-reviewed code corpus,
+model/context work and substantially broader held-out evaluation before any
+capability claim. See [`CODING.md`](CODING.md) for the record format, report
+limits and prediction format.
+
 Training on NVIDIA GPUs: `torchrun --nproc_per_node 8 -m guru train --size base-1b --compile`. It uses bf16 and fused AdamW.
 
 ## How it is checked

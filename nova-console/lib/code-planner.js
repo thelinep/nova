@@ -183,12 +183,18 @@ async function generatePlan(store, scanner, changes, ollama, input, signal, opti
   if (!status.reachable) throw error('Ollama is not currently available.', 503);
   let model;
   let qualification = null;
+  const installedModels = status.models.map(tag => ({ ...tag, id: tag.name }));
   if (options.qualificationBypass === true) {
     model = store.get('models', String(input.modelId || ''));
     if (!model || model.runtime !== 'ollama') throw error('Select an installed Ollama model. Demo models cannot create code plans.', 400);
     if (!status.models.some(x => x.name === model.id || x.name === model.name)) throw error('The selected Ollama model is not currently available.', 503);
+  } else if (input.modelId) {
+    const selected = qualifications.selectExplicitModel(store, installedModels, workflow, String(input.modelId));
+    const stored = store.get('models', selected.model.name);
+    model = stored && stored.runtime === 'ollama' ? stored : { id: selected.model.name, name: selected.model.name, runtime: 'ollama' };
+    qualification = selected.qualification;
   } else {
-    const selected = qualifications.selectModel(store, status.models.map(tag => ({ ...tag, id: tag.name })), workflow, 'llama3:latest');
+    const selected = qualifications.selectModel(store, installedModels, workflow, 'llama3:latest');
     const stored = store.get('models', selected.model.name);
     model = stored && stored.runtime === 'ollama' ? stored : { id: selected.model.name, name: selected.model.name, runtime: 'ollama' };
     qualification = selected.qualification;
@@ -314,10 +320,19 @@ async function preview(store, scanner, ollama, input) {
     return { ready: false, clarification: `Please provide ${analysis.missing.join(' and ')}.`, missing: analysis.missing, clarificationQuestions: analysis.missing.map(item => 'What is ' + item + '?'), plannedFiles: analysis.targets };
   }
   const workflow = requiredWorkflow(analysis, walked);
+  const explicitModel = input.modelId ? store.get('models', String(input.modelId)) : null;
+  if (explicitModel && explicitModel.runtime !== 'ollama') {
+    return { ready: false, blocker: 'Select an installed Ollama model. Demo models cannot create code plans.', requiredWorkflow: workflow, plannedFiles: analysis.targets, qualification: null };
+  }
   const status = await ollama.status();
   if (!status.reachable) throw error('Ollama is not currently available.', 503);
   let selected;
-  try { selected = qualifications.selectModel(store, status.models.map(tag => ({ ...tag, id: tag.name })), workflow, 'llama3:latest'); }
+  try {
+    const installedModels = status.models.map(tag => ({ ...tag, id: tag.name }));
+    selected = input.modelId
+      ? qualifications.selectExplicitModel(store, installedModels, workflow, String(input.modelId))
+      : qualifications.selectModel(store, installedModels, workflow, 'llama3:latest');
+  }
   catch (error) { return { ready: false, blocker: error.message, requiredWorkflow: workflow, plannedFiles: analysis.targets, qualification: null, qualificationMatrix: status.models.map(model => ({ model: model.name, ...qualifications.summary(store, model.digest) })), expectedChecks: ['Digest qualification with three passing trials per capability', 'Clarification, timeout and cancellation controls'] }; }
   const capability = capabilityReport(selected.model.name, await ollama.show(selected.model.name));
   if (!capability.compatible) return { ready: false, blocker: capability.reasons.join('; '), plannedFiles: analysis.targets, qualification: selected.qualification };

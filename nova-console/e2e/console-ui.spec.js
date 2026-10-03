@@ -378,7 +378,11 @@ test.describe('NOVA Console interactions', () => {
     await expect(card.getByRole('button', { name: 'Evaluate quality' })).toBeVisible({ timeout: 8000 });
     await card.getByRole('button', { name: 'Evaluate quality' }).click();
     await expect(page.getByText('Agrees with the sutra on 169 of 169 vowel pairs')).toBeVisible();
+    const tryResponsePromise = page.waitForResponse(response => response.url().includes('/api/neuron-factory/artifacts/') && response.url().endsWith('/try'));
     await page.locator('article', { hasText: 'यण् sandhi neuron (6.1.77)' }).getByRole('button', { name: 'Ask the neuron' }).click();
+    const tryResponse = await tryResponsePromise;
+    const tryBody = await tryResponse.json();
+    expect(tryResponse.ok(), JSON.stringify(tryBody)).toBeTruthy();
     await expect(page.locator('.sutra-try-out')).toContainText('sutra 6.1.77: य् ✓');
   });
 

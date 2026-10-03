@@ -1,6 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
 test('Models: example rows are tucked away and marked; several loaded models raise a memory note', async ({ page, request }) => {
+  // This browser test uses stored fixtures and should not race a live Ollama
+  // sync that refreshes the whole view while its examples disclosure is open.
+  await page.route('**/api/ollama/status', route => route.fulfill({ json: { reachable: false, host: null, models: [], runningModelNames: [] } }));
   await page.goto('/');
   await page.waitForTimeout(1500); // let the first load finish seeding
   const put = m => request.put('/api/store/models', { data: m, headers: { Origin: new URL(page.url()).origin } });

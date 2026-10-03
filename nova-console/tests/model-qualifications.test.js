@@ -29,6 +29,22 @@ test('selection prefers qualified llama3 and restricts smaller models and missin
   assert.throws(()=>q.selectModel(store,[models[0]],'multi-file'),/No installed/);
   assert.throws(()=>q.selectModel(store,[{name:'maataa:latest',digest,details:{parameter_size:'3.2B'}}],'multi-file'),/No installed/);
 });
+test('explicit selection is exact, digest-bound, qualified for workflow and control checks', () => {
+  const store = memoryStore();
+  const otherDigest = 'c'.repeat(64);
+  const requested = { id: 'requested:latest', name: 'requested:latest', digest, details: { parameter_size: '8B' } };
+  const other = { id: 'other:latest', name: 'other:latest', digest: otherDigest, details: { parameter_size: '8B' } };
+  for (const cap of q.CAPABILITIES) qualify(store, cap, otherDigest);
+  assert.throws(() => q.selectExplicitModel(store, [requested, other], 'single-file', requested.name), /not qualified.*single-file.*Qualify for coding/i,
+    'must not silently substitute another model that is qualified');
+  assert.throws(() => q.selectExplicitModel(store, [other], 'single-file', requested.name), /not installed in Ollama/);
+  assert.throws(() => q.selectExplicitModel(store, [{ ...requested, digest: null }], 'single-file', requested.name), /no current Ollama digest/);
+  assert.throws(() => q.selectExplicitModel(store, [{ ...other, details: { parameter_size: '3.2B' } }], 'multi-file', other.name), /restricted to single-file/);
+  for (const cap of q.CAPABILITIES) qualify(store, cap, digest);
+  const result = q.selectExplicitModel(store, [requested, other], 'single-file', requested.name);
+  assert.equal(result.model.name, requested.name);
+  assert.equal(result.model.digest, digest);
+});
 test('production cannot bypass missing digests; ambiguity previews never contact Ollama', async () => {
   const p = require('../lib/code-planner');
   const scanner = {approvedRoot:()=>({path:'/tmp'}),walkFiles:()=>({files:[{relativePath:'a.js'}]})};

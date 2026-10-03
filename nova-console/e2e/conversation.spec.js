@@ -100,6 +100,13 @@ test.describe('Conversation tools', () => {
       await page.keyboard.press('Enter');
       await expect(page.locator('.src-chip')).toContainText(path.basename(proj));
       await expect(page.locator('.msg.user')).toHaveCount(0);
+      // This browser test has no native folder chooser. Match the desktop
+      // endpoint's non-native response so the UI presents its typed-path form.
+      await page.route('**/api/pick', route => route.fulfill({
+        status: 501,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'The native picker is unavailable in this browser. Type the full path instead.' }),
+      }));
       await page.locator('#composer').fill('+ > Add folder');
       await page.keyboard.press('Enter');
       await expect(page.locator('#addForm')).toBeVisible(); // no native picker in this test browser

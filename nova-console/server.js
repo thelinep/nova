@@ -100,6 +100,8 @@ const imageToCode = require('./lib/image-to-code');
 const ocr = require('./lib/ocr');
 const { Workbench } = require('./lib/workbench');
 const { WorkbenchActions } = require('./lib/workbench-actions');
+const { AgentRegistry } = require('./lib/agents');
+const { AgentTasks } = require('./lib/agent-tasks');
 const { ActivationLadder } = require('./lib/activation');
 const { SecretVault } = require('./lib/secrets');
 const { ConnectorRegistry } = require('./lib/connectors');
@@ -129,6 +131,11 @@ function gitSnapshot() {
 
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
+// The agent registry/task ledger are surfaced read-only below. The durable
+// AgentJobBridge is not registered in this runtime, so the console must not
+// offer task dispatch or imply that a completed task has been human-approved.
+const agentRegistry = new AgentRegistry(store);
+const agentTasks = new AgentTasks(store, { registry: agentRegistry });
 activity.configure(store);
 // This install's device identity (Ed25519), and contracts a restart left open are sealed as cancelled.
 deviceIdentity.ensure(store, DATA_DIR); contracts.sweep(store, DATA_DIR);
@@ -223,6 +230,25 @@ function sendJson(res, statusCode, body) {
     'Content-Length': Buffer.byteLength(text),
   });
   res.end(text);
+}
+
+function safeJson(value) {
+  try { return JSON.parse(value || 'null'); } catch { return null; }
+}
+
+function agentTaskSummary(task) {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description || null,
+    state: task.state,
+    creator_id: task.creator_id,
+    assignee_id: task.assignee_id || null,
+    parent_task_id: task.parent_task_id || null,
+    handoff_count: task.handoff_count || 0,
+    created_at: task.created_at,
+    updated_at: task.updated_at,
+  };
 }
 
 function sendError(res, err) {
@@ -1308,6 +1334,72 @@ const routes = [
 { method: 'GET', pattern: /^\/api\/workbench\/resume-passphrase$/, handler: async (_req, res) => sendJson(res, 200, resumePassphrase.status(DATA_DIR)) },
 { method: 'POST', pattern: /^\/api\/workbench\/resume-passphrase$/, handler: async (req, res) => { const b = await readJsonBody(req); sendJson(res, 200, resumePassphrase.set(DATA_DIR, b)); } },
 { method: 'GET', pattern: /^\/api\/workbench\/snapshot$/, handler: async (_req, res) => sendJson(res, 200, new Workbench(store).snapshot())},
+
+// Read-only team surface for the Studio. Execution and human-review actions
+// stay unavailable until the job bridge and their policy gates are wired into
+// this runtime; exposing the task ledger must not accidentally start agents.
+{ method: 'GET', pattern: /^\/api\/agents\/team$/, handler: async (_req, res) => {
+  const agents = agentRegistry.list({ active: true }).map((a) => ({
+    id: a.id,
+    name: a.name,
+    role: a.role,
+    description: a.description,
+    enabled: a.enabled === 1,
+    revoked: !!a.revoked_at,
+    supervisor_id: a.supervisor_id || null,
+    model_preference: safeJson(a.model_preference_json),
+    allowed_tools: safeJson(a.allowed_tools_json) || [],
+    created_at: a.created_at,
+  }));
+  const tasks = store.agentTasksList({}).slice(0, 100).map(agentTaskSummary);
+  const halted = typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1';
+  sendJson(res, 200, {
+    generated_at: new Date().toISOString(),
+    agents,
+    tasks,
+    controls: {
+      runtime_halted: halted,
+      execution_available: false,
+      execution_reason: 'agent_job_bridge_not_registered',
+      human_result_review_available: false,
+      human_result_review_reason: 'agent_result_review_state_not_implemented',
+    },
+  });
+}},
+{ method: 'GET', pattern: /^\/api\/agents\/tasks\/([^/]+)$/, handler: async (_req, res, [id]) => {
+  const task = agentTasks.get(decodeURIComponent(id));
+  if (!task) { sendJson(res, 404, { error: 'task not found' }); return; }
+  const halted = typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1';
+  sendJson(res, 200, {
+    task: {
+      ...agentTaskSummary(task),
+      payload: safeJson(task.payload_json),
+      result: safeJson(task.result_json),
+      error: task.error || null,
+      job_id: task.job_id || null,
+      started_at: task.started_at || null,
+      ended_at: task.ended_at || null,
+      expires_at: task.expires_at || null,
+    },
+    events: agentTasks.events(task.id).map((event) => ({
+      id: event.id,
+      kind: event.kind,
+      actor_id: event.actor_id,
+      from_assignee: event.from_assignee,
+      to_assignee: event.to_assignee,
+      reason: event.reason,
+      payload: safeJson(event.payload_json),
+      timestamp: event.timestamp,
+    })),
+    controls: {
+      runtime_halted: halted,
+      execution_available: false,
+      execution_reason: 'agent_job_bridge_not_registered',
+      human_result_review_available: false,
+      human_result_review_reason: 'agent_result_review_state_not_implemented',
+    },
+  });
+}},
 
    { method: 'GET', pattern: /^\/api\/activation$/, handler: async (_req, res) => sendJson(res, 200, new ActivationLadder(store).snapshot()) },
 
