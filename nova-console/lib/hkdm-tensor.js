@@ -75,6 +75,7 @@ function validate(data = load()) {
     if (!D.has(r.delta)) issues.push({ level: 'error', where: at, message: `Unknown direction ${r.delta}.` });
     if (!CONFIDENCE.includes(r.confidence)) issues.push({ level: 'error', where: at, message: 'Confidence must be established or debated.' });
     if (!BASIS.includes(r.basis)) issues.push({ level: 'error', where: at, message: 'Basis must be source or general.' });
+    if (r.refs && (!Array.isArray(r.refs) || r.refs.some(u => !/^https:\/\//.test(u)))) issues.push({ level: 'error', where: at, message: 'Record references must be https links.' });
     if (!r.note || r.note.length < 10) issues.push({ level: 'error', where: at, message: 'Every record needs a note saying what is attested.' });
   }
   for (const e of data.lineage) {
@@ -165,7 +166,7 @@ function cell(filter = {}, opts = {}) {
     if ('delta' in f && ax.delta.values[f.delta].id !== r.delta) return false;
     if ('alpha' in f && !touches(r, ax.alpha.values[f.alpha])) return false;
     return true;
-  }).map(r => ({ ...r, scriptName: byId.get(r.script)?.name, scriptHi: byId.get(r.script)?.hi, refs: byId.get(r.script)?.refs || [] }));
+  }).map(r => ({ ...r, scriptName: byId.get(r.script)?.name, scriptHi: byId.get(r.script)?.hi, refs: [...new Set([...(r.refs || []), ...(byId.get(r.script)?.refs || [])])] }));
 }
 
 /** First established attestation of each script (debated early claims are not used for gaps). */
@@ -211,7 +212,7 @@ function csvCell(v) { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' +
 function exportCsv(opts = {}) {
   const data = load(), byId = new Map(data.scripts.map(s => [s.id, s]));
   const head = ['id', 'script', 'from', 'to', 'beta', 'gamma', 'delta', 'confidence', 'basis', 'note', 'reference'];
-  return [head.join(',')].concat(selected(data, opts).map(r => [r.id, r.script, r.from, r.to, r.beta, r.gamma, r.delta, r.confidence, r.basis, r.note, (byId.get(r.script)?.refs || []).join(' ')].map(csvCell).join(','))).join('\n') + '\n';
+  return [head.join(',')].concat(selected(data, opts).map(r => [r.id, r.script, r.from, r.to, r.beta, r.gamma, r.delta, r.confidence, r.basis, r.note, [...new Set([...(r.refs || []), ...(byId.get(r.script)?.refs || [])])].join(' ')].map(csvCell).join(','))).join('\n') + '\n';
 }
 
 module.exports = { AXIS_KEYS, load, axes, validate, build, project, cell, gaps, summary, exportTensor, exportCsv, _reset: () => { cache = null; } };

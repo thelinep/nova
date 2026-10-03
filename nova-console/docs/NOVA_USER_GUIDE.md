@@ -599,7 +599,7 @@ Each record is one attestation: a script, a span of years, a substrate, an archi
 | **established** or **debated** | Whether scholars agree. Debated claims, such as the early Anuradhapura potsherds for Brahmi or Hangul as a "featural" script, are kept and marked. |
 | **from the source page** or **general knowledge, unchecked** | Whether the fact was found on the script's reference page, or is general knowledge not yet checked against a page. |
 
-> **Note** The seed data (20 scripts, 64 records) is a **draft**. Each record still needs review by an epigraphist before it is cited.
+> **Note** The seed data (20 scripts, 65 records; 57 from a source page, 8 still general knowledge) is a **draft**. Each record still needs review by an epigraphist before it is cited.
 
 ### Use it
 

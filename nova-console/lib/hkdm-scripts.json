@@ -2,7 +2,7 @@
   "format": "hkdm-scripts/1",
   "title": "HKDM script tensor: seed data",
   "status": "draft",
-  "note": "Compiled on 2026-10-03 from the reference pages listed with each script, and cross-checked the same day against Omniglot where it has a page. Records with basis 'source' state a fact found on a listed page; records with basis 'general' are general knowledge not yet checked against a page. Every record still needs review by an epigraphist before it is cited.",
+  "note": "Compiled on 2026-10-03 from the reference pages listed with each script and record, cross-checked the same day against Omniglot where it has a page. Basis 'source' means the script, substrate and start year are stated on a listed page (end years may be approximate, as each note says); basis 'general' means general knowledge not yet checked against a page. Every record still needs review by an epigraphist before it is cited.",
   "axes": {
     "alpha": {
       "symbol": "α",
@@ -504,37 +504,46 @@
       "id": "chi-bronze-ttb",
       "script": "chinese",
       "from": -1250,
-      "to": -200,
+      "to": 220,
       "beta": "metal",
       "gamma": "logographic",
       "delta": "ttb",
       "confidence": "established",
-      "basis": "general",
-      "note": "Inscriptions on bronze ritual vessels from the Shang onward (the end date is general knowledge)."
+      "basis": "source",
+      "note": "Bronze inscriptions from the Late Shang (c. 1250 BCE), at their height in the Western Zhou, continuing through the Qin and Han; vertical columns, top to bottom.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Chinese_bronze_inscriptions"
+      ]
     },
     {
       "id": "chi-bamboo-ttb",
       "script": "chinese",
       "from": -500,
-      "to": 300,
+      "to": 350,
       "beta": "wood-bamboo",
       "gamma": "logographic",
       "delta": "ttb",
       "confidence": "established",
-      "basis": "general",
-      "note": "Bamboo and wood slips (material from the source; the date range is general knowledge)."
+      "basis": "source",
+      "note": "Earliest surviving slips from the 5th century BCE; the standard medium in the Han; largely abandoned by the 4th century CE. Written vertically, right to left.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Bamboo_and_wooden_slips"
+      ]
     },
     {
       "id": "chi-silk-ttb",
       "script": "chinese",
       "from": -300,
-      "to": 300,
+      "to": -150,
       "beta": "silk",
       "gamma": "logographic",
       "delta": "ttb",
       "confidence": "established",
-      "basis": "general",
-      "note": "Writing on silk (material from the source; the date range is general knowledge)."
+      "basis": "source",
+      "note": "The Chu Silk Manuscript, c. 300 BCE; the Mawangdui silk texts, 168 BCE. Silk and bamboo were the two book media of the period (the span covers these two finds).",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Chu_Silk_Manuscript"
+      ]
     },
     {
       "id": "chi-paper-ttb",
@@ -587,14 +596,17 @@
     {
       "id": "ara-leather-rtl",
       "script": "aramaic",
-      "from": -500,
-      "to": -300,
+      "from": -353,
+      "to": -324,
       "beta": "leather",
       "gamma": "abjad",
       "delta": "rtl",
       "confidence": "established",
-      "basis": "general",
-      "note": "Administrative documents from Bactria on leather (material from the source; the dates are general knowledge)."
+      "basis": "source",
+      "note": "Thirty Imperial Aramaic documents on leather from Bactria (probably Balkh), dated 353–324 BCE (Khalili Collection).",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Khalili_Collection_of_Aramaic_Documents"
+      ]
     },
     {
       "id": "gre-clay-rtl",
@@ -809,8 +821,11 @@
       "gamma": "abugida",
       "delta": "ltr",
       "confidence": "established",
-      "basis": "general",
-      "note": "Copper plates (material from the source; the end date is general knowledge)."
+      "basis": "source",
+      "note": "Some of the earliest authenticated copper plates were issued by Pallava kings in the 4th century; copper plates stayed the main legal record for centuries (the end year is approximate).",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Indian_copper_plate_inscriptions"
+      ]
     },
     {
       "id": "gra-palm-ltr",
@@ -887,14 +902,32 @@
     {
       "id": "sha-birch-ltr",
       "script": "sharada",
-      "from": 800,
-      "to": 1900,
+      "from": 750,
+      "to": 1600,
       "beta": "birch-bark",
       "gamma": "abugida",
       "delta": "ltr",
       "confidence": "established",
-      "basis": "general",
-      "note": "Birch-bark manuscripts; later kept for religious use by Kashmiri Pandits (general knowledge)."
+      "basis": "source",
+      "note": "In Kashmir, books were written on birch bark until the 16th century (Wikipedia, Birch bark manuscript). The start follows Sharada's 8th-century start.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Birch_bark_manuscript"
+      ]
+    },
+    {
+      "id": "sha-birch-early",
+      "script": "sharada",
+      "from": 200,
+      "to": 600,
+      "beta": "birch-bark",
+      "gamma": "abugida",
+      "delta": "ltr",
+      "confidence": "debated",
+      "basis": "source",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Birch_bark_manuscript"
+      ],
+      "note": "Wikipedia's Birch bark manuscript page calls the Bakhshali manuscript (estimated 2nd–3rd century) and the Gilgit manuscripts (5th–6th century) Śāradā script. This conflicts with Sharada's 8th-century start on the Sharada page and on Omniglot; their early scripts are often classed as predecessors."
     },
     {
       "id": "dev-stone-early",
@@ -966,7 +999,10 @@
       "delta": "ltr",
       "confidence": "established",
       "basis": "general",
-      "note": "Paper manuscripts and, later, print (general knowledge)."
+      "note": "Paper is attested in India from the second half of the 7th century (Wikipedia, Paper history); its use for Devanagari from about 1300 is general knowledge, not yet checked.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Paper_history"
+      ]
     },
     {
       "id": "han-paper-ttb",
@@ -996,13 +1032,17 @@
       "id": "cun-wood-ltr",
       "script": "cuneiform",
       "from": -1000,
-      "to": -500,
+      "to": 0,
       "beta": "wood-bamboo",
       "gamma": "logographic",
       "delta": "ltr",
       "confidence": "established",
-      "basis": "general",
-      "note": "Wax-coated wooden boards were also written on (material from Omniglot; the date range and direction are general knowledge)."
+      "basis": "source",
+      "note": "Cuneiform was also written on wax-coated wooden boards (Omniglot). Writing boards were in use in Mesopotamia in the 1st millennium BCE; ivory boards from Nimrud, 8th century BCE (Wikipedia, Wax tablet). Direction follows the clay records.",
+      "refs": [
+        "https://www.omniglot.com/writing/cuneiform.htm",
+        "https://en.wikipedia.org/wiki/Wax_tablet"
+      ]
     },
     {
       "id": "pro-stone-unf",
@@ -1055,14 +1095,17 @@
     {
       "id": "lat-paper-ltr",
       "script": "latin",
-      "from": 1200,
+      "from": 1056,
       "to": 2000,
       "beta": "paper",
       "gamma": "alphabet",
       "delta": "ltr",
       "confidence": "established",
-      "basis": "general",
-      "note": "Paper manuscripts and print (general knowledge)."
+      "basis": "source",
+      "note": "Paper mills in Europe from Xàtiva, Spain, 1056, then Italy in the 13th century; later print.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Paper_history"
+      ]
     },
     {
       "id": "arb-stone-rtl",
@@ -1079,38 +1122,48 @@
     {
       "id": "arb-leather-rtl",
       "script": "arabic",
-      "from": 650,
+      "from": 568,
       "to": 1000,
       "beta": "leather",
       "gamma": "abjad",
       "delta": "rtl",
       "confidence": "established",
-      "basis": "general",
-      "note": "Early Qur'an manuscripts on parchment (general knowledge)."
+      "basis": "source",
+      "note": "The Birmingham Qur'an manuscript, Hijazi script on parchment, radiocarbon dated 568–645 CE (the date of the skin, not necessarily of the writing; the end year is approximate).",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Birmingham_Quran_manuscript"
+      ]
     },
     {
       "id": "arb-paper-rtl",
       "script": "arabic",
-      "from": 800,
+      "from": 794,
       "to": 2000,
       "beta": "paper",
       "gamma": "abjad",
       "delta": "rtl",
       "confidence": "established",
-      "basis": "general",
-      "note": "Paper manuscripts and print (general knowledge)."
+      "basis": "source",
+      "note": "Paper reached Samarkand in 751 and Baghdad had paper mills by 794–795.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Paper_history"
+      ]
     },
     {
       "id": "tib-paper-ltr",
       "script": "tibetan",
-      "from": 640,
+      "from": 650,
       "to": 2000,
       "beta": "paper",
       "gamma": "abugida",
       "delta": "ltr",
       "confidence": "established",
-      "basis": "general",
-      "note": "Finalized in the 630s or 640s (source); left to right, syllables separated by the tsek. The substrate (paper, pecha books) is general knowledge."
+      "basis": "source",
+      "note": "Paper reached Tibet around the mid-7th century; pecha books moved from palm leaf to birch bark to paper. The script was finalized in the 630s or 640s.",
+      "refs": [
+        "https://en.wikipedia.org/wiki/Paper_history",
+        "https://en.wikipedia.org/wiki/Pecha"
+      ]
     }
   ],
   "lineage": [

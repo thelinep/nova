@@ -38,8 +38,8 @@ test('cells hold what the records say, and nothing else', () => {
 test('a projection counts distinct scripts and sums over the free axes', () => {
   const p = hkdm.project({ rows: 'alpha', cols: 'gamma' });
   const row = p.rowValues.findIndex(v => v.id === '0'), col = p.colValues.findIndex(v => v.id === 'abugida');
-  assert.deepEqual(p.scripts[row][col], ['brahmi', 'devanagari', 'grantha', 'gupta', 'kharoshthi', 'tamil-brahmi']);
-  assert.equal(p.matrix[row][col], 6);
+  assert.deepEqual(p.scripts[row][col], ['brahmi', 'devanagari', 'grantha', 'gupta', 'kharoshthi', 'sharada', 'tamil-brahmi']);
+  assert.equal(p.matrix[row][col], 7, 'includes the debated early Devanagari and Sharada records');
   // Fixing δ = rtl leaves only Kharoshthi among abugidas in 0–500 CE.
   const rtl = hkdm.project({ rows: 'alpha', cols: 'gamma', filter: { delta: 'rtl' } });
   assert.deepEqual(rtl.scripts[row][col], ['kharoshthi']);
@@ -95,4 +95,20 @@ test('Omniglot cross-checks: every script named exists, disagreements are kept, 
   // Sharada's start follows Omniglot's earliest inscription.
   assert.equal(hkdm.load().records.find(r => r.id === 'sha-stone-ltr').from, 774);
   assert.ok(hkdm.load().scripts.find(x => x.id === 'sharada').refs.some(u => /omniglot\.com/.test(u)));
+});
+
+test('checked records carry their own references, and general knowledge is the minority', () => {
+  const data = hkdm.load();
+  const general = data.records.filter(r => r.basis === 'general');
+  assert.ok(general.length <= 8, `${general.length} general records`);
+  for (const id of ['chi-bamboo-ttb', 'ara-leather-rtl', 'arb-leather-rtl', 'lat-paper-ltr', 'tib-paper-ltr']) {
+    const r = data.records.find(x => x.id === id);
+    assert.equal(r.basis, 'source', id);
+    assert.ok(r.refs.length, id);
+  }
+  // The cell view lists the record's own pages first.
+  const [aram] = hkdm.cell({ beta: 'leather', gamma: 'abjad' }).filter(r => r.id === 'ara-leather-rtl');
+  assert.match(aram.refs[0], /Khalili/);
+  // A source that contradicts another is kept as a debated record.
+  assert.equal(data.records.find(r => r.id === 'sha-birch-early').confidence, 'debated');
 });
