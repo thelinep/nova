@@ -435,6 +435,22 @@
 .aai-form{font-size:24px}
 .aai-steps{margin:8px 0 0 18px;font-size:13px;line-height:1.9}
 .aai-step-result{font-size:15px;margin-right:6px}
+.bp-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px}
+@media (max-width:900px){.bp-grid{grid-template-columns:minmax(0,1fr)}}
+.bp-notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.bp-notes button{width:100%;text-align:left;border:0;background:none;color:inherit;padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:2px;font:inherit}
+.bp-notes button[aria-current="true"]{background:var(--amber-soft,rgba(255,170,60,.12))}
+.bp-notes .t{font-family:'Noto Sans Brahmi',var(--font-sans);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-notes .m{font-size:12px;color:var(--muted)}
+.bp-src{width:100%;min-height:120px;resize:vertical;font-size:16px;line-height:1.6;font-family:var(--font-sans),'Noto Sans Brahmi'}
+.bp-out{font:clamp(26px,3.2vw,36px)/1.7 'Noto Sans Brahmi',var(--font-sans);white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid var(--line);padding-top:12px;margin-top:12px;min-height:1.7em}
+.bp-reading{font-family:var(--font-mono,monospace);font-size:14px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.bp-keys{display:flex;flex-wrap:wrap;gap:5px}
+.bp-key{min-width:50px;border:1px solid var(--line);background:transparent;color:inherit;border-radius:6px;padding:3px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font:inherit}
+.bp-key:hover{border-color:var(--amber)}
+.bp-key .g{font:22px/1.35 'Noto Sans Brahmi',var(--font-sans)}
+.bp-key .l{font-size:10.5px;color:var(--muted);font-family:var(--font-mono,monospace)}
+.bp-vargas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
 .hk-heat td,.hk-heat th{text-align:center;padding:4px 6px}
 .hk-heat tbody th{text-align:left;font-weight:500;font-size:12.5px;color:var(--muted);white-space:nowrap}
 .hk-heat thead th{font-size:12px;font-weight:500;color:var(--muted);vertical-align:bottom}
@@ -866,6 +882,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item" data-view="panini"><span data-lucide="scroll-text"></span><span class="rail-text">Ashtadhyayi</span></button>
       <button class="nav-item" data-view="derivation"><span data-lucide="git-commit-horizontal"></span><span class="rail-text">Derivation</span></button>
       <button class="nav-item" data-view="lipi"><span data-lucide="languages"></span><span class="rail-text">Lipi</span></button>
+      <button class="nav-item" data-view="brahmipad"><span data-lucide="notebook-pen"></span><span class="rail-text">Brahmi Notepad</span></button>
       <button class="nav-item" data-view="hkdm"><span data-lucide="box"></span><span class="rail-text">Lipi Tensor</span></button>
     </div>
     <div class="nav-group">
@@ -1013,6 +1030,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <section id="aaiView" class="view"><div class="view-pad"><!-- VIEW:aai --></div></section>
       <section id="derivationView" class="view"><div class="view-pad"><!-- VIEW:derivation --></div></section>
       <section id="lipiView" class="view"><div class="view-pad"><!-- VIEW:lipi --></div></section>
+      <section id="brahmipadView" class="view"><div class="view-pad"><!-- VIEW:brahmipad --></div></section>
       <section id="hkdmView" class="view"><div class="view-pad"><!-- VIEW:hkdm --></div></section>
       <!-- ===================== RETRIEVAL LAB ===================== -->
       <section id="mediaView" class="view"><div class="view-pad"><!-- VIEW:media --></div></section>
@@ -1215,8 +1233,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1626,7 +1644,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
@@ -1689,7 +1707,7 @@ function showView(name){
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
@@ -5266,6 +5284,57 @@ async function renderDerivationView(){
     renderDerivationView(); setTimeout(()=>$('aaiSteps')?.scrollIntoView({behavior:'smooth',block:'start'}),50);
   }catch(e){toast(e.message);}});
   const cg=$('aaiCheckGo'); if(cg) cg.onclick=async()=>{AAI.checkText=$('aaiCheck').value.trim();const t=AAI.table;try{AAI.check=await aaiPost('/api/aai/check-form',t.kind==='verb-paradigm'?{...t.request,form:AAI.checkText}:{stem:t.request.stem,linga:t.request.linga,form:AAI.checkText});}catch(e){toast(e.message);}renderDerivationView();};
+}
+
+// ── Brahmi Notepad ───────────────────────────────────────────────────────────────────
+// Roman (ITRANS / Harvard-Kyoto / IAST) or Devanagari in, Brahmi out. The core (lib/brahmi-pad.js)
+// is the same file the web notepad uses; notes live in the 'brahmiNotes' store.
+const BP = { notes:null, current:null, confirm:false, timer:null };
+function bpLoadCore(){ if(window.BrahmiPad) return Promise.resolve(window.BrahmiPad); return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=apiUrl('/api/brahmi/pad.js');s.onload=()=>ok(window.BrahmiPad);s.onerror=()=>bad(new Error('The Brahmi core could not load.'));document.head.appendChild(s);}); }
+async function bpSave(note){ try{ const r=await fetch(apiUrl('/api/brahmi/notes/'+encodeURIComponent(note.id)),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:note.src,scheme:note.scheme})}); if(!r.ok) throw new Error((await r.json()).error); const saved=await r.json(); Object.assign(note,{updatedAt:saved.updatedAt}); const st=$('bpStatus'); if(st) st.textContent='Saved.'; }catch(e){ toast('Brahmi Notepad: '+e.message); } }
+async function renderBrahmiPadView(){
+  const pad=$('brahmipadView').querySelector('.view-pad');
+  let P; try{ P=await bpLoadCore(); if(!BP.notes) BP.notes=await paniniFetch('/api/brahmi/notes'); }catch(e){ pad.innerHTML=`<p class="empty-hint">${escapeHtml(e.message)}</p>`; return; }
+  if(!BP.notes.length){ BP.notes=[await aaiPost('/api/brahmi/notes',{src:'iyaṃ dhaṃmalipī devānaṃpriyena priyadasinā rāñā lekhāpitā',scheme:'auto'})]; }
+  if(!BP.notes.some(n=>n.id===BP.current)) BP.current=BP.notes[0].id;
+  const n=BP.notes.find(x=>x.id===BP.current);
+  const keys=list=>list.map(([g,l])=>`<button type="button" class="bp-key" data-g="${escapeHtml(g)}" title="Insert ${escapeHtml(l)}"><span class="g">${escapeHtml(g)}</span><span class="l">${escapeHtml(l)}</span></button>`).join('');
+  const groups=[5,5,5,5,5,4,4,1]; let at=0; const vargas=groups.map(size=>{const row=`<div class="bp-keys">${keys(P.KEYBOARD.consonants.slice(at,at+size))}</div>`;at+=size;return row;}).join('');
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · Lipi</span><h1 class="view-title">Brahmi Notepad</h1><p class="view-desc">Write in Roman (ITRANS, Harvard-Kyoto or IAST) or Devanagari, or use the keyboard, and read it in Brahmi as you type. Notes are saved in Maataa on this computer.</p></div></div>
+  <div class="bp-grid">
+    <div><button class="btn btn-amber" id="bpNew" type="button">New note</button><div class="cap-section-label">Notes</div><ul class="bp-notes" id="bpNotes">${BP.notes.map(x=>`<li><button type="button" data-id="${escapeHtml(x.id)}" aria-current="${x.id===n.id}"><span class="t">${escapeHtml(P.toBrahmi(x.src.split('\n')[0].slice(0,40),{scheme:x.scheme})||'Empty note')}</span><span class="m">${escapeHtml(new Date(x.updatedAt).toLocaleString())}</span></button></li>`).join('')}</ul></div>
+    <div style="min-width:0">
+      <div class="panel" style="padding:14px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><label for="bpScheme" class="panini-sub">“ch” and “sh” mean</label><select id="bpScheme" aria-label="Reading of ch and sh"><option value="auto" ${n.scheme==='auto'?'selected':''}>Auto: IAST if the text has diacritics</option><option value="itrans" ${n.scheme==='itrans'?'selected':''}>च and श (ITRANS: chakra, shiva)</option><option value="iast" ${n.scheme==='iast'?'selected':''}>छ and स्ह (IAST: chandas)</option></select><span class="badge badge-blue" id="bpReadAs"></span></div>
+        <textarea id="bpSrc" class="bp-src" aria-label="Write" spellcheck="false" placeholder="Type dharma, धर्म, or use the keyboard below">${escapeHtml(n.src)}</textarea>
+        <div class="bp-out" id="bpOut" lang="pra-Brah" aria-label="Brahmi"></div>
+        <div class="bp-reading" id="bpReading" aria-label="Reading in IAST"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px"><button class="btn btn-line" id="bpCopy" type="button">Copy Brahmi</button><button class="btn btn-line" id="bpCopyReading" type="button">Copy reading</button><a class="btn btn-line" style="text-decoration:none" href="${apiUrl('/api/brahmi/notes/'+encodeURIComponent(n.id)+'/export')}" download>Download .txt</a><a class="btn btn-line" style="text-decoration:none" href="${apiUrl('/api/brahmi/notes/'+encodeURIComponent(n.id)+'/export?format=both')}" download>Download with reading</a><span class="panini-sub" id="bpStatus" role="status" style="flex:1"></span>${BP.confirm?`<span class="panini-sub">Delete this note?</span><button class="btn btn-line" id="bpDelYes" type="button" style="color:var(--red)">Delete</button><button class="btn btn-line" id="bpDelNo" type="button">Keep</button>`:`<button class="btn btn-line" id="bpDel" type="button">Delete note</button>`}</div>
+      </div>
+      <div class="cap-section-label">Keyboard · inserts at the cursor</div>
+      <div class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div><div class="panini-sub">Vowels</div><div class="bp-keys">${keys(P.KEYBOARD.vowels)}</div></div>
+        <div><div class="panini-sub">Vowel signs (after a consonant)</div><div class="bp-keys">${keys(P.KEYBOARD.signs)}</div></div>
+        <div><div class="panini-sub">Consonants</div><div class="bp-vargas">${vargas}</div></div>
+        <div><div class="panini-sub">Marks and digits</div><div class="bp-keys">${keys(P.KEYBOARD.marks.concat(P.KEYBOARD.digits))}</div></div>
+      </div>
+      <details style="margin-top:10px"><summary class="panini-sub">What to type</summary><table class="panini-table" data-no-list-tools style="margin-top:6px"><tbody>${P.CHEATSHEET.map(([a,b])=>`<tr><td class="mono">${escapeHtml(a)}</td><td class="mono">${escapeHtml(b)}</td></tr>`).join('')}</tbody></table><p class="panini-sub">Capital letters are letters of their own (A is ā, T is ṭ, S is ṣ), so write names in lower case. A consonant at the end of a word gets a virāma by itself.</p></details>
+    </div>
+  </div>`;
+  const update=(store)=>{ const src=$('bpSrc').value; const b=P.toBrahmi(src,{scheme:n.scheme}); $('bpOut').textContent=b||'𑀮𑀺𑀔𑀢𑀼'; $('bpOut').style.color=b?'':'var(--muted)'; $('bpReading').textContent=b?P.toIast(b):'likhatu: start writing above'; $('bpReadAs').textContent='reading as '+(P.scheme(src,n.scheme)==='iast'?'IAST':'ITRANS');
+    if(store&&src!==n.src){ n.src=src; $('bpStatus').textContent='Saving…'; clearTimeout(BP.timer); BP.timer=setTimeout(()=>bpSave(n),500); const cur=$('bpNotes').querySelector('[aria-current="true"] .t'); if(cur) cur.textContent=P.toBrahmi(src.split('\n')[0].slice(0,40),{scheme:n.scheme})||'Empty note'; } };
+  update(false);
+  $('bpSrc').addEventListener('input',()=>update(true));
+  $('bpScheme').onchange=e=>{ n.scheme=e.target.value; bpSave(n); update(false); };
+  $$('#brahmipadView .bp-key').forEach(k=>k.onclick=()=>{ const ta=$('bpSrc'),a=ta.selectionStart??ta.value.length,b=ta.selectionEnd??a; ta.value=ta.value.slice(0,a)+k.dataset.g+ta.value.slice(b); const pos=a+k.dataset.g.length; ta.focus(); ta.setSelectionRange(pos,pos); update(true); });
+  $$('#bpNotes button').forEach(b=>b.onclick=()=>{ clearTimeout(BP.timer); if(n.src!==undefined) bpSave(n); BP.current=b.dataset.id; BP.confirm=false; renderBrahmiPadView(); });
+  $('bpNew').onclick=async()=>{ try{ const x=await aaiPost('/api/brahmi/notes',{src:'',scheme:'auto'}); BP.notes.unshift(x); BP.current=x.id; BP.confirm=false; await renderBrahmiPadView(); $('bpSrc').focus(); }catch(e){ toast(e.message); } };
+  const copy=async(text,done)=>{ try{ await navigator.clipboard.writeText(text); toast(done); }catch(_){ toast('Copy failed. Select the text and copy it.'); } };
+  $('bpCopy').onclick=()=>copy($('bpOut').textContent,'Brahmi copied.');
+  $('bpCopyReading').onclick=()=>copy($('bpReading').textContent,'Reading copied.');
+  if($('bpDel')) $('bpDel').onclick=()=>{ BP.confirm=true; renderBrahmiPadView(); };
+  if($('bpDelNo')) $('bpDelNo').onclick=()=>{ BP.confirm=false; renderBrahmiPadView(); };
+  if($('bpDelYes')) $('bpDelYes').onclick=async()=>{ try{ clearTimeout(BP.timer); const r=await fetch(apiUrl('/api/brahmi/notes/'+encodeURIComponent(n.id)),{method:'DELETE'}); if(!r.ok) throw new Error((await r.json()).error); BP.notes=BP.notes.filter(x=>x.id!==n.id); BP.confirm=false; BP.current=null; if(!BP.notes.length) BP.notes=null; toast('Note deleted.'); renderBrahmiPadView(); }catch(e){ toast(e.message); } };
 }
 
 // ── HKDM script tensor T(α, β, γ, δ) ─────────────────────────────────────────────────

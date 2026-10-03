@@ -15,7 +15,7 @@ This follows from MAATAA's own line, "governed intelligence" and "Intelligence f
 - **Public name:** *Maataa AAI*, always with "Maataa". In India, "AAI" on its own is widely read as the Airports Authority of India.
 - **Long form:** "Advanced Ancient Intelligence". Use it for the tagline, not as the name.
 - **Before public launch:** do a trademark search for "Maataa AAI" in classes 9 and 42, plus a domain and social-handle check.
-- **Inside the product:** the Workstation rail group is "AAI · Ancient Intelligence", with five screens: Maataa AAI, Ashtadhyayi, Derivation, Lipi and Lipi Tensor.
+- **Inside the product:** the Workstation rail group is "AAI · Ancient Intelligence", with six screens: Maataa AAI, Ashtadhyayi, Derivation, Lipi, Brahmi Notepad and Lipi Tensor.
 
 ## 3. Pillars
 
@@ -74,6 +74,7 @@ For word forms there is no model in the loop. The rules derive the forms, and AA
   - **Replay:** derivations and form checks are run again and must give the same result hash. For Ask, the model isn't run again; its citations are checked again by rule.
   - **Export:** one JSON file (`maataa-aai-evidence/1`) with the contract, the result and the device's public key. Anyone can check it offline: the result hash, the record hash, the key fingerprint, the signature, and the citation or step checks redone from the sutra text. Its position in the chain can only be checked on the sealing workstation.
   - **API:** `GET /api/aai/evidence`, `GET /api/aai/evidence/:id`, `GET /api/aai/evidence/:id/bundle`, `POST /api/aai/evidence/:id/replay`, `POST /api/aai/evidence/verify`; the chain is checked by `GET /api/contracts/verify`. Pass `"evidence": false` to skip sealing for one request.
+- **Brahmi Notepad:** Roman (ITRANS, Harvard-Kyoto, IAST), Devanagari or an on-screen varṇamālā keyboard in, Brahmi out, with the IAST reading. One core (`lib/brahmi-pad.js`) serves the Workstation screen (notes in the `brahmiNotes` store, text download) and a web version published as an artifact (notes in the browser). It matches the Lipi table on every sutra.
 - **Lipi Tensor (HKDM):** the script tensor T(α, β, γ, δ), epoch × substrate × information architecture × direction (`lib/hkdm-tensor.js`, data in `lib/hkdm-scripts.json`). The seed data holds 41 scripts and 105 records (88 from a source page, 17 general knowledge), including the Brahmic family (northern, southern and Southeast Asian branches), each marked established or debated, and from a source page or general knowledge, and is cross-checked against Omniglot on 18 topics (agree, partly, differ). It is a draft for an epigraphist to review. The screen shows any two axes as a heatmap and opens each cell to its records. It also shows lineage with the gaps between first attestations, and exports the dense tensor (JSON, 11 × 11 × 6 × 5; δ includes 'unfixed') and the records (CSV). API: `GET /api/hkdm`, `/api/hkdm/projection`, `/api/hkdm/cell`, `/api/hkdm/export/tensor`, `/api/hkdm/export/records.csv`.
 - **Tests:** unit tests for the engine, conversions, citations and the Ask verdicts; evidence tests (sealing, failed citations, tamper detection in exported files, chain breaks, replay of verb, noun and form-check results); and a browser test that derives भवति, checks a wrong form, replays the sealed record, verifies the chain and verifies an exported file.
 

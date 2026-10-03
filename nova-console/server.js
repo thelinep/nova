@@ -42,6 +42,8 @@ const sutraNeurons = require('./lib/sutra-neurons');
 const aai = require('./lib/aai');
 const aaiEvidence = require('./lib/aai-evidence');
 const hkdm = require('./lib/hkdm-tensor');
+const brahmiNotes = require('./lib/brahmi-notes');
+const BRAHMI_PAD_JS = path.join(__dirname, 'lib', 'brahmi-pad.js');
 const backgroundJobs = require('./lib/background-jobs');
 const artifactGovernance = require('./lib/artifact-governance');
 const prConnectors = require('./lib/pr-connectors');
@@ -912,6 +914,14 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/aai\/lipi$/, handler: async (req,res)=>sendJson(res,200,aai.lipi(await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/aai\/check-citations$/, handler: async (req,res)=>{const body=await readJsonBody(req);sendJson(res,200,panini.checkCitations(body.text||''));} },
   { method: 'POST', pattern: /^\/api\/aai\/ask$/, handler: async (req,res)=>{const body=await readJsonBody(req);const r=await aai.ask({ollama,question:body.question,model:body.model,killSwitch:workbenchKillSwitch});sendJson(res,200,await sealAai(body,'ask',{question:r.question,model:r.model},r));} },
+  // Brahmi Notepad: the shared transliteration core (also used by the web notepad) and the notes.
+  { method: 'GET', pattern: /^\/api\/brahmi\/pad\.js$/, handler: async (_req,res)=>{res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache'});res.end(fs.readFileSync(BRAHMI_PAD_JS));} },
+  { method: 'POST', pattern: /^\/api\/brahmi\/convert$/, handler: async (req,res)=>sendJson(res,200,brahmiNotes.convert(await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/brahmi\/notes$/, handler: async (_req,res)=>sendJson(res,200,brahmiNotes.list(store)) },
+  { method: 'POST', pattern: /^\/api\/brahmi\/notes$/, handler: async (req,res)=>sendJson(res,201,brahmiNotes.create(store,await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/brahmi\/notes\/([^/]+)\/export$/, handler: async (req,res,[id])=>{const q=new URL(req.url,'http://x').searchParams;const both=q.get('format')==='both';res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':`attachment; filename="brahmi-note${both?'-with-reading':''}.txt"`});res.end(brahmiNotes.exportText(store,decodeURIComponent(id),both?'both':'brahmi'));} },
+  { method: 'POST', pattern: /^\/api\/brahmi\/notes\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,brahmiNotes.update(store,decodeURIComponent(id),await readJsonBody(req))) },
+  { method: 'DELETE', pattern: /^\/api\/brahmi\/notes\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,brahmiNotes.remove(store,decodeURIComponent(id))) },
   // HKDM script tensor T(α, β, γ, δ) (lib/hkdm-tensor.js): read-only views of the sourced records.
   { method: 'GET', pattern: /^\/api\/hkdm$/, handler: async (req,res)=>sendJson(res,200,hkdm.summary(hkdmOpts(req))) },
   { method: 'GET', pattern: /^\/api\/hkdm\/projection$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,hkdm.project({rows:q.get('rows')||'alpha',cols:q.get('cols')||'beta',filter:hkdmFilter(q),...hkdmOpts(req)}));} },

@@ -18,6 +18,7 @@ Maataa Workstation is a local AI workspace: chat with local models, search your 
 - [Maataa AAI](#maataa-aai)
 - [Ashtadhyayi](#ashtadhyayi)
 - [Lipi Tensor (HKDM)](#lipi-tensor-hkdm)
+- [Brahmi Notepad](#brahmi-notepad)
 - [Automations and Evaluations](#automations-and-evaluations)
 - [Add sources, live steps, computer and voice](#add-sources-live-steps-computer-and-voice)
 - [Images](#images)
@@ -458,7 +459,7 @@ Turn on **Retrieval** under the Console's message box. Maataa adds the best pass
 
 **Maataa AAI** (the AAI group) works on one principle: **rules derive and check, models propose, and nothing is called correct unless the rules confirm it.**
 
-The group has five screens:
+The group has six screens:
 
 | Screen | What it does |
 | --- | --- |
@@ -466,6 +467,7 @@ The group has five screens:
 | [Ashtadhyayi](#ashtadhyayi) | All 3,983 sutras and the Dhatupatha |
 | **Derivation** | Panini's rules derive a word step by step |
 | **Lipi** | Convert text between six scripts |
+| [Brahmi Notepad](#brahmi-notepad) | Write in Roman or Devanagari and read it in Brahmi |
 | [Lipi Tensor](#lipi-tensor-hkdm) | Writing systems on four axes: epoch, substrate, architecture, direction |
 
 ### Install the derivation engine (once)
@@ -609,6 +611,47 @@ Each record is one attestation: a script, a span of years, a substrate, an archi
 4. **Lineage** shows the family tree: each script sits under its first established parent, with other proposed parents beside it and the years between first established records. Both hypotheses for the origin of Brahmi (Aramaic, Indus) are shown, both marked debated.
 5. **Cross-check with Omniglot** compares each script's main reference with its Omniglot page: 18 topics, marked agree, partly or differ. Where they differ, both sides are shown and the records say which one they follow.
 6. **Download tensor (JSON)** gives the dense count tensor (shape 11 × 11 × 6 × 5) and the sparse cells with their scripts and record ids. **Download records (CSV)** gives every record with its reference.
+
+## Brahmi Notepad
+
+*Write in Roman or Devanagari, or with the on-screen keyboard, and read it in Brahmi as you type. Notes are saved in Maataa and can be downloaded as text.*
+
+**Brahmi Notepad** (AAI group) turns what you type into Brahmi as you type it, with the reading in IAST underneath.
+
+### Three ways to write
+
+| Way | Example |
+| --- | --- |
+| **Roman** | `dharma`, `buddhaM sharaNaM gachChAmi`, `dharmaḥ` |
+| **Devanagari** | `धम्म` |
+| **Keyboard** | Press the Brahmi keys below the note. They go in at the cursor. |
+
+You can mix all three in one note. A consonant typed in Roman joins a vowel sign pressed on the keyboard.
+
+### What to type
+
+Roman input accepts ITRANS, Harvard-Kyoto and IAST together. **What to type** under the keyboard lists every spelling.
+
+| Sound | Type |
+| --- | --- |
+| ā ī ū | `aa ii uu`, `A I U` or `ā ī ū` |
+| ṭ ḍ ṇ | `T D N` or `ṭ ḍ ṇ` |
+| ś ṣ | `sh Sh`, `z S` or `ś ṣ` |
+| kṣ jñ | `x` or `kSh`, `GY` or `jñ` |
+| ṃ ḥ | `M H`, `.m` or `ṃ ḥ` |
+
+Capital letters are letters of their own (A is ā, T is ṭ, S is ṣ), so write names in lower case. A consonant at the end of a word gets a virāma by itself.
+
+> **Note** "ch" means च in ITRANS (chakra) and छ in IAST (chandas). With **Auto**, a note that contains IAST diacritics is read as IAST, and the badge says which reading is in use. You can also choose one for each note.
+
+### Notes
+
+- Notes save as you type, in Maataa on this computer.
+- **Copy Brahmi** and **Copy reading** copy the text.
+- **Download .txt** saves the Brahmi; **Download with reading** saves each line with its IAST underneath.
+- If Brahmi letters show as boxes, install the free Noto Sans Brahmi font.
+
+The same converter runs in the web version of the notepad, which keeps its notes in your browser. It gives the same Brahmi as the Lipi screen on all 3,983 sutras.
 
 ## Automations and Evaluations
 

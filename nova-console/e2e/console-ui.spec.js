@@ -382,6 +382,25 @@ test.describe('NOVA Console interactions', () => {
     await expect(page.locator('.sutra-try-out')).toContainText('sutra 6.1.77: य् ✓');
   });
 
+  test('Brahmi Notepad turns Roman and Devanagari into Brahmi, takes keyboard input and keeps the note', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-view="brahmipad"]').click();
+    await expect(page.getByRole('heading', { name: 'Brahmi Notepad' })).toBeVisible();
+    const src = page.getByLabel('Write', { exact: true });
+    await src.fill('dharma');
+    await expect(page.locator('#bpOut')).toHaveText('𑀥𑀭𑁆𑀫');
+    await expect(page.locator('#bpReading')).toHaveText('dharma');
+    await src.fill('धम्म ');
+    await page.locator('.bp-key[title="Insert ka"]').click();
+    await page.locator('.bp-key[title="Insert ◌i"]').click();
+    await expect(page.locator('#bpOut')).toHaveText('𑀥𑀫𑁆𑀫 𑀓𑀺');
+    await expect(page.locator('#bpStatus')).toHaveText('Saved.', { timeout: 5000 });
+    const saved = await page.evaluate(async () => (await (await fetch('/api/brahmi/notes')).json())[0]);
+    expect(saved.brahmi).toBe('𑀥𑀫𑁆𑀫 𑀓𑀺');
+    const text = await page.evaluate(async id => (await fetch(`/api/brahmi/notes/${id}/export`)).text(), saved.id);
+    expect(text).toBe('𑀥𑀫𑁆𑀫 𑀓𑀺\n');
+  });
+
   test('Lipi Tensor shows T(α, β, γ, δ) as a heatmap and opens a cell to its sourced records', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-view="hkdm"]').click();
