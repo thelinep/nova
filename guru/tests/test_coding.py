@@ -1,5 +1,6 @@
 """Offline tests for Guru-Code's experimental data and proposal evaluator."""
 import json
+import hashlib
 import os
 import sys
 import tempfile
@@ -7,7 +8,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from guru.coding import (CodingDataError, evaluate, read_tasks, validate_plan,
-                         write_sft)
+                         canonical_sha256, write_sft)
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,6 +23,59 @@ def proposal(path, symbol, test_description):
     })
 
 
+def reviewed_release_fixture(rows, tmp, *, train_uses=("train_sft",), eval_uses=("evaluation",)):
+    rows = json.loads(json.dumps(rows))
+    source_rows = {"source-train": [], "source-eval": []}
+    for row in rows:
+        source_id = "source-train" if row["split"] == "train" else "source-eval"
+        row["leakage_group"] = f"group-{row['id']}"
+        row["provenance"]["synthetic_fixture"] = False
+        item_bytes = f"raw-item:{row['id']}".encode()
+        item_path = os.path.join(tmp, f"item-{row['id']}.txt")
+        with open(item_path, "wb") as f: f.write(item_bytes)
+        row["provenance"]["source_refs"] = [{
+            "source_id": source_id,
+            "item_id": f"upstream-item-{row['id']}",
+            "item_path": os.path.basename(item_path),
+            "item_sha256": hashlib.sha256(item_bytes).hexdigest(),
+            "transformation": "human-curated task from the pinned source item",
+        }]
+        source_rows[source_id].append(row)
+
+    sources = []
+    for source_id, source_tasks in source_rows.items():
+        raw = f"immutable archive bytes for {source_id}".encode()
+        license_text = b"Approved fixture license text."
+        artifact_path = os.path.join(tmp, f"{source_id}.bin")
+        license_path = os.path.join(tmp, f"{source_id}-LICENSE.txt")
+        with open(artifact_path, "wb") as f: f.write(raw)
+        with open(license_path, "wb") as f: f.write(license_text)
+        sources.append({
+            "source_id": source_id,
+            "uri": f"https://example.invalid/{source_id}",
+            "revision": "immutable-revision-1",
+            "artifact_path": os.path.basename(artifact_path),
+            "artifact_sha256": hashlib.sha256(raw).hexdigest(),
+            "attribution": "Attribution retained in the internal release record.",
+            "license": {
+                "id": "LicenseRef-Reviewed-Fixture",
+                "text_uri": "local:LICENSE.txt",
+                "text_path": os.path.basename(license_path),
+                "text_sha256": hashlib.sha256(license_text).hexdigest(),
+            },
+            "rights_review": {
+                "status": "approved", "reviewer": "reviewer-1",
+                "reviewed_at": "2026-10-04T12:00:00Z",
+                "allowed_uses": list(train_uses if source_id == "source-train" else eval_uses),
+            },
+            "task_hashes": {row["id"]: canonical_sha256(row) for row in source_tasks},
+        })
+    manifest_path = os.path.join(tmp, "sources.json")
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump({"schema_version": "guru-code-source-manifest-v1", "sources": sources}, f, sort_keys=True)
+    return rows, manifest_path
+
+
 class CodingDataTests(unittest.TestCase):
     def test_fixtures_are_provenanced_and_eval_has_no_targets(self):
         rows = read_tasks(TASKS)
@@ -30,6 +84,22 @@ class CodingDataTests(unittest.TestCase):
         self.assertEqual(sum(r["split"] == "eval" for r in rows), 3)
         self.assertTrue(all(r["provenance"]["description"] for r in rows))
         self.assertTrue(all("target" not in r for r in rows if r["split"] == "eval"))
+
+    def test_task_loader_rejects_duplicate_json_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "tasks.jsonl")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write('{"id":"first","id":"second"}\n')
+            with self.assertRaisesRegex(CodingDataError, "duplicate JSON object key"):
+                read_tasks(path)
+
+    def test_task_loader_rejects_nonstandard_json_constants(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "tasks.jsonl")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write('{"id":"first","ignored":NaN}\n')
+            with self.assertRaisesRegex(CodingDataError, "non-standard JSON numeric constant"):
+                read_tasks(path)
 
     def test_model_metadata_does_not_claim_a_checkpoint_or_capability(self):
         path = os.path.join(ROOT, "data", "coding", "model.json")
@@ -49,6 +119,182 @@ class CodingDataTests(unittest.TestCase):
         self.assertEqual(len(pairs), 2)
         self.assertIn("exactly one JSON object", pairs[0]["prompt"])
         self.assertNotIn("eval-001", "\n".join(p["prompt"] for p in pairs))
+
+    def test_smoke_sft_export_accepts_only_explicit_synthetic_fixtures(self):
+        rows = read_tasks(TASKS)
+        rows[0]["provenance"]["synthetic_fixture"] = False
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(CodingDataError, "only explicitly marked synthetic fixtures"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"))
+
+    def test_release_sft_requires_manifest_and_leaves_no_output_on_failure(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            output = os.path.join(tmp, "pairs.jsonl")
+            with self.assertRaisesRegex(CodingDataError, "requires --source-manifest"):
+                write_sft(rows, output, profile="release")
+            self.assertFalse(os.path.exists(output))
+
+    def test_release_sft_rejects_duplicate_manifest_json_keys(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = os.path.join(tmp, "sources.json")
+            with open(manifest, "w", encoding="utf-8") as f:
+                f.write('{"schema_version":"wrong","schema_version":"guru-code-source-manifest-v1","sources":[]}')
+            with self.assertRaisesRegex(CodingDataError, "duplicate JSON object key"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_binds_reviewed_sources_and_emits_provenance_sidecar(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            output = os.path.join(tmp, "release-pairs.jsonl")
+            self.assertEqual(write_sft(rows, output, profile="release", source_manifest=manifest), 2)
+            with open(output, encoding="utf-8") as f:
+                pairs = [json.loads(line) for line in f]
+            with open(output + ".provenance.json", encoding="utf-8") as f:
+                sidecar = json.load(f)
+            self.assertEqual(len(pairs), 2)
+            self.assertNotIn("eval-001", "\n".join(p["prompt"] for p in pairs))
+            self.assertEqual(sidecar["profile"], "release")
+            self.assertEqual(sidecar["task_ids"], ["train-001", "train-002"])
+            self.assertEqual(sidecar["train_count"], 2)
+            with open(output, "rb") as f: output_bytes = f.read()
+            self.assertEqual(sidecar["sft_sha256"], hashlib.sha256(output_bytes).hexdigest())
+            with self.assertRaisesRegex(CodingDataError, "already exists"):
+                write_sft(rows, output, profile="release", source_manifest=manifest)
+            os.unlink(output + ".provenance.json")
+            self.assertEqual(write_sft(rows, output, profile="release", source_manifest=manifest), 2)
+            self.assertTrue(os.path.exists(output + ".provenance.json"))
+
+    def test_release_sft_rejects_unapproved_or_missing_training_permission(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp, train_uses=())
+            with self.assertRaisesRegex(CodingDataError, "not approved for train_sft"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_requires_reviewed_evaluation_use_and_resolved_license(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp, eval_uses=())
+            with self.assertRaisesRegex(CodingDataError, "not approved for evaluation"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_requires_a_held_out_eval_split(self):
+        rows = [row for row in read_tasks(TASKS) if row["split"] == "train"]
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            with self.assertRaisesRegex(CodingDataError, "both train and held-out eval"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_verifies_saved_source_item_bytes(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            ref = rows[0]["provenance"]["source_refs"][0]
+            with open(os.path.join(tmp, ref["item_path"]), "ab") as f: f.write(b"changed")
+            with self.assertRaisesRegex(CodingDataError, "does not match its saved source item"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_rejects_duplicate_item_bytes_across_sources(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            train_ref = rows[0]["provenance"]["source_refs"][0]
+            eval_ref = rows[-1]["provenance"]["source_refs"][0]
+            eval_ref["item_id"] = "renamed-duplicate-item"
+            eval_ref["source_id"] = "source-train"
+            eval_ref["item_path"] = train_ref["item_path"]
+            eval_ref["item_sha256"] = train_ref["item_sha256"]
+            with open(manifest, encoding="utf-8") as f: payload = json.load(f)
+            payload["sources"][0]["rights_review"]["allowed_uses"].append("evaluation")
+            payload["sources"][0]["task_hashes"][rows[-1]["id"]] = canonical_sha256(rows[-1])
+            del payload["sources"][1]["task_hashes"][rows[-1]["id"]]
+            with open(manifest, "w", encoding="utf-8") as f: json.dump(payload, f, sort_keys=True)
+            with self.assertRaisesRegex(CodingDataError, "appears in both train and eval"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            with open(manifest, encoding="utf-8") as f: payload = json.load(f)
+            payload["sources"][0]["license"]["id"] = "REVIEW_REQUIRED"
+            with open(manifest, "w", encoding="utf-8") as f: json.dump(payload, f)
+            with self.assertRaisesRegex(CodingDataError, "license.id is unresolved"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_rejects_unsafe_manifest_paths_and_missing_task_links(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            with open(manifest, encoding="utf-8") as f: payload = json.load(f)
+            payload["sources"][0]["artifact_path"] = "../outside.bin"
+            with open(manifest, "w", encoding="utf-8") as f: json.dump(payload, f)
+            with self.assertRaisesRegex(CodingDataError, "stay inside the source manifest directory"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            with open(manifest, encoding="utf-8") as f: payload = json.load(f)
+            del payload["sources"][1]["task_hashes"]["eval-003"]
+            with open(manifest, "w", encoding="utf-8") as f: json.dump(payload, f)
+            with self.assertRaisesRegex(CodingDataError, "absent from the reviewed source manifest"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_rejects_stale_task_or_source_artifact_hashes(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            rows[0]["target"]["summary"] = "Changed after rights review."
+            with self.assertRaisesRegex(CodingDataError, "changed after source review"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            with open(os.path.join(tmp, "source-train.bin"), "ab") as f: f.write(b"changed")
+            with self.assertRaisesRegex(CodingDataError, "does not match the source artifact"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_rejects_cross_split_leakage_even_with_different_task_ids(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            rows[0]["leakage_group"] = rows[-1]["leakage_group"]
+            # Re-sign the changed row in its reviewed source. The split policy
+            # must still reject it; a changed ID or manifest hash is not enough.
+            with open(manifest, encoding="utf-8") as f: payload = json.load(f)
+            payload["sources"][0]["task_hashes"][rows[0]["id"]] = canonical_sha256(rows[0])
+            with open(manifest, "w", encoding="utf-8") as f: json.dump(payload, f, sort_keys=True)
+            with self.assertRaisesRegex(CodingDataError, "leakage group"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+    def test_release_sft_rejects_duplicate_prompt_or_source_item_across_splits(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            rows[-1]["prompt"] = rows[0]["prompt"]
+            rows[-1]["rubric"] = rows[0]["rubric"]
+            with open(manifest, encoding="utf-8") as f: payload = json.load(f)
+            payload["sources"][1]["task_hashes"][rows[-1]["id"]] = canonical_sha256(rows[-1])
+            with open(manifest, "w", encoding="utf-8") as f: json.dump(payload, f, sort_keys=True)
+            with self.assertRaisesRegex(CodingDataError, "prompt/rubric content is duplicated"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            rows[-1]["provenance"]["source_refs"][0]["item_id"] = rows[0]["provenance"]["source_refs"][0]["item_id"]
+            rows[-1]["provenance"]["source_refs"][0]["source_id"] = "source-train"
+            with open(manifest, encoding="utf-8") as f: payload = json.load(f)
+            payload["sources"][0]["rights_review"]["allowed_uses"].append("evaluation")
+            payload["sources"][0]["task_hashes"][rows[-1]["id"]] = canonical_sha256(rows[-1])
+            del payload["sources"][1]["task_hashes"][rows[-1]["id"]]
+            with open(manifest, "w", encoding="utf-8") as f: json.dump(payload, f, sort_keys=True)
+            with self.assertRaisesRegex(CodingDataError, "appears in both train and eval"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
 
     def test_plan_rejects_traversal_and_invalid_python(self):
         base = {"summary": "change", "tests": ["check"], "files": []}

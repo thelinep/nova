@@ -97,9 +97,12 @@ exact-digest qualification on the real exported artifact.
   - Focused runtime/bridge budget accounting tests: 28 passed, 0 failed;
     successful runs charge measured tokens and one pre-dispatch job, while
     failed/cancelled runs settle one bounded token reservation.
-  - Guru's focused coding checks previously passed 7/7. The full Guru suite
-    previously had 23 passed, 2 skipped, and 2 tokenizer-dependent errors
-    because `sentencepiece` is unavailable; this does not certify a model.
+  - Current Guru coding exporter checks pass 22/22, including reviewed source
+    item byte hashes, held-out split presence, leakage rejection, duplicate-key
+    and non-standard-number rejection, no-clobber output, and interrupted
+    sidecar recovery. The current full Guru run reports 38 passed, 2 skipped,
+    and 2 tokenizer-dependent errors because `sentencepiece` is unavailable;
+    this does not certify a model.
 - The first Node run in the restricted sandbox failed local-listener tests with
   `EPERM`; the passing rerun had localhost access enabled. The first focused
   Playwright run caught an assertion-label mismatch in the new planning-race
@@ -109,6 +112,13 @@ exact-digest qualification on the real exported artifact.
   implementation-run output; the checked-in Oct 3 packaging log predates this
   increment and is not evidence for these results.
 - Desktop and 390px screenshots were visually inspected during implementation.
+
+The refreshed 2026-10-04 exporter checks verify the bytes of each saved source
+item snapshot and reject corpora without both train and held-out eval rows.
+Owner-provided corpus files and training resources have not yet been delivered;
+the release path remains open. The exporter verifies consistency and recorded
+review fields, while reviewer authority and source-to-archive association still
+require human review evidence.
 
 The open gates above are required before calling the complete roadmap or a
 Guru-Code release done.

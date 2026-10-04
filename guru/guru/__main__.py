@@ -43,6 +43,9 @@ def main(argv=None):
     cd = sub.add_parser("code-data", help="validate Guru-Code tasks and write Guru teach-compatible training pairs")
     cd.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
     cd.add_argument("--sft-out", default=os.path.join(OUT, "guru-code-sft.jsonl"))
+    cd.add_argument("--profile", choices=("smoke", "release"), default="smoke",
+                    help="smoke accepts only marked synthetic fixtures; release requires reviewed source evidence")
+    cd.add_argument("--source-manifest", default="", help="reviewed source manifest required by the release profile")
     ce = sub.add_parser("code-eval", help="score held-out Guru-Code proposal JSONL (does not execute code)")
     ce.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
     ce.add_argument("--predictions", required=True, help="JSONL records with id and output (output is a JSON string)")
@@ -66,11 +69,14 @@ def main(argv=None):
         from .coding import read_tasks, write_sft, CodingDataError
         try:
             tasks = read_tasks(args.tasks)
-            count = write_sft(tasks, args.sft_out)
+            count = write_sft(tasks, args.sft_out, profile=args.profile, source_manifest=args.source_manifest or None)
         except (CodingDataError, OSError) as exc:
             raise SystemExit(str(exc))
-        print(f"Validated {len(tasks)} tasks; wrote {count} train examples to {args.sft_out}")
-        print("Experimental data only. Eval fixtures are excluded from the SFT output.")
+        print(f"Validated {len(tasks)} tasks; wrote {count} train examples to {args.sft_out} (profile: {args.profile})")
+        if args.profile == "release":
+            print(f"Wrote reviewed-source provenance sidecar to {args.sft_out}.provenance.json")
+        else:
+            print("Smoke-only synthetic data; no release capability claim. Eval fixtures are excluded from SFT output.")
         return
     if args.cmd == "code-eval":
         from .coding import read_tasks, read_predictions, evaluate, CodingDataError

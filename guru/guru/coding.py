@@ -7,8 +7,13 @@ and hand-authored fixture expectations only.
 from __future__ import annotations
 
 import ast
+from datetime import datetime
+import hashlib
 import json
 import os
+import re
+import tempfile
+import unicodedata
 from pathlib import PurePosixPath, PureWindowsPath
 
 SCHEMA_VERSION = "guru-code-task-v1"
@@ -24,10 +29,26 @@ SYSTEM_PROMPT = (
     '"tests":["..." ]}. Do not claim tests passed unless supplied evidence says so. '
     "Do not use absolute paths, parent-directory paths, or modify files outside the request."
 )
+SOURCE_MANIFEST_SCHEMA = "guru-code-source-manifest-v1"
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_ALLOWED_SOURCE_USES = {"train_sft", "evaluation", "release_weights"}
 
 
 class CodingDataError(ValueError):
     pass
+
+
+def _unique_json_object(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise CodingDataError(f"duplicate JSON object key {key!r}")
+        value[key] = item
+    return value
+
+
+def _reject_json_constant(value):
+    raise CodingDataError(f"non-standard JSON numeric constant {value!r} is not allowed")
 
 
 def read_tasks(path: str) -> list[dict]:
@@ -38,7 +59,7 @@ def read_tasks(path: str) -> list[dict]:
             if not line.strip():
                 continue
             try:
-                row = json.loads(line)
+                row = json.loads(line, object_pairs_hook=_unique_json_object, parse_constant=_reject_json_constant)
                 validate_task(row)
             except (json.JSONDecodeError, CodingDataError) as exc:
                 raise CodingDataError(f"{path}:{line_no}: {exc}") from exc
@@ -100,16 +121,263 @@ def task_prompt(row: dict) -> str:
     return f"{SYSTEM_PROMPT}\n\nTask: {row['prompt']}"
 
 
-def write_sft(tasks: list[dict], destination: str) -> int:
-    """Write the existing Guru teach-compatible prompt/answer JSONL format."""
+def _normalize_json(value):
+    if isinstance(value, str):
+        return unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n"))
+    if isinstance(value, list):
+        return [_normalize_json(item) for item in value]
+    if isinstance(value, dict):
+        return {_normalize_json(key): _normalize_json(item) for key, item in value.items()}
+    return value
+
+
+def canonical_sha256(value: object) -> str:
+    try:
+        canonical = json.dumps(_normalize_json(value), ensure_ascii=False, sort_keys=True,
+                               separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise CodingDataError(f"value cannot be canonically encoded as JSON: {exc}") from exc
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _reviewed_file_sha256(manifest_dir: str, relative_path: object, label: str) -> str:
+    if not isinstance(relative_path, str) or not relative_path.strip() or os.path.isabs(relative_path) or "\\" in relative_path or "\x00" in relative_path:
+        raise CodingDataError(f"{label} must be a safe path relative to the source manifest")
+    parts = PurePosixPath(relative_path).parts
+    if ".." in parts or relative_path.startswith("~"):
+        raise CodingDataError(f"{label} must stay inside the source manifest directory")
+    candidate = os.path.join(manifest_dir, *parts)
+    resolved = os.path.realpath(candidate)
+    if os.path.commonpath((manifest_dir, resolved)) != manifest_dir or os.path.islink(candidate) or not os.path.isfile(resolved):
+        raise CodingDataError(f"{label} must be a regular file inside the source manifest directory")
+    digest = hashlib.sha256()
+    with open(resolved, "rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _read_release_sources(tasks: list[dict], manifest_path: str) -> tuple[dict, str, str]:
+    try:
+        with open(manifest_path, "rb") as stream:
+            raw = stream.read()
+        manifest = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_json_object,
+                              parse_constant=_reject_json_constant)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, CodingDataError) as exc:
+        raise CodingDataError(f"cannot read source manifest {manifest_path}: {exc}") from exc
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != SOURCE_MANIFEST_SCHEMA:
+        raise CodingDataError(f"source manifest schema_version must be {SOURCE_MANIFEST_SCHEMA!r}")
+    sources = manifest.get("sources")
+    if not isinstance(sources, list) or not sources:
+        raise CodingDataError("source manifest requires a non-empty sources list")
+    manifest_dir = os.path.realpath(os.path.dirname(os.path.abspath(manifest_path)))
+
+    by_id = {}
+    for i, source in enumerate(sources):
+        label = f"source manifest sources[{i}]"
+        if not isinstance(source, dict):
+            raise CodingDataError(f"{label} must be an object")
+        source_id = source.get("source_id")
+        if not isinstance(source_id, str) or not source_id.strip():
+            raise CodingDataError(f"{label}.source_id must be a non-empty string")
+        if source_id in by_id:
+            raise CodingDataError(f"duplicate source_id {source_id!r}")
+        if not all(isinstance(source.get(key), str) and source[key].strip()
+                   for key in ("uri", "revision", "attribution", "artifact_path")):
+            raise CodingDataError(f"{label} requires uri, immutable revision, artifact_path, and attribution")
+        if not _SHA256.fullmatch(str(source.get("artifact_sha256", ""))):
+            raise CodingDataError(f"{label}.artifact_sha256 must be lowercase SHA-256")
+        if _reviewed_file_sha256(manifest_dir, source["artifact_path"], f"{label}.artifact_path") != source["artifact_sha256"]:
+            raise CodingDataError(f"{label}.artifact_sha256 does not match the source artifact")
+        license_record = source.get("license")
+        if not isinstance(license_record, dict) or not all(
+                isinstance(license_record.get(key), str) and license_record[key].strip()
+                for key in ("id", "text_uri", "text_path")):
+            raise CodingDataError(f"{label}.license requires id, text_uri, and local text_path")
+        license_id = license_record["id"]
+        if license_id.strip().upper() in {"REVIEW_REQUIRED", "NOASSERTION", "UNKNOWN", "UNLICENSED"}:
+            raise CodingDataError(f"{label}.license.id is unresolved")
+        if license_id.startswith("LicenseRef-") and not re.fullmatch(r"LicenseRef-[A-Za-z0-9.-]+", license_id):
+            raise CodingDataError(f"{label}.license.id has a malformed LicenseRef")
+        if not _SHA256.fullmatch(str(license_record.get("text_sha256", ""))):
+            raise CodingDataError(f"{label}.license.text_sha256 must be lowercase SHA-256")
+        if _reviewed_file_sha256(manifest_dir, license_record["text_path"], f"{label}.license.text_path") != license_record["text_sha256"]:
+            raise CodingDataError(f"{label}.license.text_sha256 does not match the saved license text")
+        review = source.get("rights_review")
+        if not isinstance(review, dict) or review.get("status") != "approved":
+            raise CodingDataError(f"{label} rights review is not approved")
+        if not isinstance(review.get("reviewer"), str) or not review["reviewer"].strip():
+            raise CodingDataError(f"{label} rights review requires a reviewer")
+        reviewed_at = review.get("reviewed_at")
+        if not isinstance(reviewed_at, str) or not reviewed_at.strip():
+            raise CodingDataError(f"{label} rights review requires reviewed_at")
+        try:
+            parsed_reviewed_at = datetime.fromisoformat(reviewed_at.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise CodingDataError(f"{label} rights review reviewed_at must be ISO-8601") from exc
+        if parsed_reviewed_at.tzinfo is None or parsed_reviewed_at.utcoffset() is None:
+            raise CodingDataError(f"{label} rights review reviewed_at must include a timezone")
+        uses = review.get("allowed_uses")
+        if not isinstance(uses, list) or not all(isinstance(use, str) and use in _ALLOWED_SOURCE_USES for use in uses):
+            raise CodingDataError(f"{label}.rights_review.allowed_uses contains missing or unknown uses")
+        if len(uses) != len(set(uses)):
+            raise CodingDataError(f"{label}.rights_review.allowed_uses contains duplicates")
+        task_hashes = source.get("task_hashes")
+        if not isinstance(task_hashes, dict) or not task_hashes:
+            raise CodingDataError(f"{label}.task_hashes must map reviewed task IDs to canonical SHA-256 values")
+        if any(not isinstance(task_id, str) or not task_id.strip() or not isinstance(digest, str) or not _SHA256.fullmatch(digest)
+               for task_id, digest in task_hashes.items()):
+            raise CodingDataError(f"{label}.task_hashes contains an invalid task ID or digest")
+        by_id[source_id] = source
+    return by_id, hashlib.sha256(raw).hexdigest(), manifest_dir
+
+
+def _validate_reviewed_tasks(tasks: list[dict], by_source: dict, manifest_dir: str) -> None:
+    actual_ids = {row["id"] for row in tasks}
+    seen_manifest_tasks = set()
+    rows_by_id = {row["id"]: row for row in tasks}
+    for source_id, source in by_source.items():
+        for task_id, digest in source["task_hashes"].items():
+            if task_id not in actual_ids:
+                raise CodingDataError(f"source {source_id!r} refers to unknown task {task_id!r}")
+            row = rows_by_id[task_id]
+            if digest != canonical_sha256(row):
+                raise CodingDataError(f"task {task_id!r} changed after source review")
+            refs = row["provenance"].get("source_refs", [])
+            if not any(isinstance(ref, dict) and ref.get("source_id") == source_id for ref in refs):
+                raise CodingDataError(f"task {task_id!r} does not reference manifest source {source_id!r}")
+            seen_manifest_tasks.add((source_id, task_id))
+
+    seen_groups, seen_prompts, seen_items = {}, {}, {}
+    if {row["split"] for row in tasks} != {"train", "eval"}:
+        raise CodingDataError("release data requires both train and held-out eval tasks")
+    manifest_task_ids = {task_id for _, task_id in seen_manifest_tasks}
+    for row in tasks:
+        if row["id"] not in manifest_task_ids:
+            raise CodingDataError(f"task {row['id']!r} is absent from the reviewed source manifest")
+        split = row["split"]
+        group = row.get("leakage_group")
+        if not isinstance(group, str) or not group.strip():
+            raise CodingDataError(f"task {row['id']!r} requires a leakage_group for release data")
+        if group in seen_groups and seen_groups[group] != split:
+            raise CodingDataError(f"leakage group {group!r} appears in both train and eval splits")
+        seen_groups[group] = split
+        fingerprint = canonical_sha256({key: row[key] for key in ("language", "prompt", "rubric")})
+        if fingerprint in seen_prompts and seen_prompts[fingerprint] != split:
+            raise CodingDataError(f"task prompt/rubric content is duplicated across train and eval splits")
+        seen_prompts[fingerprint] = split
+        refs = row["provenance"].get("source_refs")
+        if not isinstance(refs, list) or not refs:
+            raise CodingDataError(f"task {row['id']!r} requires at least one reviewed source reference")
+        used_refs = set()
+        for ref in refs:
+            if not isinstance(ref, dict) or set(ref) != {"source_id", "item_id", "item_path", "item_sha256", "transformation"}:
+                raise CodingDataError(f"task {row['id']!r} has a malformed source reference")
+            source_id = ref.get("source_id")
+            if not isinstance(source_id, str) or not source_id.strip():
+                raise CodingDataError(f"task {row['id']!r} source reference needs a source_id")
+            source = by_source.get(source_id)
+            if source is None:
+                raise CodingDataError(f"task {row['id']!r} refers to unknown source {source_id!r}")
+            if source["task_hashes"].get(row["id"]) != canonical_sha256(row):
+                raise CodingDataError(f"task {row['id']!r} is not hash-bound to referenced source {source_id!r}")
+            item_id, item_path, item_sha = ref.get("item_id"), ref.get("item_path"), ref.get("item_sha256")
+            transformation = ref.get("transformation")
+            if not isinstance(item_id, str) or not item_id.strip() or not _SHA256.fullmatch(str(item_sha or "")):
+                raise CodingDataError(f"task {row['id']!r} source reference needs item_id and lowercase item SHA-256")
+            if _reviewed_file_sha256(manifest_dir, item_path, f"task {row['id']!r} source_refs.item_path") != item_sha:
+                raise CodingDataError(f"task {row['id']!r} item_sha256 does not match its saved source item")
+            if not isinstance(transformation, str) or not transformation.strip():
+                raise CodingDataError(f"task {row['id']!r} source reference needs a transformation description")
+            key = (source_id, item_id)
+            if key in used_refs:
+                raise CodingDataError(f"task {row['id']!r} repeats source item {item_id!r}")
+            used_refs.add(key)
+            old_item = seen_items.get(key) or seen_items.get(("sha256", item_sha))
+            if old_item:
+                if old_item[0] != split:
+                    raise CodingDataError(f"source item {item_id!r} appears in both train and eval splits")
+                raise CodingDataError(f"source item {item_id!r} is referenced by more than one task")
+            seen_items[key] = (split, row["id"])
+            seen_items[("sha256", item_sha)] = (split, row["id"])
+            required_use = "train_sft" if split == "train" else "evaluation"
+            if required_use not in source["rights_review"]["allowed_uses"]:
+                raise CodingDataError(f"source {source_id!r} is not approved for {required_use}")
+
+
+def write_sft(tasks: list[dict], destination: str, *, profile: str = "smoke", source_manifest: str | None = None) -> int:
+    """Write Guru teach pairs; release mode requires reviewed source evidence."""
+    if profile not in ("smoke", "release"):
+        raise CodingDataError("profile must be 'smoke' or 'release'")
+    if profile == "release":
+        if not source_manifest:
+            raise CodingDataError("release SFT export requires --source-manifest")
+        if {row["split"] for row in tasks} != {"train", "eval"}:
+            raise CodingDataError("release data requires both train and held-out eval tasks")
+        by_source, manifest_sha, manifest_dir = _read_release_sources(tasks, source_manifest)
+        _validate_reviewed_tasks(tasks, by_source, manifest_dir)
+    else:
+        if source_manifest:
+            raise CodingDataError("--source-manifest requires the explicit release profile")
+        if any(row["split"] == "train" and row["provenance"].get("synthetic_fixture") is not True for row in tasks):
+            raise CodingDataError("smoke SFT export accepts only explicitly marked synthetic fixtures")
+        by_source, manifest_sha = {}, None
     rows = [r for r in tasks if r["split"] == "train"]
     if not rows:
         raise CodingDataError("no train tasks available for instruction tuning")
+    pairs = "".join(json.dumps({"prompt": task_prompt(row), "answer": json.dumps(row["target"], ensure_ascii=False)},
+                               ensure_ascii=False) + "\n" for row in rows).encode("utf-8")
     os.makedirs(os.path.dirname(os.path.abspath(destination)), exist_ok=True)
-    with open(destination, "w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(json.dumps({"prompt": task_prompt(row), "answer": json.dumps(row["target"], ensure_ascii=False)},
-                               ensure_ascii=False) + "\n")
+    if profile == "smoke":
+        with open(destination, "wb") as f:
+            f.write(pairs)
+    else:
+        sidecar_path = destination + ".provenance.json"
+        sidecar = json.dumps({"schema_version": "guru-code-sft-provenance-v1", "profile": "release",
+                              "source_manifest_sha256": manifest_sha, "sft_sha256": hashlib.sha256(pairs).hexdigest(),
+                              "task_ids": [row["id"] for row in rows], "train_count": len(rows),
+                              "task_hashes": {row["id"]: canonical_sha256(row) for row in rows},
+                              "source_refs": {row["id"]: row["provenance"]["source_refs"] for row in rows}},
+                             ensure_ascii=False, sort_keys=True, indent=2).encode("utf-8") + b"\n"
+        if os.path.lexists(sidecar_path):
+            raise CodingDataError("release provenance sidecar already exists; choose a new path")
+        recover_output = os.path.lexists(destination)
+        if recover_output:
+            if os.path.islink(destination) or not os.path.isfile(destination):
+                raise CodingDataError("release SFT output already exists and is not a regular file")
+            with open(destination, "rb") as existing:
+                if existing.read() != pairs:
+                    raise CodingDataError("release SFT output already exists with different bytes; choose a new path")
+        temps = []
+        created_sidecar = False
+        created_output = False
+        try:
+            for content in (pairs, sidecar):
+                with tempfile.NamedTemporaryFile(mode="wb", dir=os.path.dirname(os.path.abspath(destination)),
+                                                 prefix=".guru-code-release-", delete=False) as f:
+                    f.write(content)
+                    temps.append(f.name)
+            # Publish SFT bytes before the sidecar completion marker. If a
+            # crash lands between links, an identical output can be resumed.
+            if not recover_output:
+                os.link(temps[0], destination)
+                created_output = True
+            os.link(temps[1], sidecar_path)
+            created_sidecar = True
+        except OSError:
+            if created_output:
+                try: os.unlink(destination)
+                except OSError: pass
+            if created_sidecar:
+                try: os.unlink(sidecar_path)
+                except OSError: pass
+            for temp in temps:
+                try: os.unlink(temp)
+                except OSError: pass
+            raise
+        for temp in temps:
+            try: os.unlink(temp)
+            except OSError: pass
     return len(rows)
 
 
@@ -172,9 +440,9 @@ def _parse_prediction(text: object) -> tuple[object | None, str | None]:
     if not isinstance(text, str):
         return None, "prediction output must be a string"
     try:
-        return json.loads(text), None
-    except json.JSONDecodeError as exc:
-        return None, f"output is not strict JSON: {exc.msg}"
+        return json.loads(text, object_pairs_hook=_unique_json_object), None
+    except (json.JSONDecodeError, CodingDataError) as exc:
+        return None, f"output is not strict JSON: {getattr(exc, 'msg', str(exc))}"
 
 
 def evaluate(tasks: list[dict], predictions: list[dict]) -> dict:
@@ -243,9 +511,9 @@ def read_predictions(path: str) -> list[dict]:
             if not line.strip():
                 continue
             try:
-                row = json.loads(line)
-            except json.JSONDecodeError as exc:
-                raise CodingDataError(f"{path}:{line_no}: invalid JSON: {exc.msg}") from exc
+                row = json.loads(line, object_pairs_hook=_unique_json_object)
+            except (json.JSONDecodeError, CodingDataError) as exc:
+                raise CodingDataError(f"{path}:{line_no}: invalid JSON: {getattr(exc, 'msg', str(exc))}") from exc
             if not isinstance(row, dict):
                 raise CodingDataError(f"{path}:{line_no}: prediction must be an object")
             rows.append(row)

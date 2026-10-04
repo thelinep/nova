@@ -62,7 +62,7 @@ The checked-in fixtures are original, hand-authored examples; held-out eval
 rows have no target answers and are excluded from `code-data` SFT export.
 
 ```bash
-python -m guru code-data
+python -m guru code-data --profile smoke
 python -m guru code-eval --predictions out/guru-code-predictions.jsonl
 ```
 

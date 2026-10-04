@@ -61,31 +61,67 @@ task to its source records):
   "source_id": "replace-with-stable-id",
   "uri": "https://or-local-immutable-source/",
   "revision": "immutable-commit-or-release-id",
-  "license_spdx": "REVIEW_REQUIRED",
-  "license_text_sha256": "",
-  "source_content_sha256": "",
-  "retrieved_at": "YYYY-MM-DD",
-  "transformation": "describe filtering and normalization, or none",
-  "permitted_uses": {
-    "training": false,
-    "evaluation": false,
-    "weight_redistribution": false
+  "artifact_path": "sources/source-archive.bin",
+  "artifact_sha256": "",
+  "attribution": "Required attribution text",
+  "license": {
+    "id": "LicenseRef-OwnerReviewedTerms",
+    "text_uri": "https://or-local-immutable-license-text/",
+    "text_path": "licenses/source-license.txt",
+    "text_sha256": ""
   },
-  "review": {
-    "status": "not-reviewed",
+  "rights_review": {
+    "status": "approved",
     "reviewer": "",
     "reviewed_at": "",
-    "notes": ""
-  }
+    "allowed_uses": ["train_sft", "evaluation"]
+  },
+  "task_hashes": {"stable-task-id": "canonical-task-sha256"}
 }
 ```
 
-`REVIEW_REQUIRED`, empty digests, a missing reviewer, or a false required use
-must exclude the source from the corresponding dataset/export. Record
-synthetic tasks distinctly; they may remain pipeline fixtures but do not count
-toward capability evaluation. Resolve license and weight-distribution
-conditions with the authorized owner/reviewer; this project code does not make
-legal determinations.
+Each source artifact and saved license text must be inside the source manifest
+directory; Guru verifies both file hashes. Save the exact reviewed upstream
+item bytes as a separate file under that directory too. Each task row
+references one or more sources in `provenance.source_refs`, with the immutable
+upstream `item_id`, `item_path` to those saved bytes, their computed SHA-256,
+and a transformation description. Guru checks each item hash against the
+saved bytes and rejects matching item hashes across rows, including across
+different source IDs. A human reviewer still needs to establish that each
+saved item is faithfully associated with the pinned source artifact. The
+source's `task_hashes` binds its review to canonical task rows. Every release
+corpus must include both train and held-out eval tasks. Give every task a
+`leakage_group`; do not put one project, issue family, or duplicated source
+item on both sides of the split. The example manifest at
+`data/coding/source-manifest.example.json` is intentionally empty and cannot
+be used for release export.
+
+`REVIEW_REQUIRED`, empty/mismatched digests, a missing reviewer, unresolved
+license IDs, unreviewed sources, missing use permission, or an unmanifested
+task fails release export before output files are created. `train_sft`,
+`evaluation` and `release_weights` are separate permissions. A successful SFT
+export proves source-record completeness and hash consistency only; it does
+not settle legal questions or prove model quality. Resolve license and weight
+distribution conditions with the authorized owner/reviewer; this project code
+does not make legal determinations.
+
+The `code-data` default `smoke` profile accepts only rows explicitly marked
+`synthetic_fixture: true` and emits no release claim. Curated data requires the
+explicit `release` profile and source manifest:
+
+```sh
+python -m guru code-data --profile release \
+  --tasks data/coding/release/tasks.jsonl \
+  --source-manifest data/coding/release/sources.json \
+  --sft-out out/guru-code-sft.jsonl
+```
+
+Release mode excludes eval targets from SFT and emits a `.provenance.json`
+sidecar bound to both the exact source manifest bytes and SFT output bytes.
+The `approved` status, reviewer identity, URI, revision, and license identifier
+remain owner/reviewer assertions in the manifest; this local exporter does not
+authenticate the reviewer or independently determine legal rights. Keep that
+review evidence with the corpus.
 
 ## Evaluation and release evidence
 

@@ -44,6 +44,10 @@ python -m guru code-data --sft-out out/guru-code-sft.jsonl
 existing `prompt`/`answer` SFT format. It does not download or add external
 data, train a model, or establish capability. Use `--tasks FILE --sft-out
 FILE` to select another explicitly curated dataset.
+The default `smoke` profile accepts only tasks explicitly marked
+`synthetic_fixture: true`. Release data must use the `release` profile and a
+reviewed source manifest; see [`CODING_RELEASE.md`](CODING_RELEASE.md) for its
+required artifact/license files, row hashes, split groups and command.
 
 The `teach` command is a separate fine-tuning step. It requires a prepared Guru
 tokenizer and an existing base checkpoint at `out/<Guru model name>/best.pt`;
