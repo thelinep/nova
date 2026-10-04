@@ -1,0 +1,50 @@
+"""Offline teacher intake and rights validation."""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from pydantic import ValidationError
+
+from guru.schemas.teacher_lineage import AccessMethod, OutputRights, ReviewStatus, TeacherLineage
+
+
+def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key {key!r}")
+        result[key] = value
+    return result
+
+
+def validate_teacher(teacher: TeacherLineage) -> dict[str, Any]:
+    blockers: list[str] = []
+    if teacher.review_status is not ReviewStatus.APPROVED:
+        blockers.append("review_status is not APPROVED")
+    if teacher.review_status is ReviewStatus.APPROVED and (not teacher.reviewed_by or teacher.reviewed_at is None):
+        blockers.append("approved teacher is missing reviewed_by or reviewed_at")
+    if teacher.output_rights not in {OutputRights.MAY_TRAIN, OutputRights.MAY_REDISTRIBUTE}:
+        blockers.append("output_rights does not permit training")
+    disclosure = teacher.input_disclosure
+    if (teacher.access_method is AccessMethod.API and disclosure.confidentiality_required
+            and not disclosure.transmission_approved_by):
+        blockers.append("confidentiality is required but no transmission approver is recorded")
+    if teacher.access_method is AccessMethod.WEIGHTS and not teacher.model_digest:
+        blockers.append("weights access has no model_digest")
+    return {"admissible": not blockers, "blockers": blockers}
+
+
+def load_registry(path: str | Path) -> list[TeacherLineage]:
+    teachers: list[TeacherLineage] = []
+    with Path(path).open("r", encoding="utf-8") as stream:
+        for line_number, line in enumerate(stream, start=1):
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line, object_pairs_hook=_unique_object)
+                teachers.append(TeacherLineage.model_validate(record))
+            except (json.JSONDecodeError, ValidationError, ValueError) as exc:
+                raise ValueError(f"{path}:{line_number}: invalid teacher registry record") from exc
+    return teachers

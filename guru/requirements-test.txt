@@ -1,0 +1,5 @@
+# Lightweight CPU-only dependencies for Guru-Code apparatus tests.
+# Keep separate from requirements.txt, which includes training/runtime packages.
+pytest==7.4.4
+pydantic==2.13.4
+scipy==1.13.1

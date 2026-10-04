@@ -1,0 +1,1 @@
+"""Teacher model intake validation."""
