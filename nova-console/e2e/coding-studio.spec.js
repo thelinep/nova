@@ -22,7 +22,7 @@ function qualification(digest, capabilities) {
   };
 }
 
-async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false, agentFlow = null } = {}) {
+async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false, agentFlow = null, modelLabel = 'Guru-Code local' } = {}) {
   const base = 'http://127.0.0.1:8791';
   const headers = { Origin: base };
   let releasePreview, releasePlan, previewStarted, planStarted;
@@ -81,7 +81,7 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
       requiredWorkflow: 'single-file', plannedFiles: ['feature.js'], qualification: null,
     } });
     return route.fulfill({ json: {
-      ready: true, requiredWorkflow: 'multi-file', selectedModel: { id: 'guru-code-local', name: 'Guru-Code local', digest: digestQualified },
+      ready: true, requiredWorkflow: 'multi-file', selectedModel: { id: 'guru-code-local', name: modelLabel, digest: digestQualified },
       qualification: { capability: 'multi-file', qualified: true }, plannedFiles: ['feature.js','draft.json'],
       repositoryScope: { observedFiles: 4, presentedFiles: ['feature.js','draft.json'], omittedFiles: [], truncated: false },
     } });
@@ -109,12 +109,12 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
   await page.waitForLoadState('networkidle');
   await page.reload();
   await page.waitForLoadState('networkidle');
-  await page.evaluate(() => {
+  await page.evaluate((demoModelLabel) => {
     DB.models = [
-      { id:'guru-code-local', name:'Guru-Code local', runtime:'ollama', digest:'a'.repeat(64), details:{parameter_size:'7B'}, contextLength:8192 },
+      { id:'guru-code-local', name:demoModelLabel, runtime:'ollama', digest:'a'.repeat(64), details:{parameter_size:'7B'}, contextLength:8192 },
       { id:'unqualified-coder', name:'Unqualified coder', runtime:'ollama', digest:'b'.repeat(64), details:{parameter_size:'7B'}, contextLength:8192 },
     ];
-  });
+  }, modelLabel);
   await page.locator('[data-view="codingstudio"]').click();
   await expect(page.getByRole('heading', { name: 'Coding Studio' })).toBeVisible();
   return {
@@ -376,4 +376,75 @@ test('Studio exposes multi-agent blockers truthfully and remains keyboard usable
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect.poll(() => page.evaluate(() => document.querySelector('#codingstudioView').scrollWidth <= document.querySelector('#codingstudioView').clientWidth)).toBe(true);
   await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test.describe('Guru-Code Playwright demo recording', () => {
+  test('records the simulated proposal, human review, apply and rollback flow', async ({ page }, testInfo) => {
+    const root = await approveFixtureRoot(page);
+    const flow = codingAgentFlow(page, root.id);
+    const video = page.video();
+    const videoPath = process.env.GURU_CODE_DEMO_VIDEO || testInfo.outputPath('guru-code-playwright-demo.webm');
+    fs.mkdirSync(require('node:path').dirname(videoPath), { recursive: true });
+
+    try {
+      await openStudio(page, {
+        roots: [root],
+        agentFlow: flow,
+        modelLabel: 'Guru-Code demo (simulated)',
+      });
+      await page.evaluate(() => {
+        const banner = document.createElement('div');
+        banner.setAttribute('role', 'note');
+        banner.textContent = 'PLAYWRIGHT DEMO · SIMULATED MODEL OUTPUT · NO GURU-CODE CHECKPOINT';
+        Object.assign(banner.style, {
+          position: 'sticky', top: '0', zIndex: '99999', padding: '9px 12px',
+          background: '#713d17', color: '#fff7e8', textAlign: 'center',
+          font: '600 12px/1.4 system-ui, sans-serif', letterSpacing: '.04em',
+        });
+        document.body.prepend(banner);
+      });
+      await page.waitForTimeout(900);
+
+      await fillCodingTask(page);
+      await page.locator('#studioModel').selectOption('guru-code-local');
+      await page.locator('#studioModel option[value="guru-code-local"]').evaluate(option => { option.textContent = 'Guru-Code demo (simulated)'; });
+      await page.getByRole('button', { name: 'Check readiness' }).click();
+      await expect(page.locator('#studioReadiness')).toContainText('Ready for a code proposal');
+      await page.waitForTimeout(1100);
+
+      await page.getByRole('button', { name: 'Ask agent for proposal' }).click();
+      await expect(page.getByText('Agent proposal awaiting your review')).toBeVisible();
+      await expect(page.getByText('No project file has been written by the agent.')).toBeVisible();
+      await page.waitForTimeout(1400);
+
+      await page.getByLabel('Review note').fill('The simulated proposal is limited to the requested fixture change.');
+      await page.getByRole('button', { name: 'Accept proposal for validation' }).click();
+      await expect(page.getByText('Proposal accepted · validation still required')).toBeVisible();
+      await page.waitForTimeout(900);
+      await page.getByRole('button', { name: 'Review exact batch in Local Workspace' }).click();
+      await expect(page.getByLabel('Combined batch diff')).toContainText('+const enabled = true;');
+      await page.waitForTimeout(1100);
+
+      await page.getByRole('button', { name: 'Validate entire batch' }).click();
+      await expect(page.getByRole('button', { name: 'Approve exact batch' })).toBeVisible();
+      await page.waitForTimeout(800);
+      await page.getByRole('button', { name: 'Approve exact batch' }).click();
+      await expect(page.getByRole('button', { name: 'Apply atomically' })).toBeVisible();
+      await page.waitForTimeout(800);
+      await page.getByRole('button', { name: 'Apply atomically' }).click();
+      await expect(page.getByText('Applied 2 change(s).')).toBeVisible();
+      await page.waitForTimeout(1000);
+      await page.getByRole('button', { name: 'Roll back batch' }).click();
+      await expect(page.getByText('Rolled back — every file restored to its pre-batch state.')).toBeVisible();
+      expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+      await page.waitForTimeout(1400);
+    } finally {
+      await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } }).catch(() => {});
+      await page.close();
+      if (video) {
+        await video.saveAs(videoPath);
+        await testInfo.attach('Guru-Code simulated Playwright demo', { path: videoPath, contentType: 'video/webm' });
+      }
+    }
+  });
 });

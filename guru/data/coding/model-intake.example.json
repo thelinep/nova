@@ -1,0 +1,49 @@
+{
+  "schema_version": "guru-code-model-intake-v1",
+  "intake_id": "",
+  "model_id": "",
+  "model_sha256": "",
+  "adapter_sha256": null,
+  "intended_use": "",
+  "student_base": false,
+  "teacher": false,
+  "runtime_only": false,
+  "tokenizer": {
+    "id": "",
+    "revision": "",
+    "sha256": ""
+  },
+  "context_tokens": null,
+  "runtime": {
+    "name": "",
+    "version": "",
+    "artifact_sha256": ""
+  },
+  "permissions": {
+    "weights_use": "pending_review",
+    "weights_modification": "pending_review",
+    "weights_distribution": "pending_review",
+    "teacher_output_training": "pending_review",
+    "input_transmission": "pending_review",
+    "input_retention": "pending_review",
+    "provider_training_on_inputs": "pending_review",
+    "permitted_scopes": [],
+    "evidence_refs": []
+  },
+  "review": {
+    "status": "pending_review",
+    "reviewer": "",
+    "reviewed_at": null,
+    "notes_ref": null
+  },
+  "lineage": {
+    "base_model_intake_id": null,
+    "parent_model_intake_ids": [],
+    "source_manifest_refs": [],
+    "task_refs": [],
+    "trajectory_refs": [],
+    "teacher_output_refs": [],
+    "derived_artifact_refs": []
+  },
+  "notes": "Blank template. No permission, provenance, or capability is asserted."
+}

@@ -17,6 +17,28 @@ not a claim that Guru-Code or autonomous agent execution is production-ready.
 - The current product note assumes one local operator; shared projects and
   multi-user collaboration are outside this release.
 
+## Future: Ollama-independent Guru runtime
+
+The future direction is to let Maataa Workstation run Guru locally without
+requiring Ollama. The current Coding Studio remains Ollama-backed: model
+inventory, chat, planning and exact-digest qualification call the Ollama
+runtime directly.
+
+Guru already has a checkpoint-to-Hugging-Face-to-GGUF export path using a
+pinned llama.cpp converter, followed by Ollama import. A future runtime phase
+can evaluate a direct llama.cpp backend first, then consider Apple-native
+inference if it offers a verified benefit. Keep runtime choice separate from
+model identity and qualification: records must bind the exact model artifact
+digest, tokenizer, context, runtime version and tested capabilities. The
+Ollama adapter can remain available for other local models.
+
+This direction needs a shared local-runtime contract for discovery, metadata,
+load/unload, chat and streaming, cancellation, context reporting, resource
+status and digest identity; Maataa's planner, agent runtime and qualification
+suite must consume that contract instead of assuming Ollama. It is not
+implemented yet. The current local micro prototype cannot use this export path
+because it has a temporary byte tokenizer and only 512 positions.
+
 ## Phases and status
 
 | Phase | Result | Status and evidence |
@@ -26,7 +48,35 @@ not a claim that Guru-Code or autonomous agent execution is production-ready.
 | 2. Guru-Code data/evaluation foundation | Versioned task format, provenance fields, train-only SFT export and target-free held-out fixture checks | Plumbing implemented in `guru/data/coding/`, `guru/guru/coding.py` and `guru/CODING.md`. V1 retains train/eval; v2 adds target-bearing validation and requires all three splits for release. Mixed schema versions are rejected. The checked-in examples remain synthetic smoke fixtures, not a representative corpus or capability benchmark. |
 | 3. One-project Coding Studio | Readiness check, selected model, bounded request, reviewable proposal, existing validation/approval/apply/rollback flow, Guru readiness and read-only team status | Implemented in `nova-console/public/index.html`; help is in `nova-console/docs/help/41-coding-studio.md`; deterministic browser coverage is in `nova-console/e2e/coding-studio.spec.js`. |
 | 4. Independent Agent Studio | Dispatch independent agents for bounded coding work; turn each result into a validated proposal; keep every result pending human review; allow writes only through Maataa's approved batch flow | Implemented for one local operator and one approved project. The Studio has bounded dispatch/retry/cancel/review routes in `nova-console/server.js`; exact-model, scoped-policy and budget gates plus startup recovery in `nova-console/lib/coding-agent-runtime.js`; a coding-only job bridge and cancellation/halt propagation; digest-bound proposal acceptance that creates the batch transactionally only after human review. Acceptance creates a draft batch only: existing validation, separate approval, apply and rollback remain in Maataa Local Workspace. The UI now renders proposal code, review notes and state-specific actions. Generic agent endpoints and non-coding job kinds remain separate. Full gate evidence is recorded below after the current complete run. |
-| 5. Guru-Code capability release | Train, export and qualify a dedicated code model against representative held-out tasks | **Open.** There is no trained Guru-Code checkpoint or established coding capability in this checkout. One external synthetic shard is fetched to ignored local quarantine, with high duplicate counts and source/teacher terms still requiring review. The host has no training-capable CUDA runtime; the current 7B trainer is unsharded and estimated to exceed an 80 GB GPU before activations. No safe evaluator for arbitrary generated code is available; Maataa's project workflow runner is not that sandbox. This phase needs rights-reviewed data, a tested memory strategy and approved GPU host, isolated execution-based evaluation, and exact-digest Maataa qualification. See [`guru/CODING_PHASE5_EXECUTION_PACKET.md`](guru/CODING_PHASE5_EXECUTION_PACKET.md) for the review, preflight and evaluator plans. |
+| 5. Guru-Code capability release | Train, export and qualify a dedicated code model against representative held-out tasks | **Open.** No release-capable or exportable Guru-Code checkpoint exists. A tiny CPU training-path smoke run has since completed, but its temporary byte tokenizer and 512-position context make it non-exportable and non-qualifying. The external synthetic shard remains quarantined with source/teacher rights and quality unresolved. The host has no usable MPS/CUDA training runtime; the 7B trainer still needs a tested memory strategy. No isolated evaluator for generated code is available. Close the staged work breakdown below before training or release. GPU spend remains research/preparation only unless explicitly approved. See [`guru/CODING_PHASE5_EXECUTION_PACKET.md`](guru/CODING_PHASE5_EXECUTION_PACKET.md). |
+
+## Guru-Code holistic data and model-learning roadmap
+
+This is the work breakdown for open Phase 5. “Absorbing” an existing model
+must specify whether it is a student base, a response/logit teacher, a live
+runtime tool, or a weight-merge input. Multi-agent traces are candidate
+training evidence, not automatically correct answers. The current v1/v2 task
+schema and exporter do not yet consume the new separate multi-agent
+trajectory validator or store complete teacher lineage in their released SFT
+sidecars. The trajectory format is a foundation, not an admitted corpus.
+
+| Step | Work and exit gate | Status |
+| --- | --- | --- |
+| 5.1 Scope and benchmark contract | Freeze the task mix, project-size limits, context requirement, per-target pass bars and baseline before examining held-out outcomes. The requested scope is 17 language/format targets plus Git tooling; Git is not a programming language. | Partial: inventory and samples are in [`guru/CODING.md`](guru/CODING.md) and [`guru/GURU_CODE_CHEAT_SHEET.md`](guru/GURU_CODE_CHEAT_SHEET.md). Parser/runtime coverage and pass bars are open. |
+| 5.2 Holistic evidence schema | Version linked records for intent, acceptance criteria, immutable project/source context, files/symbols/dependencies, patch, explanation, commands, tests, raw results, revision/outcome, author/teacher IDs, digests, permission and leakage group. Keep Brahmi explanation separate from conventional code. | Foundation implemented as `guru-code-trajectory-v1` in `guru/guru/trajectories.py` with seven focused tests. It validates structure, lineage shapes, bounds, held-out target fields and split groups. It does not resolve references, prove rights or integrate with task validation, release manifests or SFT export. |
+| 5.3 Existing-model inventory and roles | Inventory candidate pretrained student bases and candidate teachers separately. For each, record model/adapter digest, architecture, tokenizer, context, runtime/API, access mode, terms and intended use. Decide which model initializes Guru and which only supplies examples or feedback. | Blank intake template and structural validator added in `guru/data/coding/model-intake.example.json` and `guru/guru/model_intake.py`. No candidate inventory or admitted base/student/teacher. |
+| 5.4 Rights and data-transmission review | Review base weights, teacher access, generated outputs, derived examples and student-weight distribution separately. Decide whether each task may be sent to an external teacher, including provider retention/training, confidentiality and residency conditions. | Structural permission fields, evidence references and role-specific approval requirements are validated; the validator does not resolve evidence or decide rights. Nothing is reviewed or approved. Do not send proprietary code or quarantined data to a teacher until input transmission, provider retention/training and residency terms are approved. |
+| 5.5 Corpus collection and curation | Build approved original and external material across the frozen scope. Keep training, retrieval-only, evaluation-only and quarantine pools distinct. Pin source bytes and toolchain versions; deduplicate by task/repository/family; label quality, difficulty and provenance. | Open: existing examples are synthetic smoke fixtures; the downloaded shard is not admitted. |
+| 5.6 Multi-agent trace generation | For approved tasks, record structured Planner → Coder → Tester → Reviewer → Supervisor turns. Capture role/model digests, prompt, context digest, message/action, patch, evaluator evidence, revision and human disposition. Agents propose; Maataa retains its separate validation, approval and write controls. | Record validation implemented, but no trace-generation integration. Do not train on unverified conversation text or consensus alone. |
+| 5.7 Trace quality and adjudication | Check source permissions, duplicate/leakage groups, parser/compiler results, executable tests and security behavior. Set explicit acceptance thresholds, review sampling, conflict handling and rejection reasons; preserve failed attempts only with labels that prevent treating them as gold targets. | Review policy draft added to `guru/CODING_RELEASE.md`; numeric benchmark pass bars, reviewer sampling rates and real adjudication evidence remain open. |
+| 5.8 Language toolchains and isolated evaluator | Pin parsers/compilers and task runners for each supported target. Prove a disposable evaluator has no host/project/credential mounts or egress and enforces resource, time and cleanup limits before running generated code. | Target catalog and a Docker CLI evaluator scaffold are added. No toolchains are pinned; Docker daemon/VM hardening, payload format, adversarial isolation tests and cleanup guarantees are not qualified. Do not use this scaffold to execute generated code yet. Existing syntax evidence is Python-only. |
+| 5.9 Leakage-safe splits | Group by repository, source item, task family, generated trajectory and duplicates before splitting. Freeze train, validation and target-free hidden evaluation; prevent teacher generation, prompt iteration and model selection from exposing held-out targets. | Partial: v1/v2 split validation exists, but holistic trace groups and a representative benchmark remain open. |
+| 5.10 Training preflight | Select an approved base checkpoint with the required tokenizer/context. Test memory strategy, reproducible dependencies, checkpoint/restart and an honest compute estimate before any paid run. | Open. The local CPU smoke run demonstrates only a tiny training path; current host/runtime does not meet the release requirement. No GPU provisioning or spend is authorized by this roadmap. |
+| 5.11 Baseline response distillation | Generate small candidate sets from reviewed teacher(s), verify and adjudicate them, then fine-tune the selected student with ordinary sequence SFT. Measure per-language/task changes against the declared baseline; stop on regressions. | Open; recommended first model-transfer experiment after Steps 5.2–5.10. |
+| 5.12 Multi-agent trajectory distillation | Compare compact role-tagged collaboration traces against the response-SFT baseline under the same student and frozen evaluation suite. Train on useful actions, checked changes and concise explanations; don’t require exposing private chain-of-thought. | Open; dependent on recorded traces, evaluator and base student. Research precedents include [MapCoder-Lite](https://aclanthology.org/2026.findings-eacl.346/) and [Chain-of-Agents](https://arxiv.org/abs/2508.13167), not a Guru capability guarantee. |
+| 5.13 Advanced transfer experiments | Separately test student-on-policy teacher feedback, logits/hidden states, continued pretraining and weight merging. Require method-specific compatibility and permission checks; compare total teacher, review, training, evaluation and inference costs. Keep only repeatable gains. | Later experiments; not a launch prerequisite for the first response-SFT baseline. |
+| 5.14 Exact artifact release | Hash base/student/tokenizer/training recipe and exports; verify runtime and at least 4096 context. Pass hidden executable correctness/security thresholds, then Maataa’s six exact-digest capabilities with three clean trials each (18 total). | Open; no qualified Guru-Code artifact exists. |
+| 6. Ollama-independent runtime | After an eligible model exists, implement a shared runtime contract, evaluate direct llama.cpp first, keep Ollama as an adapter, and qualify every exact model/runtime pair. Consider Apple-native inference only if it shows a verified benefit. | Future; not implemented. |
 
 ## Independent Agent Studio acceptance gates
 
@@ -88,11 +138,12 @@ exact-digest qualification on the real exported artifact.
 ## Validation evidence for this increment
 
 - Fresh local runs on 2026-10-04 for this branch's current Maataa working tree:
-  - `npm run test:all` in `nova-console`: Node **752 passed, 3 skipped, 0
-    failed**; Playwright **58 passed, 1 skipped, 0 failed**; Rust **16 passed,
+  - `npm run test:all` after the Guru-Code demo addition: Node **752 passed, 3 skipped, 0
+    failed**; Playwright **59 passed, 1 skipped, 0 failed**; Rust **16 passed,
     0 failed**. The browser skip is the existing Ashtadhyayi/Sanskrit engine
     integration that needs an optional local engine.
-  - The full Playwright run passed all **9 Coding Studio scenarios**, including
+  - The full Playwright run passed all **9 Coding Studio scenarios** and the
+    Guru-Code demo recording, including
     agent review, stale readiness, delayed responses, and 390px keyboard use.
     The earlier focused agent review subset passed 4/4: accepted
     proposal through separate validation, approval, apply and rollback;
@@ -106,11 +157,15 @@ exact-digest qualification on the real exported artifact.
     release requirements, mixed-schema rejection, reviewed source item byte
     hashes, leakage checks, duplicate-key and non-standard-number rejection,
     no-clobber output, and interrupted sidecar recovery.
-  - The full Guru unit suite reports **48 passed, 2 skipped, 0 failed**. The
-    two skipped tests require optional Vidyut. It ran in a temporary environment with the repository-declared
-    SentencePiece dependency; the base Python environment remains unchanged.
-    These CPU tests and synthetic benchmark do not verify 7B CUDA capacity or
-    certify a coding model.
+  - New trajectory, model-intake and evaluator-focused Python tests pass
+    **24/24**. The full Guru suite ran **74 tests**: **70 passed, 2 skipped,
+    2 errored** because `sentencepiece` is absent in the current base Python
+    environment. Those errors are in existing tokenizer-dependent tests. The
+    two skipped tests require optional integrations. These CPU tests and
+    synthetic benchmark do not verify 7B CUDA capacity or certify a coding
+    model.
+  - `npm run demo:guru-code` generated a 1440×900 WebM from the simulated
+    proposal/review/apply/rollback UI flow. It exercises no Guru-Code model.
 - The first Node run in the restricted sandbox failed local-listener tests with
   `EPERM`; the passing rerun had localhost access enabled. The first focused
   Playwright run caught an assertion-label mismatch in the new planning-race
@@ -137,8 +192,10 @@ finds that Guru's from-scratch 7B trainer needs a memory-capacity pass before
 any paid multi-week training reservation.
 
 The synthetic trainer benchmark has only been smoke-tested on CPU and makes no
-capacity claim. A source review also found no safe evaluator for untrusted
-generated code on this host; existing Maataa validation commands run with local
-workstation access. Until Phase 5's rights, training-capacity, isolated
-evaluation and exact-digest gates are passed, the roadmap remains open and
-Guru-Code is not releasable.
+capacity claim. A Docker CLI evaluator scaffold and mock-only lifecycle tests
+now exist, but Docker is not running on this host and no reviewed image,
+daemon/VM configuration, adversarial isolation suite, or evaluator integration
+is proven. Existing Maataa validation commands still run with local workstation
+access. Until Phase 5's rights, training-capacity, isolated evaluation and
+exact-digest gates are passed, the roadmap remains open and Guru-Code is not
+releasable.

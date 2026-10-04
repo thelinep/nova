@@ -1,0 +1,455 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "guru-code-toolchain-catalog",
+  "observed_date": "2026-10-04",
+  "purpose": "Proposed per-target toolchain and qualification hooks. This is an inventory, not a support claim or authorization to execute generated code.",
+  "status_legend": {
+    "verified_limited": "Repository evidence confirms only the explicitly named limited check; this does not imply semantic, runtime, security, or model capability.",
+    "proposed_unverified": "Suggested direction only; tool versions, evaluator image digest, tests, and qualification evidence are not yet approved or proven."
+  },
+  "common_requirements": {
+    "pinning": "Before qualification, select exact tool versions and immutable evaluator image digests; record OS/architecture, tool versions, dependencies, config, and hashes. Null version fields mean no version is selected.",
+    "execution_boundary": "Execute generated code only inside an adversarially tested disposable evaluator with no host/project/credential mounts and no network egress; enforce CPU, memory, process, disk, output, and wall-clock limits and verify cleanup.",
+    "evidence": [
+      "Exact tool and evaluator image versions/digests plus reproducible invocation",
+      "Parser/compiler/type-check results on representative target-specific cases",
+      "Frozen held-out tasks separated by repository/source/family, with raw per-case outcomes",
+      "For executable targets: isolated execution, expected-output/tests, timeout/resource-limit, cancellation, cleanup, and adversarial isolation results",
+      "Known limitations, unsupported syntax/version modes, and human review disposition"
+    ]
+  },
+  "targets": [
+    {
+      "id": "python",
+      "name": "Python",
+      "category": "programming_language",
+      "status": "verified_limited",
+      "verified_evidence": "Guru evaluator invokes Python ast.parse for Python candidate contents; docs state only Python syntax is parsed. The audited host had Python 3.12.4, but this does not establish a pinned evaluator toolchain.",
+      "documentation": [
+        "https://docs.python.org/3/"
+      ],
+      "suggested_toolchain": {
+        "parser": "CPython ast module",
+        "compiler_or_checker": "CPython compileall or py_compile",
+        "runtime": "CPython",
+        "proposed_version": null,
+        "pinning": "Pin exact CPython patch release in evaluator image; no release selected."
+      },
+      "evaluator_hook": "Parse first; if executable tests are authorized, run pytest or unittest inside the disposable evaluator.",
+      "required_evidence": [
+        "Python syntax cases including invalid input",
+        "Pinned interpreter and dependency lock",
+        "Isolated unit tests and no-egress/resource/cleanup evidence"
+      ]
+    },
+    {
+      "id": "go",
+      "name": "Go",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://go.dev/doc/",
+        "https://pkg.go.dev/cmd/go"
+      ],
+      "suggested_toolchain": {
+        "parser": "go/parser via gofmt",
+        "compiler_or_checker": "go test / go vet",
+        "runtime": "Go toolchain runtime",
+        "proposed_version": null,
+        "pinning": "Pin exact Go release and module dependency checksums; select after benchmark scope freeze."
+      },
+      "evaluator_hook": "gofmt -d then go test ./... inside disposable evaluator with module/network access disabled after dependency staging.",
+      "required_evidence": [
+        "Formatting/parser and compile failures",
+        "Module checksum and offline dependency policy",
+        "Isolated tests, fuzz/resource limits, no-egress proof"
+      ]
+    },
+    {
+      "id": "c",
+      "name": "C",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://gcc.gnu.org/onlinedocs/",
+        "https://clang.llvm.org/docs/"
+      ],
+      "suggested_toolchain": {
+        "parser": "Clang frontend diagnostics",
+        "compiler_or_checker": "Clang or GCC; standard mode must be fixed",
+        "runtime": "Native executable in disposable Linux VM/container",
+        "proposed_version": null,
+        "pinning": "Select compiler and C standard; pin compiler build, sysroot, flags, and evaluator image."
+      },
+      "evaluator_hook": "clang -fsyntax-only followed by isolated compile-and-test only for authorized executable tasks.",
+      "required_evidence": [
+        "Pinned C language standard and compiler",
+        "Warnings/errors corpus and memory-safety instrumentation policy",
+        "Sandboxed runtime tests and adversarial isolation evidence"
+      ]
+    },
+    {
+      "id": "cpp",
+      "name": "C++",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://clang.llvm.org/docs/",
+        "https://eel.is/c++draft/"
+      ],
+      "suggested_toolchain": {
+        "parser": "Clang C++ frontend diagnostics",
+        "compiler_or_checker": "Clang or GCC with explicit -std mode",
+        "runtime": "Native executable in disposable Linux VM/container",
+        "proposed_version": null,
+        "pinning": "Pin compiler, C++ standard, standard library, sysroot, build flags, dependencies, and evaluator image."
+      },
+      "evaluator_hook": "clang++ -fsyntax-only then isolated project build/tests with network disabled.",
+      "required_evidence": [
+        "Explicit C++ standard and ABI/toolchain",
+        "Compile and template-heavy representative cases",
+        "Sandboxed tests, sanitizer policy, resource and cleanup proof"
+      ]
+    },
+    {
+      "id": "csharp",
+      "name": "C#",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://learn.microsoft.com/dotnet/csharp/",
+        "https://learn.microsoft.com/dotnet/core/tools/"
+      ],
+      "suggested_toolchain": {
+        "parser": "Roslyn compiler diagnostics",
+        "compiler_or_checker": "dotnet build and dotnet test",
+        "runtime": ".NET runtime",
+        "proposed_version": null,
+        "pinning": "Pin SDK, target framework, NuGet lock file, and evaluator image."
+      },
+      "evaluator_hook": "dotnet build --no-restore then dotnet test --no-build within the isolated evaluator.",
+      "required_evidence": [
+        "SDK/runtime/framework and NuGet versions locked",
+        "Build/test outcomes and package provenance",
+        "Network-disabled sandbox, process/resource limits, cleanup evidence"
+      ]
+    },
+    {
+      "id": "rust",
+      "name": "Rust",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://doc.rust-lang.org/book/",
+        "https://doc.rust-lang.org/cargo/"
+      ],
+      "suggested_toolchain": {
+        "parser": "rustfmt parser or rustc front end",
+        "compiler_or_checker": "rustc / cargo check / cargo test",
+        "runtime": "Native executable in disposable Linux VM/container",
+        "proposed_version": null,
+        "pinning": "Pin rustc/cargo toolchain, target triple, Cargo.lock, and evaluator image."
+      },
+      "evaluator_hook": "cargo fmt --check and cargo test --locked --offline after dependencies are staged.",
+      "required_evidence": [
+        "Toolchain channel/version, target, and lockfile",
+        "Compile/test outcomes including unsafe-code cases",
+        "Offline execution, resource limits, cancellation and cleanup proof"
+      ]
+    },
+    {
+      "id": "javascript",
+      "name": "JavaScript",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide",
+        "https://nodejs.org/docs/latest/api/"
+      ],
+      "suggested_toolchain": {
+        "parser": "Node.js V8 parser or pinned ESLint parser",
+        "compiler_or_checker": "ESLint with locked config (optional)",
+        "runtime": "Node.js",
+        "proposed_version": null,
+        "pinning": "Pin Node.js patch release, package manager, lockfile, and evaluator image."
+      },
+      "evaluator_hook": "node --check for syntax; run tests in a restricted Node process/container with network and host access denied.",
+      "required_evidence": [
+        "ECMAScript/runtime mode pinned",
+        "Syntax and module-resolution cases",
+        "Isolated test, child-process, resource, timeout, and cleanup results"
+      ]
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://www.typescriptlang.org/docs/",
+        "https://www.typescriptlang.org/tsconfig"
+      ],
+      "suggested_toolchain": {
+        "parser": "TypeScript compiler API",
+        "compiler_or_checker": "tsc --noEmit",
+        "runtime": "Pinned Node.js after explicit transpilation",
+        "proposed_version": null,
+        "pinning": "Pin TypeScript, Node.js, tsconfig, package manager, dependency lock, and evaluator image."
+      },
+      "evaluator_hook": "tsc --noEmit using a locked tsconfig, then execute compiled tests in the isolated evaluator.",
+      "required_evidence": [
+        "Compiler, target/lib settings, and Node versions pinned",
+        "Type-check and transpilation cases",
+        "Isolated runtime tests and no-egress/cleanup proof"
+      ]
+    },
+    {
+      "id": "java",
+      "name": "Java",
+      "category": "programming_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://docs.oracle.com/en/java/",
+        "https://dev.java/learn/"
+      ],
+      "suggested_toolchain": {
+        "parser": "javac diagnostics or Eclipse JDT parser",
+        "compiler_or_checker": "javac and locked build tool",
+        "runtime": "OpenJDK or Oracle JDK runtime",
+        "proposed_version": null,
+        "pinning": "Pin JDK distribution/version, language release, build tool wrapper, and dependency locks."
+      },
+      "evaluator_hook": "Compile with javac --release N and run project tests inside disposable evaluator.",
+      "required_evidence": [
+        "JDK vendor/build, release target, and build/dependency locks",
+        "Compile/test outcomes",
+        "JVM process, filesystem/network, memory/time and cleanup controls"
+      ]
+    },
+    {
+      "id": "bash",
+      "name": "Bash",
+      "category": "command_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://www.gnu.org/software/bash/manual/"
+      ],
+      "suggested_toolchain": {
+        "parser": "bash -n",
+        "compiler_or_checker": "ShellCheck (Bash dialect)",
+        "runtime": "Bash",
+        "proposed_version": null,
+        "pinning": "Pin Bash and ShellCheck versions, dialect, OS base, and evaluator image."
+      },
+      "evaluator_hook": "bash -n and shellcheck; execute only in the isolated evaluator with minimal environment and no secrets.",
+      "required_evidence": [
+        "Bash version and dialect recorded",
+        "Static findings and edge cases",
+        "Command-spawn, environment, filesystem/network, timeout, and cleanup tests"
+      ]
+    },
+    {
+      "id": "posix_shell",
+      "name": "POSIX shell",
+      "category": "command_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://pubs.opengroup.org/onlinepubs/9799919799/utilities/V3_chap02.html"
+      ],
+      "suggested_toolchain": {
+        "parser": "dash -n or another declared POSIX shell parser",
+        "compiler_or_checker": "ShellCheck in sh mode",
+        "runtime": "dash as selected POSIX shell implementation",
+        "proposed_version": null,
+        "pinning": "Pin shell implementation/version, target OS/base image, and POSIX edition."
+      },
+      "evaluator_hook": "dash -n and ShellCheck --shell=sh; execute only in the isolated evaluator.",
+      "required_evidence": [
+        "POSIX edition and concrete shell implementation pinned",
+        "Portability cases across declared target set",
+        "Isolated command/environment/resource/network/cleanup evidence"
+      ]
+    },
+    {
+      "id": "powershell",
+      "name": "PowerShell",
+      "category": "command_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://learn.microsoft.com/powershell/",
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_language"
+      ],
+      "suggested_toolchain": {
+        "parser": "System.Management.Automation.Language.Parser",
+        "compiler_or_checker": "PSScriptAnalyzer",
+        "runtime": "PowerShell (pwsh)",
+        "proposed_version": null,
+        "pinning": "Pin PowerShell release, .NET runtime, analyzer rules, OS image, and evaluator image."
+      },
+      "evaluator_hook": "ParseFile plus PSScriptAnalyzer; run tests only in a disposable restricted worker.",
+      "required_evidence": [
+        "PowerShell edition/version and OS pinned",
+        "Parser/analyzer results and module lock/provenance",
+        "Constrained process, filesystem/network, timeout and cleanup evidence"
+      ]
+    },
+    {
+      "id": "html",
+      "name": "HTML",
+      "category": "markup_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://html.spec.whatwg.org/"
+      ],
+      "suggested_toolchain": {
+        "parser": "Nu HTML Checker (v.Nu) or parse5",
+        "compiler_or_checker": "HTML conformance checker",
+        "runtime": "Pinned browser engine only for behavior tests",
+        "proposed_version": null,
+        "pinning": "Pin checker and browser engine versions; record standard snapshot and evaluator image."
+      },
+      "evaluator_hook": "Validate static documents with checker; use isolated headless browser only for explicitly scoped rendering/behavior cases.",
+      "required_evidence": [
+        "Checker/browser versions and standards mode",
+        "Malformed/nested/document conformance cases",
+        "Browser isolation, network denial, resource and cleanup results for behavior tests"
+      ]
+    },
+    {
+      "id": "xml",
+      "name": "XML",
+      "category": "markup_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://www.w3.org/TR/xml/"
+      ],
+      "suggested_toolchain": {
+        "parser": "libxml2 xmllint with network/external entities disabled",
+        "compiler_or_checker": "xmllint --noout plus pinned schema validator where needed",
+        "runtime": "No runtime by default",
+        "proposed_version": null,
+        "pinning": "Pin parser/library, schema versions and resolver policy."
+      },
+      "evaluator_hook": "xmllint --nonet --noout; disable DTD/external entity resolution unless a reviewed fixture explicitly requires it.",
+      "required_evidence": [
+        "XML edition and parser/library version",
+        "Malformed, namespace, schema, XXE and entity-expansion test cases",
+        "Proof external resolution is disabled and resource bounds enforced"
+      ]
+    },
+    {
+      "id": "css",
+      "name": "CSS",
+      "category": "stylesheet_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://www.w3.org/Style/CSS/",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference"
+      ],
+      "suggested_toolchain": {
+        "parser": "PostCSS parser",
+        "compiler_or_checker": "stylelint with locked config",
+        "runtime": "Pinned browser engine only for visual/behavior tests",
+        "proposed_version": null,
+        "pinning": "Pin parser/linter, browser engine, supported CSS feature baseline, and evaluator image."
+      },
+      "evaluator_hook": "stylelint and parse checks; browser rendering only in isolated browser worker with network disabled.",
+      "required_evidence": [
+        "CSS feature baseline and parser/linter versions",
+        "Parse/lint and scoped browser cases",
+        "Browser sandbox and asset/network containment evidence"
+      ]
+    },
+    {
+      "id": "sql",
+      "name": "SQL",
+      "category": "query_language",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://www.postgresql.org/docs/current/sql-commands.html"
+      ],
+      "suggested_toolchain": {
+        "parser": "SQLGlot in explicitly selected dialect or PostgreSQL parser",
+        "compiler_or_checker": "PostgreSQL EXPLAIN/prepare in disposable database",
+        "runtime": "Ephemeral PostgreSQL with fixture-only database",
+        "proposed_version": null,
+        "pinning": "Pin SQL dialect, parser, database engine/version, schema fixtures and evaluator image."
+      },
+      "evaluator_hook": "Parse with a dialect-explicit parser; run approved queries only against ephemeral least-privilege database with no network.",
+      "required_evidence": [
+        "Dialect and engine version pinned",
+        "Schema/parameterization/query-result tests",
+        "Database isolation, destructive statement controls, resource limits, and cleanup proof"
+      ]
+    },
+    {
+      "id": "json",
+      "name": "JSON",
+      "category": "data_format",
+      "status": "proposed_unverified",
+      "verified_evidence": null,
+      "documentation": [
+        "https://www.ecma-international.org/publications-and-standards/standards/ecma-404/"
+      ],
+      "suggested_toolchain": {
+        "parser": "Pinned standards-conformant JSON parser",
+        "compiler_or_checker": "JSON Schema validator only when a versioned schema is specified",
+        "runtime": "No runtime by default",
+        "proposed_version": null,
+        "pinning": "Pin parser and JSON Schema dialect/validator version when used."
+      },
+      "evaluator_hook": "Strict parse with duplicate-key policy declared; validate schema only against a pinned schema dialect.",
+      "required_evidence": [
+        "Parser/version, encoding, duplicate-key and numeric policies",
+        "Valid/invalid and size/depth cases",
+        "Schema identifier/dialect and validator digest when schema checking applies"
+      ]
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "category": "version_control_workflows",
+      "status": "proposed_unverified",
+      "verified_evidence": "Repository is a Git checkout; this proves Git is present in the workflow, not Guru's ability or authorization to perform Git operations.",
+      "documentation": [
+        "https://git-scm.com/docs/",
+        "https://git-scm.com/docs/gittutorial"
+      ],
+      "suggested_toolchain": {
+        "parser": "git diff --check plus structured diff/status inspection",
+        "compiler_or_checker": "Git CLI",
+        "runtime": "Git CLI with isolated temporary repository fixtures",
+        "proposed_version": null,
+        "pinning": "Pin Git version and fixture image; bind commands to explicit repo root and allowed operation set."
+      },
+      "evaluator_hook": "Use temporary disposable repositories for status/diff/branch/merge-conflict exercises; never commit, push, rewrite history, or touch operator repo in evaluation.",
+      "required_evidence": [
+        "Git version and config baseline pinned",
+        "Fixtures for clean/dirty trees, conflicts, ignored/untracked files, and path safety",
+        "Proof all operations stay inside temp repo; explicit review/approval boundary for mutations"
+      ]
+    }
+  ],
+  "non_claims": [
+    "No target is model-qualified by this catalog.",
+    "Python's verified_limited status refers only to AST syntax parsing in Guru's offline evaluator.",
+    "The current evaluator does not execute candidate code.",
+    "The local Python version observed in the release audit is not an approved or pinned isolated evaluator toolchain.",
+    "Git being present in the repository workflow does not grant Guru permission to commit or push."
+  ]
+}

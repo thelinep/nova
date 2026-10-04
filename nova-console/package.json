@@ -13,6 +13,7 @@
     "test:ui": "playwright test",
     "test:e2e": "playwright test",
     "test:browser": "playwright test --config=playwright.browser.config.js --reporter=line",
+    "demo:guru-code": "playwright test --config=playwright.guru-code-demo.config.js --grep \"Guru-Code Playwright demo recording\"",
     "test:jobs": "node --test tests/jobs.test.js",
     "test:policy": "node --test tests/policy.test.js",
     "test:rollback": "node --test tests/rollback.test.js",

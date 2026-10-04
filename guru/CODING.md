@@ -109,6 +109,33 @@ replace/expand them before making model-quality claims.
 - Model context, training scale, inference quality, tool integration, and Maataa
   coding qualification must be assessed separately on the exact exported model.
 
+## Requested language coverage (roadmap only)
+
+Python remains the only language in the current Guru-Code fixtures and syntax
+checks. The expanded target scope is:
+
+- **Programming and command languages:** Python, Go, C, C++, C#, Rust,
+  JavaScript, TypeScript, Java, Bash, POSIX shell and PowerShell.
+- **Markup, style, query and data formats:** HTML, XML, CSS, SQL and JSON.
+
+Git is an additional **developer-tooling target**, not a programming language.
+The companion [Guru-Code cheat sheet](GURU_CODE_CHEAT_SHEET.md) gives a short
+description, sample and documentation reference for each listed target and for
+reviewable Git workflows. Git operations that alter a repository remain subject
+to Maataa's existing review and approval flow; examples in the cheat sheet do
+not grant Guru permission to commit or push.
+The versioned machine-readable list of targets, proposed toolchains, official
+documentation and per-target evidence gates is
+[`data/coding/toolchain-catalog.v1.json`](data/coding/toolchain-catalog.v1.json).
+Proposed toolchains have no version pins until they are selected and tested.
+
+The request's “dos” and “is” were confirmed as **Go** and **TypeScript**.
+None of these additions is implemented or model-qualified by being listed
+here. Each language or format needs an appropriate parser/compiler, pinned
+isolated toolchain, representative held-out tasks, and runtime/security checks
+where executable behavior is involved. Add further targets through this
+explicit inventory rather than treating “and others” as automatic support.
+
 See [`CODING_RELEASE.md`](CODING_RELEASE.md) for per-source rights and
 provenance records, target-free executable benchmark requirements, the exact
 artifact chain, and the incomplete release manifest template at
