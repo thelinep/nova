@@ -263,6 +263,35 @@ student suitable for these experiments. All admitted distillation examples
 must satisfy the same frozen-split, executable-evaluation, exact-artifact and
 Maataa-qualification requirements below.
 
+## First transfer experiment: response distillation vs. SFT
+
+The first proposed model-transfer experiment is documented in
+[`experiments/exp-rd-vs-sft-001/PLAN.md`](experiments/exp-rd-vs-sft-001/PLAN.md).
+It compares one admitted teacher's reviewed response targets with SFT-only on
+the same task IDs, one student base, one frozen Python evaluation suite, and
+two matched seeds per arm. It records all ten cost categories and explicit
+not-applicable reasons. No training, teacher request, external transmission,
+GPU spend, or evaluation execution has started.
+
+[`experiments/exp-rd-vs-sft-001/preregistration.json`](experiments/exp-rd-vs-sft-001/preregistration.json)
+is deliberately marked `blocked_draft`: teacher/student identities, rights,
+dataset and evaluation hashes, host, reviewers, budget, wall-clock ceiling and
+owner sign-off are not supplied. The policy names and thresholds are drafts,
+not ratified rules. The sibling `report.md` is an empty result template.
+
+The pure decision utility at `guru/experiments/decision.py` refuses to decide
+unless completed evidence cites a `pre_registered` record, both arms, a
+matching frozen evaluation, identical task-ID digests, two matched seeds,
+blind human-review outcomes, actual costs for all categories, explicit reasons
+for not-applicable costs, and a budget ceiling. `guru/experiments/report.py`
+binds the pre-registration SHA-256 to the exact canonical JSON record and
+checks that the reported hypothesis, model lineage, evaluation set, split and
+policy versions match that record. It renders the comparison from those
+records. Both are offline utilities: they do not authenticate owner approvals,
+references or signatures, establish rights, validate the truth of evidence, or
+run models or evaluators. Any positive result would still require separate
+exact-digest Maataa qualification.
+
 ## Evaluation and release evidence
 
 Before training, publish a versioned benchmark plan with target-free tests for

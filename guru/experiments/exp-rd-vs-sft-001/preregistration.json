@@ -1,0 +1,133 @@
+{
+  "schema_version": "guru-code-experiment-prereg-v1",
+  "experiment_id": "exp-rd-vs-sft-001",
+  "status": "blocked_draft",
+  "hypothesis": "Reviewed response distillation from an admitted teacher improves executable correctness on Guru-Code tasks by at least +0.02 absolute over SFT-only, at no more than 3x total cost, with no security regression. The cost ceiling may rise to 5x only if executable correctness improves by at least +0.05.",
+  "decision_rule_version": "rd-sft-v0.1-proposed",
+  "decision_rule_owner_ratification_ref": null,
+  "decision_rule": {
+    "correctness_gain_minimum": 0.02,
+    "correctness_gain_for_5x_cost": 0.05,
+    "cost_ratio_maximum": 3.0,
+    "cost_ratio_maximum_for_5x": 5.0,
+    "security_regression_allowed": 0.0,
+    "matched_seed_tolerance": 0.01,
+    "seed_disagreement_inconclusive_above": 0.02,
+    "seed_count_per_arm": 2
+  },
+  "owner": null,
+  "owner_signoff": null,
+  "experiment_started": false,
+  "teacher": {
+    "intake_id": null,
+    "intake_record_sha256": null,
+    "output_training_permission": "pending_review",
+    "input_disclosure_approval_ref": null,
+    "transmission_approver": null
+  },
+  "student_base": {
+    "intake_id": null,
+    "intake_record_sha256": null,
+    "minimum_context_tokens": 4096
+  },
+  "model_lineage": {
+    "teacher_intake_sha256": null,
+    "teacher_model_sha256": null,
+    "teacher_adapter_sha256": null,
+    "student_base_intake_sha256": null,
+    "student_base_sha256": null,
+    "tokenizer_sha256": null,
+    "context_tokens": null,
+    "training_recipe_sha256": null,
+    "evaluator_image_sha256": null
+  },
+  "data_plan": {
+    "task_family": "small executable Python coding tasks",
+    "minimum_total_tasks": 500,
+    "split": {
+      "method": "Sort by SHA-256 of UTF-8 task_id bytes (task_id breaks hash ties); assign floor(0.8N) train, next floor(0.1N) validation, remainder hidden test",
+      "train_percent": 80,
+      "validation_percent": 10,
+      "test_percent": 10,
+      "total_count": null,
+      "train_count": null,
+      "validation_count": null,
+      "test_count": null,
+      "train_task_ids_sha256": null,
+      "validation_task_ids_sha256": null,
+      "test_task_ids_sha256": null
+    },
+    "frozen_eval_set": {
+      "id": "guru-eval-v1",
+      "sha256": null,
+      "size": null,
+      "task_ids_sha256": null
+    }
+  },
+  "evaluation": {
+    "evaluator_invocation_sha256": null,
+    "evidence_schema_version": null
+  },
+  "policies": {
+    "quality_policy_version": "quality-v0.1-proposed",
+    "disclosure_policy_version": "disclosure-v0.1-proposed",
+    "owner_ratification_ref": null
+  },
+  "arms": {
+    "sft_only": {
+      "target_source": "admitted human-written targets",
+      "seed_ids": [null, null]
+    },
+    "response_distill": {
+      "target_source": "human-adjudicated admitted teacher responses for identical task IDs",
+      "seed_ids": [null, null]
+    }
+  },
+  "training_protocol": {
+    "training_host": null,
+    "hardware_class": null,
+    "wall_clock_ceiling_hours_per_arm": null,
+    "checkpoint_selection_rule": null,
+    "arm_specific_tuning_allowed": false
+  },
+  "human_review": {
+    "tier_a_reviewers": [null, null],
+    "tier_b_sample_rate": 0.1,
+    "tier_b_minimum_sample": 5,
+    "tier_c_sample_rate": 0.01,
+    "tier_c_minimum_sample": 1,
+    "owner_disagreement_escalation": null,
+    "blinded_to_arm": true
+  },
+  "costs": {
+    "budget_ceiling_usd": null,
+    "categories": {
+      "teacher_inference": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "data_generation_overhead": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "input_disclosure_review": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "data_review": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "quality_gate_runs": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "student_training": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "evaluation": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "inference_at_deployment": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "engineering": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null},
+      "storage_and_transfer": {"sft_only_estimate_usd": null, "response_distill_estimate_usd": null}
+    }
+  },
+  "blocking_prerequisites": [
+    "approved teacher and student model-intake records with exact digests and applicable rights",
+    "per-task input disclosure policy and named transmission approval",
+    "at least 500 approved, validator-clean Python tasks in total across the 80/10/10 split",
+    "frozen train/validation/test split and committed guru-eval-v1 digest",
+    "reviewed, digest-pinned, adversarially tested isolated evaluator",
+    "implemented and owner-ratified quality and disclosure policies",
+    "two named Tier A reviewers and finalized sampling/escalation policy",
+    "approved training host, tested training recipe, actual cost instrumentation, and owner-approved budget ceiling",
+    "completed and reviewed immutable pre-registration before any teacher call or training"
+  ],
+  "non_authorizations": [
+    "This draft is not a pre-registration or permission to begin the experiment.",
+    "GPU spending remains research and preparation only.",
+    "No teacher calls, corpus transmission, data admission, training, evaluation execution, or deployment is authorized by this file."
+  ]
+}
