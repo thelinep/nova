@@ -284,6 +284,8 @@ item snapshot and reject corpora without both train and held-out eval rows.
   integration.
 - `npm run demo:guru-code`: **1 passed**; the recorded proposal/review/apply/
   rollback scenario is synthetic and does not invoke a trained Guru model.
+  The 1440×900 WebM is checked in at
+  [`guru/demo/guru-code-playwright-demo-2026-10-05.webm`](guru/demo/guru-code-playwright-demo-2026-10-05.webm).
 - `npm run test:rust`: **16 passed, 0 failed**.
 - Guru's isolated Python 3.12.1 environment: **71 passed** across the
   disclosure, quality, corpus, teacher intake, evaluator-mock, trajectory and
