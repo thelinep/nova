@@ -63,7 +63,6 @@ rows have no target answers and are excluded from `code-data` SFT export.
 
 ```bash
 python -m guru code-data
-python -m guru teach --size nano --pairs out/guru-code-sft.jsonl
 python -m guru code-eval --predictions out/guru-code-predictions.jsonl
 ```
 
@@ -73,7 +72,17 @@ relative paths, Python syntax and shallow fixture rubrics; it does not execute
 generated code. Guru-Code needs a dedicated provenance-reviewed code corpus,
 model/context work and substantially broader held-out evaluation before any
 capability claim. See [`CODING.md`](CODING.md) for the record format, report
-limits and prediction format.
+limits and prediction format, and [`CODING_RELEASE.md`](CODING_RELEASE.md) for
+the provenance intake, execution benchmark and end-to-end release evidence
+requirements.
+
+`code-data` only exports the train split; it does not train a model. `teach`
+requires a previously trained Guru base checkpoint and the matching prepared
+tokenizer. The default nano preset has only 512 tokens of context, while
+Maataa's current Coding Studio requires at least 4096. The documented 7b
+preset reaches 4096 tokens but requires GPU-cluster training resources; no
+eligible Guru base checkpoint or coding corpus is currently provided. See
+[`CODING.md`](CODING.md) for the gated SFT sequence.
 
 Training on NVIDIA GPUs: `torchrun --nproc_per_node 8 -m guru train --size base-1b --compile`. It uses bf16 and fused AdamW.
 

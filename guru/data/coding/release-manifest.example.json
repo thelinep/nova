@@ -1,0 +1,62 @@
+{
+  "schema_version": "guru-code-release-v1",
+  "status": "incomplete-template",
+  "model_family": "Guru-Code",
+  "capability_established": false,
+  "scope": {
+    "languages": [],
+    "task_categories": [],
+    "minimum_context_tokens": 4096,
+    "thresholds_frozen_at": null
+  },
+  "data": {
+    "source_manifest": null,
+    "source_manifest_sha256": null,
+    "split_manifest": null,
+    "split_manifest_sha256": null,
+    "held_out_targets_excluded": false,
+    "rights_review_record": null
+  },
+  "training": {
+    "repository_commit": null,
+    "dependency_lock_sha256": null,
+    "base_checkpoint_sha256": null,
+    "tokenizer_sha256": null,
+    "base_pretraining_configuration": null,
+    "base_pretraining_log_sha256": null,
+    "sft_configuration": null,
+    "sft_log_sha256": null,
+    "base_pretraining_seed": null,
+    "sft_seed": null,
+    "run_environment": null
+  },
+  "artifacts": {
+    "checkpoint_sha256": null,
+    "huggingface_export_sha256": null,
+    "gguf_sha256": null,
+    "ollama_model_id": null,
+    "ollama_digest": null,
+    "verified_context_tokens": null
+  },
+  "evaluation": {
+    "benchmark_revision": null,
+    "runner_image_digest": null,
+    "baseline_id": null,
+    "thresholds_sha256": null,
+    "raw_results_sha256": null,
+    "decision": "not-run"
+  },
+  "maataa_qualification": {
+    "ollama_digest": null,
+    "record_id": null,
+    "workflow": null,
+    "passed_trials": null,
+    "required_trials": 18,
+    "decision": "not-run"
+  },
+  "review": {
+    "reviewer": null,
+    "reviewed_at": null,
+    "limitations": []
+  }
+}

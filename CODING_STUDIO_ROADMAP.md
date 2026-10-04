@@ -69,13 +69,19 @@ not a claim that Guru-Code or autonomous agent execution is production-ready.
 - Never treat SFT export success, an example-set pass or a model's `Guru-Code`
   label as proof of capability.
 
-The 2026-10-04 environment audit found no Guru-Code checkpoint or encoded code
-corpus; SentencePiece and the GGUF Python package are missing. The host is
-CPU-only with installed PyTorch below the repository's declared minimum. The
-two training examples and three held-out synthetic examples validate plumbing,
-not capability. Closing these gates requires owner-provided rights-reviewed
-data plus suitable training resources; Maataa's separate 18-trial exact-digest
-qualification must also pass on a real imported artifact.
+The fresh 2026-10-04 host audit found no Guru-Code checkpoint or encoded code
+corpus. The M3 Pro host has Metal hardware, but its installed PyTorch 2.2.2
+reports MPS unavailable; the Guru requirements specify PyTorch 2.4 or newer.
+SentencePiece and the GGUF Python package are absent. Guru's nano/mini/small
+configurations have only 512/1024/1024 tokens and base-1b has 2048; only its
+7b configuration meets Maataa's current 4096-token minimum. The two training
+examples and three held-out synthetic examples validate plumbing, not
+capability. The detailed intake and release evidence contract is in
+`guru/CODING_RELEASE.md`, with a deliberately incomplete machine-readable
+template in `guru/data/coding/release-manifest.example.json`. Closing these
+gates requires owner-provided rights-reviewed data and a suitable training
+host, followed by executable evaluation and Maataa's separate 18-trial
+exact-digest qualification on the real exported artifact.
 
 ## Validation evidence for this increment
 
