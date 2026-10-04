@@ -15,8 +15,10 @@ Observed on 2026-10-04 in this checkout and host:
 - `guru/data/coding/model.json` records a null checkpoint, no capability claim,
   and no verified context length. No Guru `.pt`, safetensors, or GGUF artifact,
   prepared Guru tokenizer, or prepared token corpus is present in `guru/`.
-- The available Python is 3.12.4 with PyTorch 2.2.2; `guru/requirements.txt`
-  requires PyTorch 2.4 or newer. SentencePiece and `gguf` are not installed.
+- The available Python is 3.12.4 with PyTorch 2.3.1; `guru/requirements.txt`
+  requires PyTorch 2.4 or newer. SentencePiece and `gguf` are not installed in
+  the base environment (SentencePiece was added to a temporary test-only
+  virtualenv for the full Guru unit suite).
   The host is an Apple M3 Pro with Metal hardware, but the installed PyTorch
   reports MPS unavailable; CUDA is unavailable too. Hardware presence alone is
   not usable training capacity.
@@ -89,10 +91,14 @@ and a transformation description. Guru checks each item hash against the
 saved bytes and rejects matching item hashes across rows, including across
 different source IDs. A human reviewer still needs to establish that each
 saved item is faithfully associated with the pinned source artifact. The
-source's `task_hashes` binds its review to canonical task rows. Every release
-corpus must include both train and held-out eval tasks. Give every task a
-`leakage_group`; do not put one project, issue family, or duplicated source
-item on both sides of the split. The example manifest at
+source's `task_hashes` binds its review to canonical task rows. A v1 release
+corpus retains its existing `train` plus target-free `eval` requirement. A v2
+release corpus requires all three splits: target-bearing `train`, target-bearing
+`validation`, and target-free `eval`. Validation may support model selection and
+tuning, but only `train` rows are ever copied into SFT. Give every task a
+`leakage_group`; no project, issue family, duplicate prompt/rubric, or source
+item may cross any split boundary. Do not mix schema versions in one release
+corpus. The example manifest at
 `data/coding/source-manifest.example.json` is intentionally empty and cannot
 be used for release export.
 
@@ -116,8 +122,10 @@ python -m guru code-data --profile release \
   --sft-out out/guru-code-sft.jsonl
 ```
 
-Release mode excludes eval targets from SFT and emits a `.provenance.json`
-sidecar bound to both the exact source manifest bytes and SFT output bytes.
+Release mode exports only train targets (for both schemas) and emits a
+`.provenance.json` sidecar bound to both the exact source manifest bytes and SFT
+output bytes. V2 validation targets are available for validation workflows but
+never enter the training pairs.
 The `approved` status, reviewer identity, URI, revision, and license identifier
 remain owner/reviewer assertions in the manifest; this local exporter does not
 authenticate the reviewer or independently determine legal rights. Keep that

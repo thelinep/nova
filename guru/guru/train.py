@@ -5,6 +5,8 @@ Stops cleanly at a token budget or a time budget, keeps the best checkpoint by
 validation loss, and can resume. Every evaluation writes a line to log.jsonl
 with the loss, speed and a short sample, and Guru-Panini's score of the sample.
 """
+from __future__ import annotations
+
 import json
 import math
 import os
@@ -17,7 +19,6 @@ import torch.distributed as dist
 
 from .config import GuruConfig, preset
 from .model import GuruForCausalLM
-from .tokenizer import Tokenizer, BOS, EOS
 from . import panini
 
 PROMPT_TEMPLATE = "### प्रश्न / Question:\n{prompt}\n\n### उत्तर / Answer:\n"
@@ -52,6 +53,9 @@ class TokenStream:
 class SFTStream:
     """Question/answer pairs in the Guru template; the loss counts only the answer tokens."""
     def __init__(self, path, tok: Tokenizer, seq_len, seed=0):
+        from .tokenizer import EOS
+
+        self.eos_id = EOS
         self.items = []
         with open(path, encoding="utf-8") as f:
             for line in f:
@@ -71,7 +75,7 @@ class SFTStream:
     def batch(self, bs, device):
         pick = self.rng.integers(0, len(self.items), size=bs)
         T = min(self.seq_len, max(len(self.items[i][0]) for i in pick) - 1)
-        x = torch.full((bs, T), EOS, dtype=torch.long); y = torch.full((bs, T), -100, dtype=torch.long); m = torch.zeros((bs, T))
+        x = torch.full((bs, T), self.eos_id, dtype=torch.long); y = torch.full((bs, T), -100, dtype=torch.long); m = torch.zeros((bs, T))
         for r, i in enumerate(pick):
             ids, mask = self.items[i]
             n = min(len(ids) - 1, T)
@@ -86,14 +90,115 @@ def lr_at(step, total, peak, warmup):
     return peak * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * progress)))
 
 
+def _synthetic_benchmark(model, raw_model, opt, cfg, *, steps, seq_len, micro_bs,
+                         accumulation, device, amp, rank=0, world=1):
+    """Run fixed synthetic optimizer steps without touching corpus or checkpoint files."""
+    cuda = device.startswith("cuda")
+    if cuda:
+        torch.cuda.synchronize(device)
+        torch.cuda.reset_peak_memory_stats(device)
+    if world > 1:
+        dist.barrier()
+    started = time.perf_counter()
+    step_events = []
+    model.train()
+    opt.zero_grad(set_to_none=True)
+    for step in range(steps):
+        if cuda:
+            start_event = torch.cuda.Event(enable_timing=True)
+            end_event = torch.cuda.Event(enable_timing=True)
+            start_event.record()
+        for micro in range(accumulation):
+            x = torch.randint(cfg.vocab_size, (micro_bs, seq_len), device=device)
+            y = torch.randint(cfg.vocab_size, (micro_bs, seq_len), device=device)
+            if world > 1:
+                model.require_backward_grad_sync = micro == accumulation - 1
+            with amp:
+                _, loss = model(x, y)
+            (loss / accumulation).backward()
+        torch.nn.utils.clip_grad_norm_(raw_model.parameters(), 1.0)
+        opt.step()
+        opt.zero_grad(set_to_none=True)
+        if cuda:
+            end_event.record()
+            step_events.append((start_event, end_event))
+    if cuda:
+        torch.cuda.synchronize(device)
+    elapsed = time.perf_counter() - started
+    if world > 1:
+        # Report the slowest rank's wall time and memory use as the run-level result.
+        device_type = device if device.startswith("cuda") else "cpu"
+        stats = torch.tensor(
+            [elapsed,
+             torch.cuda.max_memory_allocated(device) if cuda else 0,
+             torch.cuda.max_memory_reserved(device) if cuda else 0],
+            dtype=torch.float64, device=device_type,
+        )
+        dist.all_reduce(stats, op=dist.ReduceOp.MAX)
+        elapsed, peak_allocated, peak_reserved = (float(v) for v in stats.cpu().tolist())
+    else:
+        peak_allocated = torch.cuda.max_memory_allocated(device) if cuda else None
+        peak_reserved = torch.cuda.max_memory_reserved(device) if cuda else None
+
+    tokens_per_step = seq_len * micro_bs * accumulation * world
+    result = {
+        "kind": "guru_synthetic_training_benchmark",
+        "model_name": cfg.name,
+        "parameter_count": raw_model.num_parameters(),
+        "torch_version": torch.__version__,
+        "cuda_runtime_version": torch.version.cuda,
+        "device": device,
+        "device_name": torch.cuda.get_device_name(device) if cuda else None,
+        "forward_precision": "bfloat16_autocast" if cuda else "fp32",
+        "synthetic_data": True,
+        "steps": steps,
+        "sequence_length": seq_len,
+        "micro_batch_size_per_rank": micro_bs,
+        "gradient_accumulation_steps": accumulation,
+        "world_size": world,
+        "global_tokens_per_optimizer_step": tokens_per_step,
+        "elapsed_seconds": round(elapsed, 6),
+        "average_step_latency_seconds": round(elapsed / steps, 6),
+        "global_tokens_per_second": round(steps * tokens_per_step / max(elapsed, 1e-12), 2),
+        "cuda_peak_allocated_bytes": peak_allocated,
+        "cuda_peak_reserved_bytes": peak_reserved,
+        "cuda_memory_scope": "maximum across ranks" if world > 1 else "this process",
+        "checkpoint_written": False,
+        "training_capacity_claim": False,
+    }
+    if cuda:
+        event_ms = [start.elapsed_time(end) for start, end in step_events]
+        result["cuda_event_rank0_step_latency_ms_mean"] = round(sum(event_ms) / len(event_ms), 3)
+        result["cuda_event_rank0_step_latency_ms_max"] = round(max(event_ms), 3)
+    if rank == 0:
+        print("BENCHMARK_RESULT " + json.dumps(result, sort_keys=True))
+    return result
+
+
 def sample(model, tok, prompt, device, n=48):
+    from .tokenizer import EOS
+
     ids = torch.tensor([tok.encode(prompt, bos=True)], device=device)
     out = model.generate(ids, max_new_tokens=n, temperature=0.8, top_k=40, eos_id=EOS)
     return tok.decode(out[0].tolist())
 
 
 def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minutes=None, tokens=None, micro_bs=None,
-          resume=False, device=None, sft=None, init_from=None, eval_every=200, seed=1337, compile_model=False, overrides=None):
+          resume=False, device=None, sft=None, init_from=None, eval_every=200, seed=1337, compile_model=False,
+          overrides=None, benchmark_steps=None, benchmark_seq_len=None, benchmark_accumulation=1):
+    benchmark = benchmark_steps is not None
+    if benchmark:
+        if not isinstance(benchmark_steps, int) or isinstance(benchmark_steps, bool) or benchmark_steps < 1:
+            raise ValueError("benchmark_steps must be a positive integer")
+        if minutes is not None or tokens is not None or resume or sft or init_from or compile_model:
+            raise ValueError("synthetic benchmark cannot be combined with training budgets, resume, SFT, checkpoints, or torch.compile")
+        if (not isinstance(benchmark_accumulation, int) or isinstance(benchmark_accumulation, bool)
+                or benchmark_accumulation < 1):
+            raise ValueError("benchmark_accumulation must be a positive integer")
+        if micro_bs is not None and (not isinstance(micro_bs, int) or isinstance(micro_bs, bool) or micro_bs < 1):
+            raise ValueError("micro_bs must be a positive integer")
+    elif benchmark_seq_len is not None or benchmark_accumulation != 1:
+        raise ValueError("benchmark sequence length and accumulation require benchmark_steps")
     ddp = int(os.environ.get("WORLD_SIZE", "1")) > 1
     rank = 0
     if ddp:
@@ -103,7 +208,12 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
     master = rank == 0
     torch.manual_seed(seed + rank)
     tokenizer_path = tokenizer_path or os.path.join(data_dir, "guru-dhatu.model")
-    tok = Tokenizer(tokenizer_path)
+    if benchmark:
+        tok = None
+    else:
+        from .tokenizer import Tokenizer
+
+        tok = Tokenizer(tokenizer_path)
 
     ckpt = None
     if init_from or resume:
@@ -111,9 +221,17 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
         ckpt = torch.load(src, map_location="cpu", weights_only=False)
         cfg = GuruConfig.from_dict(ckpt["config"])
     else:
-        cfg = preset(size, vocab_size=tok.vocab_size, **(overrides or {}))
-    if cfg.vocab_size != tok.vocab_size:
+        preset_options = dict(overrides or {})
+        if not benchmark:
+            preset_options["vocab_size"] = tok.vocab_size
+        cfg = preset(size, **preset_options)
+    if not benchmark and cfg.vocab_size != tok.vocab_size:
         raise SystemExit(f"The tokenizer has {tok.vocab_size} pieces but the model expects {cfg.vocab_size}.")
+    seq = cfg.max_seq_len
+    if benchmark:
+        seq = cfg.max_seq_len if benchmark_seq_len is None else benchmark_seq_len
+        if not isinstance(seq, int) or seq < 1 or seq > cfg.max_seq_len:
+            raise ValueError(f"benchmark_seq_len must be an integer from 1 through the model context ({cfg.max_seq_len})")
     if sft:
         cfg.name = cfg.name.replace("-instruct", "") + "-instruct"
 
@@ -126,13 +244,16 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
     if ddp:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[int(os.environ["LOCAL_RANK"])])
 
-    seq = cfg.max_seq_len
     micro_bs = micro_bs or {"nano": 16, "mini": 8, "small": 4}.get(size, 2)
     world = dist.get_world_size() if ddp else 1
-    accum = max(1, cfg.batch_tokens // (seq * micro_bs * world))
+    accum = benchmark_accumulation if benchmark else max(1, cfg.batch_tokens // (seq * micro_bs * world))
     budget = int(tokens or cfg.train_tokens)
     total_steps = max(1, budget // (seq * micro_bs * accum * world))
-    if sft:
+    if benchmark:
+        stream = val_stream = None
+        total_steps = benchmark_steps
+        peak = cfg.lr
+    elif sft:
         stream = SFTStream(sft, tok, seq, seed + rank)
         val_stream = None
         total_steps = min(total_steps, int(tokens or 0) // (seq * micro_bs * accum) or 600)
@@ -152,6 +273,15 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
         opt.load_state_dict(ckpt["optimizer"]); step = ckpt["step"]; best = ckpt.get("best_val", best)
 
     amp = torch.autocast("cuda", dtype=torch.bfloat16) if device.startswith("cuda") else nullcontext()
+    if benchmark:
+        result = _synthetic_benchmark(
+            model, raw_model, opt, cfg, steps=benchmark_steps, seq_len=seq,
+            micro_bs=micro_bs, accumulation=accum, device=device, amp=amp,
+            rank=rank, world=world,
+        )
+        if ddp:
+            dist.destroy_process_group()
+        return result
     os.makedirs(out_dir, exist_ok=True)
     if master:
         with open(os.path.join(out_dir, "config.json"), "w") as f:

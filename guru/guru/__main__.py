@@ -39,6 +39,9 @@ def main(argv=None):
     p = sub.add_parser("prepare"); p.add_argument("--size", default="nano"); p.add_argument("--vocab", type=int, default=0); p.add_argument("--own-weight", type=int, default=3); p.add_argument("--panini-weight", type=int, default=3)
     tr = sub.add_parser("train"); tr.add_argument("--size", default="nano"); tr.add_argument("--minutes", type=float); tr.add_argument("--tokens", type=float)
     tr.add_argument("--micro-bs", type=int); tr.add_argument("--resume", action="store_true"); tr.add_argument("--device"); tr.add_argument("--eval-every", type=int, default=200); tr.add_argument("--lr", type=float); tr.add_argument("--compile", action="store_true")
+    tr.add_argument("--benchmark-steps", type=int, help="run exactly N synthetic optimizer steps; writes no checkpoint and proves no training capacity")
+    tr.add_argument("--benchmark-seq-len", type=int, help="synthetic benchmark sequence length (at most the selected model context)")
+    tr.add_argument("--benchmark-accumulation", type=int, default=1, help="synthetic benchmark microbatches per optimizer step")
     te = sub.add_parser("teach"); te.add_argument("--size", default="nano"); te.add_argument("--pairs", default=""); te.add_argument("--panini", action="store_true", help="add question/answer pairs built from the Ashtadhyayi and Dhatupatha"); te.add_argument("--minutes", type=float, default=20); te.add_argument("--device")
     cd = sub.add_parser("code-data", help="validate Guru-Code tasks and write Guru teach-compatible training pairs")
     cd.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
@@ -170,7 +173,9 @@ def main(argv=None):
         from .train import train
         ov = {"lr": args.lr} if args.lr else {}
         train(args.size, DATA, out_for(args.size), tok_path, minutes=args.minutes, tokens=args.tokens, micro_bs=args.micro_bs,
-              resume=args.resume, device=args.device, eval_every=args.eval_every, compile_model=args.compile, overrides=ov); return
+              resume=args.resume, device=args.device, eval_every=args.eval_every, compile_model=args.compile, overrides=ov,
+              benchmark_steps=args.benchmark_steps, benchmark_seq_len=args.benchmark_seq_len,
+              benchmark_accumulation=args.benchmark_accumulation); return
     if args.cmd == "teach":
         from .train import train
         base = os.path.join(out_for(args.size), "best.pt")

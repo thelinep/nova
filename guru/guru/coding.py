@@ -17,6 +17,7 @@ import unicodedata
 from pathlib import PurePosixPath, PureWindowsPath
 
 SCHEMA_VERSION = "guru-code-task-v1"
+SCHEMA_VERSION_V2 = "guru-code-task-v2"
 PLAN_SCHEMA = {
     "summary": "short string",
     "files": [{"path": "project-relative path", "content": "complete file contents"}],
@@ -69,6 +70,9 @@ def read_tasks(path: str) -> list[dict]:
             rows.append(row)
     if not rows:
         raise CodingDataError(f"{path}: no tasks found")
+    versions = {row["schema_version"] for row in rows}
+    if len(versions) > 1:
+        raise CodingDataError(f"{path}: task corpus cannot mix schema versions")
     return rows
 
 
@@ -79,12 +83,14 @@ def validate_task(row: object) -> None:
     missing = required - row.keys()
     if missing:
         raise CodingDataError(f"missing fields: {', '.join(sorted(missing))}")
-    if row["schema_version"] != SCHEMA_VERSION:
-        raise CodingDataError(f"schema_version must be {SCHEMA_VERSION!r}")
+    if row["schema_version"] not in (SCHEMA_VERSION, SCHEMA_VERSION_V2):
+        raise CodingDataError(f"schema_version must be {SCHEMA_VERSION!r} or {SCHEMA_VERSION_V2!r}")
     if not isinstance(row["id"], str) or not row["id"].strip():
         raise CodingDataError("id must be a non-empty string")
-    if row["split"] not in ("train", "eval"):
-        raise CodingDataError("split must be 'train' or 'eval'")
+    version = row["schema_version"]
+    allowed_splits = ("train", "eval") if version == SCHEMA_VERSION else ("train", "validation", "eval")
+    if row["split"] not in allowed_splits:
+        raise CodingDataError(f"split must be one of {', '.join(repr(split) for split in allowed_splits)}")
     if not isinstance(row["language"], str) or not row["language"].strip():
         raise CodingDataError("language must be a non-empty string")
     if not isinstance(row["prompt"], str) or not row["prompt"].strip():
@@ -106,7 +112,7 @@ def validate_task(row: object) -> None:
     snippets = rubric.get("required_test_snippets", [])
     if not isinstance(snippets, list) or not all(isinstance(s, str) for s in snippets):
         raise CodingDataError("rubric.required_test_snippets must be a list of strings")
-    if row["split"] == "train":
+    if row["split"] in ("train", "validation"):
         target = row.get("target")
         if not isinstance(target, dict):
             raise CodingDataError("train tasks require a target plan object")
@@ -249,8 +255,15 @@ def _validate_reviewed_tasks(tasks: list[dict], by_source: dict, manifest_dir: s
             seen_manifest_tasks.add((source_id, task_id))
 
     seen_groups, seen_prompts, seen_items = {}, {}, {}
-    if {row["split"] for row in tasks} != {"train", "eval"}:
-        raise CodingDataError("release data requires both train and held-out eval tasks")
+    versions = {row["schema_version"] for row in tasks}
+    if len(versions) != 1:
+        raise CodingDataError("release data cannot mix task schema versions")
+    version = next(iter(versions))
+    required_splits = {"train", "eval"} if version == SCHEMA_VERSION else {"train", "validation", "eval"}
+    if {row["split"] for row in tasks} != required_splits:
+        if version == SCHEMA_VERSION:
+            raise CodingDataError("release data requires both train and held-out eval tasks")
+        raise CodingDataError("v2 release data requires train, validation, and held-out eval tasks")
     manifest_task_ids = {task_id for _, task_id in seen_manifest_tasks}
     for row in tasks:
         if row["id"] not in manifest_task_ids:
@@ -260,11 +273,11 @@ def _validate_reviewed_tasks(tasks: list[dict], by_source: dict, manifest_dir: s
         if not isinstance(group, str) or not group.strip():
             raise CodingDataError(f"task {row['id']!r} requires a leakage_group for release data")
         if group in seen_groups and seen_groups[group] != split:
-            raise CodingDataError(f"leakage group {group!r} appears in both train and eval splits")
+            raise CodingDataError(f"leakage group {group!r} appears in both {seen_groups[group]} and {split} splits")
         seen_groups[group] = split
         fingerprint = canonical_sha256({key: row[key] for key in ("language", "prompt", "rubric")})
         if fingerprint in seen_prompts and seen_prompts[fingerprint] != split:
-            raise CodingDataError(f"task prompt/rubric content is duplicated across train and eval splits")
+            raise CodingDataError("task prompt/rubric content is duplicated across splits")
         seen_prompts[fingerprint] = split
         refs = row["provenance"].get("source_refs")
         if not isinstance(refs, list) or not refs:
@@ -296,7 +309,7 @@ def _validate_reviewed_tasks(tasks: list[dict], by_source: dict, manifest_dir: s
             old_item = seen_items.get(key) or seen_items.get(("sha256", item_sha))
             if old_item:
                 if old_item[0] != split:
-                    raise CodingDataError(f"source item {item_id!r} appears in both train and eval splits")
+                    raise CodingDataError(f"source item {item_id!r} appears in both {old_item[0]} and {split} splits")
                 raise CodingDataError(f"source item {item_id!r} is referenced by more than one task")
             seen_items[key] = (split, row["id"])
             seen_items[("sha256", item_sha)] = (split, row["id"])
@@ -309,11 +322,19 @@ def write_sft(tasks: list[dict], destination: str, *, profile: str = "smoke", so
     """Write Guru teach pairs; release mode requires reviewed source evidence."""
     if profile not in ("smoke", "release"):
         raise CodingDataError("profile must be 'smoke' or 'release'")
+    if not tasks:
+        raise CodingDataError("no tasks available for instruction tuning")
+    versions = {row["schema_version"] for row in tasks}
+    if len(versions) > 1:
+        raise CodingDataError("task corpus cannot mix schema versions")
     if profile == "release":
         if not source_manifest:
             raise CodingDataError("release SFT export requires --source-manifest")
-        if {row["split"] for row in tasks} != {"train", "eval"}:
-            raise CodingDataError("release data requires both train and held-out eval tasks")
+        required_splits = {"train", "eval"} if next(iter(versions)) == SCHEMA_VERSION else {"train", "validation", "eval"}
+        if {row["split"] for row in tasks} != required_splits:
+            if required_splits == {"train", "eval"}:
+                raise CodingDataError("release data requires both train and held-out eval tasks")
+            raise CodingDataError("v2 release data requires train, validation, and held-out eval tasks")
         by_source, manifest_sha, manifest_dir = _read_release_sources(tasks, source_manifest)
         _validate_reviewed_tasks(tasks, by_source, manifest_dir)
     else:

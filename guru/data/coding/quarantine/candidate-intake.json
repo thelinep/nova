@@ -1,0 +1,41 @@
+{
+  "schema_version": "guru-code-source-manifest-v1",
+  "candidate_id": "tinypython-qwen25-coder-7b-small-1b1ecba",
+  "fetched_at": "2026-10-04",
+  "uri": "https://huggingface.co/datasets/BertilBraun/TinyPython",
+  "revision": "1b1ecba91d931ffe5d97d22300ea370499432d3b",
+  "artifact_path": "tinypython-qwen25-coder-7b-small.jsonl",
+  "artifact_size_bytes": 133908297,
+  "artifact_sha256": "7793c3288a95d128614dff8bdfcfecc431ffffe245a7a8f51331ac0bedb46e80",
+  "dataset_card": {
+    "path": "TinyPython-README-1b1ecba.md",
+    "sha256": "2ef0b66d89daddeb836fb0ca9b1eee90c386e7481b7bb2c9ad0f82dcf6be4c00"
+  },
+  "license": {
+    "id": "Apache-2.0",
+    "declared_by_source_card": true,
+    "upstream_license_file_present": false,
+    "reference_text_path": "APACHE-2.0-reference.txt",
+    "reference_text_uri": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+    "reference_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "teacher_model": "Qwen/Qwen2.5-Coder-7B-Instruct",
+  "record_count": 99904,
+  "row_level_review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewed_at": null,
+    "allowed_uses": []
+  },
+  "quality_review": {
+    "status": "pending",
+    "json_parse_failures": 0,
+    "python_syntax_failures": 0,
+    "repeated_task_descriptions": 65017,
+    "repeated_code_values": 54541,
+    "semantic_execution_tests": null,
+    "split_review": "not_started"
+  },
+  "release_weights_permission": "not_reviewed",
+  "task_hashes": {}
+}

@@ -11,9 +11,12 @@ capacity/context, and broader held-out evaluations remain future work.
 
 `data/coding/tasks.jsonl` contains one JSON object per line using
 `guru-code-task-v1`. Every task records an ID, split, language, natural-language
-request, provenance, and a small rubric. Training tasks have a structured
-`target`; held-out `eval` tasks must not include targets. Provenance is required
-even for hand-authored synthetic tasks so the fixture origin is explicit.
+request, provenance, and a small rubric. V1 permits `train` with a structured
+`target` and target-free `eval`. V1 remains unchanged for existing datasets.
+The opt-in `guru-code-task-v2` adds target-bearing `validation`; its `train` and
+`validation` tasks require a structured target, while target-free `eval` must
+not contain one. Keep one schema version per corpus. Provenance is required even
+for hand-authored synthetic tasks so the fixture origin is explicit.
 `data/coding/model.json` records the current support status; it intentionally
 reports no trained Guru-Code checkpoint and no established coding capability.
 
@@ -41,8 +44,10 @@ python -m guru code-data --sft-out out/guru-code-sft.jsonl
 ```
 
 `code-data` checks the task format and writes only the `train` rows in Guru's
-existing `prompt`/`answer` SFT format. It does not download or add external
-data, train a model, or establish capability. Use `--tasks FILE --sft-out
+existing `prompt`/`answer` SFT format. V2 `validation` targets are never copied
+to SFT; validation is reserved for model selection and tuning. It does not
+download or add external data, train a model, or establish capability. Use
+`--tasks FILE --sft-out
 FILE` to select another explicitly curated dataset.
 The default `smoke` profile accepts only tasks explicitly marked
 `synthetic_fixture: true`. Release data must use the `release` profile and a

@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from guru.coding import (CodingDataError, evaluate, read_tasks, validate_plan,
-                         canonical_sha256, write_sft)
+                         canonical_sha256, validate_task, write_sft)
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,6 +77,86 @@ def reviewed_release_fixture(rows, tmp, *, train_uses=("train_sft",), eval_uses=
 
 
 class CodingDataTests(unittest.TestCase):
+    def test_task_corpus_cannot_mix_schema_versions(self):
+        rows = json.loads(json.dumps(read_tasks(TASKS)))
+        rows[0]["schema_version"] = "guru-code-task-v2"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mixed.jsonl")
+            with open(path, "w", encoding="utf-8") as f:
+                for row in rows:
+                    f.write(json.dumps(row) + "\n")
+            with self.assertRaisesRegex(CodingDataError, "cannot mix schema versions"):
+                read_tasks(path)
+            with self.assertRaisesRegex(CodingDataError, "cannot mix schema versions"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"))
+
+    def test_v2_supports_targeted_validation_without_changing_v1_splits(self):
+        v1_rows = read_tasks(TASKS)
+        v1_validation = json.loads(json.dumps(v1_rows[0]))
+        v1_validation["split"] = "validation"
+        with self.assertRaisesRegex(CodingDataError, "split must be one of 'train', 'eval'"):
+            validate_task(v1_validation)
+
+        rows = json.loads(json.dumps(v1_rows))
+        validation = rows.pop(1)
+        validation.update(schema_version="guru-code-task-v2", split="validation", id="validation-001")
+        for row in rows:
+            row["schema_version"] = "guru-code-task-v2"
+        rows.append(validation)
+        for row in rows:
+            validate_task(row)
+        self.assertTrue(any(row["split"] == "validation" and "target" in row for row in rows))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = os.path.join(tmp, "pairs.jsonl")
+            self.assertEqual(write_sft(rows, output), 1)
+            with open(output, encoding="utf-8") as f:
+                pairs = [json.loads(line) for line in f]
+            self.assertEqual(len(pairs), 1)
+            self.assertIn("Create a small module", pairs[0]["prompt"])
+            self.assertNotIn("validation-001", pairs[0]["prompt"])
+
+    def test_v2_eval_remains_target_free_and_validation_requires_target(self):
+        rows = read_tasks(TASKS)
+        validation = json.loads(json.dumps(rows[0]))
+        validation.update(schema_version="guru-code-task-v2", split="validation", id="validation-001")
+        del validation["target"]
+        with self.assertRaisesRegex(CodingDataError, "train tasks require a target plan object"):
+            validate_task(validation)
+        evaluation = json.loads(json.dumps(rows[-1]))
+        evaluation["schema_version"] = "guru-code-task-v2"
+        evaluation["target"] = {}
+        with self.assertRaisesRegex(CodingDataError, "eval tasks must not include target output"):
+            validate_task(evaluation)
+
+    def test_v2_release_requires_validation_and_exports_train_only(self):
+        rows = json.loads(json.dumps(read_tasks(TASKS)))
+        validation = rows.pop(1)
+        validation.update(schema_version="guru-code-task-v2", split="validation", id="validation-001")
+        for row in rows:
+            row["schema_version"] = "guru-code-task-v2"
+        rows.append(validation)
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            output = os.path.join(tmp, "v2-release-pairs.jsonl")
+            self.assertEqual(write_sft(rows, output, profile="release", source_manifest=manifest), 1)
+            with open(output, encoding="utf-8") as f:
+                pairs = [json.loads(line) for line in f]
+            self.assertEqual(len(pairs), 1)
+            self.assertNotIn("validation-001", pairs[0]["prompt"])
+            self.assertNotIn("eval-001", pairs[0]["prompt"])
+
+    def test_v2_release_requires_train_validation_and_eval(self):
+        rows = json.loads(json.dumps(read_tasks(TASKS)))
+        rows = [row for row in rows if row["split"] != "eval"]
+        for row in rows:
+            row["schema_version"] = "guru-code-task-v2"
+        rows[1].update(split="validation", id="validation-001")
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, manifest = reviewed_release_fixture(rows, tmp)
+            with self.assertRaisesRegex(CodingDataError, "v2 release data requires train, validation, and held-out eval"):
+                write_sft(rows, os.path.join(tmp, "pairs.jsonl"), profile="release", source_manifest=manifest)
+
     def test_invented_starter_corpus_is_synthetic_valid_and_smoke_only(self):
         path = os.path.join(ROOT, "data", "coding", "invented-starter-v1.jsonl")
         rows = read_tasks(path)

@@ -55,6 +55,20 @@ python -m guru teach --size nano --pairs data/teach.jsonl               # {"prom
 python -m guru export --size nano --ollama guru-maataa-nano
 ```
 
+Guru also offers a synthetic fixed-step trainer benchmark for preflight:
+
+```bash
+python -m guru train --size nano --benchmark-steps 2 --benchmark-seq-len 8 \
+  --micro-bs 2 --benchmark-accumulation 3
+```
+
+It uses random synthetic token IDs, skips corpus/tokenizer loading, evaluation,
+sampling and checkpoint writes, and reports latency/tokens per second plus
+CUDA peak memory when available. The result explicitly makes no training
+capacity claim. The 7b preset remains unsharded and is not currently shown to
+fit on an 80 GB H100; do not use benchmark throughput from a different model as
+a full-training quote.
+
 ### Experimental Guru-Code path
 
 `CODING.md` documents an experimental task-data contract and offline evaluator.

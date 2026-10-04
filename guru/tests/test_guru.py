@@ -1,10 +1,13 @@
 """python -m unittest discover -s tests  (from the guru folder)"""
 import json
+import io
 import os
 import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
 import torch
 
@@ -53,6 +56,54 @@ class ModelTests(unittest.TestCase):
         m = GuruForCausalLM(GuruConfig(**TINY))
         with self.assertRaises(ValueError):
             m(torch.zeros((1, 65), dtype=torch.long))
+
+
+class TrainerBenchmarkTests(unittest.TestCase):
+    def test_synthetic_benchmark_runs_exact_steps_without_tokenizer_or_output_files(self):
+        from guru.train import train
+        tmp = tempfile.mkdtemp()
+        out_dir = os.path.join(tmp, "must-remain-absent")
+        stdout = io.StringIO()
+        optimizer_step = torch.optim.AdamW.step
+        try:
+            with redirect_stdout(stdout), patch.object(torch.optim.AdamW, "step", autospec=True,
+                                                        side_effect=optimizer_step) as steps:
+                result = train(
+                    size="nano", data_dir=tmp, out_dir=out_dir,
+                    benchmark_steps=2, benchmark_seq_len=8, micro_bs=2,
+                    benchmark_accumulation=3, device="cpu", overrides=TINY,
+                )
+            self.assertEqual(steps.call_count, 2)
+            self.assertEqual(result["steps"], 2)
+            self.assertTrue(result["synthetic_data"])
+            self.assertEqual(result["device"], "cpu")
+            self.assertEqual(result["forward_precision"], "fp32")
+            self.assertGreater(result["parameter_count"], 0)
+            self.assertFalse(result["checkpoint_written"])
+            self.assertFalse(result["training_capacity_claim"])
+            self.assertEqual(result["sequence_length"], 8)
+            self.assertEqual(result["micro_batch_size_per_rank"], 2)
+            self.assertEqual(result["gradient_accumulation_steps"], 3)
+            self.assertEqual(result["global_tokens_per_optimizer_step"], 48)
+            self.assertEqual(result["cuda_peak_allocated_bytes"], None)
+            self.assertGreater(result["global_tokens_per_second"], 0)
+            self.assertIn('"steps": 2', stdout.getvalue())
+            self.assertFalse(os.path.exists(out_dir))
+            self.assertFalse(os.path.exists(os.path.join(tmp, "guru-dhatu.model")))
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_benchmark_rejects_invalid_context_and_combined_training_modes(self):
+        from guru.train import train
+        with self.assertRaisesRegex(ValueError, "benchmark_seq_len"):
+            train(size="nano", benchmark_steps=1, benchmark_seq_len=65,
+                  micro_bs=1, device="cpu", overrides=TINY)
+        with self.assertRaisesRegex(ValueError, "cannot be combined"):
+            train(size="nano", benchmark_steps=1, tokens=10,
+                  micro_bs=1, device="cpu", overrides=TINY)
+        with self.assertRaisesRegex(ValueError, "torch.compile"):
+            train(size="nano", benchmark_steps=1, compile_model=True,
+                  micro_bs=1, device="cpu", overrides=TINY)
 
 
 class HFCompatTests(unittest.TestCase):
