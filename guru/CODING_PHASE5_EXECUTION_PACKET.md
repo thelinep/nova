@@ -56,8 +56,8 @@ the actual task tests and preserve their results.
   reusing it.
 - The current worktree has follow-up edits to this packet, the roadmap, the
   corpus split implementation/tests, the test-environment instructions and
-  the October 5 evaluator report. These changes have passed the local gates
-  recorded in the roadmap but remain uncommitted.
+  the October 5 evaluator report. They passed the local gates recorded in the
+  roadmap and were committed and pushed in commit `245a708`.
 
 ## Rights review: TinyPython candidate
 
