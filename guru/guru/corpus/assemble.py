@@ -196,11 +196,23 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
     if not admitted:
         raise CorpusAssemblyBlocked(["no admitted items are available for assembly"])
 
+    # Split at task granularity so multiple examples for one task cannot leak
+    # across partitions. Match exp-rd-vs-sft-001's preregistered deterministic
+    # rule: sort unique UTF-8 task IDs by SHA-256 (task ID breaks hash ties),
+    # then allocate floor(80% N), floor(10% N), and the remainder.
+    task_ids_by_hash = sorted(
+        {item.task_id for item in admitted},
+        key=lambda task_id: (hashlib.sha256(task_id.encode("utf-8")).digest(), task_id),
+    )
+    train_end = len(task_ids_by_hash) * 80 // 100
+    val_end = train_end + len(task_ids_by_hash) * 10 // 100
+    split_by_task = {
+        task_id: ("train" if index < train_end else "val" if index < val_end else "test")
+        for index, task_id in enumerate(task_ids_by_hash)
+    }
     buckets: dict[str, list[CorpusItem]] = {"train": [], "val": [], "test": []}
     for item in sorted(admitted, key=lambda entry: (entry.task_id, entry.item_id)):
-        bucket = int(hashlib.sha256(f"{split_seed}:{item.task_id}".encode("utf-8")).hexdigest(), 16) % 100
-        split = "train" if bucket < 80 else "val" if bucket < 90 else "test"
-        buckets[split].append(item)
+        buckets[split_by_task[item.task_id]].append(item)
 
     base = Path(output_root) if output_root is not None else REPO_GURU_ROOT / "corpora"
     corpus_parent = base / corpus_id
@@ -217,7 +229,7 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
         corpus_id=corpus_id, version=version, kind=corpus_kind,
         status=CorpusStatus.FROZEN if owner_approval else CorpusStatus.DRAFT,
         owner_approval=owner_approval, split_seed=split_seed,
-        split_rule="sha256(f'{split_seed}:{task_id}') mod 100; <80 train, <90 val, otherwise test",
+        split_rule="split_seed is recorded as provenance only; sort unique UTF-8 task_id by SHA-256 digest (task_id breaks ties); floor(0.8N) train, next floor(0.1N) val, remainder test",
         item_count=len(admitted), split_counts={name: len(rows) for name, rows in buckets.items()},
         teacher_ids=sorted(teachers_used), excluded_task_ids=sorted(exclusions),
         exclusion_reasons=exclusions, item_file_digests=file_digests, items_digest=items_digest,

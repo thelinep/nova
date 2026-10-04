@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -86,6 +87,48 @@ class CorpusAssemblyTests(unittest.TestCase):
                 left = Path(directory) / "one" / "exp" / "v1" / name
                 right = Path(directory) / "two" / "exp" / "v1" / name
                 self.assertEqual(left.read_bytes(), right.read_bytes())
+
+    def test_split_matches_preregistration_counts_and_task_hash_order(self) -> None:
+        # 40 unique tasks yield 32 train, 4 validation, and 4 held-out tasks.
+        with TemporaryDirectory() as directory:
+            result = assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
+                              admission_audit=admission_rows(), items=corpus_items(), corpus_id="exp", version="v1",
+                              split_seed="ignored-for-frozen-rule", output_root=directory)
+            other_seed = assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
+                                  admission_audit=admission_rows(), items=corpus_items(), corpus_id="exp", version="v2",
+                                  split_seed="another-recorded-seed", output_root=directory)
+            self.assertEqual(result.item_file_digests, other_seed.item_file_digests)
+            root = Path(directory) / "exp" / "v1"
+            expected = sorted((f"task-{index:03d}" for index in range(40)),
+                              key=lambda task_id: (hashlib.sha256(task_id.encode("utf-8")).digest(), task_id))
+            actual = {}
+            for split, count in (("train", 32), ("val", 4), ("test", 4)):
+                rows = [json.loads(line) for line in (root / f"items.{split}.jsonl").read_text().splitlines()]
+                task_ids = {row["task_id"] for row in rows}
+                self.assertEqual(len(task_ids), count)
+                self.assertTrue(task_ids.issubset(set(expected[:32] if split == "train" else expected[32:36] if split == "val" else expected[36:])))
+                actual[split] = task_ids
+            self.assertFalse(actual["train"] & actual["val"])
+            self.assertFalse(actual["train"] & actual["test"])
+            self.assertFalse(actual["val"] & actual["test"])
+            self.assertIn("floor(0.8N)", result.split_rule)
+            self.assertIn("provenance only", result.split_rule)
+
+    def test_all_items_for_a_task_stay_in_the_same_split(self) -> None:
+        rows = [*corpus_items(40), CorpusItem(
+            item_id="item-duplicate-example", task_id="task-000", prompt="another view",
+            target="def other(): return 0", target_source="teacher", teacher_lineage_id="teacher-1",
+            source_digest="f" * 64,
+        )]
+        with TemporaryDirectory() as directory:
+            assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
+                     admission_audit=[*admission_rows(), {"event": "item_admission", "item_id": "item-duplicate-example", "decision": "admit"}],
+                     items=rows, corpus_id="exp", version="v1", split_seed="seed", output_root=directory)
+            root = Path(directory) / "exp" / "v1"
+            placements = [split for split in ("train", "val", "test")
+                          if all(item_id in (root / f"items.{split}.jsonl").read_text()
+                                 for item_id in ("item-000", "item-duplicate-example"))]
+            self.assertEqual(len(placements), 1)
 
     def test_frozen_corpus_requires_owner_approval(self) -> None:
         with self.assertRaises(ValidationError):
