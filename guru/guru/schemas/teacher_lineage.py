@@ -68,6 +68,15 @@ def _normalize_digests(value: Any) -> list[str]:
 class TeacherLineage(StrictModel):
     teacher_id: str = Field(min_length=1)
     model_name: str = Field(min_length=1)
+    license: str = Field(
+        ...,
+        min_length=1,
+        description="SPDX identifier or provider license name, verbatim.",
+    )
+    terms_url: str | None = Field(
+        default=None,
+        description="URL to the license or use policy in force at approval time.",
+    )
     access_method: AccessMethod
     output_rights: OutputRights
     review_status: ReviewStatus

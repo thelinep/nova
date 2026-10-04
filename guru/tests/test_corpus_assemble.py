@@ -17,7 +17,7 @@ from guru.schemas.teacher_lineage import AccessMethod, InputDisclosure, InputTyp
 
 def approved_teacher() -> TeacherLineage:
     return TeacherLineage(
-        teacher_id="teacher-1", model_name="approved-model", access_method=AccessMethod.WEIGHTS,
+        teacher_id="teacher-1", model_name="approved-model", license="Apache-2.0", access_method=AccessMethod.WEIGHTS,
         output_rights=OutputRights.MAY_TRAIN, review_status=ReviewStatus.APPROVED,
         reviewed_by="reviewer", reviewed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         model_digest="a" * 64,

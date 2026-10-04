@@ -7,6 +7,8 @@ from tempfile import TemporaryDirectory
 from typing import Any
 import unittest
 
+from pydantic import ValidationError
+
 from guru.schemas.teacher_lineage import AccessMethod, InputDisclosure, InputType, OutputRights, ReviewStatus, TeacherLineage
 from guru.schemas.trajectory import ActionType, FinalOutcome, ProjectSnapshot, Role, Trajectory, Turn
 from guru.teacher.intake import load_registry, validate_teacher
@@ -15,6 +17,7 @@ from guru.teacher.intake import load_registry, validate_teacher
 def approved_teacher(**overrides: Any) -> TeacherLineage:
     values = {
         "teacher_id": "t-1", "model_name": "approved-teacher",
+        "license": "Apache-2.0",
         "access_method": AccessMethod.WEIGHTS, "output_rights": OutputRights.MAY_TRAIN,
         "review_status": ReviewStatus.APPROVED, "reviewed_by": "reviewer",
         "reviewed_at": datetime(2026, 1, 1, tzinfo=timezone.utc),
@@ -43,13 +46,41 @@ class TeacherIntakeTests(unittest.TestCase):
         self.assertTrue(any("missing reviewed_by" in blocker for blocker in result["blockers"]))
 
     def test_research_only_rights_are_rejected(self) -> None:
-        result = validate_teacher(approved_teacher(output_rights=OutputRights.RESEARCH_ONLY))
+        result = validate_teacher(approved_teacher(
+            output_rights=OutputRights.RESEARCH_ONLY, license="Internal Research-Only License",
+        ))
         self.assertFalse(result["admissible"])
         self.assertIn("output_rights does not permit training", result["blockers"])
 
     def test_valid_approved_teacher_is_admissible(self) -> None:
         result = validate_teacher(approved_teacher())
-        self.assertEqual(result, {"admissible": True, "blockers": []})
+        self.assertEqual(result, {"admissible": True, "blockers": [], "warnings": []})
+
+    def test_teacher_lineage_requires_license(self) -> None:
+        record = approved_teacher().model_dump(mode="json")
+        record.pop("license")
+        with self.assertRaises(ValidationError):
+            TeacherLineage.model_validate(record)
+
+    def test_terms_url_optional(self) -> None:
+        teacher = approved_teacher()
+        self.assertIsNone(teacher.terms_url)
+        self.assertTrue(validate_teacher(teacher)["admissible"])
+
+    def test_intake_rejects_may_train_on_research_license(self) -> None:
+        result = validate_teacher(approved_teacher(
+            license="Mistral AI Non-Production License", output_rights=OutputRights.MAY_TRAIN,
+        ))
+        self.assertFalse(result["admissible"])
+        self.assertIn("license does not grant training rights", result["blockers"])
+
+    def test_intake_warns_on_apache_with_research_only(self) -> None:
+        result = validate_teacher(approved_teacher(
+            license="Apache-2.0", output_rights=OutputRights.RESEARCH_ONLY,
+        ))
+        self.assertFalse(result["admissible"])
+        self.assertIn("output_rights does not permit training", result["blockers"])
+        self.assertIn("license is more permissive than output_rights; review", result["warnings"])
 
     def test_weights_access_requires_model_digest_and_registry_skips_blank_lines(self) -> None:
         valid = approved_teacher()
@@ -65,6 +96,7 @@ class TeacherIntakeTests(unittest.TestCase):
     def test_digest_inputs_normalize_to_string_lists(self) -> None:
         teacher = TeacherLineage(
             teacher_id="t", model_name="m", access_method="weights", output_rights="may_train",
+            license="Apache-2.0",
             review_status="approved", reviewed_by="reviewer", reviewed_at="2026-01-01T00:00:00Z",
             model_digest="a" * 64, adapter_digests=None,
         )
@@ -75,6 +107,7 @@ class TeacherIntakeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             TeacherLineage(
                 teacher_id="t", model_name="m", access_method="api", output_rights="may_train",
+                license="Apache-2.0",
                 review_status="approved", reviewed_by=None, reviewed_at=None,
             )
         with self.assertRaises(ValueError):

@@ -20,7 +20,7 @@ from guru.schemas.teacher_lineage import (
 
 def teacher(**overrides: Any) -> TeacherLineage:
     values = {
-        "teacher_id": "teacher-1", "model_name": "reviewed-model",
+        "teacher_id": "teacher-1", "model_name": "reviewed-model", "license": "Apache-2.0",
         "access_method": AccessMethod.API, "output_rights": OutputRights.MAY_TRAIN,
         "review_status": ReviewStatus.APPROVED, "reviewed_by": "reviewer-1",
         "reviewed_at": datetime(2026, 1, 1, tzinfo=timezone.utc),
