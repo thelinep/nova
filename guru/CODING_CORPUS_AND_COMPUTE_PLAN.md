@@ -148,7 +148,12 @@ configured in this workspace.
    training, evaluation, and weight-distribution permissions separately.
 2. Pin each accepted source revision; save the source archive, item snapshots,
    and exact license text, then generate hashes and task/source links.
-3. Add the validation split contract and executable isolated task runner.
+3. The v2 validation-split contract is implemented. Still required: build and
+   test a disposable evaluator with an enforceable OS/VM boundary, no network,
+   no host/project/dependency mounts or credentials, resource limits, bounded
+   output, interruption cleanup and retained per-case evidence. Maataa's
+   `workspace-runner.js` is not suitable for executing arbitrary generated
+   code, and the local Docker daemon is not running.
 4. Finish a Guru 7B memory/throughput preflight before estimating a paid run.
 5. Approve a provider, region, account, budget ceiling, retention and deletion
    policy before provisioning compute or transferring corpus data.

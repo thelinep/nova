@@ -2,8 +2,8 @@
 
 This document defines the evidence needed to move Guru-Code from experimental
 plumbing to a model that Maataa can prefer for coding. It does not certify a
-checkpoint. The current workspace has no Guru-Code weights, vetted code corpus,
-or executed coding benchmark.
+checkpoint. The current workspace has no Guru-Code weights, rights-approved
+code corpus, or executed model coding evaluation.
 
 ## Current local readiness audit
 
@@ -11,7 +11,10 @@ Observed on 2026-10-04 in this checkout and host:
 
 - `guru/data/coding/tasks.jsonl` contains two synthetic Python training tasks
   and three synthetic, target-free Python evaluation tasks. They test data
-  plumbing only.
+  plumbing only. A 99,904-row external synthetic shard is present in the local
+  quarantine directory, ignored by Git, and not approved, split, or used for
+  training. It has high exact-duplicate counts and its source card raises
+  teacher-model terms for review. No prepared training-token corpus exists.
 - `guru/data/coding/model.json` records a null checkpoint, no capability claim,
   and no verified context length. No Guru `.pt`, safetensors, or GGUF artifact,
   prepared Guru tokenizer, or prepared token corpus is present in `guru/`.
@@ -28,6 +31,11 @@ Observed on 2026-10-04 in this checkout and host:
   hardware or a GPU cluster.
 - The local Ollama manifests inspected during the audit contain no Guru model.
   Existing non-Guru Ollama weights cannot be relabelled as Guru.
+- No safe runner for evaluating arbitrary model-produced code is available.
+  Maataa's `workspace-runner.js` runs project-owned validation workflows for
+  the local operator; it executes with workstation access and is not an
+  evaluator sandbox for untrusted proposals. Docker is installed on this host,
+  but its daemon is not running. No generated candidate code was executed.
 
 These observations are a local snapshot; rerun the checks after the owner
 provides a training host or a model artifact.
@@ -48,10 +56,13 @@ provides a training host or a model artifact.
    training capacity for a model that supports at least 4096 context tokens.
    The current host does not meet this requirement with its installed runtime.
 5. An approved evaluation runner that executes generated proposals in a
-   disposable environment with no network access and no host/project mounts.
-   The runner must impose time, memory, process and output limits and preserve
-   raw per-case results. Never execute generated code in the Maataa process or
-   against an approved project folder.
+   disposable, non-privileged environment with enforceable no-network policy,
+   no host/project mounts or credentials, and no access to real dependency
+   directories. It must impose time, memory, process and output limits, stop
+   resource exhaustion, clean up after interruption, and preserve raw per-case
+   results. The current Maataa project runner does not satisfy this contract.
+   Never execute generated code in the Maataa process or against an approved
+   project folder.
 
 ## Per-source intake record
 

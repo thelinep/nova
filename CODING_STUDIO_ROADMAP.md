@@ -26,7 +26,7 @@ not a claim that Guru-Code or autonomous agent execution is production-ready.
 | 2. Guru-Code data/evaluation foundation | Versioned task format, provenance fields, train-only SFT export and target-free held-out fixture checks | Plumbing implemented in `guru/data/coding/`, `guru/guru/coding.py` and `guru/CODING.md`. V1 retains train/eval; v2 adds target-bearing validation and requires all three splits for release. Mixed schema versions are rejected. The checked-in examples remain synthetic smoke fixtures, not a representative corpus or capability benchmark. |
 | 3. One-project Coding Studio | Readiness check, selected model, bounded request, reviewable proposal, existing validation/approval/apply/rollback flow, Guru readiness and read-only team status | Implemented in `nova-console/public/index.html`; help is in `nova-console/docs/help/41-coding-studio.md`; deterministic browser coverage is in `nova-console/e2e/coding-studio.spec.js`. |
 | 4. Independent Agent Studio | Dispatch independent agents for bounded coding work; turn each result into a validated proposal; keep every result pending human review; allow writes only through Maataa's approved batch flow | Implemented for one local operator and one approved project. The Studio has bounded dispatch/retry/cancel/review routes in `nova-console/server.js`; exact-model, scoped-policy and budget gates plus startup recovery in `nova-console/lib/coding-agent-runtime.js`; a coding-only job bridge and cancellation/halt propagation; digest-bound proposal acceptance that creates the batch transactionally only after human review. Acceptance creates a draft batch only: existing validation, separate approval, apply and rollback remain in Maataa Local Workspace. The UI now renders proposal code, review notes and state-specific actions. Generic agent endpoints and non-coding job kinds remain separate. Full gate evidence is recorded below after the current complete run. |
-| 5. Guru-Code capability release | Train, export and qualify a dedicated code model against representative held-out tasks | Open gate. There is no trained Guru-Code checkpoint or established coding capability in this checkout. Requires provenance- and license-reviewed data, adequate model/context capacity, training compute, execution-based correctness/security evaluations and Maataa qualification of the exact exported digest. |
+| 5. Guru-Code capability release | Train, export and qualify a dedicated code model against representative held-out tasks | **Open.** There is no trained Guru-Code checkpoint or established coding capability in this checkout. One external synthetic shard is fetched to ignored local quarantine, with high duplicate counts and source/teacher terms still requiring review. The host has no training-capable CUDA runtime; the current 7B trainer is unsharded and estimated to exceed an 80 GB GPU before activations. No safe evaluator for arbitrary generated code is available; Maataa's project workflow runner is not that sandbox. This phase needs rights-reviewed data, a tested memory strategy and approved GPU host, isolated execution-based evaluation, and exact-digest Maataa qualification. |
 
 ## Independent Agent Studio acceptance gates
 
@@ -137,6 +137,8 @@ finds that Guru's from-scratch 7B trainer needs a memory-capacity pass before
 any paid multi-week training reservation.
 
 The synthetic trainer benchmark has only been smoke-tested on CPU and makes no
-capacity claim. Until Phase 5's data, training-capacity, executed benchmark and
-exact-digest gates are passed, the roadmap remains open and Guru-Code is not
-releasable.
+capacity claim. A source review also found no safe evaluator for untrusted
+generated code on this host; existing Maataa validation commands run with local
+workstation access. Until Phase 5's rights, training-capacity, isolated
+evaluation and exact-digest gates are passed, the roadmap remains open and
+Guru-Code is not releasable.
