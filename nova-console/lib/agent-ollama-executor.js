@@ -94,6 +94,7 @@ function agentOllamaExecutor(options) {
         messages,
         temperature,
         max_tokens: maxTokens,
+        signal: ctx.signal,
       });
     } catch (e) {
       const msg = String((e && e.message) || e);

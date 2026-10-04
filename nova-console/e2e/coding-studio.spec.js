@@ -5,6 +5,11 @@ const fixtureRoot = '/private/tmp/nova-e2e-workspace';
 const digestQualified = 'a'.repeat(64);
 const digestUnqualified = 'b'.repeat(64);
 
+test.beforeEach(() => {
+  fs.writeFileSync(`${fixtureRoot}/feature.js`, 'const enabled = false;\n');
+  fs.writeFileSync(`${fixtureRoot}/draft.json`, '{"version":"0.1.0"}\n');
+});
+
 function qualification(digest, capabilities) {
   return {
     id: `qualification-${digest.slice(0, 8)}`,
@@ -17,7 +22,7 @@ function qualification(digest, capabilities) {
   };
 }
 
-async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false } = {}) {
+async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false, agentFlow = null } = {}) {
   const base = 'http://127.0.0.1:8791';
   const headers = { Origin: base };
   let releasePreview, releasePlan, previewStarted, planStarted;
@@ -31,12 +36,42 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
     qualification(digestQualified, ['single-file', 'multi-file', 'large-context', 'clarification', 'timeout', 'cancellation']),
     qualification(digestUnqualified, []),
   ] }));
-  await page.route('**/api/agents/team', route => route.fulfill({ json: {
+  await page.route('**/api/agents/team', route => route.fulfill({ json: agentFlow ? agentFlow.team() : {
     generated_at: new Date().toISOString(), agents: [], tasks: [], controls: {
       runtime_halted: false, execution_available: false, execution_reason: 'agent_job_bridge_not_registered',
       human_result_review_available: false, human_result_review_reason: 'agent_result_review_state_not_implemented',
     },
   } }));
+  if (agentFlow) {
+    await page.route('**/api/agents/coding/tasks', async route => {
+      if (route.request().method() !== 'POST') return route.continue();
+      const body = route.request().postDataJSON();
+      expect(body.rootId).toBe(agentFlow.rootId);
+      expect(body.modelId).toBe('guru-code-local');
+      expect(body.request).toContain('Keep programming syntax, keywords, and identifiers conventional.');
+      expect(body.brahmiComments).toBe(true);
+      return route.fulfill({ status: 202, json: agentFlow.dispatch(body) });
+    });
+    await page.route('**/api/agents/tasks/**', async route => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const taskId = url.pathname.split('/')[4];
+      if (request.method() === 'GET' && !url.pathname.endsWith('/review') && !url.pathname.endsWith('/retry') && !url.pathname.endsWith('/cancel')) {
+        return route.fulfill({ json: { task: agentFlow.detail(taskId) } });
+      }
+      if (request.method() === 'POST' && url.pathname.endsWith('/review')) {
+        const body = request.postDataJSON();
+        return route.fulfill({ json: { task: await agentFlow.review(taskId, body) } });
+      }
+      if (request.method() === 'POST' && url.pathname.endsWith('/retry')) {
+        return route.fulfill({ json: { task: agentFlow.retry(taskId, request.postDataJSON()) } });
+      }
+      if (request.method() === 'POST' && url.pathname.endsWith('/cancel')) {
+        return route.fulfill({ json: { task: agentFlow.cancel(taskId) } });
+      }
+      return route.continue();
+    });
+  }
   await page.route('**/api/workspace/code-plan/preview', async route => {
     const body = route.request().postDataJSON();
     if (deferredPreview) { previewStarted(); await new Promise(resolve => { releasePreview = resolve; }); }
@@ -90,12 +125,60 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
   };
 }
 
+function codingAgentFlow(page, rootId) {
+  let task = null;
+  let batch = null;
+  let sequence = 0;
+  const controls = {
+    runtime_halted: false, execution_available: true, execution_reason: null,
+    human_result_review_available: true, human_result_review_reason: null,
+  };
+  const changes = [
+    { operation: 'edit', relativePath: 'feature.js', find: 'const enabled = false;', replacement: 'const enabled = true;', impact: 'Enable the requested feature.' },
+    { operation: 'edit', relativePath: 'draft.json', find: '0.1.0', replacement: '0.1.1', impact: 'Keep the fixture version aligned.' },
+  ];
+  const result = () => ({ proposal: { summary: 'Enable the requested feature.', changes, acceptanceChecks: [{ description: 'feature.js contains the enabled flag.' }] }, acceptanceChecks: [{ description: 'feature.js contains the enabled flag.' }], batchId: batch?.id || null });
+  return {
+    rootId,
+    team: () => ({ generated_at: new Date().toISOString(), agents: [{ id: 'coding-worker', name: 'Coding worker', role: 'worker' }], tasks: task ? [{ id: task.id, state: task.state, codingStudio: true }] : [], controls }),
+    dispatch: body => {
+      sequence++;
+      task = { id: `coding-task-e2e-${sequence}`, state: 'awaiting_result_review', codingStudio: true, rootId: body.rootId, modelId: body.modelId, batchId: null, result: result() };
+      return { task };
+    },
+    detail: id => id === task?.id ? structuredClone(task) : null,
+    review: async (id, body) => {
+      expect(id).toBe(task.id);
+      expect(body.reason).toBeTruthy();
+      if (body.decision === 'accept') {
+        const response = await page.request.post('http://127.0.0.1:8791/api/workspace/change-batches', {
+          headers: { Origin: 'http://127.0.0.1:8791' },
+          data: { rootId, summary: 'Enable the requested feature.', changes },
+        });
+        expect(response.ok()).toBeTruthy();
+        batch = await response.json();
+        task.state = 'accepted'; task.batchId = batch.id; task.result.batchId = batch.id;
+      } else if (body.decision === 'revise') task.state = 'revision_requested';
+      else if (body.decision === 'reject') task.state = 'rejected';
+      return structuredClone(task);
+    },
+    retry: (id, body) => { expect(id).toBe(task.id); expect(body.feedback).toBeTruthy(); task.state = 'running'; return structuredClone(task); },
+    cancel: id => { expect(id).toBe(task.id); task.state = 'cancelled'; return structuredClone(task); },
+  };
+}
+
 async function approveFixtureRoot(page) {
   const response = await page.request.post('http://127.0.0.1:8791/api/workspace/roots', {
     headers: { Origin: 'http://127.0.0.1:8791' }, data: { path: fixtureRoot, label: 'Studio E2E project' },
   });
   expect(response.ok()).toBeTruthy();
   return response.json();
+}
+
+async function rootBatches(page, rootId) {
+  const response = await page.request.get('http://127.0.0.1:8791/api/workspace/change-batches', { headers: { Origin: 'http://127.0.0.1:8791' } });
+  expect(response.ok()).toBeTruthy();
+  return (await response.json()).filter(batch => batch.rootId === rootId);
 }
 
 async function fillCodingTask(page) {
@@ -160,6 +243,73 @@ test('qualified task creates a proposal, then uses existing check, approval, app
   await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
 });
 
+test('agent proposal waits for human review, then needs validation and separate approval before any write', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const flow = codingAgentFlow(page, root.id);
+  await openStudio(page, { roots: [root], agentFlow: flow });
+  await fillCodingTask(page);
+  await page.getByRole('button', { name: 'Check readiness' }).click();
+  await expect(page.getByRole('button', { name: 'Ask agent for proposal' })).toBeEnabled();
+  const batchCountBefore = (await rootBatches(page, root.id)).length;
+  await page.getByRole('button', { name: 'Ask agent for proposal' }).click();
+  await expect(page.getByRole('article').filter({ has: page.getByText('Agent proposal awaiting your review') })).toBeVisible();
+  await expect(page.getByText('No project file has been written by the agent.')).toBeVisible();
+  await expect(page.locator('#studioAgentTask .coding-studio-code').nth(0)).toContainText('const enabled = false;');
+  await expect(page.locator('#studioAgentTask .coding-studio-code').nth(1)).toContainText('const enabled = true;');
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  expect(await rootBatches(page, root.id)).toHaveLength(batchCountBefore);
+  await expect(page.getByRole('button', { name: 'Apply atomically' })).toHaveCount(0);
+
+  await page.getByLabel('Review note').fill('The proposal targets only the requested feature flag.');
+  await page.getByRole('button', { name: 'Accept proposal for validation' }).click();
+  await expect(page.getByText('Proposal accepted · validation still required')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Review exact batch in Local Workspace' })).toBeVisible();
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  await page.getByRole('button', { name: 'Review exact batch in Local Workspace' }).click();
+  await expect(page.getByLabel('Combined batch diff')).toContainText('+const enabled = true;');
+  await page.getByRole('button', { name: 'Validate entire batch' }).click();
+  await expect(page.getByRole('button', { name: 'Approve exact batch' })).toBeVisible();
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  await page.getByRole('button', { name: 'Approve exact batch' }).click();
+  await expect(page.getByRole('button', { name: 'Apply atomically' })).toBeVisible();
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  await page.getByRole('button', { name: 'Apply atomically' }).click();
+  await expect(page.getByText('Applied 2 change(s).')).toBeVisible();
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('true');
+  expect(fs.readFileSync(`${fixtureRoot}/draft.json`, 'utf8')).toContain('0.1.1');
+  await page.getByRole('button', { name: 'Roll back batch' }).click();
+  await expect(page.getByText('Rolled back — every file restored to its pre-batch state.')).toBeVisible();
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test('agent revision, retry, cancellation and rejection never create or write a batch', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const batchCountBefore = (await rootBatches(page, root.id)).length;
+  const flow = codingAgentFlow(page, root.id);
+  await openStudio(page, { roots: [root], agentFlow: flow });
+  await fillCodingTask(page);
+  await page.getByRole('button', { name: 'Check readiness' }).click();
+  await page.getByRole('button', { name: 'Ask agent for proposal' }).click();
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'awaiting_result_review');
+  await page.getByLabel('Review note').fill('Please include the matching configuration change.');
+  await page.getByRole('button', { name: 'Request a revision' }).click();
+  await expect(page.getByText('Revision requested')).toBeVisible();
+  await page.getByLabel('Revision instructions').fill('Update the feature flag and its fixture version together.');
+  await page.getByRole('button', { name: 'Ask agent to revise' }).click();
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'running');
+  await page.getByRole('button', { name: 'Cancel task' }).click();
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'cancelled');
+  await page.getByRole('button', { name: 'Ask agent for proposal' }).click();
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'awaiting_result_review');
+  await page.getByLabel('Review note').fill('The proposal does not match the requested scope.');
+  await page.getByRole('button', { name: 'Reject proposal' }).click();
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'rejected');
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  expect(await rootBatches(page, root.id)).toHaveLength(batchCountBefore);
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
 test('readiness becomes stale when the request changes and planning errors keep writes gated', async ({ page }) => {
   const root = await approveFixtureRoot(page);
   await openStudio(page, { roots: [root], planError: 'Source changed after readiness was checked.' });
@@ -172,7 +322,7 @@ test('readiness becomes stale when the request changes and planning errors keep 
   await page.getByRole('button', { name: 'Check readiness' }).click();
   await expect(page.getByRole('button', { name: 'Create proposal' })).toBeEnabled();
   await page.getByRole('button', { name: 'Create proposal' }).click();
-  await expect(page.getByRole('alert')).toContainText('project changed after readiness was checked');
+  await expect(page.locator('#studioError')).toContainText('project changed after readiness was checked');
   await expect(page.getByRole('button', { name: 'Create proposal' })).toBeDisabled();
   expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
   await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });

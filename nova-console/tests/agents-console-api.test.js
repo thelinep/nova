@@ -73,14 +73,14 @@ test('agent team API exposes task evidence read-only and reports execution/revie
     const teamResponse = await get(app.base, '/api/agents/team');
     assert.equal(teamResponse.status, 200);
     const team = JSON.parse(teamResponse.body);
-    assert.equal(team.agents.length, 2);
+    assert.ok(team.agents.length >= 4, 'generic agents remain visible alongside the dedicated coding team');
     assert.equal(team.agents.find(agent => agent.id === coder.id).supervisor_id, lead.id);
     assert.deepEqual(team.agents.find(agent => agent.id === coder.id).allowed_tools, ['workspace:read']);
     assert.equal(team.tasks[0].id, task.id);
     assert.equal(team.tasks[0].state, 'completed');
     assert.equal(team.controls.runtime_halted, true);
     assert.equal(team.controls.execution_available, false);
-    assert.equal(team.controls.execution_reason, 'agent_job_bridge_not_registered');
+    assert.equal(team.controls.execution_reason, 'runtime_halted');
     assert.equal(team.controls.human_result_review_available, false);
 
     const detailResponse = await get(app.base, `/api/agents/tasks/${encodeURIComponent(task.id)}`);

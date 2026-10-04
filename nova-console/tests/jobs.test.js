@@ -62,6 +62,25 @@ test('2 cancel_queued', async () => {
   cleanup(env);
 });
 
+test('coding-only engines claim and recover only their configured job kind', async () => {
+  const env = fresh();
+  const engine = new JobEngine(env.store, { pollMs: 20, allowedKinds: ['coding'] });
+  engine.register('coding', async payload => payload.ok);
+  const coding = engine.enqueue('coding', { ok: true });
+  const otherQueued = env.store.jobsInsert({ id: 'job_other_queued', kind: 'agent.task', state: 'queued', payload_json: '{}', result_json: null, created_at: new Date().toISOString(), started_at: null, heartbeat_at: null, timeout_at: null, run_at: new Date(Date.now() - 1000).toISOString(), timeout_ms: 10000, attempts: 0, max_attempts: 1, parent_id: null, error: null, ended_at: null });
+  // Insert a real running legacy row through the same schema helper.
+  env.store.jobsInsert({ id: 'job_other_running', kind: 'agent.task', state: 'running', payload_json: '{}', result_json: null, created_at: new Date().toISOString(), started_at: new Date().toISOString(), heartbeat_at: null, timeout_at: null, run_at: new Date().toISOString(), timeout_ms: 10000, attempts: 0, max_attempts: 1, parent_id: null, error: null, ended_at: null });
+  assert.throws(() => engine.cancel(otherQueued.id), /not enabled/);
+  assert.equal(env.store.jobsGet(otherQueued.id).state, 'queued', 'coding-only cancellation cannot mutate other job kinds');
+  engine.start();
+  await waitFor(() => env.store.jobsGet(coding.id).state === 'completed');
+  assert.equal(env.store.jobsGet(otherQueued.id).state, 'queued');
+  assert.equal(env.store.jobsGet('job_other_running').state, 'running', 'startup recovery leaves other job kinds untouched');
+  assert.throws(() => engine.enqueue('agent.task', {}), /not enabled/);
+  engine.stop();
+  cleanup(env);
+});
+
 test('3 cancel_running', async () => {
   const env = fresh();
   const engine = new JobEngine(env.store, { pollMs: 20 });

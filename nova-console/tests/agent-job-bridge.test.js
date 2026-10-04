@@ -378,6 +378,50 @@ test('11d global halt blocks queued dispatch immediately before executor call', 
   cleanup(env);
 });
 
+test('11e cancellation signal prevents late results from entering human review', async () => {
+  const s = setup(); const { env } = s;
+  let entered = false;
+  const bridge = new AgentJobBridge(env.store, {
+    registry: env.registry, tasks: env.tasks, jobEngine: env.jobEngine,
+    executor: ctx => new Promise((_resolve, reject) => {
+      entered = true;
+      ctx.signal.addEventListener('abort', () => reject(ctx.signal.reason), { once: true });
+    }),
+    resultHandler: async () => ({ batchId: null, proposal: { summary: 'draft' } }),
+    allowDeferredBatch: true,
+  });
+  bridge.register(); env.jobEngine.start();
+  const started = await bridge.startTask(s.task.id, s.worker.id);
+  await waitFor(() => entered);
+  env.jobEngine.cancel(started.job.id);
+  await waitFor(() => ['cancelled', 'failed', 'awaiting_result_review'].includes(env.tasks.get(s.task.id).state));
+  assert.equal(env.tasks.get(s.task.id).state, 'cancelled');
+  cleanup(env);
+});
+
+test('11f a global halt aborts in-flight work before result review', async () => {
+  const s = setup(); const { env } = s;
+  let halted = false;
+  let entered = false;
+  const bridge = new AgentJobBridge(env.store, {
+    registry: env.registry, tasks: env.tasks, jobEngine: env.jobEngine,
+    isHalted: () => halted,
+    executor: ctx => new Promise((_resolve, reject) => {
+      entered = true;
+      ctx.signal.addEventListener('abort', () => reject(ctx.signal.reason), { once: true });
+    }),
+    resultHandler: async () => ({ batchId: null, proposal: { summary: 'draft' } }),
+    allowDeferredBatch: true,
+  });
+  bridge.register(); env.jobEngine.start();
+  await bridge.startTask(s.task.id, s.worker.id);
+  await waitFor(() => entered);
+  halted = true;
+  await waitFor(() => ['failed', 'awaiting_result_review'].includes(env.tasks.get(s.task.id).state));
+  assert.equal(env.tasks.get(s.task.id).state, 'failed');
+  cleanup(env);
+});
+
 test('12 reconcile_marks_orphaned_running_tasks_failed', () => {
   const env = fresh();
   const registry = env.registry;

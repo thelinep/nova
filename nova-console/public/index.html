@@ -5003,8 +5003,9 @@ let workspaceSelectedProjectId = null;
 let workspaceRunPoll = null;
 let workspaceSelectedLoopId = null;
 let workspaceLoopPoll = null;
-let codingStudioState = { rootId:null, modelId:null, request:'', brahmiComments:true, readiness:null, proposal:null, error:'', busy:'' };
+let codingStudioState = { rootId:null, modelId:null, request:'', brahmiComments:true, readiness:null, proposal:null, agentTaskId:null, agentReason:'', agentFeedback:'', error:'', busy:'' };
 let codingStudioRevision = 0;
+let codingStudioPollTimer = null;
 function codingStudioTaskText(){
   const request=String(codingStudioState.request||'').trim();
   return codingStudioState.brahmiComments
@@ -5032,6 +5033,13 @@ async function renderCodingStudioView(){
     if(qualificationResponse.ok)qualifications=await qualificationResponse.json();
     if(teamResponse.ok)team=await teamResponse.json();
   }catch(_){loadError='Maataa could not load project or readiness information. Refresh the Studio and try again.';}
+  let agentTask=null;
+  const taskSummaries=(team?.tasks||[]).filter(task=>task.codingStudio===true||task.coding_studio===true);
+  const activeTaskSummary=taskSummaries.find(task=>['queued','assigned','running'].includes(task.state));
+  if(!taskSummaries.some(task=>task.id===codingStudioState.agentTaskId))codingStudioState.agentTaskId=activeTaskSummary?.id||taskSummaries[0]?.id||null;
+  if(codingStudioState.agentTaskId){
+    try{const response=await fetch(apiUrl('/api/agents/tasks/'+encodeURIComponent(codingStudioState.agentTaskId)));if(response.ok)agentTask=(await response.json()).task||null;else if(response.status===404)codingStudioState.agentTaskId=null;}catch(_){}
+  }
   if(!roots.some(root=>root.id===codingStudioState.rootId))codingStudioState.rootId=roots[0]?.id||null;
   const localModels=(DB.models||[]).filter(model=>model.runtime==='ollama'&&!model.example);
   if(!localModels.some(model=>model.id===codingStudioState.modelId))codingStudioState.modelId=localModels[0]?.id||null;
@@ -5056,20 +5064,32 @@ async function renderCodingStudioView(){
     : `<div id="studioReadiness" class="coding-studio-state" role="status" aria-live="polite">Choose an approved project, a local model and a specific request, then check readiness. This read-only check does not change project files.</div>`;
   const proposal=codingStudioState.proposal;
   const proposalChanges=proposal?(proposal.changes||[]).map(change=>`<div style="padding:8px 0;border-top:1px solid var(--line-soft)"><strong>${escapeHtml(change.relativePath||change.path||'Proposed file')}</strong><div class="empty-hint">${escapeHtml(change.impact||change.operation||'Proposed change')}</div>${change.diff?`<pre class="coding-studio-code">${escapeHtml(change.diff)}</pre>`:''}</div>`).join(''):'';
-  let teamHtml;
+  let teamHtml,teamControls=team?.controls?.codingStudio?{...team.controls,...team.controls.codingStudio}:team?.controls||{};
   if(!team){
     teamHtml='<div class="coding-studio-state" role="status">Multi-agent readiness is unavailable. This Studio does not offer agent execution.</div>';
   }else{
-    const controls=team.controls||{};
+    const controls=teamControls;
     const gates=[];
     gates.push(controls.execution_available?'Agent execution available':'Agent execution unavailable: '+codingStudioReason(controls.execution_reason));
     gates.push(controls.human_result_review_available?'Human result review available':'Human result review unavailable: '+codingStudioReason(controls.human_result_review_reason));
     if(controls.runtime_halted)gates.push('Agent runtime is halted.');
-    teamHtml=`<div class="coding-studio-state" role="status"><strong>Team status · read-only</strong><div class="coding-studio-meta" style="margin-top:6px"><span>${(team.agents||[]).length} agent profiles</span><span>${(team.tasks||[]).length} recorded tasks</span></div><div style="margin-top:6px">${gates.map(escapeHtml).join('<br>')}</div><div class="empty-hint" style="margin-top:6px">No task can be dispatched or approved from this Studio.</div></div>`;
+    const state=agentTask?.state||'';
+    const result=agentTask?.result||{};
+    const agentProposal=result.proposal||agentTask?.proposal||null;
+    const reviewPending=state==='awaiting_result_review';
+    const accepted=state==='accepted';
+    const needsRevision=state==='needs_revision'||state==='revision_requested';
+    const agentActive=['queued','assigned','running'].includes(state)||!!activeTaskSummary;
+    const changes=(agentProposal?.changes||[]).map(change=>{const preview=change.operation==='edit'?`<div class="coding-studio-meta" style="margin-top:6px"><span>Current text</span><span>Proposed text</span></div><div class="coding-studio-form" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:8px;margin-top:5px"><pre class="coding-studio-code">${escapeHtml(change.find||'')}</pre><pre class="coding-studio-code">${escapeHtml(change.replacement||'')}</pre></div>`:change.operation==='create'?`<div class="empty-hint" style="margin-top:6px">New file content</div><pre class="coding-studio-code">${escapeHtml(change.content||'')}</pre>`:change.operation==='rename'?`<div class="empty-hint" style="margin-top:6px">New path: ${escapeHtml(change.toPath||'')}</div>`:'';return `<div style="padding:8px 0;border-top:1px solid var(--line-soft)"><strong>${escapeHtml(change.relativePath||'Proposed file')}</strong><div class="empty-hint">${escapeHtml(change.operation||'Proposed change')}${change.impact?' · '+escapeHtml(change.impact):''}</div>${preview}${change.diff?`<pre class="coding-studio-code">${escapeHtml(change.diff)}</pre>`:''}</div>`;}).join('');
+    const controlsHtml=`<div class="coding-studio-meta" style="margin-top:6px"><span>${(team.agents||[]).length} agent profiles</span><span>${taskSummaries.length} Coding Studio task${taskSummaries.length===1?'':'s'}</span></div><div style="margin-top:6px">${gates.map(escapeHtml).join('<br>')}</div>`;
+    const reviewControls=reviewPending?`<label class="coding-studio-field" style="margin-top:12px"><span>Review note</span><textarea id="studioAgentReviewReason" maxlength="1000" placeholder="What did you verify or what should change?">${escapeHtml(codingStudioState.agentReason)}</textarea></label><div class="coding-studio-actions" style="margin-top:9px"><button type="button" class="btn btn-amber" id="studioAgentAccept">Accept proposal for validation</button><button type="button" class="btn btn-line" id="studioAgentRevise">Request a revision</button><button type="button" class="btn btn-line" id="studioAgentReject">Reject proposal</button></div><div class="empty-hint" style="margin-top:6px">Accepting records your review and unlocks validation in Local Workspace. It does not approve or write project files.</div>`:'';
+    const taskHtml=agentTask?`<article class="coding-studio-state" id="studioAgentTask" data-state="${escapeHtml(state)}" style="margin-top:10px"><strong>${reviewPending?'Agent proposal awaiting your review':accepted?'Proposal accepted · validation still required':needsRevision?'Revision requested':state==='running'?'Agent is working':state==='failed'?'Agent task failed':state==='rejected'?'Proposal rejected':'Agent task · '+escapeHtml(state||'unknown')}</strong><div class="coding-studio-meta" style="margin-top:6px"><span>Task ${escapeHtml(agentTask.id)}</span><span>Model ${escapeHtml(agentTask.modelId||result.modelId||agentProposal?.modelId||'selected local model')}</span>${agentTask.batchId||result.batchId?`<span>Batch ${escapeHtml(agentTask.batchId||result.batchId)}</span>`:''}</div>${agentTask.error?`<p class="empty-hint">${escapeHtml(agentTask.error)}</p>`:''}${agentProposal?`<p class="empty-hint" style="margin:8px 0">${escapeHtml(agentProposal.summary||'The agent prepared a proposal for review.')}</p>${changes}<div class="empty-hint" style="margin-top:6px">No project file has been written by the agent.</div>`:''}${reviewPending?reviewControls:''}${accepted?'<div class="coding-studio-actions" style="margin-top:9px"><button type="button" class="btn btn-amber" id="studioAgentOpenBatch">Review exact batch in Local Workspace</button></div><div class="empty-hint" style="margin-top:6px">Maataa must still validate the complete batch, then you approve and apply it separately.</div>':''}${needsRevision?`<label class="coding-studio-field" style="margin-top:12px"><span>Revision instructions</span><textarea id="studioAgentFeedback" maxlength="4000" placeholder="Describe the specific correction.">${escapeHtml(codingStudioState.agentFeedback)}</textarea></label><button type="button" class="btn btn-line" id="studioAgentRetry" style="margin-top:8px">Ask agent to revise</button>`:''}${['queued','assigned','running'].includes(state)?`<div class="coding-studio-actions" style="margin-top:9px"><span class="empty-hint">The agent can only propose bounded changes; it cannot write files or run project commands.</span><button type="button" class="btn btn-line" id="studioAgentCancel">Cancel task</button></div>`:''}</article>`:'';
+    teamHtml=`<div class="coding-studio-state" role="status"><strong>Independent coding agent</strong>${controlsHtml}${codingStudioState.error?`<p id="studioAgentError" role="alert" style="color:var(--red);margin:8px 0 0">${escapeHtml(codingStudioState.error)}</p>`:''}</div>${taskHtml}`;
   }
   const guruHtml='<div class="coding-studio-state" role="status"><strong>Guru-Code · experimental, not ready</strong><div style="margin-top:4px">This checkout has no trained Guru-Code checkpoint or established coding results. Guru-Code becomes selectable only when installed in Ollama and qualified by Maataa. Other qualified local models can be used meanwhile.</div><div class="empty-hint" style="margin-top:6px">Code syntax and identifiers stay conventional. Brahmi comments and explanations are an experimental opt-in.</div></div>';
   const noRoots=!roots.length;
   const noModels=!localModels.length;
+  const codingAgentActive=['queued','assigned','running'].includes(agentTask?.state)||!!activeTaskSummary;
   pad.innerHTML=`<div class="view-head"><div><h1 class="view-title">Coding Studio</h1><p class="view-desc">Give one approved local project a bounded coding task. Inspect the exact proposal in Local Workspace; Maataa checks it before you approve any write.</p></div></div>
     ${loadError?`<div class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(loadError)}</div>`:''}
     ${noRoots?`<section class="panel" style="padding:18px;margin-bottom:14px"><h2 style="font-size:16px;margin:0 0 6px">Approve a project to begin</h2><p class="empty-hint">Coding Studio only works inside a folder you have approved in Local Workspace.</p><button type="button" class="btn btn-line" id="studioOpenWorkspace">Open Local Workspace</button></section>`:''}
@@ -5079,7 +5099,7 @@ async function renderCodingStudioView(){
         <div class="coding-studio-field"><label for="studioModel">Local coding model</label><select id="studioModel" ${noModels?'disabled':''}><option value="">${noModels?'No installed Ollama models':'Choose a model'}</option>${modelOptions}</select><div class="coding-studio-meta" id="studioModelSummary">${modelSummary}</div>${noModels?'<button type="button" class="btn btn-ghost" id="studioOpenModels" style="align-self:flex-start;padding-left:0">Open Models</button>':''}</div>
         <div class="coding-studio-field coding-studio-span"><label for="studioRequest">What should change?</label><textarea id="studioRequest" maxlength="4000" placeholder="Name the file and the behavior. For example: In src/feature.js, change enabled to true so the feature is active by default." ${noRoots||noModels?'disabled':''}>${escapeHtml(codingStudioState.request)}</textarea><div class="empty-hint">Be specific about the target file and expected behavior. Maataa sends bounded project context to the selected model.</div></div>
         <label class="coding-studio-check coding-studio-span"><input id="studioBrahmiComments" type="checkbox" ${codingStudioState.brahmiComments?'checked':''} ${noRoots||noModels?'disabled':''}><span><strong style="color:var(--ink-dim)">Brahmi comments and explanations</strong> <span class="badge">Experimental</span><br>Keep code syntax, keywords and identifiers conventional. Ask for Brahmi only in comments and explanatory text; the model may not support this reliably yet.</span></label>
-        <div class="coding-studio-actions coding-studio-span"><button type="button" class="btn btn-line" id="studioCheckReadiness" ${noRoots||noModels||codingStudioState.busy?'disabled':''}>${codingStudioState.busy==='preview'?'Checking…':'Check readiness'}</button><button type="button" class="btn btn-amber" id="studioCreateProposal" ${!ready||noRoots||noModels||codingStudioState.busy?'disabled':''}>${codingStudioState.busy==='plan'?'Preparing proposal…':'Create proposal'}</button></div>
+        <div class="coding-studio-actions coding-studio-span"><button type="button" class="btn btn-line" id="studioCheckReadiness" ${noRoots||noModels||codingStudioState.busy?'disabled':''}>${codingStudioState.busy==='preview'?'Checking…':'Check readiness'}</button><button type="button" class="btn btn-amber" id="studioCreateProposal" ${!ready||noRoots||noModels||codingStudioState.busy?'disabled':''}>${codingStudioState.busy==='plan'?'Preparing proposal…':'Create proposal'}</button>${teamControls.execution_available?`<button type="button" class="btn btn-line" id="studioDispatchAgent" ${!ready||noRoots||noModels||codingStudioState.busy||teamControls.runtime_halted||codingAgentActive?'disabled':''}>${codingStudioState.busy==='agent-dispatch'?'Sending to agent…':codingAgentActive?'Agent task in progress':'Ask agent for proposal'}</button>`:''}</div>
         <div class="coding-studio-span">${readinessHtml}</div>
         ${codingStudioState.error?`<div id="studioError" class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(codingStudioState.error)}<div class="empty-hint" style="margin-top:5px">Your project was not changed. Correct the request or refresh readiness before trying again.</div></div>`:''}
       </div>
@@ -5108,6 +5128,40 @@ async function renderCodingStudioView(){
     const data=await response.json().catch(()=>({error:'Maataa returned an unreadable response.'}));
     if(!response.ok)throw new Error(data.error||`Request failed (${response.status}).`);
     return data;
+  };
+  if($('studioDispatchAgent'))$('studioDispatchAgent').onclick=async()=>{
+    if(!codingStudioState.readiness?.ready||codingStudioState.busy)return;
+    codingStudioState.rootId=$('studioRoot').value||null;codingStudioState.modelId=$('studioModel').value||null;codingStudioState.request=$('studioRequest').value;codingStudioState.brahmiComments=$('studioBrahmiComments').checked;
+    if(!codingStudioState.rootId||!codingStudioState.modelId||!codingStudioState.request.trim())return;
+    codingStudioState.busy='agent-dispatch';codingStudioState.error='';await renderCodingStudioView();
+    try{const data=await runJson('/api/agents/coding/tasks',{rootId:codingStudioState.rootId,modelId:codingStudioState.modelId,request:codingStudioTaskText(),brahmiComments:codingStudioState.brahmiComments});codingStudioState.agentTaskId=data.task?.id||data.id;if(!codingStudioState.agentTaskId)throw new Error('Maataa did not return the created agent task.');}
+    catch(error){codingStudioState.error=error.message;}
+    finally{codingStudioState.busy='';await renderCodingStudioView();}
+  };
+  const reviewAgentResult=async(decision)=>{
+    if(!agentTask)return;
+    codingStudioState.agentReason=$('studioAgentReviewReason')?.value||'';
+    if(!codingStudioState.agentReason.trim()){codingStudioState.error='Add a short review note before recording this decision.';return renderCodingStudioView();}
+    try{await runJson('/api/agents/tasks/'+encodeURIComponent(agentTask.id)+'/review',{decision,reason:codingStudioState.agentReason});codingStudioState.error='';codingStudioState.agentReason='';await renderCodingStudioView();}
+    catch(error){codingStudioState.error=error.message;await renderCodingStudioView();}
+  };
+  if($('studioAgentAccept'))$('studioAgentAccept').onclick=()=>reviewAgentResult('accept');
+  if($('studioAgentReject'))$('studioAgentReject').onclick=()=>reviewAgentResult('reject');
+  if($('studioAgentRevise'))$('studioAgentRevise').onclick=()=>reviewAgentResult('revise');
+  if($('studioAgentRetry'))$('studioAgentRetry').onclick=async()=>{
+    codingStudioState.agentFeedback=$('studioAgentFeedback')?.value||'';
+    if(!codingStudioState.agentFeedback.trim()){codingStudioState.error='Describe the correction before retrying.';return renderCodingStudioView();}
+    try{await runJson('/api/agents/tasks/'+encodeURIComponent(agentTask.id)+'/retry',{feedback:codingStudioState.agentFeedback});codingStudioState.error='';await renderCodingStudioView();}
+    catch(error){codingStudioState.error=error.message;await renderCodingStudioView();}
+  };
+  if($('studioAgentCancel'))$('studioAgentCancel').onclick=async()=>{
+    try{await runJson('/api/agents/tasks/'+encodeURIComponent(agentTask.id)+'/cancel',{});codingStudioState.error='';await renderCodingStudioView();}
+    catch(error){codingStudioState.error=error.message;await renderCodingStudioView();}
+  };
+  if($('studioAgentOpenBatch'))$('studioAgentOpenBatch').onclick=()=>{
+    const batchId=agentTask.batchId||agentTask.result?.batchId; if(!batchId)return;
+    workspaceSelectedRootId=agentTask.rootId||codingStudioState.rootId;workspaceSelectedBatchId=batchId;showView('workspace');
+    setTimeout(()=>[...document.querySelectorAll('.workspace-batch')].find(node=>node.dataset.id===batchId)?.scrollIntoView({behavior:'smooth',block:'center'}),500);
   };
   if($('studioCheckReadiness'))$('studioCheckReadiness').onclick=async()=>{
     codingStudioState.rootId=$('studioRoot').value||null;codingStudioState.modelId=$('studioModel').value||null;codingStudioState.request=$('studioRequest').value;codingStudioState.brahmiComments=$('studioBrahmiComments').checked;
@@ -5148,6 +5202,8 @@ async function renderCodingStudioView(){
     showView('workspace');
     setTimeout(()=>[...document.querySelectorAll('.workspace-batch,.workspace-change')].find(node=>node.dataset.id===proposal.id)?.scrollIntoView({behavior:'smooth',block:'center'}),500);
   };
+  if(codingStudioPollTimer){clearTimeout(codingStudioPollTimer);codingStudioPollTimer=null;}
+  if(agentTask&&['queued','assigned','running'].includes(agentTask.state))codingStudioPollTimer=setTimeout(()=>{if(activeView==='codingstudio'&&codingStudioState.agentTaskId===agentTask.id)renderCodingStudioView();},1500);
 }
 function workspaceBytes(bytes){ return bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KB':(bytes/1048576).toFixed(1)+' MB'; }
 function workspaceCitation(item){ return `<button class="tag-chip workspace-citation" data-citation="${escapeHtml(item.citation)}" title="Copy file citation">${escapeHtml(item.relativePath)}:${item.line||1}</button>`; }

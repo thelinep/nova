@@ -40,6 +40,7 @@ class JobEngine {
     this.defaultTimeoutMs = Number.isFinite(options.defaultTimeoutMs)
       ? options.defaultTimeoutMs
       : 300000;
+    this.allowedKinds = Array.isArray(options.allowedKinds) ? new Set(options.allowedKinds.map(String)) : null;
     this.handlers = new Map();
     this.active = new Map();
     this.timers = { poll: null, heartbeat: null, reaper: null };
@@ -47,6 +48,7 @@ class JobEngine {
   }
 
   register(kind, handler) {
+    this._assertKind(kind);
     if (typeof handler !== 'function') {
       throw new JobError('handler must be a function', 'bad_handler');
     }
@@ -54,6 +56,7 @@ class JobEngine {
   }
 
   enqueue(kind, payload, options) {
+    this._assertKind(kind);
     options = options || {};
     const id = uid('job');
     const timeoutMs = Number.isFinite(options.timeoutMs)
@@ -85,6 +88,7 @@ class JobEngine {
   cancel(jobId) {
     const job = this.store.jobsGet(jobId);
     if (!job) throw new JobError('job not found', 'not_found');
+    this._assertKind(job.kind);
     if (job.state === 'queued') {
       const updated = this.store.jobsUpdate(jobId, {
         state: 'cancelled',
@@ -132,7 +136,9 @@ class JobEngine {
   }
 
   recover() {
-    const running = this.store.jobsListByState('running');
+    const running = this.allowedKinds
+      ? [...this.allowedKinds].flatMap(kind => this.store.jobsListByKindAndState(kind, 'running'))
+      : this.store.jobsListByState('running');
     for (const job of running) {
       this.store.jobsUpdate(job.id, {
         state: 'failed',
@@ -145,9 +151,12 @@ class JobEngine {
   }
 
   stats() {
+    const list = state => this.allowedKinds
+      ? [...this.allowedKinds].flatMap(kind => this.store.jobsListByKindAndState(kind, state))
+      : this.store.jobsListByState(state);
     return {
-      queued: this.store.jobsListByState('queued').length,
-      running: this.store.jobsListByState('running').length,
+      queued: list('queued').length,
+      running: list('running').length,
       active: this.active.size,
       handlers: this.handlers.size,
     };
@@ -156,7 +165,15 @@ class JobEngine {
   async _poll() {
     const slots = this.concurrency - this.active.size;
     if (slots <= 0) return;
-    const claimed = this.store.jobsClaimNext(slots);
+    let claimed;
+    if (this.allowedKinds) {
+      claimed = [];
+      for (const kind of this.allowedKinds) {
+        const remaining = slots - claimed.length;
+        if (remaining <= 0) break;
+        claimed.push(...this.store.jobsClaimNextByKind(kind, remaining));
+      }
+    } else claimed = this.store.jobsClaimNext(slots);
     for (const job of claimed) {
       this._run(job).catch((e) => this._log('run', e));
     }
@@ -184,6 +201,7 @@ class JobEngine {
         return active.cancelRequested;
       },
     });
+    Object.defineProperty(ctx, 'cancelReason', { get() { return active.cancelReason; } });
     active.ctx = ctx;
     this.active.set(job.id, active);
 
@@ -277,7 +295,9 @@ class JobEngine {
   }
 
   async _reap() {
-    const timedOut = this.store.jobsFindTimedOut();
+    const timedOut = this.allowedKinds
+      ? [...this.allowedKinds].flatMap(kind => this.store.jobsFindTimedOutByKind(kind))
+      : this.store.jobsFindTimedOut();
     for (const job of timedOut) {
       const active = this.active.get(job.id);
       if (active && !active.cancelRequested) {
@@ -300,6 +320,12 @@ class JobEngine {
   _log(where, err) {
     if (process.env.NOVA_JOBS_DEBUG) {
       console.error(`[jobs.${where}]`, (err && err.message) || err);
+    }
+  }
+
+  _assertKind(kind) {
+    if (this.allowedKinds && !this.allowedKinds.has(String(kind))) {
+      throw new JobError('job kind is not enabled on this engine', 'kind_not_allowed');
     }
   }
 }

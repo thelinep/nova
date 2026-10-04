@@ -102,6 +102,9 @@ const { Workbench } = require('./lib/workbench');
 const { WorkbenchActions } = require('./lib/workbench-actions');
 const { AgentRegistry } = require('./lib/agents');
 const { AgentTasks } = require('./lib/agent-tasks');
+const { BudgetEngine } = require('./lib/budgets');
+const { AgentBudgets } = require('./lib/agent-budgets');
+const { CodingAgentRuntime } = require('./lib/coding-agent-runtime');
 const { ActivationLadder } = require('./lib/activation');
 const { SecretVault } = require('./lib/secrets');
 const { ConnectorRegistry } = require('./lib/connectors');
@@ -131,11 +134,10 @@ function gitSnapshot() {
 
 const { db } = openDb(DATA_DIR);
 const store = new Store(db);
-// The agent registry/task ledger are surfaced read-only below. The durable
-// AgentJobBridge is not registered in this runtime, so the console must not
-// offer task dispatch or imply that a completed task has been human-approved.
 const agentRegistry = new AgentRegistry(store);
 const agentTasks = new AgentTasks(store, { registry: agentRegistry });
+const budgetEngine = new BudgetEngine(store);
+const agentBudgets = new AgentBudgets({ store, registry: agentRegistry, budgetEngine });
 activity.configure(store);
 // This install's device identity (Ed25519), and contracts a restart left open are sealed as cancelled.
 deviceIdentity.ensure(store, DATA_DIR); contracts.sweep(store, DATA_DIR);
@@ -200,6 +202,11 @@ try {
 if (workbenchActions) workbenchActions.connectorActions = connectorActions;
 
 const ollama = new OllamaClient(process.env.OLLAMA_HOST);
+const codingAgentRuntime = new CodingAgentRuntime({
+  store, registry: agentRegistry, tasks: agentTasks, scanner: workspaceScanner,
+  changes: workspaceChanges, planner: codePlanner, ollama, budgets: agentBudgets, policy: workbenchPolicy,
+  audit: event => desktopSecurity.appendAudit(DATA_DIR, event),
+});
 const telemetry = new TelemetryReader();
 
 // Cached reachability flag the frontend's diagnostics/status-bar can read
@@ -1335,71 +1342,25 @@ const routes = [
 { method: 'POST', pattern: /^\/api\/workbench\/resume-passphrase$/, handler: async (req, res) => { const b = await readJsonBody(req); sendJson(res, 200, resumePassphrase.set(DATA_DIR, b)); } },
 { method: 'GET', pattern: /^\/api\/workbench\/snapshot$/, handler: async (_req, res) => sendJson(res, 200, new Workbench(store).snapshot())},
 
-// Read-only team surface for the Studio. Execution and human-review actions
-// stay unavailable until the job bridge and their policy gates are wired into
-// this runtime; exposing the task ledger must not accidentally start agents.
 { method: 'GET', pattern: /^\/api\/agents\/team$/, handler: async (_req, res) => {
-  const agents = agentRegistry.list({ active: true }).map((a) => ({
-    id: a.id,
-    name: a.name,
-    role: a.role,
-    description: a.description,
-    enabled: a.enabled === 1,
-    revoked: !!a.revoked_at,
-    supervisor_id: a.supervisor_id || null,
-    model_preference: safeJson(a.model_preference_json),
-    allowed_tools: safeJson(a.allowed_tools_json) || [],
-    created_at: a.created_at,
-  }));
-  const tasks = store.agentTasksList({}).slice(0, 100).map(agentTaskSummary);
-  const halted = typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1';
-  sendJson(res, 200, {
-    generated_at: new Date().toISOString(),
-    agents,
-    tasks,
-    controls: {
-      runtime_halted: halted,
-      execution_available: false,
-      execution_reason: 'agent_job_bridge_not_registered',
-      human_result_review_available: false,
-      human_result_review_reason: 'agent_result_review_state_not_implemented',
-    },
-  });
+  const coding = codingAgentRuntime.team();
+  const agents = agentRegistry.list({ active: true }).map(agent => ({ id: agent.id, name: agent.name, role: agent.role, description: agent.description, enabled: agent.enabled === 1, revoked: !!agent.revoked_at, supervisor_id: agent.supervisor_id || null, model_preference: safeJson(agent.model_preference_json), allowed_tools: safeJson(agent.allowed_tools_json) || [], created_at: agent.created_at }));
+  const codingById = new Map(coding.tasks.map(task => [task.id, task]));
+  const tasks = store.agentTasksList({}).slice(0, 100).map(task => codingById.get(task.id) || { ...agentTaskSummary(task), codingStudio: false, rootId: null, modelId: null, batchId: null });
+  sendJson(res, 200, { ...coding, agents, tasks, controls: { ...coding.controls, human_result_review_available: false, human_result_review_reason: 'Review actions are scoped to Coding Studio tasks.', codingStudio: { execution_available: coding.controls.execution_available, human_result_review_available: true } } });
 }},
 { method: 'GET', pattern: /^\/api\/agents\/tasks\/([^/]+)$/, handler: async (_req, res, [id]) => {
-  const task = agentTasks.get(decodeURIComponent(id));
+  const decoded = decodeURIComponent(id);
+  const task = agentTasks.get(decoded);
+  if (task && codingAgentRuntime.isCodingTask(task)) { sendJson(res, 200, codingAgentRuntime.detail(decoded)); return; }
   if (!task) { sendJson(res, 404, { error: 'task not found' }); return; }
   const halted = typeof store.getGlobalHalt === 'function' && store.getGlobalHalt() === '1';
-  sendJson(res, 200, {
-    task: {
-      ...agentTaskSummary(task),
-      payload: safeJson(task.payload_json),
-      result: safeJson(task.result_json),
-      error: task.error || null,
-      job_id: task.job_id || null,
-      started_at: task.started_at || null,
-      ended_at: task.ended_at || null,
-      expires_at: task.expires_at || null,
-    },
-    events: agentTasks.events(task.id).map((event) => ({
-      id: event.id,
-      kind: event.kind,
-      actor_id: event.actor_id,
-      from_assignee: event.from_assignee,
-      to_assignee: event.to_assignee,
-      reason: event.reason,
-      payload: safeJson(event.payload_json),
-      timestamp: event.timestamp,
-    })),
-    controls: {
-      runtime_halted: halted,
-      execution_available: false,
-      execution_reason: 'agent_job_bridge_not_registered',
-      human_result_review_available: false,
-      human_result_review_reason: 'agent_result_review_state_not_implemented',
-    },
-  });
+  sendJson(res, 200, { task: { ...agentTaskSummary(task), payload: safeJson(task.payload_json), result: safeJson(task.result_json), error: task.error || null, job_id: task.job_id || null, started_at: task.started_at || null, ended_at: task.ended_at || null, expires_at: task.expires_at || null, codingStudio: false }, events: agentTasks.events(task.id).map(event => ({ id: event.id, kind: event.kind, actor_id: event.actor_id, from_assignee: event.from_assignee, to_assignee: event.to_assignee, reason: event.reason, payload: safeJson(event.payload_json), timestamp: event.timestamp })), controls: { runtime_halted: halted, execution_available: false, execution_reason: 'general_agent_execution_unavailable', human_result_review_available: false, human_result_review_reason: 'generic_task_review_unavailable' } });
 }},
+{ method: 'POST', pattern: /^\/api\/agents\/coding\/tasks$/, handler: async (req, res) => sendJson(res, 202, await codingAgentRuntime.createTask(await readJsonBody(req))) },
+{ method: 'POST', pattern: /^\/api\/agents\/tasks\/([^/]+)\/review$/, handler: async (req, res, [id]) => sendJson(res, 200, await codingAgentRuntime.reviewTask(decodeURIComponent(id), await readJsonBody(req))) },
+{ method: 'POST', pattern: /^\/api\/agents\/tasks\/([^/]+)\/retry$/, handler: async (req, res, [id]) => sendJson(res, 202, await codingAgentRuntime.retryTask(decodeURIComponent(id), await readJsonBody(req))) },
+{ method: 'POST', pattern: /^\/api\/agents\/tasks\/([^/]+)\/cancel$/, handler: async (_req, res, [id]) => sendJson(res, 200, codingAgentRuntime.cancelTask(decodeURIComponent(id))) },
 
    { method: 'GET', pattern: /^\/api\/activation$/, handler: async (_req, res) => sendJson(res, 200, new ActivationLadder(store).snapshot()) },
 
@@ -1556,6 +1517,8 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Maataa Workstation listening on http://127.0.0.1:${server.address().port}`);
+  try { codingAgentRuntime.start(); console.log('  coding studio: bounded Ollama drafts with human review'); }
+  catch (error) { console.error('  coding studio unavailable:', error.message); }
   console.log(`  data dir:    ${DATA_DIR}`);
   console.log(`  ollama host: ${ollama.host}`);
   console.log(`  stores:      ${STORE_NAMES.join(', ')}`);
@@ -1593,6 +1556,7 @@ server.listen(PORT, '127.0.0.1', () => {
 
 function shutdown() {
   console.log('\nShutting down Maataa Workstation...');
+  codingAgentRuntime.stop();
   mcpManager.shutdownAll(); // real child MCP server processes — close them, don't orphan
   workspaceRunner.stopAll(); // dev servers and commands run in their own process groups
   const closing = Promise.all([browser.shutdown().catch(() => {}), comfyManager.shutdown().catch(() => {})]); // agent browser windows, Maataa's own ComfyUI

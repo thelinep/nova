@@ -30,12 +30,13 @@ class OllamaClient {
   /** Cheap reachability + model inventory check. Never throws — callers get
    *  {reachable:false, error} instead, because "Ollama isn't running" is an
    *  ordinary, expected state for this prototype, not a server error. */
-  async status() {
+  async status(externalSignal) {
     const t = withTimeout(REACHABILITY_TIMEOUT_MS);
+    const signal = externalSignal ? AbortSignal.any([t.signal, externalSignal]) : t.signal;
     try {
       const [tagsRes, psRes] = await Promise.all([
-        fetch(this.url('/api/tags'), { signal: t.signal }),
-        fetch(this.url('/api/ps'), { signal: t.signal }).catch(() => null),
+        fetch(this.url('/api/tags'), { signal }),
+        fetch(this.url('/api/ps'), { signal }).catch(() => null),
       ]);
       if (!tagsRes.ok) throw new Error(`Ollama responded ${tagsRes.status}`);
       const tags = await tagsRes.json();

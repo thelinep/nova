@@ -117,6 +117,24 @@ test('explicit planner model is the model used and an unqualified choice never f
   }
 });
 
+test('Coding Studio preflight preview has a cancellable timeout for stalled Ollama inventory', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-plan-preview-timeout-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'a.js'), 'const value = 1;\n');
+    const db = store();
+    const root = scanner.approveRoot(db, { path: dir });
+    const ollama = { status: async () => new Promise(() => {}) };
+    const started = Date.now();
+    await assert.rejects(
+      () => productionPlanner.preview(db, scanner, ollama, { rootId: root.id, modelId: 'chosen:latest', request: 'Change value in a.js to 2' }, { timeoutMs: 15 }),
+      error => error.statusCode === 504 && /preflight timed out/i.test(error.message),
+    );
+    assert.ok(Date.now() - started < 1000, 'preflight returns promptly when inventory hangs');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('repository context budget preserves output room and caps large-context models', () => {
   assert.equal(planner.repositoryCharacterBudget(8192, 100), 14332);
   assert.equal(planner.repositoryCharacterBudget(131072, 100), 120000);

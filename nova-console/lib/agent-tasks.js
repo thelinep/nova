@@ -5,10 +5,10 @@ const crypto = require('node:crypto');
 const nowIso = () => new Date().toISOString();
 const uid = (p) => `${p}_${crypto.randomUUID()}`;
 
-const STATES = ['queued', 'assigned', 'running', 'awaiting_result_review', 'completed', 'accepted', 'rejected', 'failed', 'cancelled'];
+const STATES = ['queued', 'assigned', 'running', 'awaiting_result_review', 'revision_requested', 'completed', 'accepted', 'rejected', 'failed', 'cancelled'];
 const EVENT_KINDS = [
   'created', 'assigned', 'started', 'result_submitted_for_review',
-  'result_accepted', 'result_rejected', 'completed', 'failed',
+  'result_accepted', 'result_rejected', 'result_revision_requested', 'retried', 'completed', 'failed',
   'cancelled', 'handed_off',
 ];
 
@@ -198,8 +198,8 @@ class AgentTasks {
   }
 
   /** Record an explicit, terminal local acceptance decision. */
-  acceptResult(taskId, actorId, reason) {
-    return this._reviewResult(taskId, 'accepted', actorId, reason);
+  acceptResult(taskId, actorId, reason, result) {
+    return this._reviewResult(taskId, 'accepted', actorId, reason, result);
   }
 
   /** Record an explicit, terminal local rejection decision. */
@@ -207,8 +207,57 @@ class AgentTasks {
     return this._reviewResult(taskId, 'rejected', actorId, reason);
   }
 
-  _reviewResult(taskId, decision, actorId, reason) {
+  requestRevision(taskId, actorId, reason) {
     const row = this._require(taskId);
+    this._validateReview(row, actorId, reason);
+    const at = nowIso();
+    const next = this.store.agentTasksUpdate(taskId, { state: 'revision_requested', updated_at: at });
+    this._event(taskId, 'result_revision_requested', { actor_id: actorId.trim(), reason: reason.trim(), payload: { result_sha256: row.result_json == null ? null : crypto.createHash('sha256').update(row.result_json).digest('hex') } });
+    this._audit('result_revision_requested', { task_id: taskId, actor_id: actorId.trim() });
+    return next;
+  }
+
+  retry(taskId, payload, actorId) {
+    const row = this._require(taskId);
+    if (!['revision_requested', 'rejected', 'failed', 'cancelled'].includes(row.state)) throw new AgentTaskError('task is not eligible for retry', 'not_retryable');
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new AgentTaskError('retry payload must be an object', 'bad_payload');
+    let payloadJson;
+    try { payloadJson = JSON.stringify(payload); } catch { throw new AgentTaskError('retry payload must be serializable', 'bad_payload'); }
+    const next = this.store.agentTasksUpdate(taskId, { state: 'assigned', payload_json: payloadJson, result_json: null, error: null, started_at: null, ended_at: null, job_id: null, updated_at: nowIso() });
+    this._event(taskId, 'retried', { actor_id: actorId || null, payload: { payload_sha256: crypto.createHash('sha256').update(payloadJson).digest('hex') } });
+    this._audit('retried', { task_id: taskId, actor_id: actorId || null });
+    return next;
+  }
+
+  _reviewResult(taskId, decision, actorId, reason, result) {
+    const row = this._require(taskId);
+    this._validateReview(row, actorId, reason);
+    const reviewedAt = nowIso();
+    let resultJson = row.result_json;
+    if (result !== undefined) {
+      try { resultJson = JSON.stringify(result); } catch { throw new AgentTaskError('review result must be serializable', 'bad_payload'); }
+    }
+    const next = this.store.agentTasksUpdate(taskId, {
+      state: decision,
+      ...(decision === 'accepted' ? { result_json: resultJson } : {}),
+      ended_at: reviewedAt,
+      updated_at: reviewedAt,
+    });
+    // Result digest refers to the artifact the operator accepted/rejected.
+    this._event(taskId, decision === 'accepted' ? 'result_accepted' : 'result_rejected', {
+      actor_id: actorId.trim(),
+      reason: reason.trim(),
+      payload: {
+        decision,
+        result_sha256: row.result_json == null ? null : crypto.createHash('sha256').update(row.result_json).digest('hex'),
+        accepted_result_sha256: resultJson == null ? null : crypto.createHash('sha256').update(resultJson).digest('hex'),
+      },
+    });
+    this._audit('result_' + decision, { task_id: taskId, actor_id: actorId.trim() });
+    return next;
+  }
+
+  _validateReview(row, actorId, reason) {
     if (row.state !== 'awaiting_result_review') {
       throw new AgentTaskError('task is not awaiting result review', 'not_awaiting_result_review');
     }
@@ -218,24 +267,6 @@ class AgentTasks {
     if (typeof reason !== 'string' || !reason.trim()) {
       throw new AgentTaskError('review reason required', 'bad_review_reason');
     }
-    const reviewedAt = nowIso();
-    const next = this.store.agentTasksUpdate(taskId, {
-      state: decision,
-      ended_at: reviewedAt,
-      updated_at: reviewedAt,
-    });
-    // The event log is append-only. Keep the decision, actor, reason, and
-    // digest of the reviewed result together as immutable terminal evidence.
-    this._event(taskId, decision === 'accepted' ? 'result_accepted' : 'result_rejected', {
-      actor_id: actorId.trim(),
-      reason: reason.trim(),
-      payload: {
-        decision,
-        result_sha256: row.result_json == null ? null : crypto.createHash('sha256').update(row.result_json).digest('hex'),
-      },
-    });
-    this._audit('result_' + decision, { task_id: taskId, actor_id: actorId.trim(), reason: reason.trim() });
-    return next;
   }
 
   fail(taskId, error, actorId) {

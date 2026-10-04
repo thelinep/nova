@@ -51,6 +51,12 @@ class AgentJobBridge {
     this.registry = deps.registry;
     this.tasks = deps.tasks;
     this.jobEngine = deps.jobEngine;
+    this.jobKind = deps.jobKind || JOB_KIND;
+    this.timeoutMs = Number.isFinite(deps.timeoutMs) ? Math.min(15 * 60 * 1000, Math.max(1000, deps.timeoutMs)) : 15 * 60 * 1000;
+    this.allowDeferredBatch = deps.allowDeferredBatch === true;
+    // Generic bridges own usage charging by default. Specialized runtimes may
+    // opt out when they must settle bounded usage on executor failure/cancel.
+    this.chargeBudgets = deps.chargeBudgets !== false;
     this.memory = deps.memory || null;
     this.tools = deps.tools || null;
     this.budgets = deps.budgets || null;
@@ -72,7 +78,7 @@ class AgentJobBridge {
 
   register() {
     if (this.registered) return;
-    this.jobEngine.register(JOB_KIND, (payload, ctx) => this._handle(payload, ctx));
+    this.jobEngine.register(this.jobKind, (payload, ctx) => this._handle(payload, ctx));
     this.registered = true;
   }
 
@@ -90,9 +96,9 @@ class AgentJobBridge {
     this._assertDispatchAllowed();
     this.tasks.start(taskId, actorId || task.assignee_id);
 
-    const job = this.jobEngine.enqueue(JOB_KIND, { taskId }, {
+    const job = this.jobEngine.enqueue(this.jobKind, { taskId }, {
       maxAttempts: 1,
-      timeoutMs: 15 * 60 * 1000,
+      timeoutMs: this.timeoutMs,
     });
 
     this.tasks._require; // noop guard so linting does not flag unused
@@ -154,6 +160,7 @@ class AgentJobBridge {
       }
     }
 
+    const cancellation = makeSignal(ctx, () => this.isHalted ? this.isHalted() : false);
     const executorCtx = {
       task: {
         id: task.id,
@@ -174,6 +181,7 @@ class AgentJobBridge {
       attempts: ctx.attempts,
       progress: (p) => ctx.progress(p),
       isCancelled: () => ctx.cancelled === true,
+      signal: cancellation.signal,
     };
 
     let result;
@@ -183,16 +191,21 @@ class AgentJobBridge {
       // be halted after startTask enqueues the job.
       this._assertDispatchAllowed();
       result = await this.executor(executorCtx);
+      this._assertNotCancelled(ctx);
+      this._assertDispatchAllowed();
       if (this.resultHandler) {
         const proposal = await this.resultHandler(result, {
           task: executorCtx.task,
           agent: executorCtx.agent,
           jobId: ctx.jobId,
         });
-        reviewProposal = validateReviewProposal(proposal, result);
+        reviewProposal = validateReviewProposal(proposal, result, { allowDeferredBatch: this.allowDeferredBatch });
+        this._assertNotCancelled(ctx);
+        this._assertDispatchAllowed();
       }
     } catch (e) {
-      if (ctx.cancelled) {
+      cancellation.cleanup();
+      if (ctx.cancelled && ctx.cancelReason !== 'timeout') {
         this.tasks.cancel(taskId, agent.id, 'cancelled via job engine');
         this._audit('task_cancelled', { task_id: taskId, job_id: ctx.jobId });
       } else {
@@ -202,9 +215,10 @@ class AgentJobBridge {
       }
       throw e;
     }
+    cancellation.cleanup();
 
     // Charge budgets on success
-    if (this.budgets && result && result.usage && typeof result.usage === 'object') {
+    if (this.chargeBudgets && this.budgets && result && result.usage && typeof result.usage === 'object') {
       try {
         if (Number.isFinite(result.usage.tokens)) {
           this.budgets.charge(agent.id, 'tokens', result.usage.tokens, task.id);
@@ -265,6 +279,15 @@ class AgentJobBridge {
     if (halted) throw new AgentJobBridgeError('runtime is halted; agent dispatch blocked', 'runtime_halted');
   }
 
+  _assertNotCancelled(ctx) {
+    if (ctx.cancelled) {
+      const timeout = ctx.cancelReason === 'timeout';
+      throw Object.assign(new Error(timeout ? 'Agent job timed out.' : 'Agent job cancelled.'), {
+        name: timeout ? 'TimeoutError' : 'CancelledError', code: timeout ? 'timeout' : 'cancelled',
+      });
+    }
+  }
+
   _audit(action, data) {
     if (!this.audit) return;
     try { this.audit({ action: 'agent_job.' + action, ...data }); }
@@ -276,18 +299,19 @@ function safeParse(s) {
   try { return JSON.parse(s || 'null'); } catch { return null; }
 }
 
-function validateReviewProposal(proposal, executorResult) {
+function validateReviewProposal(proposal, executorResult, options = {}) {
   if (!proposal || typeof proposal !== 'object' || Array.isArray(proposal)) {
     throw new AgentJobBridgeError('result handler must return a structured proposal object', 'bad_review_proposal');
   }
-  if (typeof proposal.batchId !== 'string' || !proposal.batchId.trim()) {
+  const deferred = options.allowDeferredBatch === true && proposal.batchId === null;
+  if (!deferred && (typeof proposal.batchId !== 'string' || !proposal.batchId.trim())) {
     throw new AgentJobBridgeError('result handler proposal must include a batchId', 'bad_review_proposal');
   }
   let serialized;
   try {
     serialized = JSON.stringify({
       ...proposal,
-      batchId: proposal.batchId.trim(),
+      batchId: deferred ? null : proposal.batchId.trim(),
       executorResult,
       usage: executorResult && typeof executorResult === 'object' ? executorResult.usage : undefined,
     });
@@ -299,6 +323,23 @@ function validateReviewProposal(proposal, executorResult) {
   }
   try { return JSON.parse(serialized); }
   catch { throw new AgentJobBridgeError('result handler proposal could not be normalized', 'bad_review_proposal'); }
+}
+
+function makeSignal(ctx, isHalted) {
+  const controller = new AbortController();
+  const timer = setInterval(() => {
+    if (controller.signal.aborted) return;
+    const cancelled = ctx.cancelled;
+    let halted = false;
+    try { halted = isHalted(); } catch { halted = true; }
+    if (!cancelled && !halted) return;
+    const timeout = cancelled && ctx.cancelReason === 'timeout';
+    const code = halted ? 'runtime_halted' : timeout ? 'timeout' : 'cancelled';
+    const message = halted ? 'Maataa runtime halted during agent execution.' : timeout ? 'Agent job timed out.' : 'Agent job cancelled.';
+    controller.abort(Object.assign(new Error(message), { name: timeout ? 'TimeoutError' : 'AbortError', code }));
+  }, 20);
+  if (timer.unref) timer.unref();
+  return { signal: controller.signal, cleanup: () => clearInterval(timer) };
 }
 
 module.exports = { AgentJobBridge, AgentJobBridgeError, JOB_KIND };
