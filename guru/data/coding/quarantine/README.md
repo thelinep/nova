@@ -27,9 +27,12 @@ users should consider applicable teacher-model terms.
 
 - 99,904 JSONL rows; all identify Qwen2.5-Coder-7B-Instruct as the teacher.
 - Every line parsed as JSON; every `code` value parsed as Python syntax.
-- Exact repeated `task_description` rows: 65,017; exact repeated `code` rows:
-  54,541. Do not split rows independently. Group by seed/task family, dedupe,
-  then independently generate and execute tests before admission.
+- Excess duplicate `task_description` rows beyond the first occurrence: 65,017
+  (14,340 distinct repeated values; 79,357 rows in repeated groups). Excess
+  duplicate `code` rows: 54,541 (14,774 distinct repeated values; 69,315 rows
+  in repeated groups). Do not split rows independently. Group by seed/task
+  family, dedupe, then independently generate and execute tests before
+  admission.
 - Dataset card says this is one train split. It does not provide a frozen
   validation or target-free evaluation split, and it reports that samples were
   structurally checked, not exhaustively verified for semantics.

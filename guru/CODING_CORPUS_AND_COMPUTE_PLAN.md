@@ -53,8 +53,9 @@ claim. Train targets receive schema and Python syntax checks in the Guru tests.
   `1b1ecba91d931ffe5d97d22300ea370499432d3b` into the local quarantine at
   `guru/data/coding/quarantine/`; the JSONL SHA-256 is
   `7793c3288a95d128614dff8bdfcfecc431ffffe245a7a8f51331ac0bedb46e80`.
-  Structural inspection found valid JSON/Python syntax, but 65,017 repeated
-  task descriptions and 54,541 repeated code strings. The card says validation
+  Structural inspection found valid JSON/Python syntax, but 65,017 excess
+  duplicate task-description rows beyond the first occurrence and 54,541 excess
+  duplicate code rows. The card says validation
   was structural, not exhaustive semantic execution, and warns that teacher
   model terms may apply. The pinned root listing has no separate `LICENSE`
   file, so archive exact license text and resolve teacher/output rights before
