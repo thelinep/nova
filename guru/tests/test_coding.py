@@ -77,6 +77,35 @@ def reviewed_release_fixture(rows, tmp, *, train_uses=("train_sft",), eval_uses=
 
 
 class CodingDataTests(unittest.TestCase):
+    def test_invented_starter_corpus_is_synthetic_valid_and_smoke_only(self):
+        path = os.path.join(ROOT, "data", "coding", "invented-starter-v1.jsonl")
+        rows = read_tasks(path)
+        self.assertEqual(sum(row["split"] == "train" for row in rows), 4)
+        self.assertEqual(sum(row["split"] == "eval" for row in rows), 2)
+        self.assertTrue(all(row["provenance"]["synthetic_fixture"] is True for row in rows))
+        for row in rows:
+            if row["split"] == "train":
+                valid, report = validate_plan(row["target"])
+                self.assertTrue(valid, report)
+                for item in row["target"]["files"]:
+                    compile(item["content"], item["path"], "exec")
+                    namespace = {}
+                    exec(compile(item["content"], item["path"], "exec"), namespace)
+                    if row["id"] == "starter-train-001":
+                        self.assertTrue(namespace["parse_bool"](" YES "))
+                        self.assertFalse(namespace["parse_bool"](0))
+                        with self.assertRaises(ValueError): namespace["parse_bool"]("perhaps")
+                    elif row["id"] == "starter-train-002":
+                        self.assertEqual(namespace["paginate"]([1, 2, 3], 2, 2), [3])
+                    elif row["id"] == "starter-train-003":
+                        self.assertEqual(namespace["unique_by_key"]([{"k": 1}, {"k": 1}, {"k": 2}], "k"),
+                                         [{"k": 1}, {"k": 2}])
+                    elif row["id"] == "starter-train-004":
+                        self.assertEqual(namespace["format_bytes"](1024), "1.0 KiB")
+                        self.assertEqual(namespace["format_bytes"](1_048_575), "1.0 MiB")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(write_sft(rows, os.path.join(tmp, "starter.jsonl")), 4)
+
     def test_fixtures_are_provenanced_and_eval_has_no_targets(self):
         rows = read_tasks(TASKS)
         self.assertEqual(len(rows), 5)

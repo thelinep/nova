@@ -120,5 +120,12 @@ the release path remains open. The exporter verifies consistency and recorded
 review fields, while reviewer authority and source-to-archive association still
 require human review evidence.
 
+An original four-train/two-eval synthetic starter corpus is now in
+`guru/data/coding/invented-starter-v1.jsonl`; it is smoke-only and does not
+close the data gate. External dataset candidates and current cloud compute
+pricing are inventoried in `guru/CODING_CORPUS_AND_COMPUTE_PLAN.md`. The plan
+finds that Guru's from-scratch 7B trainer needs a memory-capacity pass before
+any paid multi-week training reservation.
+
 The open gates above are required before calling the complete roadmap or a
 Guru-Code release done.
