@@ -1614,9 +1614,38 @@ The **Git workflow** panel in Local Workspace works on an approved project, one 
 
 ## Coding Studio
 
-*Give one approved project a coding task, check the selected local model, and review its proposed changes before Maataa applies them.*
+*Build a new app from a description, or give an approved project a coding task; a qualified local model writes the code, tests run, and you approve before anything is applied.*
 
-Coding Studio helps you ask a local model for a bounded change in one project you approved. It is a task and review surface, not a full code editor.
+Coding Studio helps you build new apps and change existing ones with a local model. It is a task and review surface, not a full code editor.
+
+### Start with one click
+
+Double-click **Maataa - Start coding** in the brahmini folder. It does five things:
+
+- starts Ollama and Maataa;
+- installs the coding model `qwen2.5-coder:7b` when there is enough disk space (about 4.7 GB), or offers a model you already have;
+- approves **~/Maataa Projects** as the folder new apps go into;
+- offers to run the coding checks;
+- opens Coding Studio.
+
+### Build a new app
+
+1. Under **Build a new app**, describe the app in any language. For example: *A tip calculator: enter the bill and the number of people, and show each share*, or *एक नोट्स वेबसाइट जिसमें खोज हो*.
+2. Leave **Starting point** on automatic, or choose one:
+   - **Static website**: HTML, CSS and JavaScript; runs without installing anything.
+   - **Node API**: a JSON API.
+   - **React**: needs `npm install` with network access on before it runs.
+3. Press **Prepare the plan**. This writes nothing. It shows the folder that will be created, the template files and the exact request the model will receive.
+4. Press **Create the project and start building**. Maataa then:
+   - creates the folder from the template, with git;
+   - allows only that project's `test`, `dev`, `build` and `git-status` commands;
+   - runs the development loop in a copy: the model writes the code, `npm test` runs, and if tests fail their output goes back to the model for the next attempt (up to 5 attempts).
+5. When the tests pass, review the changed files. To see the exact diff, open **See the exact diff in Local Workspace**. Then press **Approve this exact batch** and **Apply to the project**. You can roll the batch back from Local Workspace.
+6. Press **Run the app** to start its dev server, then use the **Open** link. To keep going, press **Ask for the next change**: the same project and model are selected in the task form below.
+
+You can also ask in Chat, for example *Build me a todo app with dark mode* or *मेरे लिए एक टिप कैलकुलेटर ऐप बनाओ*. Maataa prepares the same plan and opens Coding Studio; nothing is written until you start it and approve the result.
+
+The model must have passed the coding checks for multi-file work. If it has not, the App Builder names it and offers **Run coding checks now**. The checks are 18 local runs that take about 10–30 minutes; follow them in Activity.
 
 ### Choose a project and model
 
@@ -1636,7 +1665,7 @@ If the project or request changes after the readiness check, check readiness aga
 
 The optional Brahmi setting asks for comments and explanatory text in Brahmi. Programming syntax, keywords and identifiers remain conventional. This output is experimental and may be incomplete; inspect the exact diff and run suitable project checks.
 
-The Studio reports Guru-Code as experimental until a trained checkpoint and coding capability are established. An exported Guru model is usable only after Maataa qualifies that exact Ollama model version. General Guru models do not gain coding status merely from their name.
+The Studio reports Guru-Code as experimental until a trained checkpoint and coding capability are established. The four owner decisions that unlock it are in `guru/decisions/README.md`. An exported Guru model is usable only after Maataa qualifies that exact Ollama model version. General Guru models do not gain coding status merely from their name.
 
 ### Multi-agent readiness
 

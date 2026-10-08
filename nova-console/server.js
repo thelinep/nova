@@ -55,6 +55,7 @@ const workspacePlanner = require('./lib/workspace-planner');
 const workspaceChanges = require('./lib/workspace-changes');
 const workspaceProjects = require('./lib/workspace-projects');
 const devLoop = require('./lib/dev-loop');
+const appBuilder = require('./lib/app-builder');
 const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
@@ -749,6 +750,13 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/workspace\/loops\/([^/]+)$/, handler: async (_req,res,[id])=>{const loop=store.get('workspaceLoops',decodeURIComponent(id));if(!loop){sendJson(res,404,{error:'Unknown development loop.'});return;}sendJson(res,200,loop);} },
   { method: 'POST', pattern: /^\/api\/workspace\/loops$/, handler: async (req,res)=>{const {loop}=devLoop.startLoop(store,{scanner:workspaceScanner,changes:workspaceChanges,runner:workspaceRunner,planner:codePlanner,ollama,dataDir:DATA_DIR},await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.loop.started',loopId:loop.id,rootId:loop.rootId,maxAttempts:loop.maxAttempts});sendJson(res,201,loop);} },
   { method: 'POST', pattern: /^\/api\/workspace\/loops\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,devLoop.cancelLoop(store,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/app-builder\/templates$/, handler: async (_req,res)=>sendJson(res,200,{templates:workspaceProjects.listTemplates().filter(t=>appBuilder.RECIPES[t.id]),projectsFolder:appBuilder.defaultProjectsDir()}) },
+  { method: 'POST', pattern: /^\/api\/app-builder\/projects-folder$/, handler: async (_req,res)=>{const root=appBuilder.ensureProjectsRoot(store,workspaceScanner);desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.root.approved',rootId:root.id,source:'app-builder'});sendJson(res,200,root);} },
+  { method: 'POST', pattern: /^\/api\/app-builder\/suggest$/, handler: async (req,res)=>{const b=await readJsonBody(req);const template=b.template||appBuilder.suggestTemplate(b.description);const name=appBuilder.suggestName(b.description);sendJson(res,200,{template,name,title:appBuilder.titleFrom(name),request:appBuilder.composeRequest(template,String(b.description||''))});} },
+  { method: 'GET', pattern: /^\/api\/app-builder\/builds$/, handler: async (_req,res)=>sendJson(res,200,appBuilder.list(store)) },
+  { method: 'POST', pattern: /^\/api\/app-builder\/builds$/, handler: async (req,res)=>sendJson(res,201,appBuilder.draft(store,{scanner:workspaceScanner,projects:workspaceProjects},await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/app-builder\/builds\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,appBuilder.detail(store,decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/app-builder\/builds\/([^/]+)\/start$/, handler: async (_req,res,[id])=>{const build=appBuilder.start(store,{scanner:workspaceScanner,projects:workspaceProjects,runner:workspaceRunner,devLoop,loopDeps:{scanner:workspaceScanner,changes:workspaceChanges,runner:workspaceRunner,planner:codePlanner,ollama,dataDir:DATA_DIR},audit:event=>desktopSecurity.appendAudit(DATA_DIR,event)},decodeURIComponent(id));sendJson(res,202,appBuilder.detail(store,build.id));} },
   { method: 'GET', pattern: /^\/api\/workspace\/project-templates$/, handler: async (_req,res)=>sendJson(res,200,workspaceProjects.listTemplates()) },
   { method: 'GET', pattern: /^\/api\/workspace\/projects$/, handler: async (_req,res)=>sendJson(res,200,store.all('workspaceProjects').reverse()) },
   { method: 'POST', pattern: /^\/api\/workspace\/projects$/, handler: async (req,res)=>sendJson(res,201,workspaceProjects.draftProject(store,workspaceScanner,await readJsonBody(req))) },
@@ -1531,6 +1539,7 @@ server.listen(PORT, '127.0.0.1', () => {
   const interruptedMedia=transcriber.recoverInterrupted(store)+imageGen.recoverInterrupted(store);
   if(interruptedMedia)console.log(`  recovered:   ${interruptedMedia} interrupted media job(s)`);
   const interruptedLoops=devLoop.recoverInterrupted(store);
+  appBuilder.recoverInterrupted(store);
   if(interruptedLoops)console.log(`  recovered:   ${interruptedLoops} interrupted development loop(s)`);
   const interruptedCollectors=collectorWorkflows.recoverInterrupted(store);
   if(interruptedCollectors)console.log(`  recovered:   ${interruptedCollectors} interrupted collector run(s)`);

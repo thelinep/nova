@@ -20,6 +20,7 @@ execFileSync('git', ['add', 'draft.json', 'feature.js', 'batch-config.json', 'ba
 execFileSync('git', ['commit', '-qm', 'Initial fixture'], { cwd: workspaceDir });
 process.env.DATA_DIR = dataDir;
 process.env.NOVA_LIBRARY_DIR = path.join(dataDir, 'library'); // never write test output into the real ~/Documents/NOVA Library
+process.env.NOVA_PROJECTS_DIR = path.join(dataDir, 'Maataa Projects'); // App Builder never creates ~/Maataa Projects during tests
 const { server } = require('../server');
 
 function shutdown() {

@@ -2156,14 +2156,39 @@ async function sendMessage(){
   if (!s.preferences.computer) {
     const buildAsk = (msg.mediaIds||[]).length && (/^\/build\b/i.test(text) || (/\b(build|make|create|recreate|replicate|clone|convert|turn|generate|code|implement|write|develop)\b/i.test(text) && /\b(html|css|web ?page|webpage|landing|website|site|ui|component|react|tailwind|layout|front-?end|screen|page)\b/i.test(text)));
     if(!buildAsk && await createFromConversation(s,text,msg.mediaIds))return;
+    if(!buildAsk && !hasSources && await routeAppBuildFromConversation(s,text))return;
     if(!hasSources && await draftCodePlanFromConversation(s,text))return;
     if(!hasSources && await draftWorkspacePlanFromConversation(s,text))return;
   }
   await startReply(s, text);
 }
 
+const APP_BUILD_VERB=/\b(build|make|create|develop|write|generate|code up|banao|bana do|banaye|banayen)\b|बना|तैयार कर|डेवलप|विकसित/i;
+const APP_BUILD_NOUN=/\b(app|application|website|web ?site|web ?app|webpage|api|tool|calculator|game|dashboard|tracker|landing page)\b|ऐप|एप्प?|एप्लीकेशन|एप्लिकेशन|वेबसाइट|साइट|एपीआई|टूल|गेम|कैलकुलेटर|डैशबोर्ड|ट्रैकर/i;
+const APP_BUILD_QUESTION=/^\s*(how|why|what is|what are|which|explain|tell me about)\b|कैसे|क्यों/i;
+/** "Build me a … app" in chat opens Coding Studio's App Builder with the request as the description and drafts the plan (drafting writes nothing). */
+async function routeAppBuildFromConversation(session,text){
+  if(!APP_BUILD_VERB.test(text)||!APP_BUILD_NOUN.test(text)||APP_BUILD_QUESTION.test(text))return false;
+  const st=appBuilderState;
+  const say=content=>{session.messages.push({id:uid('msg'),role:'assistant',content,createdAt:nowIso()});session.updatedAt=nowIso();idbPut('sessions',session);renderConvo();};
+  if(st.build&&['building'].includes(st.build.status)){say('An app is already being built in Coding Studio ('+st.build.title+'). Open Coding Studio to follow it; start the next one when it finishes.');return true;}
+  st.build=null;st.buildId=null;st.run=null;st.error='';st.description=String(text).trim().slice(0,2000);
+  const model=modelById(session.modelId);if(model&&model.runtime==='ollama')st.modelId=model.id;
+  let drafted=false;
+  try{
+    const roots=await (await fetch(apiUrl('/api/workspace/roots'))).json();
+    const parent=roots.find(r=>r.id===st.parentRootId)||roots.find(r=>r.label==='Maataa Projects')||null;
+    if(parent&&st.modelId){st.parentRootId=parent.id;st.build=await appBuilderPost('/api/app-builder/builds',{description:st.description,parentRootId:parent.id,modelId:st.modelId,maxAttempts:st.maxAttempts});st.buildId=st.build.id;drafted=true;}
+  }catch(e){st.error=e.message;}
+  say(drafted
+    ?`I prepared a plan for this app in Coding Studio: ${st.build.templateLabel} in ${st.build.targetPath}, written by ${st.build.modelId}. Nothing has been written yet. Open Coding Studio, check the exact request, then press “Create the project and start building”. Your local model writes the code, the tests run, and you approve the result before it is applied.`
+    :`I opened Build a new app in Coding Studio with your description.${st.error?' '+st.error:''} Choose where to create it and which local model writes the code, then press “Prepare the plan”.`);
+  setPipelineState('COMPLETE','app plan ready in Coding Studio');
+  showView('codingstudio');
+  return true;
+}
 async function draftCodePlanFromConversation(session,text,generate=false){
-  if(!/\b(fix|change|edit|patch|refactor|implement|update)\b/i.test(text)||!/\b(code|file|project|repo|repository|bug|feature)\b/i.test(text))return false;
+  if(!/\b(fix|change|edit|patch|refactor|implement|update|add)\b|ठीक कर|बदल|सुधार|जोड़/i.test(text)||!/\b(code|file|project|repo|repository|bug|feature)\b|कोड|फ़ाइल|फाइल|प्रोजेक्ट|बग|फ़ीचर|फीचर/i.test(text))return false;
   const model=modelById(session.modelId);if(!workspaceSelectedRootId||!model||model.runtime!=='ollama'||!ollamaStatus.reachable)return false;
   const controller = new AbortController(); PIPELINE.abortController = controller;
   try{setPipelineState('PREPARING','asking '+model.name+' for a code-change draft');const response=await fetch(apiUrl('/api/workspace/code-plan'),{signal:controller.signal,method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rootId:workspaceSelectedRootId,modelId:model.id,request:text})});const data=await response.json();if(!response.ok)throw new Error(data.error);if(data.type==='workspace-change-batch'){workspaceSelectedBatchId=data.id;DB.workspaceChangeBatches.push(data);}else{workspaceSelectedChangeId=data.id;DB.workspaceChanges.push(data);}session.messages.push({id:uid('msg'),role:'assistant',content:`Created a reviewable ${data.type==='workspace-change-batch'?'multi-file batch':'patch proposal'} using ${model.name}. No source file was changed. Open Local Workspace to inspect the exact diff, run isolated validation, and approve any write.`,createdAt:nowIso()});session.updatedAt=nowIso();idbPut('sessions',session);renderConvo();setPipelineState('COMPLETE','code draft ready for review');return true;}catch(error){session.messages.push({id:uid('msg'),role:'assistant',content:'I could not create a safe code draft: '+error.message,createdAt:nowIso()});idbPut('sessions',session);renderConvo();setPipelineState('ERROR','code planning failed');return true;}finally{if(PIPELINE.abortController===controller)PIPELINE.abortController=null;}
@@ -5006,6 +5031,110 @@ let workspaceLoopPoll = null;
 let codingStudioState = { rootId:null, modelId:null, request:'', brahmiComments:true, readiness:null, proposal:null, agentTaskId:null, agentReason:'', agentFeedback:'', error:'', busy:'' };
 let codingStudioRevision = 0;
 let codingStudioPollTimer = null;
+let appBuilderState = { description:'', template:'', parentRootId:null, modelId:null, maxAttempts:3, buildId:null, build:null, run:null, busy:'', error:'', templates:null, projectsFolder:'' };
+let appBuilderPollTimer = null;
+async function appBuilderPost(url, body){
+  const response=await fetch(apiUrl(url),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+  let data={};try{data=await response.json();}catch(_){}
+  if(!response.ok)throw new Error(data.error||('Request failed ('+response.status+')'));
+  return data;
+}
+function appBuilderStatusText(build){
+  return {drafted:'Plan ready — nothing written yet',created:'Project created',building:'Writing code and running tests',ready:'Tests pass — ready for your approval',applied:'Applied to your project','needs-attention':'Needs your attention',failed:'Build failed',cancelled:'Cancelled'}[build?.status]||String(build?.status||'');
+}
+function appBuilderPanelHtml(roots, localModels, qualificationsByDigest){
+  const st=appBuilderState, build=st.build;
+  if(!roots.some(root=>root.id===st.parentRootId))st.parentRootId=(roots.find(root=>root.label==='Maataa Projects')||roots[0])?.id||null;
+  if(!localModels.some(model=>model.id===st.modelId))st.modelId=codingStudioState.modelId||localModels[0]?.id||null;
+  const model=localModels.find(m=>m.id===st.modelId);
+  const record=model&&qualificationsByDigest.get(String(model.digest||'').replace(/^sha256:/i,''));
+  const caps=codingStudioCapabilities(record);
+  const multiReady=['multi-file','clarification','timeout','cancellation'].every(c=>caps.includes(c));
+  const templateOptions=[['', 'Choose automatically from the description'],...(st.templates||[]).map(t=>[t.id,t.label+(t.needsInstall?' (needs npm install to run)':'')])].map(([v,l])=>`<option value="${escapeHtml(v)}" ${v===st.template?'selected':''}>${escapeHtml(l)}</option>`).join('');
+  const rootOptions=roots.map(root=>`<option value="${escapeHtml(root.id)}" ${root.id===st.parentRootId?'selected':''}>${escapeHtml(root.label||root.path)} — ${escapeHtml(root.path)}</option>`).join('');
+  const modelOptions=localModels.map(m=>{const r=qualificationsByDigest.get(String(m.digest||'').replace(/^sha256:/i,''));const n=codingStudioCapabilities(r).length;return `<option value="${escapeHtml(m.id)}" ${m.id===st.modelId?'selected':''}>${escapeHtml(m.name||m.id)} · ${n?n+'/6 coding checks':'not qualified'}</option>`;}).join('');
+  const qualifyHtml=model&&!multiReady?`<div class="coding-studio-state" data-tone="bad" id="abQualifyNote" style="margin-top:8px"><strong>${escapeHtml(model.name||model.id)} has not passed the coding checks yet</strong><div class="empty-hint" style="margin-top:4px">Maataa only lets a model write code after this exact version passes its 18 coding checks (about 10–30 minutes, runs locally).</div><button type="button" class="btn btn-line" id="abQualify" style="margin-top:8px" ${st.busy?'disabled':''}>${st.busy==='qualify'?'Starting…':'Run coding checks now'}</button></div>`:'';
+  const errorHtml=st.error?`<div class="coding-studio-state" data-tone="bad" role="alert" id="abError" style="margin-top:10px">${escapeHtml(st.error)}</div>`:'';
+  let body='';
+  if(!build){
+    body=`<div class="coding-studio-form">
+      <div class="coding-studio-field coding-studio-span"><label for="abDescription">Describe the app (any language)</label><textarea id="abDescription" maxlength="2000" placeholder="For example: A tip calculator — enter the bill and the number of people, show the tip and each share. / एक नोट्स ऐप जिसमें खोज हो।">${escapeHtml(st.description)}</textarea></div>
+      <div class="coding-studio-field"><label for="abTemplate">Starting point</label><select id="abTemplate">${templateOptions}</select></div>
+      <div class="coding-studio-field"><label for="abParent">Create it in</label>${roots.length?`<select id="abParent">${rootOptions}</select>`:'<div class="empty-hint">No folder is approved yet.</div>'}<button type="button" class="btn btn-ghost" id="abUseDefaultFolder" style="align-self:flex-start;padding-left:0">Use ${escapeHtml(st.projectsFolder||'~/Maataa Projects')}</button></div>
+      <div class="coding-studio-field"><label for="abModel">Local model</label><select id="abModel" ${localModels.length?'':'disabled'}>${modelOptions||'<option>No installed Ollama model</option>'}</select></div>
+      <div class="coding-studio-field"><label for="abAttempts">Attempts if tests fail</label><select id="abAttempts">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===st.maxAttempts?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="coding-studio-actions coding-studio-span"><button type="button" class="btn btn-amber" id="abDraft" ${st.busy||!roots.length||!localModels.length?'disabled':''}>${st.busy==='draft'?'Preparing…':'Prepare the plan'}</button><span class="empty-hint">Preparing the plan writes nothing. You see the folder, files and the exact request first.</span></div>
+    </div>${qualifyHtml}`;
+  }else{
+    const loop=build.loop, batch=build.batch;
+    const attempts=(loop?.attempts||[]).map(a=>`<li>Attempt ${a.number}: ${escapeHtml(a.status)}${a.test?' · tests '+escapeHtml(a.test.status):''}${a.applyError?' · '+escapeHtml(a.applyError).slice(0,200):''}</li>`).join('');
+    const lastOutput=[...(loop?.attempts||[])].reverse().find(a=>a.test?.outputTail)?.test?.outputTail||'';
+    const tone=['ready','applied'].includes(build.status)?'good':['failed','needs-attention','cancelled'].includes(build.status)?'bad':'';
+    body=`<div class="coding-studio-state" id="abBuild" data-status="${escapeHtml(build.status)}" ${tone?`data-tone="${tone}"`:''} role="status" aria-live="polite"><strong>${escapeHtml(appBuilderStatusText(build))}</strong>
+      <div class="coding-studio-meta" style="margin-top:6px"><span>${escapeHtml(build.title)}</span><span>${escapeHtml(build.templateLabel||build.template)}</span><span>${escapeHtml(build.targetPath)}</span><span>Model ${escapeHtml(build.modelId)}</span>${loop?`<span>Phase ${escapeHtml(loop.phase||loop.status)}</span>`:''}</div>
+      ${build.error?`<p class="empty-hint" style="margin:8px 0 0">${escapeHtml(build.error)}</p>`:''}</div>`;
+    if(build.status==='drafted'){
+      body+=`<details style="margin-top:10px" open><summary>The exact request the model will get</summary><pre class="coding-studio-code" id="abRequest">${escapeHtml(build.request)}</pre></details>
+        <div class="empty-hint" style="margin-top:6px">Template files: ${(build.files||[]).map(f=>escapeHtml(f.relativePath)).join(', ')}${build.needsInstall?' · this template needs npm install (with network on) before it runs':''}</div>
+        <div class="coding-studio-actions" style="margin-top:10px"><button type="button" class="btn btn-amber" id="abStart" ${st.busy?'disabled':''}>${st.busy==='start'?'Starting…':'Create the project and start building'}</button><button type="button" class="btn btn-line" id="abReset">Change the description</button></div>
+        <div class="empty-hint" style="margin-top:6px">Starting creates the folder from the template, allows only its test, dev, build and git-status commands, and runs the development loop in a copy. Your approval is still needed before any generated code is written.</div>`;
+    }
+    if(attempts)body+=`<ul class="empty-hint" id="abAttemptsList" style="margin:10px 0 0 18px">${attempts}</ul>`;
+    if(lastOutput&&build.status!=='ready'&&build.status!=='applied')body+=`<details style="margin-top:8px"><summary>Last test output</summary><pre class="coding-studio-code">${escapeHtml(lastOutput)}</pre></details>`;
+    if(build.status==='building')body+=`<div class="coding-studio-actions" style="margin-top:10px"><button type="button" class="btn btn-line" id="abCancel">Cancel</button></div>`;
+    if(batch&&['ready','needs-attention'].includes(build.status)){
+      const approved=batch.status==='approved';
+      body+=`<div style="margin-top:10px"><strong>Changes</strong><div class="coding-studio-meta" style="margin-top:6px">${(batch.files||[]).map(f=>`<span>${escapeHtml(f)}</span>`).join('')}</div><div class="empty-hint" style="margin-top:6px">Checks: ${(batch.checks||[]).map(c=>escapeHtml(c.name+' '+c.status)).join(' · ')||'not run'}</div>
+        <div class="coding-studio-actions" style="margin-top:10px">${approved?'<button type="button" class="btn btn-amber" id="abApply">Apply to the project</button>':'<button type="button" class="btn btn-amber" id="abApprove">Approve this exact batch</button>'}<button type="button" class="btn btn-line" id="abOpenBatch">See the exact diff in Local Workspace</button></div></div>`;
+    }
+    if(build.status==='applied'){
+      const run=st.run;
+      body+=`<div class="coding-studio-actions" style="margin-top:10px"><button type="button" class="btn btn-amber" id="abRun" ${st.busy==='run'||run?.status==='running'&&!run?.url?'disabled':''}>${run?.status==='running'&&!run?.url?'Starting…':'Run the app'}</button>${run?.url?`<a class="btn btn-line" id="abOpenApp" href="${escapeHtml(run.url)}" target="_blank" rel="noopener">Open ${escapeHtml(run.url)}</a>`:''}<button type="button" class="btn btn-line" id="abContinue">Ask for the next change</button></div>${run&&run.status!=='running'&&!run.url?`<p class="empty-hint">${escapeHtml(String(run.output||'').slice(-600))}</p>`:''}`;
+    }
+    if(['applied','failed','needs-attention','cancelled'].includes(build.status))body+=`<div class="coding-studio-actions" style="margin-top:10px"><button type="button" class="btn btn-ghost" id="abNew">Build another app</button></div>`;
+  }
+  return `<section class="panel" id="appBuilder" style="padding:18px;margin-bottom:14px" aria-labelledby="abTitle"><h2 id="abTitle" style="font-size:16px;margin:0 0 6px">Build a new app</h2><p class="empty-hint" style="margin:0 0 14px">Describe it; Maataa creates a project from a template, has your local model write the code, runs the tests and retries with the failures. You approve before anything is applied.</p>${body}${errorHtml}</section>`;
+}
+function bindAppBuilder(){
+  const st=appBuilderState;
+  const rerender=()=>{if(currentView==='codingstudio')renderCodingStudioView();};
+  const act=async(name,fn)=>{st.busy=name;st.error='';rerender();try{await fn();}catch(e){st.error=e.message;}finally{st.busy='';rerender();}};
+  if($('abDescription'))$('abDescription').addEventListener('input',e=>{st.description=e.target.value;});
+  if($('abTemplate'))$('abTemplate').onchange=e=>{st.template=e.target.value;};
+  if($('abParent'))$('abParent').onchange=e=>{st.parentRootId=e.target.value;};
+  if($('abModel'))$('abModel').onchange=e=>{st.modelId=e.target.value;rerender();};
+  if($('abAttempts'))$('abAttempts').onchange=e=>{st.maxAttempts=Number(e.target.value)||3;};
+  if($('abUseDefaultFolder'))$('abUseDefaultFolder').onclick=()=>act('folder',async()=>{const root=await appBuilderPost('/api/app-builder/projects-folder');st.parentRootId=root.id;});
+  if($('abQualify'))$('abQualify').onclick=()=>act('qualify',async()=>{const model=(DB.models||[]).find(m=>m.id===st.modelId);await appBuilderPost('/api/models/qualify',{model:model?.name||st.modelId});toast('Coding checks started. Watch them in Activity; this takes about 10–30 minutes.');});
+  if($('abDraft'))$('abDraft').onclick=()=>act('draft',async()=>{st.build=await appBuilderPost('/api/app-builder/builds',{description:st.description,template:st.template||undefined,parentRootId:st.parentRootId,modelId:st.modelId,maxAttempts:st.maxAttempts});st.buildId=st.build.id;});
+  if($('abReset'))$('abReset').onclick=()=>{st.build=null;st.buildId=null;st.run=null;rerender();};
+  if($('abNew'))$('abNew').onclick=()=>{st.build=null;st.buildId=null;st.run=null;st.description='';rerender();};
+  if($('abStart'))$('abStart').onclick=()=>act('start',async()=>{st.build=await appBuilderPost('/api/app-builder/builds/'+encodeURIComponent(st.buildId)+'/start');});
+  if($('abCancel'))$('abCancel').onclick=()=>act('cancel',async()=>{await appBuilderPost('/api/workspace/loops/'+encodeURIComponent(st.build.loopId)+'/cancel');});
+  if($('abApprove'))$('abApprove').onclick=()=>act('approve',async()=>{await appBuilderPost('/api/workspace/change-batches/'+encodeURIComponent(st.build.batchId)+'/approve');await appBuilderRefresh();});
+  if($('abApply'))$('abApply').onclick=()=>act('apply',async()=>{await appBuilderPost('/api/workspace/change-batches/'+encodeURIComponent(st.build.batchId)+'/execute');await appBuilderRefresh();toast('Applied. The batch can be rolled back from Local Workspace.');});
+  if($('abOpenBatch'))$('abOpenBatch').onclick=()=>{workspaceSelectedRootId=st.build.rootId;workspaceSelectedBatchId=st.build.batchId;showView('workspace');};
+  if($('abRun'))$('abRun').onclick=()=>act('run',async()=>{st.run=await appBuilderPost('/api/workspace/runs',{rootId:st.build.rootId,action:'dev'});appBuilderPollRun();});
+  if($('abContinue'))$('abContinue').onclick=()=>{codingStudioState.rootId=st.build.rootId;codingStudioState.modelId=st.build.modelId;codingStudioState.readiness=null;codingStudioState.proposal=null;rerender();setTimeout(()=>{const el=$('studioRequest');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus();}},300);};
+  if(appBuilderPollTimer){clearTimeout(appBuilderPollTimer);appBuilderPollTimer=null;}
+  if(st.build&&['building','created'].includes(st.build.status))appBuilderPollTimer=setTimeout(async()=>{await appBuilderRefresh();rerender();},2000);
+}
+async function appBuilderRefresh(){
+  const st=appBuilderState;if(!st.buildId)return;
+  try{const r=await fetch(apiUrl('/api/app-builder/builds/'+encodeURIComponent(st.buildId)));if(r.ok)st.build=await r.json();}catch(_){}
+}
+function appBuilderPollRun(tries=0){
+  const st=appBuilderState;if(!st.run?.id||tries>40)return;
+  setTimeout(async()=>{try{const r=await fetch(apiUrl('/api/workspace/runs/'+encodeURIComponent(st.run.id)));if(r.ok)st.run=await r.json();}catch(_){}
+    if(currentView==='codingstudio')renderCodingStudioView();
+    if(st.run?.status==='running'&&!st.run?.url)appBuilderPollRun(tries+1);},1000);
+}
+async function appBuilderLoad(){
+  const st=appBuilderState;
+  if(!st.templates){try{const r=await fetch(apiUrl('/api/app-builder/templates'));if(r.ok){const d=await r.json();st.templates=d.templates;st.projectsFolder=d.projectsFolder;}}catch(_){st.templates=[];}}
+  if(!st.buildId){try{const r=await fetch(apiUrl('/api/app-builder/builds'));if(r.ok){const list=await r.json();const live=list.find(b=>['building','ready','needs-attention'].includes(b.status));if(live){st.build=live;st.buildId=live.id;}}}catch(_){}}
+  else await appBuilderRefresh();
+}
 function codingStudioTaskText(){
   const request=String(codingStudioState.request||'').trim();
   return codingStudioState.brahmiComments
@@ -5033,6 +5162,7 @@ async function renderCodingStudioView(){
     if(qualificationResponse.ok)qualifications=await qualificationResponse.json();
     if(teamResponse.ok)team=await teamResponse.json();
   }catch(_){loadError='Maataa could not load project or readiness information. Refresh the Studio and try again.';}
+  await appBuilderLoad();
   let agentTask=null;
   const taskSummaries=(team?.tasks||[]).filter(task=>task.codingStudio===true||task.coding_studio===true);
   const activeTaskSummary=taskSummaries.find(task=>['queued','assigned','running'].includes(task.state));
@@ -5086,12 +5216,13 @@ async function renderCodingStudioView(){
     const taskHtml=agentTask?`<article class="coding-studio-state" id="studioAgentTask" data-state="${escapeHtml(state)}" style="margin-top:10px"><strong>${reviewPending?'Agent proposal awaiting your review':accepted?'Proposal accepted · validation still required':needsRevision?'Revision requested':state==='running'?'Agent is working':state==='failed'?'Agent task failed':state==='rejected'?'Proposal rejected':'Agent task · '+escapeHtml(state||'unknown')}</strong><div class="coding-studio-meta" style="margin-top:6px"><span>Task ${escapeHtml(agentTask.id)}</span><span>Model ${escapeHtml(agentTask.modelId||result.modelId||agentProposal?.modelId||'selected local model')}</span>${agentTask.batchId||result.batchId?`<span>Batch ${escapeHtml(agentTask.batchId||result.batchId)}</span>`:''}</div>${agentTask.error?`<p class="empty-hint">${escapeHtml(agentTask.error)}</p>`:''}${agentProposal?`<p class="empty-hint" style="margin:8px 0">${escapeHtml(agentProposal.summary||'The agent prepared a proposal for review.')}</p>${changes}<div class="empty-hint" style="margin-top:6px">No project file has been written by the agent.</div>`:''}${reviewPending?reviewControls:''}${accepted?'<div class="coding-studio-actions" style="margin-top:9px"><button type="button" class="btn btn-amber" id="studioAgentOpenBatch">Review exact batch in Local Workspace</button></div><div class="empty-hint" style="margin-top:6px">Maataa must still validate the complete batch, then you approve and apply it separately.</div>':''}${needsRevision?`<label class="coding-studio-field" style="margin-top:12px"><span>Revision instructions</span><textarea id="studioAgentFeedback" maxlength="4000" placeholder="Describe the specific correction.">${escapeHtml(codingStudioState.agentFeedback)}</textarea></label><button type="button" class="btn btn-line" id="studioAgentRetry" style="margin-top:8px">Ask agent to revise</button>`:''}${['queued','assigned','running'].includes(state)?`<div class="coding-studio-actions" style="margin-top:9px"><span class="empty-hint">The agent can only propose bounded changes; it cannot write files or run project commands.</span><button type="button" class="btn btn-line" id="studioAgentCancel">Cancel task</button></div>`:''}</article>`:'';
     teamHtml=`<div class="coding-studio-state" role="status"><strong>Independent coding agent</strong>${controlsHtml}${codingStudioState.error?`<p id="studioAgentError" role="alert" style="color:var(--red);margin:8px 0 0">${escapeHtml(codingStudioState.error)}</p>`:''}</div>${taskHtml}`;
   }
-  const guruHtml='<div class="coding-studio-state" role="status"><strong>Guru-Code · experimental, not ready</strong><div style="margin-top:4px">This checkout has no trained Guru-Code checkpoint or established coding results. Guru-Code becomes selectable only when installed in Ollama and qualified by Maataa. Other qualified local models can be used meanwhile.</div><div class="empty-hint" style="margin-top:6px">Code syntax and identifiers stay conventional. Brahmi comments and explanations are an experimental opt-in.</div></div>';
+  const guruHtml='<div class="coding-studio-state" role="status"><strong>Guru-Code · experimental, not ready</strong><div style="margin-top:4px">This checkout has no trained Guru-Code checkpoint or established coding results. Guru-Code becomes selectable only when installed in Ollama and qualified by Maataa. Other qualified local models can be used meanwhile — Maataa - Start coding sets up qwen2.5-coder:7b. The owner decisions that unlock Guru-Code are in guru/decisions/README.md.</div><div class="empty-hint" style="margin-top:6px">Code syntax and identifiers stay conventional. Brahmi comments and explanations are an experimental opt-in.</div></div>';
   const noRoots=!roots.length;
   const noModels=!localModels.length;
   const codingAgentActive=['queued','assigned','running'].includes(agentTask?.state)||!!activeTaskSummary;
   pad.innerHTML=`<div class="view-head"><div><h1 class="view-title">Coding Studio</h1><p class="view-desc">Give one approved local project a bounded coding task. Inspect the exact proposal in Local Workspace; Maataa checks it before you approve any write.</p></div></div>
     ${loadError?`<div class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(loadError)}</div>`:''}
+    ${appBuilderPanelHtml(roots,localModels,qualificationsByDigest)}
     ${noRoots?`<section class="panel" style="padding:18px;margin-bottom:14px"><h2 style="font-size:16px;margin:0 0 6px">Approve a project to begin</h2><p class="empty-hint">Coding Studio only works inside a folder you have approved in Local Workspace.</p><button type="button" class="btn btn-line" id="studioOpenWorkspace">Open Local Workspace</button></section>`:''}
     <section class="panel" style="padding:18px;margin-bottom:14px" aria-labelledby="studioTaskTitle"><h2 id="studioTaskTitle" style="font-size:16px;margin:0 0 14px">Project and task</h2>
       <div class="coding-studio-form">
@@ -5202,8 +5333,9 @@ async function renderCodingStudioView(){
     showView('workspace');
     setTimeout(()=>[...document.querySelectorAll('.workspace-batch,.workspace-change')].find(node=>node.dataset.id===proposal.id)?.scrollIntoView({behavior:'smooth',block:'center'}),500);
   };
+  bindAppBuilder();
   if(codingStudioPollTimer){clearTimeout(codingStudioPollTimer);codingStudioPollTimer=null;}
-  if(agentTask&&['queued','assigned','running'].includes(agentTask.state))codingStudioPollTimer=setTimeout(()=>{if(activeView==='codingstudio'&&codingStudioState.agentTaskId===agentTask.id)renderCodingStudioView();},1500);
+  if(agentTask&&['queued','assigned','running'].includes(agentTask.state))codingStudioPollTimer=setTimeout(()=>{if(currentView==='codingstudio'&&codingStudioState.agentTaskId===agentTask.id)renderCodingStudioView();},1500);
 }
 function workspaceBytes(bytes){ return bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KB':(bytes/1048576).toFixed(1)+' MB'; }
 function workspaceCitation(item){ return `<button class="tag-chip workspace-citation" data-citation="${escapeHtml(item.citation)}" title="Copy file citation">${escapeHtml(item.relativePath)}:${item.line||1}</button>`; }
