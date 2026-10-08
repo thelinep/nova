@@ -1,0 +1,2802 @@
+{
+ "meta": {
+  "font": "Noto Sans Brahmi Regular",
+  "version": "Version 2.004; ttfautohint (v1.8.4.7-5d5b)",
+  "license": "SIL Open Font License 1.1",
+  "unitsPerEm": 1000,
+  "method": "For each Brahmi vowel and consonant the glyph outline is read with fontTools,\nfilled at high resolution, thinned to a one-pixel skeleton (scikit-image), and\nthe skeleton's end points are taken as stroke terminals. Terminals in the lower\npart of the letter are its *bottom terminals*. A letter with none (a closed\nloop such as ṭha) gets its lowest skeleton point instead, and says so.",
+  "parameters": {
+   "scalePxPerUnit": 0.4,
+   "lowerShare": 0.4,
+   "spurShare": 0.09
+  }
+ },
+ "glyphs": [
+  {
+   "cp": "U+11005",
+   "char": "𑀅",
+   "name": "a",
+   "glyph": "brm_A",
+   "advance": 593,
+   "bounds": [
+    78,
+    0,
+    495,
+    714
+   ],
+   "strokeEnds": [
+    [
+     120.5,
+     46.5
+    ],
+    [
+     135.5,
+     671.5
+    ],
+    [
+     445.5,
+     46.5
+    ],
+    [
+     450.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     120.5,
+     46.5
+    ],
+    [
+     445.5,
+     46.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    283.0,
+    46.5
+   ],
+   "path": "M405 322H397Q330 322 278.5 287.0Q227 252 197.5 193.0Q168 134 168 62V0H78V64Q78 150 118.0 228.5Q158 307 229 352Q161 387 124.5 449.5Q88 512 88 591V714H178V593Q178 532 204.5 488.5Q231 445 278.5 421.5Q326 398 387 398H405V714H495V0H405Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11006",
+   "char": "𑀆",
+   "name": "ā",
+   "glyph": "brm_AA",
+   "advance": 637,
+   "bounds": [
+    78,
+    0,
+    617,
+    714
+   ],
+   "strokeEnds": [
+    [
+     120.5,
+     46.5
+    ],
+    [
+     135.5,
+     671.5
+    ],
+    [
+     445.5,
+     46.5
+    ],
+    [
+     450.5,
+     671.5
+    ],
+    [
+     580.5,
+     364.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     120.5,
+     46.5
+    ],
+    [
+     445.5,
+     46.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    283.0,
+    46.5
+   ],
+   "path": "M78 0V64Q78 154 119.0 231.5Q160 309 229 352Q163 385 125.5 448.0Q88 511 88 591V714H178V593Q178 504 235.0 451.0Q292 398 387 398H405V714H495V398H617V322H495V0H405V322H397Q333 322 281.0 287.0Q229 252 198.5 194.0Q168 136 168 65V0Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11007",
+   "char": "𑀇",
+   "name": "i",
+   "glyph": "brm_I",
+   "advance": 544,
+   "bounds": [
+    98,
+    -14,
+    446,
+    616
+   ],
+   "strokeEnds": [
+    [
+     155.5,
+     38.5
+    ],
+    [
+     158.0,
+     66.0
+    ],
+    [
+     158.0,
+     536.0
+    ],
+    [
+     160.5,
+     556.0
+    ],
+    [
+     380.5,
+     301.0
+    ],
+    [
+     383.0,
+     313.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     155.5,
+     38.5
+    ],
+    [
+     158.0,
+     66.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    156.8,
+    38.5
+   ],
+   "path": "M98 548Q98 580 113.0 598.0Q128 616 159 616Q222 616 222 548Q222 517 205.0 498.5Q188 480 159 480Q130 480 114.0 498.5Q98 517 98 548ZM322 301Q322 333 337.5 351.0Q353 369 383 369Q414 369 430.0 351.0Q446 333 446 301Q446 270 429.5 251.5Q413 233 383 233Q355 233 338.5 251.0Q322 269 322 301ZM98 54Q98 121 159 121Q188 121 205.0 103.5Q222 86 222 54Q222 23 205.0 4.5Q188 -14 159 -14Q130 -14 114.0 4.0Q98 22 98 54Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11008",
+   "char": "𑀈",
+   "name": "ī",
+   "glyph": "brm_II",
+   "advance": 637,
+   "bounds": [
+    78,
+    0,
+    559,
+    714
+   ],
+   "strokeEnds": [
+    [
+     135.5,
+     346.5
+    ],
+    [
+     138.0,
+     374.0
+    ],
+    [
+     315.5,
+     46.5
+    ],
+    [
+     320.5,
+     671.5
+    ],
+    [
+     495.5,
+     349.0
+    ],
+    [
+     498.0,
+     369.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     315.5,
+     46.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    315.5,
+    46.5
+   ],
+   "path": "M364 714V0H274V714ZM78 362Q78 429 139 429Q168 429 185.0 411.5Q202 394 202 362Q202 331 185.0 312.5Q168 294 139 294Q110 294 94.0 312.0Q78 330 78 362ZM435 362Q435 429 496 429Q559 429 559 362Q559 331 542.5 312.5Q526 294 496 294Q467 294 451.0 312.0Q435 330 435 362Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11009",
+   "char": "𑀉",
+   "name": "u",
+   "glyph": "brm_U",
+   "advance": 500,
+   "bounds": [
+    98,
+    0,
+    451,
+    714
+   ],
+   "strokeEnds": [
+    [
+     143.0,
+     671.5
+    ],
+    [
+     413.0,
+     44.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     413.0,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    413.0,
+    44.0
+   ],
+   "path": "M98 0V714H187V80H451V0Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+1100A",
+   "char": "𑀊",
+   "name": "ū",
+   "glyph": "brm_UU",
+   "advance": 500,
+   "bounds": [
+    98,
+    0,
+    451,
+    714
+   ],
+   "strokeEnds": [
+    [
+     143.0,
+     671.5
+    ],
+    [
+     413.0,
+     44.0
+    ],
+    [
+     413.0,
+     234.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     413.0,
+     44.0
+    ],
+    [
+     413.0,
+     234.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    413.0,
+    44.0
+   ],
+   "path": "M187 190V80H451V0H98V714H187V271H451V190Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+1100B",
+   "char": "𑀋",
+   "name": "ṛ",
+   "glyph": "brm_R",
+   "advance": 610,
+   "bounds": [
+    59,
+    0,
+    552,
+    572
+   ],
+   "strokeEnds": [
+    [
+     64.0,
+     4.5
+    ],
+    [
+     69.0,
+     572.0
+    ],
+    [
+     541.5,
+     572.0
+    ],
+    [
+     551.5,
+     2.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     64.0,
+     4.5
+    ],
+    [
+     551.5,
+     2.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    307.8,
+    2.0
+   ],
+   "path": "M252 292 67 572H167L306 353L442 572H542L356 292L552 0H452L306 232L158 0H59Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+1100C",
+   "char": "𑀌",
+   "name": "ṝ",
+   "glyph": "brm_RR",
+   "advance": 680,
+   "bounds": [
+    59,
+    -12,
+    665,
+    572
+   ],
+   "strokeEnds": [
+    [
+     64.0,
+     4.5
+    ],
+    [
+     69.0,
+     572.0
+    ],
+    [
+     541.5,
+     572.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     64.0,
+     4.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    64.0,
+    4.5
+   ],
+   "path": "M542 -12Q501 -12 470.5 6.5Q440 25 411 69L306 232L158 0H59L252 292L67 572H167L306 353L442 572H542L356 292L457 139Q485 97 504.0 82.0Q523 67 544 67Q567 67 584.0 80.0Q601 93 615 109L665 54Q608 -12 542 -12Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+1100D",
+   "char": "𑀍",
+   "name": "ḷ",
+   "glyph": "brm_L",
+   "advance": 575,
+   "bounds": [
+    78,
+    -15,
+    497,
+    726
+   ],
+   "strokeEnds": [
+    [
+     495.5,
+     106.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     495.5,
+     106.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    495.5,
+    106.0
+   ],
+   "path": "M321 -15Q280 -15 251.5 2.0Q223 19 208.5 46.5Q194 74 194 104Q194 145 224.0 187.5Q254 230 298 282Q401 402 401 521Q401 575 371.5 608.5Q342 642 292 642Q168 642 168 526Q168 495 175 468L87 457Q78 487 78 523Q78 585 105.5 630.5Q133 676 181.5 701.0Q230 726 293 726Q387 726 442.0 672.5Q497 619 497 528Q497 450 463.0 382.0Q429 314 375 251Q332 201 308.0 166.0Q284 131 284 105Q284 64 324 64Q353 64 374.5 82.5Q396 101 424 143L496 104Q456 39 415.5 12.0Q375 -15 321 -15Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+1100E",
+   "char": "𑀎",
+   "name": "ḹ",
+   "glyph": "brm_LL",
+   "advance": 603,
+   "bounds": [
+    78,
+    -15,
+    573,
+    726
+   ],
+   "strokeEnds": [
+    [
+     495.5,
+     106.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     495.5,
+     106.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    495.5,
+    106.0
+   ],
+   "path": "M321 -15Q280 -15 251.5 2.0Q223 19 208.5 46.5Q194 74 194 104Q194 145 224.0 187.5Q254 230 298 282Q349 342 375.0 401.0Q401 460 401 521Q401 575 371.5 608.5Q342 642 292 642Q168 642 168 526Q168 495 175 468L87 457Q78 487 78 523Q78 585 105.0 630.5Q132 676 180.5 701.0Q229 726 293 726Q387 726 442.0 672.5Q497 619 497 528Q497 449 456 369L573 289L527 224L416 304Q400 281 383.0 260.0Q366 239 349 220Q321 188 302.5 159.5Q284 131 284 105Q284 64 324 64Q353 64 374.5 82.5Q396 101 424 143L496 104Q456 39 415.5 12.0Q375 -15 321 -15Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+1100F",
+   "char": "𑀏",
+   "name": "e",
+   "glyph": "brm_E",
+   "advance": 659,
+   "bounds": [
+    49,
+    0,
+    610,
+    719
+   ],
+   "strokeEnds": [
+    [
+     59.0,
+     9.0
+    ],
+    [
+     606.5,
+     4.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     59.0,
+     9.0
+    ],
+    [
+     606.5,
+     4.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    332.8,
+    4.0
+   ],
+   "path": "M284 719H375L610 0H49ZM172 80H485L329 604Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11010",
+   "char": "𑀐",
+   "name": "ai",
+   "glyph": "brm_AI",
+   "advance": 659,
+   "bounds": [
+    49,
+    0,
+    610,
+    714
+   ],
+   "strokeEnds": [
+    [
+     59.0,
+     9.0
+    ],
+    [
+     141.5,
+     674.0
+    ],
+    [
+     606.5,
+     4.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     59.0,
+     9.0
+    ],
+    [
+     606.5,
+     4.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    332.8,
+    4.0
+   ],
+   "path": "M104 714H375L610 0H49L258 634H104ZM172 80H485L329 599Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11011",
+   "char": "𑀑",
+   "name": "o",
+   "glyph": "brm_O",
+   "advance": 606,
+   "bounds": [
+    49,
+    0,
+    558,
+    714
+   ],
+   "strokeEnds": [
+    [
+     86.5,
+     674.0
+    ],
+    [
+     519.0,
+     44.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     519.0,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    519.0,
+    44.0
+   ],
+   "path": "M294 714V80H558V0H205V634H49V714Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11012",
+   "char": "𑀒",
+   "name": "au",
+   "glyph": "brm_AU",
+   "advance": 606,
+   "bounds": [
+    49,
+    0,
+    558,
+    714
+   ],
+   "strokeEnds": [
+    [
+     86.5,
+     674.0
+    ],
+    [
+     519.0,
+     44.0
+    ],
+    [
+     519.0,
+     234.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     519.0,
+     44.0
+    ],
+    [
+     519.0,
+     234.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    519.0,
+    44.0
+   ],
+   "path": "M294 714V271H558V190H294V80H558V0H205V634H49V714Z",
+   "kind": "vowel"
+  },
+  {
+   "cp": "U+11013",
+   "char": "𑀓",
+   "name": "ka",
+   "glyph": "brm_KA",
+   "advance": 754,
+   "bounds": [
+    78,
+    0,
+    676,
+    714
+   ],
+   "strokeEnds": [
+    [
+     115.5,
+     374.0
+    ],
+    [
+     373.0,
+     46.5
+    ],
+    [
+     378.0,
+     671.5
+    ],
+    [
+     638.0,
+     376.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     373.0,
+     46.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    373.0,
+    46.5
+   ],
+   "path": "M332 0V333H78V412H332V714H422V412H676V333H422V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      375,
+      0,
+      644,
+      80
+     ],
+     "topCenter": [
+      509.5,
+      80
+     ],
+     "leftEnd": 375,
+     "offset": [
+      375,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      373.0,
+      46.5
+     ],
+     "dx": 136.5,
+     "dxLeft": 2.0,
+     "dy": 33.5
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      375,
+      0,
+      644,
+      236
+     ],
+     "topCenter": [
+      509.5,
+      236
+     ],
+     "leftEnd": 375,
+     "offset": [
+      375,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      373.0,
+      46.5
+     ],
+     "dx": 136.5,
+     "dxLeft": 2.0,
+     "dy": 189.5
+    }
+   }
+  },
+  {
+   "cp": "U+11014",
+   "char": "𑀔",
+   "name": "kha",
+   "glyph": "brm_KHA",
+   "advance": 589,
+   "bounds": [
+    59,
+    0,
+    492,
+    726
+   ],
+   "strokeEnds": [
+    [
+     89.0,
+     493.5
+    ],
+    [
+     444.0,
+     46.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     444.0,
+     46.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    444.0,
+    46.0
+   ],
+   "path": "M59 461V464Q59 517 65.0 559.0Q71 601 87 632Q112 680 158.0 703.0Q204 726 278 726Q362 726 408.5 696.0Q455 666 473.5 607.0Q492 548 492 462V0H402V465Q402 526 393.0 565.0Q384 604 357.5 623.0Q331 642 278 642Q223 642 195.0 621.5Q167 601 157.5 561.5Q148 522 148 464V461Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      438,
+      0,
+      707,
+      80
+     ],
+     "topCenter": [
+      572.5,
+      80
+     ],
+     "leftEnd": 438,
+     "offset": [
+      438,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      444.0,
+      46.0
+     ],
+     "dx": 128.5,
+     "dxLeft": -6.0,
+     "dy": 34.0
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      438,
+      0,
+      707,
+      236
+     ],
+     "topCenter": [
+      572.5,
+      236
+     ],
+     "leftEnd": 438,
+     "offset": [
+      438,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      444.0,
+      46.0
+     ],
+     "dx": 128.5,
+     "dxLeft": -6.0,
+     "dy": 190.0
+    }
+   }
+  },
+  {
+   "cp": "U+11015",
+   "char": "𑀕",
+   "name": "ga",
+   "glyph": "brm_GA",
+   "advance": 659,
+   "bounds": [
+    49,
+    0,
+    610,
+    714
+   ],
+   "strokeEnds": [
+    [
+     59.0,
+     9.0
+    ],
+    [
+     606.5,
+     4.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     59.0,
+     9.0
+    ],
+    [
+     606.5,
+     4.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    332.8,
+    4.0
+   ],
+   "path": "M284 714H375L610 0H510L329 599L148 0H49Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      531,
+      0,
+      800,
+      80
+     ],
+     "topCenter": [
+      665.5,
+      80
+     ],
+     "leftEnd": 531,
+     "offset": [
+      531,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      606.5,
+      4.0
+     ],
+     "dx": 332.7,
+     "dxLeft": 198.2,
+     "dy": 76.0
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      531,
+      0,
+      800,
+      236
+     ],
+     "topCenter": [
+      665.5,
+      236
+     ],
+     "leftEnd": 531,
+     "offset": [
+      531,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      606.5,
+      4.0
+     ],
+     "dx": 332.7,
+     "dxLeft": 198.2,
+     "dy": 232.0
+    }
+   }
+  },
+  {
+   "cp": "U+11016",
+   "char": "𑀖",
+   "name": "gha",
+   "glyph": "brm_GHA",
+   "advance": 702,
+   "bounds": [
+    98,
+    -12,
+    624,
+    714
+   ],
+   "strokeEnds": [
+    [
+     143.0,
+     671.5
+    ],
+    [
+     363.0,
+     231.5
+    ],
+    [
+     595.5,
+     251.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     363.0,
+     231.5
+    ],
+    [
+     595.5,
+     251.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    479.2,
+    231.5
+   ],
+   "path": "M360 -12Q224 -12 161.0 47.0Q98 106 98 244V714H187V249Q187 186 199.5 149.0Q212 112 240.5 95.0Q269 78 316 74V274H406V75Q456 82 484.0 98.5Q512 115 523.0 150.5Q534 186 534 250V277H624V250Q624 147 595 92Q541 -12 360 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_GHU"
+    },
+    "ū": {
+     "ligature": "brm_GHUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11017",
+   "char": "𑀗",
+   "name": "ṅa",
+   "glyph": "brm_NGA",
+   "advance": 529,
+   "bounds": [
+    98,
+    0,
+    451,
+    714
+   ],
+   "strokeEnds": [
+    [
+     413.0,
+     44.0
+    ],
+    [
+     413.0,
+     676.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     413.0,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    413.0,
+    44.0
+   ],
+   "path": "M98 0V714H451V634H187V80H451V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_NGU"
+    },
+    "ū": {
+     "ligature": "brm_NGUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11018",
+   "char": "𑀘",
+   "name": "ca",
+   "glyph": "brm_CA",
+   "advance": 542,
+   "bounds": [
+    78,
+    0,
+    444,
+    714
+   ],
+   "strokeEnds": [
+    [
+     400.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     333.0,
+     41.5
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    333.0,
+    41.5
+   ],
+   "path": "M315 0Q203 0 140.5 43.5Q78 87 78 165Q78 257 143.5 301.0Q209 345 346 345H354V714H444V0ZM354 80V265Q296 265 260.5 259.5Q225 254 205 242Q186 230 179.5 207.0Q173 184 173 168Q173 122 218.5 101.0Q264 80 354 80Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_CU"
+    },
+    "ū": {
+     "ligature": "brm_CUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11019",
+   "char": "𑀙",
+   "name": "cha",
+   "glyph": "brm_CHA",
+   "advance": 609,
+   "bounds": [
+    63,
+    -12,
+    546,
+    714
+   ],
+   "strokeEnds": [
+    [
+     305.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     309.2,
+     34.0
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    309.2,
+    34.0
+   ],
+   "path": "M305 -12Q238 -12 183.0 19.5Q128 51 95.5 104.0Q63 157 63 222Q63 279 88.5 328.0Q114 377 158.5 409.5Q203 442 260 451V714H350V451Q406 442 450.0 409.5Q494 377 520.0 328.5Q546 280 546 222Q546 157 513.5 104.0Q481 51 426.5 19.5Q372 -12 305 -12ZM260 75V369Q212 354 182.5 313.5Q153 273 153 224Q153 174 183.0 132.0Q213 90 260 75ZM350 74Q397 90 426.5 131.5Q456 173 456 224Q456 274 426.0 314.0Q396 354 350 369Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_CHU"
+    },
+    "ū": {
+     "ligature": "brm_CHUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1101A",
+   "char": "𑀚",
+   "name": "ja",
+   "glyph": "brm_JA",
+   "advance": 514,
+   "bounds": [
+    78,
+    0,
+    440,
+    714
+   ],
+   "strokeEnds": [
+    [
+     383.0,
+     364.0
+    ],
+    [
+     400.5,
+     44.0
+    ],
+    [
+     400.5,
+     676.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     400.5,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    400.5,
+    44.0
+   ],
+   "path": "M320 0Q207 0 142.5 52.0Q78 104 78 187Q78 246 104.5 290.5Q131 335 179 360Q131 385 104.5 427.5Q78 470 78 526Q78 581 109.0 623.0Q140 665 197.0 689.5Q254 714 330 714H440V634H322Q254 634 213.5 605.0Q173 576 173 526Q173 459 218.0 429.5Q263 400 358 400H422V320H358Q266 320 219.5 288.0Q173 256 173 188Q173 137 211.5 108.5Q250 80 317 80H440V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_JU"
+    },
+    "ū": {
+     "ligature": "brm_JUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1101B",
+   "char": "𑀛",
+   "name": "jha",
+   "glyph": "brm_JHA",
+   "advance": 594,
+   "bounds": [
+    98,
+    0,
+    516,
+    714
+   ],
+   "strokeEnds": [
+    [
+     138.0,
+     44.0
+    ],
+    [
+     143.0,
+     671.5
+    ],
+    [
+     473.0,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     138.0,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    138.0,
+    44.0
+   ],
+   "path": "M98 0V714H187V432Q208 414 239.0 402.0Q270 390 306 390Q372 390 399.0 420.5Q426 451 426 519V714H516V502Q516 399 465.0 352.5Q414 306 316 306Q280 306 245.5 315.0Q211 324 187 340V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      146,
+      0,
+      415,
+      80
+     ],
+     "topCenter": [
+      280.5,
+      80
+     ],
+     "leftEnd": 146,
+     "offset": [
+      146,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      138.0,
+      44.0
+     ],
+     "dx": 142.5,
+     "dxLeft": 8.0,
+     "dy": 36.0
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      146,
+      0,
+      415,
+      236
+     ],
+     "topCenter": [
+      280.5,
+      236
+     ],
+     "leftEnd": 146,
+     "offset": [
+      146,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      138.0,
+      44.0
+     ],
+     "dx": 142.5,
+     "dxLeft": 8.0,
+     "dy": 192.0
+    }
+   }
+  },
+  {
+   "cp": "U+1101C",
+   "char": "𑀜",
+   "name": "ña",
+   "glyph": "brm_NYA",
+   "advance": 647,
+   "bounds": [
+    49,
+    0,
+    569,
+    714
+   ],
+   "strokeEnds": [
+    [
+     86.5,
+     674.0
+    ],
+    [
+     246.5,
+     46.5
+    ],
+    [
+     521.5,
+     216.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     246.5,
+     46.5
+    ],
+    [
+     521.5,
+     216.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    384.0,
+    46.5
+   ],
+   "path": "M205 0V634H49V714H294V494Q313 499 332.0 502.0Q351 505 370 505Q467 505 518.0 458.5Q569 412 569 310V170H479V292Q479 360 451.5 391.0Q424 422 359 422Q323 422 294 413V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      205,
+      0,
+      474,
+      80
+     ],
+     "topCenter": [
+      339.5,
+      80
+     ],
+     "leftEnd": 205,
+     "offset": [
+      205,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      246.5,
+      46.5
+     ],
+     "dx": -44.5,
+     "dxLeft": -179.0,
+     "dy": 33.5
+    },
+    "ū": {
+     "glyph": "brm_vowelUU.alt",
+     "box": [
+      205,
+      -236,
+      474,
+      0
+     ],
+     "topCenter": [
+      339.5,
+      0
+     ],
+     "leftEnd": 205,
+     "offset": [
+      205,
+      0
+     ],
+     "path": "M0 0H269V-80H88V-156H269V-236H0Z",
+     "nearestTerminal": [
+      246.5,
+      46.5
+     ],
+     "dx": -44.5,
+     "dxLeft": -179.0,
+     "dy": -46.5
+    }
+   }
+  },
+  {
+   "cp": "U+1101D",
+   "char": "𑀝",
+   "name": "ṭa",
+   "glyph": "brm_TTA",
+   "advance": 515,
+   "bounds": [
+    78,
+    0,
+    447,
+    714
+   ],
+   "strokeEnds": [
+    [
+     408.0,
+     44.0
+    ],
+    [
+     408.0,
+     676.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     408.0,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    408.0,
+    44.0
+   ],
+   "path": "M447 0H386Q298 0 228.0 41.5Q158 83 118.0 163.0Q78 243 78 358Q78 469 117.0 549.0Q156 629 225.5 671.5Q295 714 386 714H447V634H386Q325 634 276.5 601.0Q228 568 200.5 506.0Q173 444 173 357Q173 269 201.0 207.0Q229 145 277.0 112.5Q325 80 386 80H447Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_TTU"
+    },
+    "ū": {
+     "ligature": "brm_TTUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1101E",
+   "char": "𑀞",
+   "name": "ṭha",
+   "glyph": "brm_TTHA",
+   "advance": 818,
+   "bounds": [
+    78,
+    27,
+    740,
+    689
+   ],
+   "strokeEnds": [],
+   "bottomTerminals": [
+    [
+     408.0,
+     71.5
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    408.0,
+    71.5
+   ],
+   "path": "M409 27Q336 27 275.5 52.5Q215 78 170.5 123.0Q126 168 102.0 228.5Q78 289 78 358Q78 429 102.5 489.0Q127 549 171.5 594.0Q216 639 276.5 664.0Q337 689 409 689Q481 689 541.5 663.5Q602 638 646.5 593.0Q691 548 715.5 487.5Q740 427 740 358Q740 289 716.0 229.0Q692 169 647.5 123.5Q603 78 542.5 52.5Q482 27 409 27ZM409 111Q473 111 526.5 144.0Q580 177 612.5 233.5Q645 290 645 359Q645 426 614.0 482.0Q583 538 530.0 571.5Q477 605 409 605Q342 605 288.5 571.5Q235 538 204.0 482.0Q173 426 173 359Q173 290 205.0 233.5Q237 177 290.5 144.0Q344 111 409 111Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_TTHU"
+    },
+    "ū": {
+     "ligature": "brm_TTHUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1101F",
+   "char": "𑀟",
+   "name": "ḍa",
+   "glyph": "brm_DDA",
+   "advance": 485,
+   "bounds": [
+    78,
+    0,
+    407,
+    714
+   ],
+   "strokeEnds": [
+    [
+     120.5,
+     46.5
+    ],
+    [
+     363.0,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     120.5,
+     46.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    120.5,
+    46.5
+   ],
+   "path": "M168 332V0H78V412H317V714H407V332Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      116,
+      0,
+      385,
+      80
+     ],
+     "topCenter": [
+      250.5,
+      80
+     ],
+     "leftEnd": 116,
+     "offset": [
+      116,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      120.5,
+      46.5
+     ],
+     "dx": 130.0,
+     "dxLeft": -4.5,
+     "dy": 33.5
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      116,
+      0,
+      385,
+      236
+     ],
+     "topCenter": [
+      250.5,
+      236
+     ],
+     "leftEnd": 116,
+     "offset": [
+      116,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      120.5,
+      46.5
+     ],
+     "dx": 130.0,
+     "dxLeft": -4.5,
+     "dy": 189.5
+    }
+   }
+  },
+  {
+   "cp": "U+11020",
+   "char": "𑀠",
+   "name": "ḍha",
+   "glyph": "brm_DDHA",
+   "advance": 600,
+   "bounds": [
+    63,
+    -12,
+    537,
+    714
+   ],
+   "strokeEnds": [
+    [
+     310.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     308.0,
+     34.0
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    308.0,
+    34.0
+   ],
+   "path": "M300 -12Q232 -12 178.5 17.0Q125 46 94.0 96.5Q63 147 63 209Q63 266 89.0 314.5Q115 363 161.0 395.5Q207 428 265 437V714H355V362H310Q268 362 233.5 342.0Q199 322 179.0 287.5Q159 253 159 211Q159 146 199.0 109.0Q239 72 310 72Q374 72 410.5 95.0Q447 118 447 162Q447 191 433.5 205.5Q420 220 399 220Q348 220 327 155L243 194Q260 241 297.0 270.0Q334 299 393 299Q458 299 497.5 261.5Q537 224 537 162Q537 79 474.5 33.5Q412 -12 300 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_DDHU"
+    },
+    "ū": {
+     "ligature": "brm_DDHUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11021",
+   "char": "𑀡",
+   "name": "ṇa",
+   "glyph": "brm_NNA",
+   "advance": 538,
+   "bounds": [
+    49,
+    0,
+    489,
+    714
+   ],
+   "strokeEnds": [
+    [
+     86.5,
+     41.5
+    ],
+    [
+     86.5,
+     674.0
+    ],
+    [
+     451.5,
+     44.0
+    ],
+    [
+     451.5,
+     676.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     86.5,
+     41.5
+    ],
+    [
+     451.5,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    269.0,
+    41.5
+   ],
+   "path": "M489 714V634H314V80H489V0H49V80H224V634H49V714Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_NNU"
+    },
+    "ū": {
+     "ligature": "brm_NNUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11022",
+   "char": "𑀢",
+   "name": "ta",
+   "glyph": "brm_TA",
+   "advance": 625,
+   "bounds": [
+    29,
+    0,
+    595,
+    714
+   ],
+   "strokeEnds": [
+    [
+     34.0,
+     4.0
+    ],
+    [
+     314.0,
+     671.5
+    ],
+    [
+     594.0,
+     1.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     34.0,
+     4.0
+    ],
+    [
+     594.0,
+     1.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    314.0,
+    1.5
+   ],
+   "path": "M127 0H29L267 441V714H357V437L595 0H499L312 351Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      506,
+      0,
+      775,
+      80
+     ],
+     "topCenter": [
+      640.5,
+      80
+     ],
+     "leftEnd": 506,
+     "offset": [
+      506,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      594.0,
+      1.5
+     ],
+     "dx": 326.5,
+     "dxLeft": 192.0,
+     "dy": 78.5
+    },
+    "ū": {
+     "ligature": "brm_TUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11023",
+   "char": "𑀣",
+   "name": "tha",
+   "glyph": "brm_THA",
+   "advance": 818,
+   "bounds": [
+    78,
+    27,
+    740,
+    689
+   ],
+   "strokeEnds": [
+    [
+     405.5,
+     351.5
+    ],
+    [
+     405.5,
+     369.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     408.0,
+     71.5
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    408.0,
+    71.5
+   ],
+   "path": "M409 27Q336 27 275.5 52.5Q215 78 170.5 123.0Q126 168 102.0 228.5Q78 289 78 358Q78 429 102.5 489.0Q127 549 171.5 594.0Q216 639 276.5 664.0Q337 689 409 689Q481 689 541.5 663.5Q602 638 646.5 593.0Q691 548 715.5 487.5Q740 427 740 358Q740 289 716.0 229.0Q692 169 647.5 123.5Q603 78 542.5 52.5Q482 27 409 27ZM409 111Q473 111 526.5 144.0Q580 177 612.5 233.5Q645 290 645 359Q645 426 614.0 482.0Q583 538 530.0 571.5Q477 605 409 605Q342 605 288.5 571.5Q235 538 204.0 482.0Q173 426 173 359Q173 290 205.0 233.5Q237 177 290.5 144.0Q344 111 409 111ZM408 294Q380 294 363.5 312.0Q347 330 347 362Q347 394 362.5 412.0Q378 430 408 430Q439 430 455.0 412.0Q471 394 471 362Q471 331 454.5 312.5Q438 294 408 294Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_THU"
+    },
+    "ū": {
+     "ligature": "brm_THUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11024",
+   "char": "𑀤",
+   "name": "da",
+   "glyph": "brm_DA",
+   "advance": 462,
+   "bounds": [
+    98,
+    0,
+    384,
+    714
+   ],
+   "strokeEnds": [
+    [
+     138.0,
+     44.0
+    ],
+    [
+     143.0,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     138.0,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    138.0,
+    44.0
+   ],
+   "path": "M98 0V189H129Q175 189 212.0 208.0Q249 227 271.5 261.5Q294 296 294 341Q294 408 248.0 450.5Q202 493 129 493H98V714H187V563Q272 556 329 493Q384 432 384 339Q384 281 359.5 233.5Q335 186 291.0 156.0Q247 126 187 119V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      98,
+      0,
+      367,
+      80
+     ],
+     "topCenter": [
+      232.5,
+      80
+     ],
+     "leftEnd": 98,
+     "offset": [
+      98,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      138.0,
+      44.0
+     ],
+     "dx": 94.5,
+     "dxLeft": -40.0,
+     "dy": 36.0
+    },
+    "ū": {
+     "glyph": "brm_vowelUU.alt",
+     "box": [
+      98,
+      -236,
+      367,
+      0
+     ],
+     "topCenter": [
+      232.5,
+      0
+     ],
+     "leftEnd": 98,
+     "offset": [
+      98,
+      0
+     ],
+     "path": "M0 0H269V-80H88V-156H269V-236H0Z",
+     "nearestTerminal": [
+      138.0,
+      44.0
+     ],
+     "dx": 94.5,
+     "dxLeft": -40.0,
+     "dy": -44.0
+    }
+   }
+  },
+  {
+   "cp": "U+11025",
+   "char": "𑀥",
+   "name": "dha",
+   "glyph": "brm_DHA",
+   "advance": 608,
+   "bounds": [
+    98,
+    0,
+    530,
+    714
+   ],
+   "strokeEnds": [],
+   "bottomTerminals": [
+    [
+     194.2,
+     41.5
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    194.2,
+    41.5
+   ],
+   "path": "M98 0V714H187Q296 714 372.5 671.0Q449 628 489.5 548.0Q530 468 530 358Q530 185 446.0 92.5Q362 0 202 0ZM187 80H189Q309 80 372.5 152.0Q436 224 436 357Q436 488 370.5 561.0Q305 634 187 634Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_DHU"
+    },
+    "ū": {
+     "ligature": "brm_DHUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11026",
+   "char": "𑀦",
+   "name": "na",
+   "glyph": "brm_NA",
+   "advance": 538,
+   "bounds": [
+    49,
+    0,
+    489,
+    714
+   ],
+   "strokeEnds": [
+    [
+     86.5,
+     41.5
+    ],
+    [
+     271.5,
+     671.5
+    ],
+    [
+     451.5,
+     44.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     86.5,
+     41.5
+    ],
+    [
+     451.5,
+     44.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    269.0,
+    41.5
+   ],
+   "path": "M314 714V80H489V0H49V80H224V714Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_NU"
+    },
+    "ū": {
+     "ligature": "brm_NUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11027",
+   "char": "𑀧",
+   "name": "pa",
+   "glyph": "brm_PA",
+   "advance": 609,
+   "bounds": [
+    98,
+    -12,
+    531,
+    714
+   ],
+   "strokeEnds": [
+    [
+     143.0,
+     671.5
+    ],
+    [
+     518.0,
+     241.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     518.0,
+     241.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    518.0,
+    241.5
+   ],
+   "path": "M311 -12Q228 -12 181.5 18.0Q135 48 116.5 107.0Q98 166 98 252V714H187V248Q187 188 196.0 149.0Q205 110 231.5 91.0Q258 72 312 72Q368 72 395.5 93.5Q423 115 432.0 155.0Q441 195 441 250V252H531V250Q531 162 511.0 103.5Q491 45 443.0 16.5Q395 -12 311 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_PU"
+    },
+    "ū": {
+     "ligature": "brm_PUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11028",
+   "char": "𑀨",
+   "name": "pha",
+   "glyph": "brm_PHA",
+   "advance": 576,
+   "bounds": [
+    98,
+    -12,
+    513,
+    714
+   ],
+   "strokeEnds": [
+    [
+     143.0,
+     671.5
+    ],
+    [
+     230.5,
+     384.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     291.8,
+     34.0
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    291.8,
+    34.0
+   ],
+   "path": "M300 -12Q196 -12 147.0 44.5Q98 101 98 215V714H187V208Q187 153 201.5 123.5Q216 94 242.0 83.0Q268 72 302 72Q418 72 418 204Q418 253 391.0 284.5Q364 316 321 316Q307 316 293.0 314.0Q279 312 265 308L228 383Q270 400 312 400Q372 400 417.5 376.0Q463 352 488.0 308.0Q513 264 513 205Q513 144 487.0 94.5Q461 45 413.0 16.5Q365 -12 300 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_PHU"
+    },
+    "ū": {
+     "ligature": "brm_PHUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11029",
+   "char": "𑀩",
+   "name": "ba",
+   "glyph": "brm_BA",
+   "advance": 773,
+   "bounds": [
+    98,
+    70,
+    675,
+    652
+   ],
+   "strokeEnds": [],
+   "bottomTerminals": [
+    [
+     383.0,
+     112.0
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    383.0,
+    112.0
+   ],
+   "path": "M98 70V652H675V70ZM187 150H585V572H187Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_BU"
+    },
+    "ū": {
+     "ligature": "brm_BUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1102A",
+   "char": "𑀪",
+   "name": "bha",
+   "glyph": "brm_BHA",
+   "advance": 898,
+   "bounds": [
+    98,
+    0,
+    830,
+    714
+   ],
+   "strokeEnds": [
+    [
+     138.0,
+     44.0
+    ],
+    [
+     608.0,
+     46.5
+    ],
+    [
+     785.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     138.0,
+     44.0
+    ],
+    [
+     608.0,
+     46.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    373.0,
+    44.0
+   ],
+   "path": "M566 0V420H187V0H98V500H740V714H830V420H656V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      580,
+      0,
+      849,
+      80
+     ],
+     "topCenter": [
+      714.5,
+      80
+     ],
+     "leftEnd": 580,
+     "offset": [
+      580,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      608.0,
+      46.5
+     ],
+     "dx": 341.5,
+     "dxLeft": 207.0,
+     "dy": 36.0
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      580,
+      0,
+      849,
+      236
+     ],
+     "topCenter": [
+      714.5,
+      236
+     ],
+     "leftEnd": 580,
+     "offset": [
+      580,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      608.0,
+      46.5
+     ],
+     "dx": 341.5,
+     "dxLeft": 207.0,
+     "dy": 192.0
+    }
+   }
+  },
+  {
+   "cp": "U+1102B",
+   "char": "𑀫",
+   "name": "ma",
+   "glyph": "brm_MA",
+   "advance": 698,
+   "bounds": [
+    78,
+    -12,
+    620,
+    714
+   ],
+   "strokeEnds": [
+    [
+     120.5,
+     674.0
+    ],
+    [
+     583.0,
+     679.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     346.8,
+     31.5
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    346.8,
+    31.5
+   ],
+   "path": "M347 -12Q246 -12 191.0 37.0Q136 86 136 174Q136 241 169.0 294.5Q202 348 272 394Q208 432 165.0 470.5Q122 509 100.0 557.5Q78 606 78 674V714H168V674Q168 612 194.0 570.5Q220 529 261.5 499.5Q303 470 349 442Q396 470 437.0 500.0Q478 530 504.0 571.0Q530 612 530 674V714H620V674Q620 606 598.0 558.0Q576 510 533.0 472.0Q490 434 427 395Q499 348 530.5 294.0Q562 240 562 174Q562 85 506.5 36.5Q451 -12 347 -12ZM347 72Q404 72 435.5 98.0Q467 124 467 178Q467 229 439.0 270.5Q411 312 351 350Q290 312 260.5 270.5Q231 229 231 178Q231 125 262.0 98.5Q293 72 347 72Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_MU"
+    },
+    "ū": {
+     "ligature": "brm_MUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1102C",
+   "char": "𑀬",
+   "name": "ya",
+   "glyph": "brm_YA",
+   "advance": 807,
+   "bounds": [
+    63,
+    -12,
+    743,
+    714
+   ],
+   "strokeEnds": [
+    [
+     105.5,
+     211.5
+    ],
+    [
+     405.5,
+     671.5
+    ],
+    [
+     725.5,
+     234.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     105.5,
+     211.5
+    ],
+    [
+     725.5,
+     234.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    415.5,
+    211.5
+   ],
+   "path": "M259 -12Q158 -12 110.5 41.0Q63 94 63 218V251H153V218Q153 137 175.0 104.5Q197 72 254 72Q312 72 335.0 104.0Q358 136 358 208V714H448V208Q448 134 471.0 103.0Q494 72 553 72Q609 72 631.0 104.5Q653 137 653 218V251H743V218Q743 95 696.0 41.5Q649 -12 547 -12Q447 -12 403 42Q360 -12 259 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_YU"
+    },
+    "ū": {
+     "ligature": "brm_YUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1102D",
+   "char": "𑀭",
+   "name": "ra",
+   "glyph": "brm_RA",
+   "advance": 324,
+   "bounds": [
+    117,
+    0,
+    207,
+    714
+   ],
+   "strokeEnds": [
+    [
+     159.5,
+     46.5
+    ],
+    [
+     164.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     159.5,
+     46.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    159.5,
+    46.5
+   ],
+   "path": "M117 0V714H207V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      146,
+      0,
+      415,
+      80
+     ],
+     "topCenter": [
+      280.5,
+      80
+     ],
+     "leftEnd": 146,
+     "offset": [
+      146,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      159.5,
+      46.5
+     ],
+     "dx": 121.0,
+     "dxLeft": -13.5,
+     "dy": 33.5
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      146,
+      0,
+      415,
+      236
+     ],
+     "topCenter": [
+      280.5,
+      236
+     ],
+     "leftEnd": 146,
+     "offset": [
+      146,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      159.5,
+      46.5
+     ],
+     "dx": 121.0,
+     "dxLeft": -13.5,
+     "dy": 189.5
+    }
+   }
+  },
+  {
+   "cp": "U+1102E",
+   "char": "𑀮",
+   "name": "la",
+   "glyph": "brm_LA",
+   "advance": 732,
+   "bounds": [
+    49,
+    -12,
+    635,
+    714
+   ],
+   "strokeEnds": [
+    [
+     86.5,
+     216.5
+    ],
+    [
+     591.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     86.5,
+     216.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    86.5,
+    216.5
+   ],
+   "path": "M421 -12Q320 -12 268.0 32.5Q216 77 205 175H49V255H291V251Q291 192 300.5 152.5Q310 113 338.0 93.0Q366 73 421 73Q475 73 501.5 93.0Q528 113 536.5 153.0Q545 193 545 251V714H635V254Q635 166 616.0 107.0Q597 48 550.5 18.0Q504 -12 421 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_LU"
+    },
+    "ū": {
+     "ligature": "brm_LUU"
+    }
+   }
+  },
+  {
+   "cp": "U+1102F",
+   "char": "𑀯",
+   "name": "va",
+   "glyph": "brm_VA",
+   "advance": 509,
+   "bounds": [
+    63,
+    -12,
+    445,
+    714
+   ],
+   "strokeEnds": [
+    [
+     255.5,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     253.0,
+     31.5
+    ]
+   ],
+   "method": "lowest-point",
+   "count": 0,
+   "parity": "none",
+   "snap": [
+    253.0,
+    31.5
+   ],
+   "path": "M254 -12Q202 -12 158.5 13.0Q115 38 89.0 80.0Q63 122 63 171Q63 235 103.5 284.5Q144 334 209 350V714H299V350Q365 335 405.0 285.0Q445 235 445 171Q445 119 418.5 78.0Q392 37 349.0 12.5Q306 -12 254 -12ZM254 67Q297 67 326.0 97.5Q355 128 355 171Q355 215 326.5 245.5Q298 276 254 276Q211 276 182.0 245.5Q153 215 153 171Q153 129 182.0 98.0Q211 67 254 67Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_VU"
+    },
+    "ū": {
+     "ligature": "brm_VUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11030",
+   "char": "𑀰",
+   "name": "śa",
+   "glyph": "brm_SHA",
+   "advance": 659,
+   "bounds": [
+    29,
+    0,
+    629,
+    714
+   ],
+   "strokeEnds": [
+    [
+     36.5,
+     6.5
+    ],
+    [
+     324.0,
+     39.0
+    ],
+    [
+     331.5,
+     674.0
+    ],
+    [
+     626.5,
+     4.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     36.5,
+     6.5
+    ],
+    [
+     324.0,
+     39.0
+    ],
+    [
+     626.5,
+     4.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 3,
+   "parity": "odd",
+   "snap": [
+    324.0,
+    39.0
+   ],
+   "path": "M289 0V537L269 451L124 0H29L287 714H372L629 0H534L391 445L367 547V0Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU.alt",
+     "box": [
+      289,
+      0,
+      468,
+      80
+     ],
+     "topCenter": [
+      378.5,
+      80
+     ],
+     "leftEnd": 289,
+     "offset": [
+      289,
+      0
+     ],
+     "path": "M0 80H179V0H0Z",
+     "nearestTerminal": [
+      324.0,
+      39.0
+     ],
+     "dx": 54.5,
+     "dxLeft": -35.0,
+     "dy": 41.0
+    },
+    "ū": {
+     "glyph": "brm_vowelUU.alt2",
+     "box": [
+      289,
+      -236,
+      498,
+      0
+     ],
+     "topCenter": [
+      393.5,
+      0
+     ],
+     "leftEnd": 289,
+     "offset": [
+      289,
+      0
+     ],
+     "path": "M0 0H209V-80H88V-156H209V-236H0Z",
+     "nearestTerminal": [
+      324.0,
+      39.0
+     ],
+     "dx": 69.5,
+     "dxLeft": -35.0,
+     "dy": -39.0
+    }
+   }
+  },
+  {
+   "cp": "U+11031",
+   "char": "𑀱",
+   "name": "ṣa",
+   "glyph": "brm_SSA",
+   "advance": 609,
+   "bounds": [
+    98,
+    -12,
+    531,
+    714
+   ],
+   "strokeEnds": [
+    [
+     143.0,
+     671.5
+    ],
+    [
+     518.0,
+     241.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     518.0,
+     241.5
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    518.0,
+    241.5
+   ],
+   "path": "M311 -12Q228 -12 181.5 18.0Q135 48 116.5 107.0Q98 166 98 252V714H187V448L441 531L466 456L187 365V248Q187 189 195.5 149.5Q204 110 231.0 91.0Q258 72 312 72Q368 72 395.5 93.5Q423 115 432.0 155.0Q441 195 441 250V252H531V250Q531 162 511.0 103.5Q491 45 443.0 16.5Q395 -12 311 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_SSU"
+    },
+    "ū": {
+     "ligature": "brm_SSUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11032",
+   "char": "𑀲",
+   "name": "sa",
+   "glyph": "SA",
+   "advance": 878,
+   "bounds": [
+    78,
+    -12,
+    814,
+    714
+   ],
+   "strokeEnds": [
+    [
+     120.5,
+     46.5
+    ],
+    [
+     398.0,
+     671.5
+    ],
+    [
+     793.0,
+     234.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     120.5,
+     46.5
+    ],
+    [
+     793.0,
+     234.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 2,
+   "parity": "even",
+   "snap": [
+    456.8,
+    46.5
+   ],
+   "path": "M577 -12Q462 -12 407.0 51.0Q352 114 352 252V267Q339 271 323.0 273.0Q307 275 288 275Q222 275 195.0 244.5Q168 214 168 146V0H78V163Q78 266 129.0 312.5Q180 359 277 359Q313 359 352 348V714H442V249Q442 150 474.0 111.0Q506 72 581 72Q655 72 690.0 113.0Q725 154 725 250V252H814V250Q814 108 755.0 48.0Q696 -12 577 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_SU"
+    },
+    "ū": {
+     "ligature": "brm_SUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11033",
+   "char": "𑀳",
+   "name": "ha",
+   "glyph": "brm_HA",
+   "advance": 732,
+   "bounds": [
+    98,
+    -12,
+    684,
+    714
+   ],
+   "strokeEnds": [
+    [
+     143.0,
+     671.5
+    ],
+    [
+     645.5,
+     219.0
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     645.5,
+     219.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    645.5,
+    219.0
+   ],
+   "path": "M311 -12Q228 -12 181.5 18.0Q135 48 116.5 107.0Q98 166 98 252V714H187V249Q187 189 195.5 149.5Q204 110 230.5 91.0Q257 72 312 72Q367 72 394.5 93.0Q422 114 431.5 155.0Q441 196 441 255H684V175H527Q517 77 464.5 32.5Q412 -12 311 -12Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "ligature": "brm_HU"
+    },
+    "ū": {
+     "ligature": "brm_HUU"
+    }
+   }
+  },
+  {
+   "cp": "U+11034",
+   "char": "𑀴",
+   "name": "ḷa",
+   "glyph": "brm_LLA",
+   "advance": 485,
+   "bounds": [
+    48,
+    -14,
+    407,
+    714
+   ],
+   "strokeEnds": [
+    [
+     125.5,
+     64.0
+    ],
+    [
+     363.0,
+     671.5
+    ]
+   ],
+   "bottomTerminals": [
+    [
+     125.5,
+     64.0
+    ]
+   ],
+   "method": "stroke-ends",
+   "count": 1,
+   "parity": "odd",
+   "snap": [
+    125.5,
+    64.0
+   ],
+   "path": "M48 63Q48 106 78 128V412H317V714H407V332H168V127Q199 106 199 63Q199 29 178.0 7.5Q157 -14 122 -14Q89 -14 68.5 7.5Q48 29 48 63Z",
+   "kind": "consonant",
+   "fontSigns": {
+    "u": {
+     "glyph": "brm_vowelU",
+     "box": [
+      116,
+      0,
+      385,
+      80
+     ],
+     "topCenter": [
+      250.5,
+      80
+     ],
+     "leftEnd": 116,
+     "offset": [
+      116,
+      0
+     ],
+     "path": "M0 80H269V0H0Z",
+     "nearestTerminal": [
+      125.5,
+      64.0
+     ],
+     "dx": 125.0,
+     "dxLeft": -9.5,
+     "dy": 16.0
+    },
+    "ū": {
+     "glyph": "brm_vowelUU",
+     "box": [
+      116,
+      0,
+      385,
+      236
+     ],
+     "topCenter": [
+      250.5,
+      236
+     ],
+     "leftEnd": 116,
+     "offset": [
+      116,
+      0
+     ],
+     "path": "M0 236H269V156H0ZM0 80H269V0H0Z",
+     "nearestTerminal": [
+      125.5,
+      64.0
+     ],
+     "dx": 125.0,
+     "dxLeft": -9.5,
+     "dy": 172.0
+    }
+   }
+  }
+ ]
+}

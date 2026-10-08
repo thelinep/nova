@@ -1,0 +1,189 @@
+<title>Brahmi Terminal Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Noto+Sans+Brahmi&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a specimen sheet. Findings first, then the measured letters as a grid of plates, then the font comparison. */
+:root{
+  --ground:#e9ece6; --plate:#f7f8f4; --ink:#1c232d; --muted:#5d6672; --rule:#cfd5cc; --glyph:#2a313b;
+  --lapis:#2b4f93; --lapis-soft:#2b4f9314; --ochre:#a35d0f; --end:#8a939e;
+  --display:"Marcellus","Cormorant Garamond",Georgia,serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --brahmi:"Noto Sans Brahmi","Segoe UI Historic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#121518; --plate:#1a1e23; --ink:#e7e4dc; --muted:#9aa2ad; --rule:#2c333b; --glyph:#d9d5cb;
+  --lapis:#93b1f0; --lapis-soft:#93b1f01c; --ochre:#e7a95f; --end:#6f7884; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#121518; --plate:#1a1e23; --ink:#e7e4dc; --muted:#9aa2ad; --rule:#2c333b; --glyph:#d9d5cb;
+  --lapis:#93b1f0; --lapis-soft:#93b1f01c; --ochre:#e7a95f; --end:#6f7884; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.55 var(--body)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 56px;padding-inline:16px;display:flex;flex-direction:column;gap:28px}
+h1{font:400 clamp(30px,4vw,44px)/1.05 var(--display);margin:0;letter-spacing:.01em;text-wrap:balance}
+h2{font:400 24px/1.2 var(--display);margin:0;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.label{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.findings{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:14px}
+.finding{background:var(--plate);border:1px solid var(--rule);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.finding .n{font:500 30px/1 var(--mono);color:var(--lapis);font-variant-numeric:tabular-nums}
+.key{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:14px;color:var(--muted)}
+.key span{display:inline-flex;gap:6px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{font:inherit;font-size:14px;color:var(--ink);background:var(--plate);border:1px solid var(--rule);border-radius:999px;padding:5px 12px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--lapis);border-color:var(--lapis);color:var(--plate)}
+:focus-visible{outline:2px solid var(--lapis);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.plate{overflow:hidden;background:var(--plate);border:1px solid var(--rule);border-radius:8px;padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.plate svg{width:100%;height:auto;display:block}
+.plate .row{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.plate .nm{font:500 14px/1.2 var(--mono)}
+.chip{font:500 11px/1 var(--mono);border-radius:999px;padding:3px 7px;border:1px solid var(--rule);color:var(--muted);white-space:nowrap}
+.chip.odd{color:var(--lapis);border-color:var(--lapis)}
+.chip.even{color:var(--ochre);border-color:var(--ochre)}
+.cmp{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:10px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 10px;border-top:1px solid var(--rule);white-space:nowrap}
+th{font:600 11px/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--mono);text-align:right}
+.lig{font:26px/1.6 var(--brahmi);letter-spacing:.15em}
+.note{font-size:14px;color:var(--muted);max-width:76ch}
+section{display:flex;flex-direction:column;gap:12px}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="label">Measured from Noto Sans Brahmi 2.004 outlines</span>
+    <h1>Brahmi Terminal Atlas</h1>
+    <p class="muted">Every vowel and consonant, thinned to its centre line. Stroke ends are found automatically; the ones in the lower 40% of the letter are its bottom terminals. The magnet rule then gives a snap point, which is tested against where the font's designer attached the vowel signs u and ū.</p>
+  </header>
+
+  <section aria-label="Findings">
+    <div class="findings" id="findings"></div>
+    <p class="note">Measured on one modern typeface, not on inscriptions. The odd/even rule uses the corrected formulas: the midpoint of two terminals is (x<sub>A</sub> + x<sub>B</sub>) / 2, and with y growing downward the bottom of a circle is at θ = π/2.</p>
+  </section>
+
+  <section aria-label="Letters">
+    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+      <h2>All 48 letters</h2>
+      <div class="filters" role="group" aria-label="Show">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="vowel" aria-pressed="false">Vowels</button>
+        <button type="button" data-f="consonant" aria-pressed="false">Consonants</button>
+        <button type="button" data-f="odd" aria-pressed="false">Odd</button>
+        <button type="button" data-f="even" aria-pressed="false">Even</button>
+        <button type="button" data-f="none" aria-pressed="false">Closed</button>
+      </div>
+    </div>
+    <div class="key">
+      <span><i class="dot" style="background:var(--end)"></i>stroke end</span>
+      <span><i class="dot" style="background:var(--lapis)"></i>bottom terminal</span>
+      <span><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7H12M7 2V12" stroke="var(--ochre)" stroke-width="2.2" fill="none"/></svg>magnet snap point</span>
+      <span><svg width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><path d="M0 5H22" stroke="var(--muted)" stroke-dasharray="3 3" fill="none"/></svg>lower 40% line</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section aria-label="Comparison with the font">
+    <h2>Where the font attaches the u sign</h2>
+    <p class="muted" id="cmpIntro"></p>
+    <div class="cmp" id="cmp"></div>
+    <div class="tbl"><table id="tbl"><thead><tr><th>Letter</th><th>Terminals</th><th>Snap point x</th><th>Sign starts at x</th><th>Miss vs snap</th><th>Miss vs nearest terminal</th></tr></thead><tbody></tbody></table></div>
+    <div>
+      <span class="label">Drawn as one combined glyph with u (no shared anchor)</span>
+      <div class="lig" id="lig"></div>
+    </div>
+  </section>
+
+  <section aria-label="Method">
+    <h2>How it was measured</h2>
+    <p class="note" id="method"></p>
+    <p class="note">Font: Noto Sans Brahmi, SIL Open Font License 1.1. Outline paths on this page are drawn from the font file. Script and data: <span style="font-family:var(--mono)">nova-console/tools/brahmi_terminals.py</span>, <span style="font-family:var(--mono)">lib/brahmi-terminals.json</span>.</p>
+  </section>
+</div>
+
+<script>
+const DATA = /*DATA*/;
+(function(){
+  const $ = id => document.getElementById(id);
+  const G = DATA.glyphs, NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.append(e); return e; };
+  const median = a => { const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+
+  function plateSvg(g, sign) {
+    const [x0, y0, x1, y1] = g.bounds, pad = 70;
+    let X0 = Math.min(x0, 0), X1 = Math.max(x1, g.advance), Y0 = y0, Y1 = y1;
+    if (sign) { const b = sign.box; X0 = Math.min(X0, b[0]); X1 = Math.max(X1, b[2]); Y0 = Math.min(Y0, b[1]); Y1 = Math.max(Y1, b[3]); }
+    const w = X1 - X0 + 2 * pad, h = Y1 - Y0 + 2 * pad;
+    const svg = el('svg', { viewBox: `${X0 - pad} ${-(Y1 + pad)} ${w} ${h}`, role: 'img', 'aria-label': `${g.name}: ${g.method === 'lowest-point' ? 'closed shape' : g.count + ' bottom terminals'}` });
+    const flip = el('g', { transform: 'scale(1 -1)' }, svg);
+    el('path', { d: g.path, fill: 'var(--glyph)', 'fill-opacity': sign ? '0.85' : '0.9' }, flip);
+    if (sign) el('path', { d: sign.path, transform: `translate(${sign.offset[0]} ${sign.offset[1]})`, fill: 'var(--lapis)', 'fill-opacity': '0.55' }, flip);
+    const cut = y1 - 0.6 * (y1 - y0);
+    el('line', { x1: X0 - pad / 2, x2: X1 + pad / 2, y1: cut, y2: cut, stroke: 'var(--muted)', 'stroke-width': 4, 'stroke-dasharray': '14 12', fill: 'none' }, flip);
+    for (const [x, y] of g.strokeEnds) el('circle', { cx: x, cy: y, r: 16, fill: 'var(--end)' }, flip);
+    for (const [x, y] of g.bottomTerminals) el('circle', { cx: x, cy: y, r: 22, fill: g.method === 'lowest-point' ? 'none' : 'var(--lapis)', stroke: 'var(--lapis)', 'stroke-width': 7 }, flip);
+    const [sx, sy] = g.snap;
+    el('path', { d: `M${sx - 38} ${sy}H${sx + 38}M${sx} ${sy - 38}V${sy + 38}`, stroke: 'var(--ochre)', 'stroke-width': 11, fill: 'none', 'stroke-linecap': 'round' }, flip);
+    if (sign) el('path', { d: `M${sign.leftEnd} ${sign.box[1] - 40}V${sign.box[3] + 40}`, stroke: 'var(--lapis)', 'stroke-width': 8, 'stroke-dasharray': '18 10', fill: 'none' }, flip);
+    return svg;
+  }
+
+  // Findings, computed from the data.
+  const cons = G.filter(g => g.kind === 'consonant');
+  const sep = cons.filter(g => g.fontSigns.u && g.fontSigns.u.dx !== undefined);
+  const lig = cons.filter(g => g.fontSigns.u && g.fontSigns.u.ligature);
+  const odd = sep.filter(g => g.parity === 'odd'), even = sep.filter(g => g.parity === 'even');
+  const oddMiss = median(odd.map(g => Math.abs(g.fontSigns.u.dxLeft)));
+  const evenMiss = median(even.map(g => Math.abs(g.fontSigns.u.dxLeft)));
+  const evenFoot = median(even.map(g => Math.abs(g.fontSigns.u.leftEnd - g.fontSigns.u.nearestTerminal[0])));
+  const count = p => G.filter(g => g.parity === p).length;
+  const F = [
+    [`${count('odd')} · ${count('even')} · ${count('none')}`, 'letters with an odd, even or no (closed) bottom-terminal count, out of 48.'],
+    [`${Math.round(oddMiss)}`, `units (of 1,000) between a single terminal and where the font starts the u sign: median of ${odd.length} odd letters. The sign attaches at the terminal and runs to the right; it is not centred under it.`],
+    [`${Math.round(evenMiss)}`, `units off when the u sign is put at the midpoint of two feet (median of ${even.length} even letters). The font attaches it near one foot instead, ${Math.round(evenFoot)} units away (median).`],
+    [`${lig.length} of ${cons.length}`, 'consonants have their own drawn form with u, so no single rule places the sign on them.'],
+  ];
+  for (const [n, t] of F) { const d = document.createElement('div'); d.className = 'finding'; d.innerHTML = '<span class="n"></span><span></span>'; d.firstChild.textContent = n; d.lastChild.textContent = t; $('findings').append(d); }
+
+  // Letter grid.
+  function drawGrid(f) {
+    $('grid').textContent = '';
+    for (const g of G.filter(g => f === 'all' || g.kind === f || g.parity === f)) {
+      const p = document.createElement('figure'); p.className = 'plate'; p.style.margin = '0';
+      p.append(plateSvg(g));
+      const row = document.createElement('figcaption'); row.className = 'row';
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = `${g.name} ${g.cp.replace('U+', '')}`;
+      const ch = document.createElement('span'); ch.className = 'chip ' + g.parity;
+      ch.textContent = g.method === 'lowest-point' ? 'closed' : `${g.count} · ${g.parity}`;
+      row.append(nm, ch); p.append(row); $('grid').append(p);
+    }
+  }
+  document.querySelectorAll('.filters button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.filters button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    drawGrid(b.dataset.f);
+  });
+  drawGrid('all');
+
+  // Comparison.
+  $('cmpIntro').textContent = `${sep.length} consonants take the separate u sign, placed by the font's anchors (blue). The orange cross is the magnet snap point; the dashed blue line is where the sign starts.`;
+  for (const g of sep) {
+    const u = g.fontSigns.u, p = document.createElement('figure'); p.className = 'plate'; p.style.margin = '0';
+    p.append(plateSvg(g, u));
+    const cap = document.createElement('figcaption'); cap.className = 'row';
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = g.name + 'u';
+    const ch = document.createElement('span'); ch.className = 'chip ' + g.parity; ch.textContent = `${g.count} · ${g.parity}`;
+    cap.append(nm, ch); p.append(cap); $('cmp').append(p);
+    const tr = document.createElement('tr');
+    const cells = [g.name, `${g.count} (${g.parity})`, g.snap[0].toFixed(0), u.leftEnd.toFixed(0), (u.dxLeft > 0 ? '+' : '') + u.dxLeft.toFixed(0), (u.leftEnd - u.nearestTerminal[0] > 0 ? '+' : '') + (u.leftEnd - u.nearestTerminal[0]).toFixed(0)];
+    cells.forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i > 1) td.className = 'num'; tr.append(td); });
+    $('tbl').tBodies[0].append(tr);
+  }
+  $('lig').textContent = lig.map(g => g.char + String.fromCodePoint(0x1103C)).join(' ');
+  $('method').textContent = DATA.meta.method.replace(/\s+/g, ' ');
+})();
+</script>
