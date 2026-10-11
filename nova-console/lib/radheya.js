@@ -43,6 +43,16 @@ function createRadheya(deps) {
   const fetchImpl = deps.fetchImpl || globalThis.fetch;
   const now = deps.now || (() => new Date().toISOString());
   const audit = event => { try { security && security.appendAudit && security.appendAudit(dataDir, event); } catch (_) {} };
+  const auditRequired = event => {
+    if (!security || typeof security.appendAudit !== 'function') throw error('Secure audit logging is unavailable; the online request was not sent.', 503);
+    try {
+      const record = security.appendAudit(dataDir, event);
+      if (!record) throw new Error('The audit store did not confirm the record.');
+      return record;
+    } catch (cause) {
+      throw error('Secure audit logging failed; the online request was not sent. ' + clip(cause.message || String(cause), 240), 503);
+    }
+  };
   const active = new Map();
   let evolving = null;
 
@@ -197,12 +207,18 @@ function createRadheya(deps) {
     let res, body, output;
     if (cfg.provider === 'anthropic') {
       body = JSON.stringify({ model: cfg.model, max_tokens: 1024, system: SYSTEM, messages });
-      res = await fetchImpl(cfg.baseUrl + '/v1/messages', { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' }, body });
     } else {
       body = JSON.stringify({ model: cfg.model, messages: [{ role: 'system', content: SYSTEM }, ...messages] });
+    }
+    const requestSha256 = sha(body);
+    const host = new URL(cfg.baseUrl).host;
+    auditRequired({ action: 'radheya.online.send_attempt', cardId: card.id, provider: cfg.provider, host, model: cfg.model, requestSha256 });
+    if (cfg.provider === 'anthropic') {
+      res = await fetchImpl(cfg.baseUrl + '/v1/messages', { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' }, body });
+    } else {
       res = await fetchImpl(cfg.baseUrl + '/chat/completions', { method: 'POST', signal, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key }, body });
     }
-    audit({ action: 'radheya.online.sent', cardId: card.id, provider: cfg.provider, host: new URL(cfg.baseUrl).host, model: cfg.model, requestSha256: sha(body), status: res.status });
+    auditRequired({ action: 'radheya.online.response', cardId: card.id, provider: cfg.provider, host, model: cfg.model, requestSha256, status: res.status });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw error(`The online agent answered ${res.status}: ${clip(data?.error?.message || JSON.stringify(data), 300)}`, 502);
     output = cfg.provider === 'anthropic' ? (data.content || []).filter(p => p.type === 'text').map(p => p.text).join('\n') : data.choices?.[0]?.message?.content;

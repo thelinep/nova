@@ -96,11 +96,14 @@ test('the browser opens only sites the card allows, then the local model answers
 
 test('an online agent needs the card\'s permission, network access and a stored key; the audit holds a hash', async () => {
   const sent = [];
-  const fetchImpl = async (url, opts) => { sent.push({ url, opts }); return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'online answer' } }] }) }; };
-  const s = setup({ fetchImpl });
+  const order = [];
+  const fetchImpl = async (url, opts) => { order.push('fetch'); sent.push({ url, opts }); return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'online answer' } }] }) }; };
+  const auditSecurity = { ...security, appendAudit(dataDir, event) { order.push(event.action); return security.appendAudit(dataDir, event); } };
+  const s = setup({ fetchImpl, security: auditSecurity });
   try {
     assert.throws(() => s.r.saveSettings({ online: { provider: 'openai', baseUrl: 'http://insecure.example', model: 'm', apiKey: 'k' } }), /https/);
     s.r.saveSettings({ online: { provider: 'openai', baseUrl: 'https://api.example.com/v1', model: 'gpt-x', apiKey: 'sk-test' } });
+    order.length = 0; // Exclude the earlier key-storage audit from the send-order assertion.
     assert.equal(s.r.board().online.secretId, 'radheya-online-key');
     assert.equal(JSON.stringify(s.r.board()).includes('sk-test'), false, 'the key is never stored in the board');
     const c = s.r.createCard({ title: 'Draft an outline', column: 'ready' });
@@ -116,10 +119,27 @@ test('an online agent needs the card\'s permission, network access and a stored 
     assert.equal(sent.length, 1);
     assert.equal(sent[0].url, 'https://api.example.com/v1/chat/completions');
     assert.equal(sent[0].opts.headers.authorization, 'Bearer sk-test');
+    assert.deepEqual(order, ['radheya.online.send_attempt', 'fetch', 'radheya.online.response'], 'persist the request hash before contacting the provider');
     assert.equal(s.r.view().cards[0].column, 'review');
-    const log = security.readAudit(s.dir).map(r => r.event).find(e => e.action === 'radheya.online.sent');
+    const log = security.readAudit(s.dir).map(r => r.event).find(e => e.action === 'radheya.online.send_attempt');
     assert.match(log.requestSha256, /^[0-9a-f]{64}$/);
     assert.equal(JSON.stringify(log).includes('Draft an outline'), false);
+  } finally { s.close(); }
+});
+
+test('an online request is not sent when the pre-send audit cannot be persisted', async () => {
+  let sends = 0;
+  const failingSecurity = { ...security, appendAudit() { throw new Error('disk unavailable'); } };
+  const s = setup({ security: failingSecurity, fetchImpl: async () => { sends++; return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'should not arrive' } }] }) }; } });
+  try {
+    s.r.saveSettings({ online: { provider: 'openai', baseUrl: 'https://api.example.com/v1', model: 'gpt-x', apiKey: 'sk-test' } });
+    const c = s.r.createCard({ title: 'Draft an outline', column: 'ready', allowOnline: true });
+    s.store.put('preferences', { id: 'default', webAccess: true });
+    const { run, done } = s.r.startRun(c.id, { kind: 'online' });
+    await done;
+    assert.equal(sends, 0);
+    assert.equal(s.r.getRun(run.id).status, 'failed');
+    assert.match(s.r.getRun(run.id).error, /audit logging failed.*request was not sent/i);
   } finally { s.close(); }
 });
 
