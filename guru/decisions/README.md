@@ -11,14 +11,18 @@ Mark one box per line, then add your name and the date.
 
 ## D1 · Runtime coding model for Maataa (needed now)
 
-Maataa uses `qwen2.5-coder:7b` from Ollama as its working coding model. It is
-not used as training data, and it is not a teacher. It passes through Maataa's
-exact-digest qualification (18 checks) before it may write code.
+The registry contains an approved teacher entry for the exact local
+Qwen2.5-Coder-7B-Instruct digest, with `output_rights: may_train`. That approval
+covers the recorded teacher output rights; it does not admit TinyPython or
+another dataset. This D1 decision is separate: it asks whether Maataa should
+use `qwen2.5-coder:7b` as its runtime coding model. D1 remains unanswered, and
+the current checkout does not establish that this exact runtime digest passed
+Maataa's 18-check qualification.
 
 - Licence to verify on the model card before saying yes: Qwen2.5-Coder 7B is
   published under Apache-2.0. Other sizes have their own terms; the 3B size, for
   example, uses a research licence.
-- [ ] Yes, use it as a runtime-only coding model  [ ] No
+- [ ] Yes, use it as a runtime coding model  [ ] No
 - Owner / date: ______________________
 
 ## D2 · TinyPython candidate shard (quarantined)
