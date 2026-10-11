@@ -60,7 +60,7 @@ class ItemAdmission(StrictModel):
     decision: AdmissionDecision
     reason_codes: list[str] = Field(default_factory=list)
     policy_version: str = "quality-v1"
-    item_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    item_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     decided_at: datetime | None = None
 
     @field_validator("auto_checks")

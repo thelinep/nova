@@ -65,10 +65,13 @@ def promote_if_sensitive(tier: QualityTier, text: str) -> QualityTier:
     return QualityTier.A if words & SENSITIVE_KEYWORDS else tier
 
 
-def item_decision(*, item_id: str, tier: QualityTier, auto_checks: Sequence[AutoCheckResult | dict],
+def item_decision(*, item_id: str, item_digest: str, tier: QualityTier,
+                  auto_checks: Sequence[AutoCheckResult | dict],
                   human_review: HumanReviewRecord | dict | None) -> ItemAdmission:
     if not isinstance(item_id, str) or not item_id.strip():
         raise QualityInputError("item_id must be non-empty")
+    if not isinstance(item_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", item_digest):
+        raise QualityInputError("item_digest must be a lowercase SHA-256 digest")
     try:
         tier = QualityTier(tier)
     except ValueError as exc:
@@ -102,7 +105,8 @@ def item_decision(*, item_id: str, tier: QualityTier, auto_checks: Sequence[Auto
     else:
         decision, reasons = AdmissionDecision.ADMIT, ["tier_c_auto_admit"]
     decision_record = {
-        "item_id": item_id, "tier": tier.value, "decision": decision.value,
+        "item_id": item_id, "item_digest": item_digest,
+        "tier": tier.value, "decision": decision.value,
         "failed_checks": failed_checks,
         "check_digests": sorted(check.evidence_digest for check in checks if check.evidence_digest),
         "reviewer_id": review.reviewer_id if review else None,
@@ -112,10 +116,12 @@ def item_decision(*, item_id: str, tier: QualityTier, auto_checks: Sequence[Auto
     result = ItemAdmission(
         item_id=item_id, tier=tier, auto_checks=checks, human_review=review,
         decision=decision, reason_codes=reasons,
+        item_digest=item_digest,
         decided_at=datetime.now(timezone.utc),
     )
     _audit("item_admission", payload_digest=digest, fields={
-        "item_id": item_id, "tier": tier.value, "decision": decision.value,
+        "item_id": item_id, "item_digest": item_digest,
+        "tier": tier.value, "decision": decision.value,
         "reason_codes": reasons, "failed_check_count": len(failed_checks),
     })
     return result

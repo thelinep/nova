@@ -38,8 +38,10 @@ def corpus_items(count: int = 40) -> list[CorpusItem]:
 
 
 def admission_rows(count: int = 40) -> list[dict[str, str]]:
-    return [{"event": "item_admission", "item_id": f"item-{index:03d}", "decision": "admit",
-             "payload_digest": f"{index:064x}"} for index in range(count)]
+    items = corpus_items(count)
+    return [{"event": "item_admission", "item_id": item.item_id, "decision": "admit",
+             "item_digest": item.canonical_digest(), "payload_digest": f"{index:064x}"}
+            for index, item in enumerate(items)]
 
 
 class CorpusAssemblyTests(unittest.TestCase):
@@ -120,9 +122,11 @@ class CorpusAssemblyTests(unittest.TestCase):
             target="def other(): return 0", target_source="teacher", teacher_lineage_id="teacher-1",
             source_digest="f" * 64,
         )]
+        extra = rows[-1]
         with TemporaryDirectory() as directory:
             assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
-                     admission_audit=[*admission_rows(), {"event": "item_admission", "item_id": "item-duplicate-example", "decision": "admit"}],
+                     admission_audit=[*admission_rows(), {"event": "item_admission", "item_id": extra.item_id,
+                                                          "decision": "admit", "item_digest": extra.canonical_digest()}],
                      items=rows, corpus_id="exp", version="v1", split_seed="seed", output_root=directory)
             root = Path(directory) / "exp" / "v1"
             placements = [split for split in ("train", "val", "test")
@@ -174,7 +178,8 @@ class CorpusAssemblyTests(unittest.TestCase):
 
     def test_rejected_items_are_not_written_to_training_splits(self) -> None:
         items = corpus_items(2)
-        audit = admission_rows(1) + [{"event": "item_admission", "item_id": "item-001", "decision": "reject"}]
+        audit = admission_rows(1) + [{"event": "item_admission", "item_id": "item-001", "decision": "reject",
+                                      "item_digest": items[1].canonical_digest()}]
         with TemporaryDirectory() as directory:
             result = assemble(kind="c_rd", task_manifest=task_rows(2), teacher_registry=[approved_teacher()],
                               admission_audit=audit, items=items, corpus_id="exp", version="v1",
@@ -183,6 +188,46 @@ class CorpusAssemblyTests(unittest.TestCase):
             self.assertIn("task-001", result.excluded_task_ids)
             self.assertTrue(all("item-001" not in (Path(directory) / "exp" / "v1" / filename).read_text()
                                 for filename in result.item_file_digests))
+
+    def test_item_digest_is_canonical_and_covers_all_item_fields(self) -> None:
+        item = corpus_items(1)[0]
+        same = CorpusItem.model_validate(dict(reversed(list(item.model_dump(mode="json").items()))))
+        self.assertEqual(item.canonical_digest(), same.canonical_digest())
+        changes = {
+            "item_id": "changed-item", "task_id": "changed-task", "prompt": "changed prompt",
+            "target": "changed target", "target_source": "human", "teacher_lineage_id": "teacher-2",
+            "trajectory_id": "trajectory-2", "source_digest": "e" * 64,
+            "language": "rust", "metadata": {"note": "changed"},
+        }
+        for field, value in changes.items():
+            with self.subTest(field=field):
+                self.assertNotEqual(item.canonical_digest(), item.model_copy(update={field: value}).canonical_digest())
+
+    def test_assembly_rejects_missing_or_mismatched_item_digest(self) -> None:
+        item = corpus_items(1)[0]
+        with TemporaryDirectory() as directory:
+            for audit in (
+                [{"event": "item_admission", "item_id": item.item_id, "decision": "admit"}],
+                [{"event": "item_admission", "item_id": item.item_id, "decision": "admit",
+                  "item_digest": "0" * 64}],
+            ):
+                with self.subTest(audit=audit):
+                    with self.assertRaisesRegex(ValueError, "item_digest|content digest"):
+                        assemble(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                                 admission_audit=audit, items=[item], corpus_id="exp", version="v1",
+                                 split_seed="seed", output_root=Path(directory) / str(len(audit[0])))
+
+    def test_assembly_rejects_duplicate_or_conflicting_decisions(self) -> None:
+        item = corpus_items(1)[0]
+        admitted = {"event": "item_admission", "item_id": item.item_id, "decision": "admit",
+                    "item_digest": item.canonical_digest()}
+        with TemporaryDirectory() as directory:
+            for index, second in enumerate((dict(admitted), {**admitted, "decision": "reject"})):
+                with self.subTest(second=second):
+                    with self.assertRaisesRegex(ValueError, "duplicate quality decisions"):
+                        assemble(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                                 admission_audit=[admitted, second], items=[item], corpus_id="exp", version="v1",
+                                 split_seed="seed", output_root=Path(directory) / str(index))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,9 @@
 """An admitted training/evaluation item with explicit provenance."""
 from __future__ import annotations
 
+import hashlib
+import json
+
 from pydantic import Field, model_validator
 
 from .teacher_lineage import StrictModel
@@ -25,3 +28,11 @@ class CorpusItem(StrictModel):
         if self.target_source == "trajectory" and not self.trajectory_id:
             raise ValueError("target_source == 'trajectory' requires trajectory_id")
         return self
+
+    def canonical_digest(self) -> str:
+        """SHA-256 over every normalized field used to admit or train this item."""
+        raw = json.dumps(
+            self.model_dump(mode="json"), ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+        return hashlib.sha256(raw).hexdigest()

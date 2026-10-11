@@ -34,31 +34,31 @@ class QualityGateTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
 
     def test_tier_a_requires_accepted_review(self) -> None:
-        self.assertEqual(item_decision(item_id="a", tier=QualityTier.A, auto_checks=checks(),
+        self.assertEqual(item_decision(item_id="a", item_digest="a" * 64, tier=QualityTier.A, auto_checks=checks(),
                                        human_review=None).decision, AdmissionDecision.REJECT)
-        self.assertEqual(item_decision(item_id="b", tier=QualityTier.A, auto_checks=checks(),
+        self.assertEqual(item_decision(item_id="b", item_digest="b" * 64, tier=QualityTier.A, auto_checks=checks(),
                                        human_review=review(True)).decision, AdmissionDecision.ADMIT)
 
     def test_tier_b_followup_and_rejected_review_paths(self) -> None:
-        pending = item_decision(item_id="b1", tier=QualityTier.B, auto_checks=checks(), human_review=None)
-        rejected = item_decision(item_id="b2", tier=QualityTier.B, auto_checks=checks(),
+        pending = item_decision(item_id="b1", item_digest="1" * 64, tier=QualityTier.B, auto_checks=checks(), human_review=None)
+        rejected = item_decision(item_id="b2", item_digest="2" * 64, tier=QualityTier.B, auto_checks=checks(),
                                   human_review=review(False, QualityTier.B))
         self.assertEqual(pending.decision, AdmissionDecision.ADMIT_WITH_FOLLOWUP)
         self.assertEqual(rejected.decision, AdmissionDecision.REJECT)
 
     def test_tier_c_auto_admits(self) -> None:
-        result = item_decision(item_id="c", tier=QualityTier.C, auto_checks=checks(), human_review=None)
+        result = item_decision(item_id="c", item_digest="c" * 64, tier=QualityTier.C, auto_checks=checks(), human_review=None)
         self.assertEqual(result.decision, AdmissionDecision.ADMIT)
 
     def test_failed_auto_check_rejects_a_b_and_quarantines_c(self) -> None:
         failed = {AutoCheckName.SECURITY}
-        self.assertEqual(item_decision(item_id="a", tier=QualityTier.A,
+        self.assertEqual(item_decision(item_id="a", item_digest="a" * 64, tier=QualityTier.A,
                                        auto_checks=checks(failed=failed), human_review=review()).decision,
                          AdmissionDecision.REJECT)
-        self.assertEqual(item_decision(item_id="b", tier=QualityTier.B,
+        self.assertEqual(item_decision(item_id="b", item_digest="b" * 64, tier=QualityTier.B,
                                        auto_checks=checks(failed=failed), human_review=None).decision,
                          AdmissionDecision.REJECT)
-        self.assertEqual(item_decision(item_id="c", tier=QualityTier.C,
+        self.assertEqual(item_decision(item_id="c", item_digest="c" * 64, tier=QualityTier.C,
                                        auto_checks=checks(failed=failed), human_review=None).decision,
                          AdmissionDecision.QUARANTINE)
 
@@ -86,12 +86,19 @@ class QualityGateTests(unittest.TestCase):
 
     def test_all_decisions_are_logged_without_item_content(self) -> None:
         path = Path(self.temp.name) / "quality.jsonl"
-        item_decision(item_id="item-7", tier=QualityTier.C, auto_checks=checks(), human_review=None)
+        decision = item_decision(item_id="item-7", item_digest="7" * 64, tier=QualityTier.C,
+                                 auto_checks=checks(), human_review=None)
         records = [json.loads(line) for line in path.read_text().splitlines()]
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["event"], "item_admission")
         self.assertRegex(records[0]["payload_digest"], r"^[0-9a-f]{64}$")
+        self.assertEqual(records[0]["item_digest"], decision.item_digest)
         self.assertNotIn("prompt", path.read_text())
+
+    def test_item_decision_requires_lowercase_sha256_content_digest(self) -> None:
+        with self.assertRaisesRegex(ValueError, "item_digest"):
+            item_decision(item_id="item", item_digest="not-a-digest", tier=QualityTier.C,
+                          auto_checks=checks(), human_review=None)
 
     def test_experiment_requires_every_cost_and_baseline_arm(self) -> None:
         costs = {name: CostLine(amount=None, not_applicable_reason="not incurred")

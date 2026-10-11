@@ -125,7 +125,10 @@ def _admission_map(source: str | Path | Iterable[dict] | None) -> dict[str, dict
     decisions: dict[str, dict] = {}
     for row in _read_admission_rows(DEFAULT_ADMISSION_AUDIT if source is None else source):
         if row.get("event") in ("item_admission", None) and isinstance(row.get("item_id"), str):
-            decisions[row["item_id"]] = row
+            item_id = row["item_id"]
+            if item_id in decisions:
+                raise CorpusAssemblyError(f"duplicate quality decisions for item {item_id!r}")
+            decisions[item_id] = row
     return decisions
 
 
@@ -187,6 +190,12 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
             raise CorpusAssemblyError(f"item {item.item_id!r} references a task absent from task_manifest")
         record = decisions.get(item.item_id)
         outcome = record.get("decision") if record else None
+        if record is not None:
+            recorded_digest = record.get("item_digest")
+            if not isinstance(recorded_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", recorded_digest):
+                raise CorpusAssemblyError(f"quality decision for item {item.item_id!r} is missing a valid item_digest")
+            if recorded_digest != item.canonical_digest():
+                raise CorpusAssemblyError(f"quality decision content digest does not match item {item.item_id!r}")
         if outcome in ADMITTED_DECISIONS:
             admitted.append(item)
             if item.teacher_lineage_id:
