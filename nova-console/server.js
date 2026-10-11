@@ -56,6 +56,7 @@ const workspaceChanges = require('./lib/workspace-changes');
 const workspaceProjects = require('./lib/workspace-projects');
 const devLoop = require('./lib/dev-loop');
 const appBuilder = require('./lib/app-builder');
+const { createRadheya } = require('./lib/radheya');
 const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
@@ -208,6 +209,7 @@ const codingAgentRuntime = new CodingAgentRuntime({
   changes: workspaceChanges, planner: codePlanner, ollama, budgets: agentBudgets, policy: workbenchPolicy,
   audit: event => desktopSecurity.appendAudit(DATA_DIR, event),
 });
+const radheya = createRadheya({ store, dataDir: DATA_DIR, ollama, browser, security: desktopSecurity });
 const telemetry = new TelemetryReader();
 
 // Cached reachability flag the frontend's diagnostics/status-bar can read
@@ -750,6 +752,23 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/workspace\/loops\/([^/]+)$/, handler: async (_req,res,[id])=>{const loop=store.get('workspaceLoops',decodeURIComponent(id));if(!loop){sendJson(res,404,{error:'Unknown development loop.'});return;}sendJson(res,200,loop);} },
   { method: 'POST', pattern: /^\/api\/workspace\/loops$/, handler: async (req,res)=>{const {loop}=devLoop.startLoop(store,{scanner:workspaceScanner,changes:workspaceChanges,runner:workspaceRunner,planner:codePlanner,ollama,dataDir:DATA_DIR},await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.loop.started',loopId:loop.id,rootId:loop.rootId,maxAttempts:loop.maxAttempts});sendJson(res,201,loop);} },
   { method: 'POST', pattern: /^\/api\/workspace\/loops\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,devLoop.cancelLoop(store,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/radheya$/, handler: async (_req,res)=>sendJson(res,200,radheya.view()) },
+  { method: 'POST', pattern: /^\/api\/radheya\/settings$/, handler: async (req,res)=>sendJson(res,200,radheya.saveSettings(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/radheya\/cards$/, handler: async (req,res)=>sendJson(res,201,radheya.createCard(await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/radheya\/cards\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,radheya.updateCard(decodeURIComponent(id),await readJsonBody(req))) },
+  { method: 'DELETE', pattern: /^\/api\/radheya\/cards\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,radheya.archiveCard(decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/radheya\/cards\/([^/]+)\/move$/, handler: async (req,res,[id])=>{const b=await readJsonBody(req);sendJson(res,200,radheya.move(decodeURIComponent(id),String(b.to||''),'human'));} },
+  { method: 'POST', pattern: /^\/api\/radheya\/cards\/([^/]+)\/notes$/, handler: async (req,res,[id])=>{const b=await readJsonBody(req);sendJson(res,200,radheya.addNote(decodeURIComponent(id),b.text,'human'));} },
+  { method: 'POST', pattern: /^\/api\/radheya\/cards\/([^/]+)\/evidence$/, handler: async (req,res,[id])=>{const b=await readJsonBody(req);sendJson(res,200,radheya.addEvidence(decodeURIComponent(id),{kind:'link',url:b.url,label:b.label},'human'));} },
+  { method: 'POST', pattern: /^\/api\/radheya\/cards\/([^/]+)\/run$/, handler: async (req,res,[id])=>{const {run}=radheya.startRun(decodeURIComponent(id),await readJsonBody(req));sendJson(res,202,run);} },
+  { method: 'POST', pattern: /^\/api\/radheya\/cards\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,radheya.cancelRun(decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/radheya\/runs\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,radheya.getRun(decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/radheya\/predictions$/, handler: async (_req,res)=>sendJson(res,200,radheya.predictions()) },
+  { method: 'GET', pattern: /^\/api\/radheya\/model$/, handler: async (_req,res)=>sendJson(res,200,radheya.modelStatus()) },
+  { method: 'POST', pattern: /^\/api\/radheya\/model\/evolve$/, handler: async (req,res)=>{const {done}=radheya.startEvolution(await readJsonBody(req));done.catch(e=>console.warn('[radheya] training round failed:',e.message));sendJson(res,202,{started:true});} },
+  { method: 'POST', pattern: /^\/api\/radheya\/model\/proposals\/([^/]+)\/(approve|reject)$/, handler: async (_req,res,[id,decision])=>sendJson(res,200,radheya.decide(decodeURIComponent(id),decision,'local-operator')) },
+  { method: 'POST', pattern: /^\/api\/radheya\/model\/rollback$/, handler: async (_req,res)=>sendJson(res,200,radheya.rollback()) },
+  { method: 'GET', pattern: /^\/api\/radheya\/events\.ndjson$/, handler: async (_req,res)=>{res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Content-Disposition':'attachment; filename="radheya-events.ndjson"'});res.end(radheya.events().map(e=>JSON.stringify(e)).join('\n')+'\n');} },
   { method: 'GET', pattern: /^\/api\/app-builder\/templates$/, handler: async (_req,res)=>sendJson(res,200,{templates:workspaceProjects.listTemplates().filter(t=>appBuilder.RECIPES[t.id]),projectsFolder:appBuilder.defaultProjectsDir()}) },
   { method: 'POST', pattern: /^\/api\/app-builder\/projects-folder$/, handler: async (_req,res)=>{const root=appBuilder.ensureProjectsRoot(store,workspaceScanner);desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.root.approved',rootId:root.id,source:'app-builder'});sendJson(res,200,root);} },
   { method: 'POST', pattern: /^\/api\/app-builder\/suggest$/, handler: async (req,res)=>{const b=await readJsonBody(req);const template=b.template||appBuilder.suggestTemplate(b.description);const name=appBuilder.suggestName(b.description);sendJson(res,200,{template,name,title:appBuilder.titleFrom(name),request:appBuilder.composeRequest(template,String(b.description||''))});} },
@@ -1568,6 +1587,7 @@ function shutdown() {
   codingAgentRuntime.stop();
   mcpManager.shutdownAll(); // real child MCP server processes — close them, don't orphan
   workspaceRunner.stopAll(); // dev servers and commands run in their own process groups
+  try { radheya.shutdown(); } catch (_) {}
   const closing = Promise.all([browser.shutdown().catch(() => {}), comfyManager.shutdown().catch(() => {})]); // agent browser windows, Maataa's own ComfyUI
   const timer = setTimeout(() => process.exit(0), 12000);
   closing.finally(() => server.close(() => { clearTimeout(timer); process.exit(0); }));

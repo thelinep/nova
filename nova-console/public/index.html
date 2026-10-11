@@ -474,6 +474,15 @@
 .hk-cell:disabled{cursor:default;color:var(--muted-dim);border-color:transparent}
 .hk-cell.sel{outline:2px solid var(--amber);outline-offset:1px}
 .hk-rec{padding:12px;margin-top:8px}
+.rd-new{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.rd-new input{flex:1;min-width:180px}
+.rd-board{display:grid;grid-template-columns:repeat(6,minmax(170px,1fr));gap:10px;overflow-x:auto;padding-bottom:6px}
+.rd-col{background:var(--panel,transparent);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:120px}
+.rd-col header{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.rd-card{text-align:left;border:1px solid var(--line);border-radius:8px;padding:8px;background:transparent;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:5px;font:inherit}
+.rd-card:hover,.rd-card:focus-visible{border-color:var(--amber-line)}.rd-sel{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+.rd-title{font-weight:600;font-size:13px;overflow-wrap:anywhere}.rd-meta{display:flex;flex-wrap:wrap;gap:4px}.rd-pred{font-size:11.5px;color:var(--ink-dim)}
+.rd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px}#rdDetail input,#rdDetail textarea,#rdDetail select,.rd-new input{font:inherit;font-size:13px}.rd-shot{max-width:100%;max-height:260px;border:1px solid var(--line);border-radius:6px;margin-top:6px}
+.rd-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}.rd-table th,.rd-table td{border-bottom:1px solid var(--line-soft);padding:5px 6px;text-align:left}.rd-best td{font-weight:600}
 .hk-tree{list-style:none;margin:4px 0 0 0;padding-left:18px;border-left:1px solid var(--line)}
 .hk-tree-root{padding-left:0;border-left:0}
 .hk-tree li{margin:5px 0}
@@ -887,6 +896,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item active" data-view="console"><span data-lucide="messages-square"></span><span class="rail-text">Console</span></button>
       <button class="nav-item" data-view="sessions"><span data-lucide="history"></span><span class="rail-text">Sessions</span></button>
       <button class="nav-item" data-view="codingstudio"><span data-lucide="code-xml"></span><span class="rail-text">Coding Studio</span></button>
+      <button class="nav-item" data-view="radheya"><span data-lucide="kanban"></span><span class="rail-text">Radheya</span></button>
       <button class="nav-item" data-view="workspace"><span data-lucide="folder-search-2"></span><span class="rail-text">Local Workspace</span></button>
     </div>
     <div class="nav-group">
@@ -1052,6 +1062,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <section id="lipiView" class="view"><div class="view-pad"><!-- VIEW:lipi --></div></section>
       <section id="brahmipadView" class="view"><div class="view-pad"><!-- VIEW:brahmipad --></div></section>
       <section id="hkdmView" class="view"><div class="view-pad"><!-- VIEW:hkdm --></div></section>
+      <section id="radheyaView" class="view"><div class="view-pad"><!-- VIEW:radheya --></div></section>
       <!-- ===================== RETRIEVAL LAB ===================== -->
       <section id="mediaView" class="view"><div class="view-pad"><!-- VIEW:media --></div></section>
       <section id="boardsView" class="view"><div class="view-pad"><!-- VIEW:boards --></div></section>
@@ -1253,8 +1264,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',radheya:'Radheya',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',radheya:'राधेय',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1664,7 +1675,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', codingstudio:'Coding Studio', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', codingstudio:'Coding Studio', radheya:'Radheya', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
@@ -1727,7 +1738,7 @@ function showView(name){
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, codingstudio:renderCodingStudioView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, codingstudio:renderCodingStudioView, radheya:renderRadheyaView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
@@ -5698,6 +5709,106 @@ const HK = { rows:'alpha', cols:'beta', filter:{}, confidence:'all', basis:'all'
 const HK_AXES = { alpha:'α युग · Epoch', beta:'β माध्यम · Substrate', gamma:'γ सूचना-संरचना · Architecture', delta:'δ दिशा · Direction' };
 function hkQuery(extra){ const q=new URLSearchParams(); q.set('bin',HK.bin); if(HK.confidence!=='all')q.set('confidence',HK.confidence); if(HK.basis!=='all')q.set('basis',HK.basis); for(const [k,v] of Object.entries(extra||{})) if(v!=null&&v!=='') q.set(k,v); return q.toString(); }
 function hkFree(){ return ['alpha','beta','gamma','delta'].filter(k=>k!==HK.rows&&k!==HK.cols); }
+// ---------------- Radheya (राधेय): self-learning Kanban ----------------
+// lib/radheya.js holds the board; lib/radheya-model.js learns from its events.
+const RD = { sel:null, data:null, preds:null, model:null, busy:'', poll:null, form:{title:'',body:''} };
+const RD_COLS = {backlog:'Backlog',ready:'Ready',doing:'Doing',review:'Review',done:'Done',blocked:'Blocked'};
+const RD_KIND = {human:'Person',local:'Local model',browser:'Browser',online:'Online agent'};
+async function rdPost(url, body, method='POST'){ const r=await fetch(apiUrl(url),{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); let d={}; try{d=await r.json();}catch(_){} if(!r.ok) throw new Error(d.error||('Request failed ('+r.status+')')); return d; }
+function rdPct(x){ return x==null?'—':Math.round(x*100)+'%'; }
+function rdDur(s){ if(s==null) return '—'; if(s<90) return s+' s'; if(s<5400) return Math.round(s/60)+' min'; if(s<172800) return Math.round(s/3600)+' h'; return Math.round(s/86400)+' d'; }
+function rdPredLine(p){
+  if(!p) return '';
+  const src=p.learned||p.baseline, top=Object.entries(src.nextColumn||{})[0];
+  const parts=[];
+  if(top) parts.push(`next: ${escapeHtml(RD_COLS[top[0]]||top[0])} ${rdPct(top[1])}`);
+  if(src.runFailure!=null) parts.push(`run fails ${rdPct(src.runFailure)}`);
+  if(p.stage) parts.push(`${rdDur(p.stage.elapsedSeconds)} here · usual ${rdDur(p.stage.medianSeconds)}`);
+  return parts.length?`<div class="rd-pred" title="${p.learned?'Approved learned model':'Baseline (counts of past events)'}">${p.learned?'◆ ':''}${parts.join(' · ')}</div>`:'';
+}
+async function renderRadheyaView(){
+  const pad=$('radheyaView').querySelector('.view-pad');
+  try{ [RD.data,RD.preds,RD.model]=await Promise.all([paniniFetch('/api/radheya'),paniniFetch('/api/radheya/predictions'),paniniFetch('/api/radheya/model')]); }
+  catch(e){ pad.innerHTML=`<div class="view-head"><h1 class="view-title">Radheya</h1></div><div class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(e.message)}</div>`; return; }
+  const {cards,columns,board,running}=RD.data, preds=RD.preds.cards||{}, runningIds=new Set(running.map(r=>r.cardId));
+  if(RD.sel && !cards.some(c=>c.id===RD.sel)) RD.sel=null;
+  const col=c=>{ const list=cards.filter(x=>x.column===c), lim=board.wip[c];
+    return `<section class="rd-col" aria-label="${RD_COLS[c]}"><header><strong>${RD_COLS[c]}</strong><span class="badge">${list.length}${lim?' / '+lim:''}</span></header>${list.map(x=>`<button type="button" class="rd-card${x.id===RD.sel?' rd-sel':''}" data-id="${escapeHtml(x.id)}"><span class="rd-title">${escapeHtml(x.title)}</span><span class="rd-meta"><span class="badge">${RD_KIND[x.assignee?.kind||'human']}</span>${runningIds.has(x.id)?'<span class="badge badge-amber">running</span>':''}${x.evidence.length?`<span class="badge">${x.evidence.length} evidence</span>`:''}${(x.labels||[]).map(l=>`<span class="tag-chip">${escapeHtml(l)}</span>`).join('')}</span>${rdPredLine(preds[x.id])}</button>`).join('')||'<div class="empty-hint">—</div>'}</section>`; };
+  const sel=cards.find(c=>c.id===RD.sel);
+  const models=(DB.models||[]).filter(m=>m.runtime==='ollama'&&!m.example);
+  const modelOpts=cur=>`<option value="">Choose a local model</option>`+models.map(m=>`<option value="${escapeHtml(m.id)}" ${m.id===cur?'selected':''}>${escapeHtml(m.name||m.id)}</option>`).join('');
+  let detail='';
+  if(sel){
+    const k=sel.assignee?.kind||'human', isRun=runningIds.has(sel.id), p=preds[sel.id];
+    const moveOpts=columns.filter(c=>c!==sel.column).map(c=>`<option value="${c}">${RD_COLS[c]}</option>`).join('');
+    detail=`<section class="panel" id="rdDetail" style="padding:18px;margin-top:14px" aria-labelledby="rdDetailTitle"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 id="rdDetailTitle" style="font-size:16px;margin:0">${escapeHtml(sel.title)}</h2><span class="badge">${RD_COLS[sel.column]}</span></div>
+      <div class="coding-studio-form" style="margin-top:12px">
+        <div class="coding-studio-field coding-studio-span"><label for="rdTitle">Title</label><input id="rdTitle" maxlength="200" value="${escapeHtml(sel.title)}"></div>
+        <div class="coding-studio-field coding-studio-span"><label for="rdBody">What should be done</label><textarea id="rdBody" maxlength="8000">${escapeHtml(sel.body||'')}</textarea></div>
+        <div class="coding-studio-field"><label for="rdKind">Who works it</label><select id="rdKind">${Object.entries(RD_KIND).map(([v,l])=>`<option value="${v}" ${v===k?'selected':''}>${l}</option>`).join('')}</select></div>
+        <div class="coding-studio-field"><label for="rdModel">Local model (also reads browser pages)</label><select id="rdModel">${modelOpts(sel.assignee?.model)}</select></div>
+        <div class="coding-studio-field"><label for="rdUrl">Page for the browser</label><input id="rdUrl" placeholder="https://… (or use a search below)" value="${escapeHtml(sel.url||'')}"></div>
+        <div class="coding-studio-field"><label for="rdQuery">Or search for</label><input id="rdQuery" maxlength="300" placeholder="Delhi sunrise time"></div>
+        <div class="coding-studio-field"><label for="rdDomains">Sites this card may open</label><input id="rdDomains" placeholder="duckduckgo.com, example.org" value="${escapeHtml((sel.allowedDomains||[]).join(', '))}"></div>
+        <div class="coding-studio-field"><label for="rdLabels">Labels</label><input id="rdLabels" value="${escapeHtml((sel.labels||[]).join(', '))}"></div>
+        <label class="coding-studio-check coding-studio-span"><input id="rdOnline" type="checkbox" ${sel.allowOnline?'checked':''}><span><strong style="color:var(--ink-dim)">May use an online agent</strong><br>Only then is this card's text sent to the online agent set up below. The audit log keeps a hash, not the text.</span></label>
+        <div class="coding-studio-actions coding-studio-span"><button type="button" class="btn btn-line" id="rdSave">Save card</button><select id="rdMoveTo" aria-label="Move to"><option value="">Move to…</option>${moveOpts}</select>
+          ${isRun?'<button type="button" class="btn btn-line" id="rdCancel">Cancel run</button>':(k==='human'?'<button type="button" class="btn btn-line" id="rdRun" disabled>Pick a worker to run it</button>':`<button type="button" class="btn btn-amber" id="rdRun">Run with ${RD_KIND[k]}</button>`)}
+          <button type="button" class="btn btn-ghost" id="rdArchive">Archive</button></div>
+      </div>
+      ${p?`<div class="coding-studio-state" style="margin-top:10px"><strong>What Radheya expects</strong><div class="coding-studio-meta" style="margin-top:6px"><span>Baseline next: ${Object.entries(p.baseline.nextColumn).slice(0,3).map(([c,v])=>escapeHtml(RD_COLS[c]||c)+' '+rdPct(v)).join(', ')||'—'}</span><span>Baseline run failure: ${rdPct(p.baseline.runFailure)}</span>${p.learned?`<span>Learned next: ${Object.entries(p.learned.nextColumn).slice(0,3).map(([c,v])=>escapeHtml(RD_COLS[c]||c)+' '+rdPct(v)).join(', ')||'—'}</span><span>Learned run failure: ${rdPct(p.learned.runFailure)}</span>`:'<span>No learned model approved yet</span>'}${p.stage?`<span>Usual time in ${escapeHtml(RD_COLS[sel.column])}: ${rdDur(p.stage.medianSeconds)} (${p.stage.samples} cards)</span>`:''}</div></div>`:''}
+      <h3 style="font-size:14px;margin:16px 0 6px">Evidence</h3>${sel.evidence.length?`<ul class="rd-list">${sel.evidence.map(e=>`<li><span class="badge">${escapeHtml(e.kind)}</span> ${e.kind==='link'?`<a href="${escapeHtml(e.url)}" target="_blank" rel="noopener">${escapeHtml(e.label)}</a>`:escapeHtml(e.label||'')}${e.sha256?` <code title="SHA-256">${escapeHtml(e.sha256.slice(0,12))}</code>`:''}${e.image?`<div><img class="rd-shot" alt="Browser screenshot of ${escapeHtml(e.url||'')}" src="${apiUrl('/browser/shots/'+e.image)}"></div>`:''}</li>`).join('')}</ul>`:'<p class="empty-hint">None yet. Runs add a record; a person can add a link. A card needs evidence before Done.</p>'}
+      <div class="coding-studio-actions" style="margin-top:6px"><input id="rdEvUrl" placeholder="https://… evidence link" style="flex:1;min-width:200px"><button type="button" class="btn btn-line" id="rdAddEv">Add evidence link</button></div>
+      <h3 style="font-size:14px;margin:16px 0 6px">Notes</h3>${sel.notes.length?`<ul class="rd-list">${sel.notes.slice().reverse().map(n=>`<li><span class="badge">${escapeHtml(n.by)}</span> <span style="white-space:pre-wrap">${escapeHtml(n.text)}</span></li>`).join('')}</ul>`:'<p class="empty-hint">No notes.</p>'}
+      <div class="coding-studio-actions" style="margin-top:6px"><textarea id="rdNote" placeholder="Add a note (notes are not evidence)" style="flex:1;min-width:200px;min-height:54px"></textarea><button type="button" class="btn btn-line" id="rdAddNote">Add note</button></div>
+    </section>`;
+  }
+  const M=RD.model, needEv=Math.max(0,M.rules.minTrainEvents-M.events);
+  const prop=M.proposals.find(x=>x.status==='proposed');
+  const propHtml=prop?`<div class="coding-studio-state" id="rdProposal" style="margin-top:10px" data-tone="${prop.recommendation==='promote'?'good':''}"><strong>Training round · ${prop.recommendation==='promote'?'recommends the best shape':'keeps the current model'}</strong>
+      <table class="rd-table"><thead><tr><th scope="col">Learner</th><th scope="col">Parameters</th><th scope="col">Held-out loss (lower is better)</th><th scope="col">Top-1</th></tr></thead><tbody><tr><td>Baseline (counts)</td><td>—</td><td>${prop.baseline.loss?.toFixed(3)??'—'}</td><td>${rdPct(prop.baseline.top1)}</td></tr>${prop.candidates.map((c,i)=>`<tr${i===prop.best?' class="rd-best"':''}><td>${escapeHtml(c.change)}${i===prop.best?' ◆':''}</td><td>${c.params.toLocaleString()}</td><td>${c.heldOut.loss?.toFixed(3)??'—'}</td><td>${rdPct(c.heldOut.top1)}</td></tr>`).join('')}</tbody></table>
+      <div class="empty-hint">${prop.trainEvents} training events · ${prop.testCards} held-out cards · ${prop.baseline.targets} held-out predictions.${prop.reasons.length?' Not recommended: '+escapeHtml(prop.reasons.join('; '))+'.':''}</div>
+      <div class="coding-studio-actions" style="margin-top:8px"><button type="button" class="btn ${prop.recommendation==='promote'?'btn-amber':'btn-line'}" id="rdApprove" ${prop.best==null?'disabled':''}>Approve the ◆ shape</button><button type="button" class="btn btn-line" id="rdReject">Reject</button></div></div>`:'';
+  const learnHtml=`<section class="panel" id="rdLearn" style="padding:18px;margin-top:14px" aria-labelledby="rdLearnTitle"><h2 id="rdLearnTitle" style="font-size:16px;margin:0 0 6px">Learning</h2>
+    <p class="empty-hint" style="margin:0 0 10px">Every move, assignment and run is an event. The baseline counts past events; a small transformer learns sequences. A trained shape is used only after you approve it, and is recommended only when it beats both on cards held out from training.</p>
+    <div class="coding-studio-meta"><span>${M.events} events</span><span>${M.trainCards} training cards · ${M.heldOutCards} held-out cards</span><span>${M.active?`Active: d ${M.active.config.d}, ${M.active.config.heads} heads, ${M.active.config.layers} layer(s), context ${M.active.config.ctx} · loss ${M.active.heldOut.loss?.toFixed(3)}`:'Active: baseline only'}</span>${needEv?`<span>${needEv} more events before a recommendation is possible</span>`:''}</div>
+    <div class="coding-studio-actions" style="margin-top:10px"><button type="button" class="btn btn-amber" id="rdEvolve" ${M.evolving||M.events<20?'disabled':''}>${M.evolving?'Training…':'Run a training round'}</button>${M.active?'<button type="button" class="btn btn-line" id="rdRollback">Roll back the learned model</button>':''}<a class="btn btn-ghost" href="${apiUrl('/api/radheya/events.ndjson')}" download>Download events</a></div>
+    ${propHtml}</section>`;
+  const on=board.online;
+  const settingsHtml=`<details class="panel" style="padding:14px 18px;margin-top:14px" id="rdSettings"><summary><strong>Board settings and online agent</strong></summary>
+    <div class="coding-studio-form" style="margin-top:12px"><div class="coding-studio-field"><label for="rdWipDoing">WIP limit · Doing</label><input id="rdWipDoing" type="number" min="0" max="99" value="${board.wip.doing||0}"></div><div class="coding-studio-field"><label for="rdWipReview">WIP limit · Review</label><input id="rdWipReview" type="number" min="0" max="99" value="${board.wip.review||0}"></div>
+      <div class="coding-studio-field"><label for="rdOnProv">Online provider</label><select id="rdOnProv"><option value="openai" ${on?.provider!=='anthropic'?'selected':''}>OpenAI-compatible</option><option value="anthropic" ${on?.provider==='anthropic'?'selected':''}>Anthropic</option></select></div>
+      <div class="coding-studio-field"><label for="rdOnBase">Endpoint (OpenAI-compatible)</label><input id="rdOnBase" placeholder="https://api.openai.com/v1" value="${escapeHtml(on?.baseUrl||'')}"></div>
+      <div class="coding-studio-field"><label for="rdOnModel">Online model</label><input id="rdOnModel" value="${escapeHtml(on?.model||'')}"></div>
+      <div class="coding-studio-field"><label for="rdOnKey">API key ${on?'(stored; leave empty to keep)':''}</label><input id="rdOnKey" type="password" autocomplete="off"></div>
+      <div class="coding-studio-actions coding-studio-span"><button type="button" class="btn btn-line" id="rdSaveSettings">Save settings</button>${on?'<button type="button" class="btn btn-ghost" id="rdOnOff">Remove online agent</button>':''}</div></div></details>`;
+  pad.innerHTML=`<div class="view-head"><div><h1 class="view-title">Radheya</h1><p class="view-desc">A Kanban that learns from its own work. Cards are worked by you, the local model, the observable agent browser or an online agent; only you move a card to Done, with evidence.</p></div></div>
+    <form class="rd-new" id="rdNew"><input id="rdNewTitle" maxlength="200" placeholder="New card title" aria-label="New card title" value="${escapeHtml(RD.form.title)}"><input id="rdNewBody" maxlength="8000" placeholder="What should be done (optional)" aria-label="Description" value="${escapeHtml(RD.form.body)}"><button type="submit" class="btn btn-amber">Add card</button></form>
+    <div class="rd-board">${columns.map(col).join('')}</div>${detail}${learnHtml}${settingsHtml}`;
+  if(window.lucide) lucide.createIcons();
+  const re=()=>{ if(currentView==='radheya') renderRadheyaView(); };
+  const act=async(fn,ok)=>{ try{ await fn(); if(ok) toast(ok); }catch(e){ toast(e.message); } re(); };
+  $('rdNewTitle').oninput=e=>RD.form.title=e.target.value; $('rdNewBody').oninput=e=>RD.form.body=e.target.value;
+  $('rdNew').onsubmit=ev=>{ ev.preventDefault(); act(async()=>{ const c=await rdPost('/api/radheya/cards',{title:RD.form.title,body:RD.form.body}); RD.form={title:'',body:''}; RD.sel=c.id; },'Card added.'); };
+  $$('#radheyaView .rd-card').forEach(b=>b.onclick=()=>{ RD.sel=b.dataset.id; re(); setTimeout(()=>$('rdDetail')?.scrollIntoView({behavior:'smooth',block:'start'}),50); });
+  const cardBody=()=>({title:$('rdTitle').value,body:$('rdBody').value,url:$('rdUrl').value,allowedDomains:$('rdDomains').value,labels:$('rdLabels').value,allowOnline:$('rdOnline').checked,assignee:{kind:$('rdKind').value,model:$('rdModel').value}});
+  ['rdKind','rdModel','rdOnline'].forEach(x=>{ if($(x)) $(x).onchange=()=>act(()=>rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel),cardBody())); });
+  if($('rdSave')) $('rdSave').onclick=()=>act(()=>rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel),cardBody()),'Saved.');
+  if($('rdMoveTo')) $('rdMoveTo').onchange=e=>{ if(e.target.value) act(()=>rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel)+'/move',{to:e.target.value})); };
+  if($('rdRun')) $('rdRun').onclick=()=>act(async()=>{ await rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel),cardBody()); await rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel)+'/run',{kind:$('rdKind').value,model:$('rdModel').value,url:$('rdUrl').value,query:$('rdQuery').value}); },'Run started.');
+  if($('rdCancel')) $('rdCancel').onclick=()=>act(()=>rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel)+'/cancel'));
+  if($('rdArchive')) $('rdArchive').onclick=()=>act(async()=>{ await rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel),{},'DELETE'); RD.sel=null; },'Archived.');
+  if($('rdAddEv')) $('rdAddEv').onclick=()=>act(()=>rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel)+'/evidence',{url:$('rdEvUrl').value}),'Evidence added.');
+  if($('rdAddNote')) $('rdAddNote').onclick=()=>act(()=>rdPost('/api/radheya/cards/'+encodeURIComponent(RD.sel)+'/notes',{text:$('rdNote').value}));
+  if($('rdEvolve')) $('rdEvolve').onclick=()=>act(()=>rdPost('/api/radheya/model/evolve',{}),'Training round started.');
+  if($('rdApprove')) $('rdApprove').onclick=()=>act(()=>rdPost('/api/radheya/model/proposals/'+encodeURIComponent(prop.id)+'/approve'),'Learned model approved and active.');
+  if($('rdReject')) $('rdReject').onclick=()=>act(()=>rdPost('/api/radheya/model/proposals/'+encodeURIComponent(prop.id)+'/reject'),'Proposal rejected.');
+  if($('rdRollback')) $('rdRollback').onclick=()=>act(()=>rdPost('/api/radheya/model/rollback'),'Rolled back.');
+  $('rdSaveSettings').onclick=()=>act(()=>{ const body={wip:{doing:Number($('rdWipDoing').value),review:Number($('rdWipReview').value)}}; if($('rdOnModel').value.trim()) body.online={provider:$('rdOnProv').value,baseUrl:$('rdOnBase').value,model:$('rdOnModel').value,apiKey:$('rdOnKey').value||undefined,secretId:on?.secretId}; return rdPost('/api/radheya/settings',body); },'Settings saved.');
+  if($('rdOnOff')) $('rdOnOff').onclick=()=>act(()=>rdPost('/api/radheya/settings',{online:null}),'Online agent removed.');
+  clearTimeout(RD.poll);
+  if(running.length||M.evolving) RD.poll=setTimeout(re,2000);
+}
 async function renderHkdmView(){
   const pad=$('hkdmView').querySelector('.view-pad');
   for(const k of Object.keys(HK.filter)) if(!hkFree().includes(k)) delete HK.filter[k];
@@ -7354,6 +7465,7 @@ init().then(routeHelpHash);
 // search/filter/sort bar, the view and key panels get a "?" help button, and prompt boxes get
 // preset chips. List choices are remembered per view in this browser.
 const VIEW_HELP = {
+  radheya:'Radheya is a Kanban that learns from its own work. Each card is worked by you, the local model, the observable agent browser (only sites the card allows, every page logged with a screenshot) or an online agent (only if the card allows it). Runs leave a note and an evidence record; only you move a card to Done, from Review, with evidence. Training rounds compare a counting baseline with small transformer shapes on held-out cards; a shape is used only after you approve it, and can be rolled back.',
   voicestudio:'Characters for your agents and for Maataa itself: a name, a personality and way of speaking, a face (made with ComfyUI) and a voice. Blend up to three Kokoro voices with speed and pitch, use a macOS voice, or a voice from the VoiceStudio app (including your own cloned voice). Give a character to an agent, or let Maataa speak as one.',
   agentbrowser:'The separate, locked-down browser Maataa\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting Maataa closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
   aai:'Maataa AAI (Advanced Ancient Intelligence): rules derive and check, models propose, and nothing is called correct unless Panini\'s rules confirm it. Install the derivation engine here, ask questions whose sutra citations are checked, and open the Ashtadhyayi, Derivation and Lipi tools.',
