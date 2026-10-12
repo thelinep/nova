@@ -2,13 +2,15 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { assertCodingModelAdapter, isLoopbackHost, ollamaCodingModelAdapter } = require('../lib/coding-model-adapter');
+const { assertCodingModelAdapter, guardCodingModelAdapter, isLoopbackHost, ollamaCodingModelAdapter } = require('../lib/coding-model-adapter');
 
 test('coding adapter contract requires local-only generation capability', () => {
   assert.throws(() => assertCodingModelAdapter({ localOnly: true, resolveModel() {} }), /implement resolveModel.*generate/);
   assert.throws(() => assertCodingModelAdapter({ localOnly: true, generate() {} }), /implement resolveModel/);
   assert.throws(() => assertCodingModelAdapter({ resolveModel() {}, generate() {} }), /local-only/);
-  const adapter = { localOnly: true, resolveModel() {}, generate() {} };
+  assert.throws(() => assertCodingModelAdapter({ localOnly: true, resolveModel() {}, generate() {} }), error => error.code === 'unapproved_coding_model_adapter');
+  assert.throws(() => guardCodingModelAdapter({ localOnly: true, resolveModel() {}, generate() {} }, { resolveModel() {}, generate() {} }), error => error.code === 'unapproved_coding_model_adapter');
+  const adapter = ollamaCodingModelAdapter({ host: 'http://127.0.0.1:11434', status: async () => ({ reachable: true, models: [] }), chatFull: async () => ({}) });
   assert.equal(assertCodingModelAdapter(adapter), adapter);
 });
 

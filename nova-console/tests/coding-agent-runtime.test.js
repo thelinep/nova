@@ -24,11 +24,12 @@ function fixture(options = {}) {
   const digest = 'sha256:' + 'b'.repeat(64);
   const response = { model: 'model:latest', message: { content: '{}' }, prompt_eval_count: 10, eval_count: 5 };
   const ollama = {
-    host: 'http://127.0.0.1:11434',
+    host: options.ollamaHost || 'http://127.0.0.1:11434',
     status: async () => ({ reachable: true, models: [{ name: 'model:latest', digest }] }),
     show: async () => ({ capabilities: ['completion'], template: 'chat', model_info: { 'test.context_length': 8192 } }),
     chatFull: async (_model, _messages, request = {}) => {
       options.onChatStarted?.();
+      if (options.chatImpl) return options.chatImpl(_model, _messages, request, response);
       if (options.cancelDuringChat) return new Promise((resolve, reject) => {
         if (request.signal?.aborted) return reject(request.signal.reason);
         request.signal?.addEventListener('abort', () => reject(request.signal.reason), { once: true });
@@ -48,37 +49,31 @@ function fixture(options = {}) {
   };
   const scanner = { approvedRoot: () => ({ id: 'root_test', path: dir }) };
   const changes = {};
-  const runtime = new CodingAgentRuntime({ store, registry, tasks, scanner, changes, planner, ollama, codingModelAdapter: options.codingModelAdapter, budgets: budgetLedger, policy });
+  const runtime = new CodingAgentRuntime({ store, registry, tasks, scanner, changes, planner, ollama, budgets: budgetLedger, policy });
   const agents = runtime.seed();
   return { dir, db, store, registry, tasks, budgetLedger, policy, digest, runtime, agents, planner };
 }
 
-test('Coding Studio runtime accepts a local adapter behind digest and token-budget guards', async () => {
+test('Coding Studio Ollama adapter stays behind digest and token-budget guards', async () => {
   const seen = [];
-  const expectedDigest = 'sha256:' + 'b'.repeat(64);
-  const env = fixture({ codingModelAdapter: { id: 'guru-qualified-local', localOnly: true, async resolveModel(modelId) { return { modelId, digest: expectedDigest }; }, async generate(request) {
-    seen.push(request);
-    return { text: '{}', finishReason: 'stop', usage: { inputTokens: 11, outputTokens: 4 } };
-  } } });
+  const env = fixture({ chatImpl: (model, _messages, generation, baseResponse) => {
+    seen.push({ model, generation });
+    return { ...baseResponse, prompt_eval_count: 11, eval_count: 4 };
+  } });
   try {
     const ctx = { task: { id: 'tsk_adapter', payload: { codingStudio: true, rootId: 'root_test', modelId: 'model:latest', modelDigest: env.digest, request: 'Create new.txt', feedback: '' } }, agent: { id: env.agents.worker.id }, signal: new AbortController().signal };
     const result = await env.runtime._execute(ctx);
     assert.equal(result.usage.tokens, 15);
     assert.equal(seen.length, 1);
-    assert.equal(seen[0].modelId, 'model:latest');
-    assert.equal(seen[0].maxContextTokens, LIMITS.maxContextTokens);
-    assert.equal(seen[0].maxOutputTokens, LIMITS.maxOutputTokens);
+    assert.equal(seen[0].model, 'model:latest');
+    assert.equal(seen[0].generation.options.num_ctx, LIMITS.maxContextTokens);
+    assert.equal(seen[0].generation.options.num_predict, LIMITS.maxOutputTokens);
     assert.equal(env.budgetLedger.effectiveLimit(env.agents.worker.id, 'tokens').used, 15);
   } finally { close(env); }
 });
 
 test('Coding Studio rejects model usage above the per-call output limit and charges the reservation', async () => {
-  const env = fixture();
-  env.runtime.codingModelAdapter = {
-    id: 'oversized-local', localOnly: true,
-    async resolveModel(modelId) { return { modelId, digest: env.digest }; },
-    async generate() { return { text: '{}', finishReason: 'stop', usage: { inputTokens: 2, outputTokens: 1025 } }; },
-  };
+  const env = fixture({ chatImpl: (_model, _messages, _generation, baseResponse) => ({ ...baseResponse, prompt_eval_count: 2, eval_count: 1025 }) });
   try {
     const ctx = { task: { id: 'tsk_usage_limit', payload: { codingStudio: true, rootId: 'root_test', modelId: 'model:latest', modelDigest: env.digest, request: 'Create new.txt', feedback: '' } }, agent: { id: env.agents.worker.id }, signal: new AbortController().signal };
     await assert.rejects(env.runtime._execute(ctx), error => error.code === 'per_call_usage_exceeded');
@@ -87,22 +82,17 @@ test('Coding Studio rejects model usage above the per-call output limit and char
 });
 
 test('late adapter completion after cancellation cannot change the next execution usage', async () => {
-  const expectedDigest = 'sha256:' + 'b'.repeat(64);
   let resolveFirst;
   let callCount = 0;
   let startedFirst;
   const firstStarted = new Promise(resolve => { startedFirst = resolve; });
-  const env = fixture({ codingModelAdapter: {
-    id: 'delayed-local', localOnly: true,
-    async resolveModel(modelId) { return { modelId, digest: expectedDigest }; },
-    generate() {
+  const env = fixture({ chatImpl: (_model, _messages, _generation, baseResponse) => {
       callCount += 1;
       if (callCount === 1) {
         startedFirst();
-        return new Promise(resolve => { resolveFirst = resolve; });
+        return new Promise(resolve => { resolveFirst = () => resolve(baseResponse); });
       }
-      return Promise.resolve({ text: '{}', finishReason: 'stop', usage: { inputTokens: 10, outputTokens: 5 } });
-    },
+      return Promise.resolve({ ...baseResponse, prompt_eval_count: 10, eval_count: 5 });
   } });
   let plannerCalls = 0;
   const syntheticPlan = { draft: { summary: 'Make a small change', changes: [{ operation: 'create', relativePath: 'new.txt', content: 'hello' }] }, acceptanceChecks: [], planner: { modelId: 'model:latest' } };
@@ -128,16 +118,16 @@ test('late adapter completion after cancellation cannot change the next executio
     const secondCtx = { task: { id: 'tsk_late_second', payload: { codingStudio: true, rootId: 'root_test', modelId: 'model:latest', modelDigest: env.digest, request: 'Create new.txt', feedback: '' } }, agent: { id: env.agents.worker.id }, signal: new AbortController().signal };
     const second = await env.runtime._execute(secondCtx);
     assert.equal(second.usage.tokens, 15);
-    resolveFirst({ text: '{}', finishReason: 'stop', usage: { inputTokens: 100, outputTokens: 80 } });
+    resolveFirst();
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(env.budgetLedger.effectiveLimit(env.agents.worker.id, 'tokens').used, 8192 + 15);
     assert.equal(env.runtime._usage.tokens, 0);
   } finally { close(env); }
 });
 
-test('Coding Studio rejects an adapter that permits external transmission before preview or task creation', async () => {
+test('Coding Studio rejects a remotely configured Ollama endpoint before preview or task creation', async () => {
   let previewed = false;
-  const env = fixture({ codingModelAdapter: { id: 'remote', localOnly: false, async resolveModel() { throw new Error('must not run'); }, async generate() { throw new Error('must not run'); } } });
+  const env = fixture({ ollamaHost: 'http://ollama.internal:11434' });
   env.planner.preview = async () => { previewed = true; return { ready: true }; };
   try {
     await assert.rejects(() => env.runtime.createTask({ rootId: 'root_test', modelId: 'model:latest', request: 'Create new.txt' }), error => error.statusCode === 503 && error.code === 'external_transmission_denied');

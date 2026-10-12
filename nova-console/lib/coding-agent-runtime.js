@@ -26,7 +26,7 @@ class CodingAgentRuntime {
     }
     this.store = deps.store; this.registry = deps.registry; this.tasks = deps.tasks;
     this.scanner = deps.scanner; this.changes = deps.changes; this.planner = deps.planner; this.ollama = deps.ollama; this.policy = deps.policy;
-    this.codingModelAdapter = deps.codingModelAdapter || codingModelAdapters.ollamaCodingModelAdapter(this.ollama);
+    this.codingModelAdapter = codingModelAdapters.ollamaCodingModelAdapter(this.ollama);
     if (typeof this.codingModelAdapter.generate !== 'function') throw problem('Coding model adapter must implement generate(request).', 500, 'bad_runtime');
     this.audit = typeof deps.audit === 'function' ? deps.audit : () => {};
     this.budgets = deps.budgets || null;
@@ -294,9 +294,7 @@ class CodingAgentRuntime {
       },
       show: (...args) => this.ollama.show(...args, abortSignal),
     };
-    const guardedModelAdapter = {
-      id: this.codingModelAdapter.id,
-      localOnly: this.codingModelAdapter.localOnly,
+    const guardedModelAdapter = codingModelAdapters.guardCodingModelAdapter(this.codingModelAdapter, {
       resolveModel: async (modelId, options = {}) => {
         if (abortSignal.aborted) throw abortSignal.reason;
         if (modelId !== payload.modelId) throw problem('Coding model adapter lookup did not match the task model.', 412, 'model_binding_mismatch');
@@ -336,7 +334,7 @@ class CodingAgentRuntime {
         if (usageState.tokens > LIMITS.maxTotalTokens) throw problem('Coding task exceeded its fixed total-token budget.', 429, 'token_budget_exceeded');
         return response;
       },
-    };
+    });
     try {
       const plan = await this.planner.plan(this.store, this.scanner, this.changes, modelClient,
         { rootId: payload.rootId, modelId: payload.modelId, request: payload.request, brahmiComments: payload.brahmiComments },

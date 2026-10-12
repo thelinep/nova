@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const productionPlanner = require('../lib/code-planner');
+const modelAdapters = require('../lib/coding-model-adapter');
 const planner = { ...productionPlanner, plan: (...args) => productionPlanner.plan(...args.slice(0, 5), { ...args[5], qualificationBypass: true }) };
 const scanner = require('../lib/workspace-scanner');
 const changes = require('../lib/workspace-changes');
@@ -57,14 +58,13 @@ test('planner routes both primary and repair generation through the injected loc
     db.put('models', { id: 'qwen:test', name: 'qwen:test', runtime: 'ollama' });
     const ollama = { host: 'http://127.0.0.1:11434', status: async () => ({ reachable: true, models: [{ name: 'qwen:test', digest: 'a'.repeat(64) }] }), show: async () => metadata() };
     const calls = [];
-    const adapter = {
-      id: 'qualified-local-checkpoint-adapter', localOnly: true,
-      async resolveModel(modelId) { return { modelId, digest: 'a'.repeat(64) }; },
-      async generate(request) {
+    const adapter = modelAdapters.guardCodingModelAdapter(modelAdapters.ollamaCodingModelAdapter(ollama), {
+      resolveModel: async modelId => ({ modelId, digest: 'a'.repeat(64) }),
+      generate: async request => {
         calls.push(request);
         return { text: calls.length === 1 ? 'not json' : JSON.stringify({ summary: 'Update value', acceptanceCriteria: [{ description: 'a.js contains value 2' }], changes: [{ relativePath: 'a.js', find: 'value = 1', replacement: 'value = 2' }] }), finishReason: 'stop', usage: { inputTokens: 12, outputTokens: 7 } };
       },
-    };
+    });
     const result = await productionPlanner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'qwen:test', request: 'Change value in a.js to 2' }, { qualificationBypass: true, modelAdapter: adapter });
     assert.equal(result.status, 'draft');
     assert.equal(result.planner.repairAttempted, true);
@@ -93,7 +93,10 @@ test('planner blocks an adapter whose resolved artifact differs from the selecte
     let generated = false;
     const digest = 'a'.repeat(64);
     const ollama = { host: 'http://127.0.0.1:11434', status: async () => ({ reachable: true, models: [{ name: 'qwen:test', digest }] }), show: async () => metadata() };
-    const adapter = { id: 'mismatched-local', localOnly: true, async resolveModel(modelId) { return { modelId, digest: 'b'.repeat(64) }; }, async generate() { generated = true; return { text: '{}', usage: { inputTokens: 1, outputTokens: 1 } }; } };
+    const adapter = modelAdapters.guardCodingModelAdapter(modelAdapters.ollamaCodingModelAdapter(ollama), {
+      resolveModel: async modelId => ({ modelId, digest: 'b'.repeat(64) }),
+      generate: async () => { generated = true; return { text: '{}', usage: { inputTokens: 1, outputTokens: 1 } }; },
+    });
     await assert.rejects(() => productionPlanner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'qwen:test', request: 'Change a.js value to two' }, { qualificationBypass: true, modelAdapter: adapter }), /not bound to the exact installed and qualified model artifact/);
     assert.equal(generated, false);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }

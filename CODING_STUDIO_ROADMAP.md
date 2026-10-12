@@ -38,8 +38,10 @@ Ollama adapter can remain available for other local models.
 
 The adapter currently rejects remote Ollama endpoints and HTTP redirects,
 checks the selected digest before and after inference, and enforces the task's
-context/output-token limits. Ollama's chat API accepts a model name rather
-than an immutable digest, so these checks detect an observed retag but cannot
+context/output-token limits. Only adapters created by the approved in-process
+transport factory are accepted; the runtime no longer has a custom-adapter
+injection option. Ollama's chat API accepts a model name rather than an
+immutable digest, so these checks detect an observed retag but cannot
 atomically pin weights against a concurrent external model change. No direct
 llama.cpp or Apple-native runtime is implemented. The current local micro
 prototype cannot use the export path because it has a temporary byte tokenizer
@@ -96,7 +98,7 @@ remaining integrity work.
 | Corpus split contract | **Aligned with the experiment draft.** The assembler now sorts unique task IDs by SHA-256 and assigns floor-based 80/10/remainder splits; examples for one task stay in one partition. | Two fresh tests cover exact membership/counts and task grouping. Source/repository/family/duplicate leakage grouping still needs to be added before a real corpus is frozen. |
 | Enforce owner-selected I7 use scopes | **Implemented and locally verified; evaluator remains unqualified.** Local qualified evaluation only, no external transmission, ephemeral-only transformed data, and private-local weights with no distribution. Direct tokenizer training now fails before input reads or output creation. `item_decision` is pure; public generic audit writes reject `item_admission`, which the quality runner writes only after complete checks. | Latest full Guru suite: 328 passed, 1 skipped. Focused I7/quality suite: 95 passed (historical focused run). Case-runner contract suite: 21 passed (historical focused run), including duplicate-key and attached/detached descendant timeout tests. Full UI Playwright: 66 passed. UI model responses are simulated; no Guru capability claim follows. Python private helpers are conventions, not a same-process security boundary. |
 | B3 abandoned-worker recovery | **Implementation pushed in `b76905f`; not evaluator-qualified.** Adds durable owner identity, serialized lifecycle/reaping, strict container labels/names, and thread-owned engine scopes. | Current full Guru suite: 328 passed, 1 skipped. Recovery tests mock Docker discovery/removal; a process-death test stubs the reaper. No actual abandoned container cleanup, daemon/host restart, or disposable Linux worker qualification was performed. |
-| Local generation adapter seam | **Implemented and locally tested; Ollama remains the only implementation.** Planning and agent execution use a provider-neutral request/response contract. | Remote endpoints and redirects are rejected; the selected digest is checked before/after generation; per-call usage and cancellation accounting are bounded. Full Maataa tests: 781 passed, 1 skipped; full Playwright: 66 passed. The Ollama model-name API cannot pin a digest atomically. This does not qualify Guru or an alternate runtime. |
+| Local generation adapter seam | **Implemented and locally tested; Ollama remains the only implementation.** Planning and agent execution use a provider-neutral request/response contract. | Only the approved in-process factory can create accepted adapters; custom injection is removed. Remote endpoints and redirects are rejected; the selected digest is checked before/after generation; per-call usage and cancellation accounting are bounded. Full Maataa tests: 781 passed, 1 skipped; full Playwright: 66 passed. The Ollama model-name API cannot pin a digest atomically. This does not qualify Guru or an alternate runtime. |
 
 | Phase | Result | Status and evidence |
 | --- | --- | --- |

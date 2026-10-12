@@ -15,6 +15,8 @@ function adapterError(message, code = 'coding_model_adapter_error') {
   return Object.assign(new Error(message), { code });
 }
 
+const approvedLocalAdapters = new WeakSet();
+
 function assertCodingModelAdapter(adapter) {
   if (!adapter || typeof adapter.generate !== 'function' || typeof adapter.resolveModel !== 'function') {
     throw adapterError('Coding model adapter must implement resolveModel(modelId) and generate(request).', 'bad_coding_model_adapter');
@@ -22,7 +24,25 @@ function assertCodingModelAdapter(adapter) {
   if (adapter.localOnly !== true) {
     throw adapterError('Coding model adapter must declare and enforce local-only inference.', 'external_transmission_denied');
   }
+  if (!approvedLocalAdapters.has(adapter)) {
+    throw adapterError('Coding model adapter is not created by an approved in-process local transport.', 'unapproved_coding_model_adapter');
+  }
   return adapter;
+}
+
+function guardCodingModelAdapter(adapter, { resolveModel, generate } = {}) {
+  assertCodingModelAdapter(adapter);
+  if (typeof resolveModel !== 'function' || typeof generate !== 'function') {
+    throw adapterError('A guarded adapter requires in-process resolution and generation checks.', 'bad_coding_model_guard');
+  }
+  const guarded = Object.freeze({
+    id: `${adapter.id || 'local'}-guarded`,
+    localOnly: true,
+    resolveModel,
+    generate,
+  });
+  approvedLocalAdapters.add(guarded);
+  return guarded;
 }
 
 function isLoopbackHost(host) {
@@ -45,7 +65,7 @@ function ollamaHost(ollama) {
 
 function ollamaCodingModelAdapter(ollama, { requireLocal = true } = {}) {
   if (!ollama || typeof ollama !== 'object') throw adapterError('Ollama coding adapter requires a client object.', 'bad_ollama_client');
-  return Object.freeze({
+  const adapter = Object.freeze({
     id: 'ollama-local-coding',
     localOnly: Boolean(isLoopbackHost(ollamaHost(ollama))),
     async resolveModel(modelId, { signal } = {}) {
@@ -95,6 +115,8 @@ function ollamaCodingModelAdapter(ollama, { requireLocal = true } = {}) {
       };
     },
   });
+  approvedLocalAdapters.add(adapter);
+  return adapter;
 }
 
-module.exports = { assertCodingModelAdapter, isLoopbackHost, ollamaCodingModelAdapter };
+module.exports = { assertCodingModelAdapter, guardCodingModelAdapter, isLoopbackHost, ollamaCodingModelAdapter };
