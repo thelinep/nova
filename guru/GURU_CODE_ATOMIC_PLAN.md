@@ -44,10 +44,10 @@ preflight warning and does not change its admitted semantics.
 | I2/I3 item-bound admission and audit integrity | Commits `d1bd36d`, `6981a0f` and `224c862`; canonical item digests are recomputed, group-aware splits are implemented, and admission rows require a unique complete v2 check summary with matching item bindings and payload digest. Legacy/incomplete rows block preflight and assembly. | A production rights provider still must load independently pinned, approved source and teacher records; unit fixtures do not establish rights authenticity. |
 | I4 teacher-lineage binding | Integrated as `244d6f3`; admitted `c_rd`/`c_trace` items require a unique, admissible registry teacher reference; declared refs are checked for all corpus kinds. Focused corpus suite: 18 passed. | Source-level rights still need review; registry teacher admission does not approve individual item data or rights. C_TRACE currently assumes teacher-derived examples. |
 | I5 deterministic checks and I8 orchestration | I5 is integrated across `7177e61`, `e374e96` and `b4461aa`; I8 is integrated in `224c862` and `925f72a`. Typed provider interfaces feed complete evaluator case-set and rights checks; unavailable evidence stops before decision/audit. Complete measured sets emit per-check tool/policy/evidence/item summaries in a digest-covered v2 audit payload, which preflight/assembly validate. End-to-end synthetic PASS and FAIL paths cover audit, preflight and assembly. The focused quality/evaluator/corpus/intake/rights suite: 124 passed before the latest provenance slice. | No production provider or composition-root implementation exists. TESTS and LICENSE remain UNAVAILABLE in normal operation until independently pinned qualification, suite/task records and approved rights/teacher registries are loaded by privileged provider code owned by the composition root. No public or request-driven provider implementation exists. The supplied source-manifest digest establishes internal consistency only; it does not prove authenticity or rights. |
-| I9 source-to-task provenance | Commit `459ac93` binds each item’s task reference to a task manifest validated against the supplied Guru release source manifest, then checks that the referenced task source artifact digest matches the item source digest. Focused quality/corpus/coding tests: 99 passed. | Authenticity and rights of the source manifest and real artifacts remain unverified; production providers must resolve reviewed records from independently pinned sources. |
+| I9 source-to-task provenance | Commit `459ac93` binds each item’s task reference to a task manifest validated against the supplied Guru release source manifest, then checks that the referenced task source artifact digest matches the item source digest. Focused quality/corpus/coding tests: 99 passed. Independent review found no must-fix issue; the source-manifest pin remains caller-supplied. | Authenticity and rights of the source manifest and real artifacts remain unverified; production providers must resolve reviewed records from independently pinned sources. |
 | I10 assembly-time provenance replay | Canonical commit `41892e0` requires pinned task/source manifests, replays every admitted item’s provenance check against current bytes, compares the audit evidence summary and records both pins in `CorpusManifest`. Independent review found the readiness CLI could not pass these required inputs; `0da40aa` adds CLI flags, help text and tests for ready/blocked exit behavior. Focused quality/corpus/coding/CLI tests: 115 passed; full Guru suite after integration: 258 passed, 1 skipped, 5 warnings. | Structural consistency is checked against caller-supplied pins; authenticity and rights remain external. CLI pin inputs do not make preflight ready unless the real admitted evidence also validates. |
 | Synthetic CPU SFT resume smoke | Canonical commit `0bab8d2` adds a tiny random-init CPU SFT run with inline synthetic examples, a temporary byte tokenizer and temp-only outputs. Independent review passed; canonical smoke tests: 24 passed. | MPS SFT resume fails closed; CUDA RNG state is saved but exact CUDA equivalence is untested. This is trainer plumbing only, not base selection, corpus qualification, evaluator qualification or coding capability. |
-| Maataa Coding Studio/App Builder | Commit `d94fec5` shortens the App Builder default-folder button label while preserving the full path in its title. Latest targeted Playwright run passed 13 tests in 52.1 seconds. | Playwright uses simulated model responses; it does not qualify a Guru checkpoint. A fresh full `npm test` run did not complete cleanly: sandboxed server tests hit loopback `EPERM`; the elevated run reached an OCR test timeout and remained stalled. |
+| Maataa Coding Studio/App Builder | Commit `d94fec5` shortens the App Builder default-folder button label while preserving the full path in its title. Latest targeted Playwright run passed 13 tests in 52.1 seconds. Full `npm test` passed 768, skipped 1, failed 0 in 39.2 seconds after `aeb085d` raised one browser-backed OCR test timeout to match its bounded OCR subprocess. | Playwright uses simulated model responses; it does not qualify a Guru checkpoint. |
 | Full Guru suite | Canonical command `PYTHONPATH=/private/tmp/guru-sentencepiece-test-deps python -m pytest tests -q` returned **258 passed, 1 skipped, 5 warnings in 15.32s** after D4, I10 and CLI integration. | The temporary SentencePiece package path is needed in this environment. This validates code/tests only; it does not qualify an evaluator, corpus, model or release. |
 | I8 provider and audit attack tests | Commits `925f72a` and `3a678f1`; synthetic providers exercise complete evaluator PASS and measured FAIL, mismatched qualification/suite/case/task/candidate/image/config bindings, rights denials, artifact/manifest/teacher-registry pin mismatches, and no-audit behavior for unavailable evidence. End-to-end tests reload audit through preflight and assembly. A source-level AST test guards that `quality/runner.py` is the sole production caller of the low-level decision gate. | These contract tests use synthetic records only; they do not qualify an evaluator or approve any data. |
 
@@ -55,14 +55,14 @@ The source roadmap remains [CODING_STUDIO_ROADMAP.md](../CODING_STUDIO_ROADMAP.m
 
 ### Live integration snapshot (2026-10-12)
 
-The canonical checkout is on `codex/absorb-tlps-locations` at `0da40aa`, 28
-commits ahead of its upstream. D4 trainer smoke, I10 assembly provenance
+The canonical checkout was validated on `codex/absorb-tlps-locations` at
+`aeb085d`, 30 commits ahead of its upstream. D4 trainer smoke, I10 assembly provenance
 replay and the I10 readiness-CLI follow-up are integrated in commits
 `0bab8d2`, `41892e0` and `0da40aa`, respectively. Independent review cleared
-D4 and I10 after the CLI gap was fixed. The plan document itself is the only
-current worktree modification. The isolated implementation worktrees remain
-available as review provenance; canonical integration no longer depends on
-uncommitted code from them.
+D4, I9 and I10 after the CLI gap was fixed. The isolated implementation
+worktrees remain available as review provenance; canonical integration no
+longer depends on uncommitted code from them. The full Maataa suite's OCR test
+timeout adjustment is in `aeb085d`.
 
 Fresh canonical `preflight c_rd` output is:
 
@@ -99,13 +99,15 @@ trust sources and external qualification gates open:
   every declared use (including evaluation, provider transmission and intended
   weight distribution). That policy needs an explicit use context and owner
   decision; engineering must not infer a distribution policy.
-- I10 is the highest-value local integrity gap: assembly does not replay the
-  audited PROVENANCE result against the current pinned source/task manifests,
-  nor persist those manifest pins in `CorpusManifest`. Implement this as a
-  synthetic-only integrity check while keeping authenticity and rights external.
-- I11 already has broad synthetic attack and audit-replay coverage. Remaining
-  work is independent review evidence and a fresh full-suite run after the
-  latest integration, not another copy of the same fixture matrix.
+- I10 now replays each audited PROVENANCE result against the current pinned
+  source/task manifests and persists both pins in `CorpusManifest`; the
+  readiness CLI accepts the item, manifest and digest inputs. These checks
+  establish consistency against supplied bytes only; manifest authenticity and
+  rights approval remain external.
+- I11 has broad synthetic attack and audit-replay coverage. Independent
+  review found no must-fix gaps and confirmed test writes are isolated under
+  temporary roots; the integrated full Guru suite passes. This is synthetic
+  structural evidence only, not rights authenticity or evaluator qualification.
 - The Qwen teacher record is not approval for TinyPython, synthetic fixtures,
   generated items, or training inputs. No empty audit file or test-generated
   decision may be treated as real admission evidence.
@@ -324,21 +326,21 @@ Engineering must not fill these fields by inference. A “no” or “not now”
 ## 6. Immediate ordered queue
 
 This queue starts from canonical branch `codex/absorb-tlps-locations` at
-`0da40aa` (28 commits ahead of its upstream), with only this plan document
-modified. Recheck branch, tree and upstream before each integration or
+`aeb085d` (30 commits ahead of its upstream), with the evidence documents
+refreshed in the immediately following documentation commit. Recheck branch, tree and upstream before each integration or
 commit. Work units marked local may use synthetic fixtures only; none may
 create or imply real admission evidence.
 
 | Order | Atomic unit | Output and acceptance check | Depends on / stop condition |
 | --- | --- | --- | --- |
 | 0 | **Refresh the evidence baseline.** Re-run branch/upstream, worktree and preflight checks before the next integration. | Current snapshot and exact preflight are recorded above. Preserve `missing admission audit` as a real blocker; never create an empty audit to make preflight green. | Recheck if any implementation commit is added. |
-| 1 | **Close the source-linkage review.** Review `459ac93`, its tests and its limit: a caller-supplied source-manifest digest proves linkage, not authenticity or rights. | Review note states verified task-to-artifact linkage, 99 focused tests, and remaining trust boundary. | Commit `459ac93`; keep owner rights approval separate. |
+| 1 | **Close the source-linkage review.** Review `459ac93`, its tests and its limit: a caller-supplied source-manifest digest proves linkage, not authenticity or rights. | Independent reviewer found no must-fix issue; 99 focused tests; trust boundary recorded above. | Complete; keep owner rights approval separate. |
 | 2 | **Close the trainer-smoke review.** Bind data and encoded-token identity, tokenizer/model/recipe, total-step budget and sampling cadence; preserve CPU RNG, restore model mode, and reject unsupported DDP/MPS resume. | Isolated stack `e429f47` + `16db898` + `3610348` + `77c35aa` passed independent review; canonical commit `0bab8d2`; smoke 24 passed. | Complete. Synthetic/unqualified; CUDA equivalence remains untested. |
 | 3 | **Integrate the reviewed trainer smoke as one standalone commit.** Apply only its code and tests to the canonical branch. | Canonical commit `0bab8d2`; exact code hashes match isolated `77c35aa`; focused tests and full suite pass. | Complete; preserve exact synthetic-only scope. |
 | 4 | **Review and integrate I10 provenance replay as a separate commit.** Confirm audit binding, manifest pin replay and output pin persistence, then apply only its code and tests. | Independent review found and fixed the CLI input gap. Canonical commits `41892e0` and `0da40aa`; focused I10 suite 115 passed; full Guru suite 258 passed, 1 skipped. | Complete; source/authenticity/rights remain external. |
-| 5 | **Refresh plan and packet evidence.** Record both integrated commits, current full-suite result, exact blockers and non-release-ready state in both documents. | Update both documents with commit IDs, tests, current blocker and the full Maataa-suite limitation. | In progress in this documentation change; no unsupported capability or rights claim. |
-| 6 | **Run integration validation.** Run the full Guru suite with its declared dependency path, focused provider/corpus/provenance suites, `git diff --check`, `preflight c_rd` and targeted Playwright specs. | Full Guru suite 258 passed/1 skipped; Playwright 13 passed; preflight remains `missing admission audit`. Full `npm test` remains unverified due sandbox `EPERM` and elevated OCR timeout. | Guru and targeted UI gates pass; record broader Maataa suite limitation without claiming green. |
-| 7 | **Resolve I7 use-scope policy and I11 review.** Define how evaluation, transmission, retention and intended weight distribution are represented and enforced; obtain the required owner decisions. Independently review existing synthetic fail-closed coverage. | Versioned use-scope policy with explicit unresolved cases and independent review note. | Do not infer rights or distribution policy. I6’s typed mapper exists; actual task execution still waits for B1–B8. |
+| 5 | **Refresh plan and packet evidence.** Record integration commits, current test results, blockers and non-release-ready state in both documents. | This evidence refresh records commits `0bab8d2`, `41892e0`, `0da40aa`, `aeb085d`, Guru 258/1, Maataa 768/1 and Playwright 13/13. | Complete in the evidence-doc commit; no unsupported capability or rights claim. |
+| 6 | **Run integration validation.** Run the full Guru suite with its declared dependency path, focused provider/corpus/provenance suites, `git diff --check`, `preflight c_rd`, full Maataa tests and targeted Playwright specs. | Full Guru suite 258 passed/1 skipped; full Maataa suite 768 passed/1 skipped; Playwright 13 passed; `git diff --check` clean; preflight remains `missing admission audit`. | Complete for local software validation; these checks do not establish rights, evaluator qualification, training or model capability. |
+| 7 | **Resolve I7 use-scope policy; close I11 review.** Bind evaluation, transmission, retention and intended weight distribution to explicit owner decisions and enforce each context. I11 independent review is complete with no must-fix gaps. | I11 review covered negative/attack fixtures and temp-only writes. I7 still needs an owner-selected scope before enforcement defaults can be finalized. | Do not infer rights or distribution policy. I6’s typed mapper exists; actual task execution still waits for B1–B8. |
 | 8 | **Decide the evaluator host and source rights independently.** Owner names a disposable Linux worker/reset operator and a reviewer provides a per-source rights decision for train/eval/retention/weight distribution; choose a reviewed fallback if TinyPython remains unresolved. | Signed host decision and source decision records identify exact digests, permissions, reviewer and date. | External decisions; engineering must not infer or fill approvals. No paid compute or provider transmission is implied. |
 | 9 | **Qualify the evaluator B1–B8.** Build the isolated worker, run adversarial isolation/recovery probes, execute deliberately passing and failing task candidates only after the security gate, preserve per-case evidence, obtain independent review and freeze image/policy digests. | Qualification packet demonstrates disposable lifecycle, no host/credential access or egress, resource limits, cleanup/restart, reliable evidence replay, and correct pass/fail mapping. | Unit 8 plus approved worker. Any isolation, cleanup or evidence failure blocks candidate execution and `tests_pass`. |
 | 10 | **Wire reviewed production trust sources.** Implement a privileged composition root that loads pinned evaluator qualification, suites/tasks, source-rights decisions and teacher registry; reject caller-controlled or mismatched records. | Provider integration tests cover digest drift, wrong scope, missing approval, stale qualification and unavailable sources; successful records resolve to named reviewed artifacts. | Units 7–9. Keep TESTS/LICENSE unavailable until independent review passes. |

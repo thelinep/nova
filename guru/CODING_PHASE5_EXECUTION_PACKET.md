@@ -20,16 +20,19 @@ provider prices are planning snapshots and must be rechecked before any launch.
   CLI flags now accept the item file, task/source manifests and digest pins.
   The pins establish consistency against supplied bytes, not authenticity or
   rights.
+- Independent review of I9 commit `459ac93` found no must-fix issues. It confirms
+  task/source/artifact linkage against caller-supplied manifest pins; it does
+  not establish authenticity or rights approval.
 - After these integrations, `PYTHONPATH=/private/tmp/guru-sentencepiece-test-deps python -m pytest tests -q`
   returned **258 passed, 1 skipped, 5 warnings in 15.32s**. The temporary
   SentencePiece package path was required in this environment.
 - Fresh targeted Coding Studio/App Builder Playwright run passed **13 tests in
   52.1 seconds**. It uses simulated model responses; it is not exact-model
   qualification.
-- Fresh full `npm test` did not reach a clean completion. The sandboxed attempt
-  hit loopback `EPERM` on server tests; the elevated attempt reached a 60-second
-  OCR timeout in `tests/image-code.test.js` and remained stalled, so it was
-  interrupted. Do not report the full Maataa suite as green.
+- Full Maataa `npm test` now passes **768 tests, 1 skipped, 0 failed in 39.2
+  seconds** after commit `aeb085d` raised the browser-backed OCR test timeout
+  from 60 to 120 seconds, consistent with its bounded OCR subprocess. An
+  earlier sandboxed attempt hit loopback `EPERM`; the elevated rerun passed.
 - Fresh `preflight c_rd` still returns
   `{"blockers":["missing admission audit"],"ready":false,"warnings":[]}`.
   No empty audit or synthetic admission was created.
