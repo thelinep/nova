@@ -59,6 +59,13 @@ def _read_teacher_records(source: str | Path | Iterable[TeacherLineage | dict[st
             for teacher in source]
 
 
+def _teachers_by_id(teachers: Iterable[TeacherLineage]) -> dict[str, list[TeacherLineage]]:
+    indexed: dict[str, list[TeacherLineage]] = {}
+    for teacher in teachers:
+        indexed.setdefault(teacher.teacher_id, []).append(teacher)
+    return indexed
+
+
 def _read_admission_rows(source: str | Path | Iterable[dict] | None) -> list[dict]:
     if source is None:
         return []
@@ -176,8 +183,10 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
         corpus_kind = CorpusKind(kind)
     except ValueError as exc:
         raise CorpusAssemblyError("unknown corpus kind") from exc
+    teacher_source = DEFAULT_TEACHER_REGISTRY if teacher_registry is None else teacher_registry
+    teachers = _read_teacher_records(teacher_source)
     check = preflight(kind=corpus_kind, task_manifest=task_manifest,
-                      teacher_registry=teacher_registry, admission_audit=admission_audit)
+                      teacher_registry=teachers, admission_audit=admission_audit)
     if not check["ready"]:
         raise CorpusAssemblyBlocked(check["blockers"])
     if items is None or (isinstance(items, (str, Path)) and not Path(items).is_file()):
@@ -191,6 +200,7 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
                                               for key in ("owner", "approval_ref", "approved_at")):
         raise CorpusAssemblyError("owner_approval requires owner, approval_ref, and approved_at")
     decisions = _admission_map(admission_audit)
+    teachers_by_id = _teachers_by_id(teachers)
     task_ids = _task_ids(task_manifest)
     admitted: list[CorpusItem] = []
     exclusions: dict[str, str] = {}
@@ -207,6 +217,32 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
             if recorded_digest != item.canonical_digest():
                 raise CorpusAssemblyError(f"quality decision content digest does not match item {item.item_id!r}")
         if outcome in ADMITTED_DECISIONS:
+            # Response-distillation and trajectory corpora are teacher-derived
+            # training data. Human-only SFT may omit lineage; any lineage it
+            # does declare is still resolved and rights-checked below.
+            if corpus_kind in {CorpusKind.C_RD, CorpusKind.C_TRACE} and not item.teacher_lineage_id:
+                raise CorpusAssemblyError(
+                    f"admitted {corpus_kind.value} item {item.item_id!r} is missing teacher_lineage_id"
+                )
+            if item.teacher_lineage_id:
+                matching_teachers = teachers_by_id.get(item.teacher_lineage_id, [])
+                if not matching_teachers:
+                    raise CorpusAssemblyError(
+                        f"admitted item {item.item_id!r} references missing teacher "
+                        f"{item.teacher_lineage_id!r}"
+                    )
+                if len(matching_teachers) > 1:
+                    raise CorpusAssemblyError(
+                        f"admitted item {item.item_id!r} references ambiguous duplicate teacher "
+                        f"{item.teacher_lineage_id!r}"
+                    )
+                teacher = matching_teachers[0]
+                teacher_check = validate_teacher(teacher)
+                if not teacher_check["admissible"]:
+                    raise CorpusAssemblyError(
+                        f"admitted item {item.item_id!r} references inadmissible teacher "
+                        f"{item.teacher_lineage_id!r}: {'; '.join(teacher_check['blockers'])}"
+                    )
             admitted.append(item)
             if item.teacher_lineage_id:
                 teachers_used.add(item.teacher_lineage_id)

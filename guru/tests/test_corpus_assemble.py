@@ -44,6 +44,11 @@ def admission_rows(count: int = 40) -> list[dict[str, str]]:
             for index, item in enumerate(items)]
 
 
+def admission_row(item: CorpusItem) -> dict[str, str]:
+    return {"event": "item_admission", "item_id": item.item_id, "decision": "admit",
+            "item_digest": item.canonical_digest()}
+
+
 class CorpusAssemblyTests(unittest.TestCase):
     def test_preflight_names_missing_approved_teacher_and_admission_audit(self) -> None:
         with TemporaryDirectory() as directory:
@@ -78,6 +83,55 @@ class CorpusAssemblyTests(unittest.TestCase):
                          output_root=Path(directory) / "corpora")
             self.assertIn("missing approved teacher", captured.exception.blockers)
             self.assertFalse((Path(directory) / "corpora").exists())
+
+    def test_c_rd_and_c_trace_require_teacher_lineage_for_admitted_items(self) -> None:
+        items = {
+            "c_rd": CorpusItem(item_id="item-rd", task_id="task-000", prompt="prompt", target="answer",
+                               target_source="human", source_digest="a" * 64),
+            "c_trace": CorpusItem(item_id="item-trace", task_id="task-000", prompt="prompt", target="answer",
+                                  target_source="trajectory", trajectory_id="trajectory-1",
+                                  source_digest="b" * 64),
+        }
+        with TemporaryDirectory() as directory:
+            for kind, item in items.items():
+                with self.subTest(kind=kind):
+                    with self.assertRaisesRegex(ValueError, "missing teacher_lineage_id"):
+                        assemble(kind=kind, task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                                 admission_audit=[admission_row(item)], items=[item], corpus_id="exp", version="v1",
+                                 split_seed="seed", output_root=Path(directory) / kind)
+
+    def test_admitted_item_rejects_missing_or_inadmissible_teacher_reference(self) -> None:
+        missing_reference = corpus_items(1)[0].model_copy(update={"teacher_lineage_id": "teacher-missing"})
+        pending_data = approved_teacher().model_dump(mode="json")
+        pending_data.update(teacher_id="teacher-pending", review_status="pending", reviewed_by=None, reviewed_at=None)
+        pending_teacher = TeacherLineage.model_validate(pending_data)
+        unapproved_reference = corpus_items(1)[0].model_copy(update={"teacher_lineage_id": "teacher-pending"})
+        with TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "references missing teacher"):
+                assemble(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                         admission_audit=[admission_row(missing_reference)], items=[missing_reference],
+                         corpus_id="exp", version="missing", split_seed="seed", output_root=directory)
+            with self.assertRaisesRegex(ValueError, "references inadmissible teacher"):
+                assemble(kind="c_rd", task_manifest=task_rows(1),
+                         teacher_registry=[approved_teacher(), pending_teacher],
+                         admission_audit=[admission_row(unapproved_reference)], items=[unapproved_reference],
+                         corpus_id="exp", version="unapproved", split_seed="seed", output_root=directory)
+            with self.assertRaisesRegex(ValueError, "ambiguous duplicate teacher"):
+                item = corpus_items(1)[0]
+                assemble(kind="c_rd", task_manifest=task_rows(1),
+                         teacher_registry=[approved_teacher(), approved_teacher()],
+                         admission_audit=[admission_row(item)], items=[item], corpus_id="exp", version="duplicate",
+                         split_seed="seed", output_root=directory)
+
+    def test_sft_allows_human_item_without_optional_teacher_lineage(self) -> None:
+        item = CorpusItem(item_id="item-human", task_id="task-000", prompt="prompt", target="answer",
+                          target_source="human", source_digest="c" * 64)
+        with TemporaryDirectory() as directory:
+            manifest = assemble(kind="c_sft", task_manifest=task_rows(1), teacher_registry=[],
+                                admission_audit=[admission_row(item)], items=[item], corpus_id="exp", version="v1",
+                                split_seed="seed", output_root=directory)
+        self.assertEqual(manifest.item_count, 1)
+        self.assertEqual(manifest.teacher_ids, [])
 
     def test_split_is_deterministic_across_two_runs_with_same_seed(self) -> None:
         items = corpus_items()
