@@ -12,14 +12,24 @@ provider prices are planning snapshots and must be rechecked before any launch.
 
 ### Fresh local verification (2026-10-13)
 
-- The full hash-locked Guru suite returned **374 passed, 1 skipped in 21.54s**
+- The full hash-locked Guru suite returned **382 passed, 1 skipped in 21.24s**
   under the Python 3.12.4 macOS arm64 environment. The D3 recipe suite returned
   **18 passed**. The full Maataa `npm test` rerun with loopback access returned
   **782 passed, 1 skipped, 0 failed**; the full Playwright suite returned
-  **72 passed in 2.5 minutes**; Rust packaging tests returned **16 passed, 0
+  **73 passed in 2.4 minutes**; Rust packaging tests returned **16 passed, 0
   failed**. The added Studio coverage exercises an allowlist gate, saved loop
-  recovery/cancellation, and a passing loop's review-only batch handoff; its
+  recovery/cancellation including delayed cancellation, and a passing loop's review-only batch handoff; its
   loop/model responses are fixtures, not live Guru inference.
+- The ordered evaluator case-set runner's focused evaluator/evidence/code-evaluator/
+  quality suite returned **144 passed**. Independent review verified ordered
+  case/digest chaining and a fix that binds the Docker logging-driver probe to
+  the exact resolved local endpoint. All backend calls remain mocked; this is
+  not disposable-worker qualification or a production trusted-provider path.
+- The selected-student Qwen2 LoRA gate-order suite returned **21 passed**. The
+  generic mechanics module checks the current draft launch gate before model,
+  tensor, optimizer or checkpoint access and has no synthetic bypass. The
+  separate smoke remains fixed random-Qwen2 plumbing; no selected weights or
+  real data were loaded, and no training ran.
 - The bounded random-Qwen2 LoRA smoke saves/restores adapter weights,
   optimizer, scheduler, global step, deterministic synthetic task-sampler
   order and RNG state. Resumed task indices, adapter parameters and logits
