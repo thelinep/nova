@@ -15,19 +15,22 @@ provider prices are planning snapshots and must be rechecked before any launch.
 - Item-bound quality decisions, duplicate-decision rejection and corpus teacher
   lineage binding: `d1bd36d`, `6981a0f`, `244d6f3`.
 - Deterministic quality checks and tri-state report: `7177e61`, `e374e96`,
-  `b4461aa`.
-  The report covers all eight check categories, but TESTS and LICENSE remain
-  UNAVAILABLE, and no admission-audit orchestrator exists.
-- The documented CPU apparatus suite now passes **116 tests** on the available
-  Python 3.12 environment. Plain `pytest tests/` in the lightweight environment
-  lacks SentencePiece for tokenizer tests. With a temporary SentencePiece 0.2.2
-  wheel on `PYTHONPATH`, the broader suite passes **173 tests**, with 1 skipped
-  and 5 warnings. This used the existing
-  Anaconda environment; a clean, full-dependency test environment and lock have
-  not been verified.
-- Maataa's full Node suite passed 768 tests, with 1 skipped. Coding Studio and
-  App Builder Playwright specs passed 13 tests using simulated model responses;
-  this is UI workflow evidence, not exact-model qualification.
+  `b4461aa`; fail-closed item-quality orchestration and digest-covered audit
+  validation: `224c862`, `925f72a`, `3a678f1`.
+  Synthetic provider-contract tests exercise complete PASS and measured FAIL
+  flows through audit, preflight and assembly. Normal operation still has no
+  production evaluator or rights provider, so TESTS and LICENSE remain
+  UNAVAILABLE and no real admission audit has been generated.
+- The focused quality/evaluator/corpus/intake/rights suites pass **124 tests**.
+  The complete Guru suite passes **212 tests, 1 skipped, 5 warnings** when run
+  with the existing temporary SentencePiece 0.2.2 package directory on
+  `PYTHONPATH`. This uses the existing Anaconda Python environment; the
+  lightweight environment without that dependency has three tokenizer/HF test
+  failures, and a clean full-dependency venv/lock has not been verified.
+- Fresh Maataa Coding Studio and App Builder Playwright specs passed **13 tests
+  in 53.1 seconds**, using simulated model responses. The test saved
+  `/private/tmp/guru-code-playwright-demo.webm`; this is UI workflow evidence,
+  not exact-model qualification or a live Guru-Code demo.
 - Fresh `preflight c_rd` still returns only `missing admission audit`; no empty
   audit or synthetic admission was created. Docker is available as persistent
   Docker Desktop on macOS, not the required disposable Linux evaluator worker.
@@ -82,10 +85,10 @@ the actual task tests and preserve their results.
   matrix. The model is not thereby shown to be wrong; regenerate or correct any
   saved run manifest that naively summed tied `state_dict` entries before
   reusing it.
-- The current worktree has follow-up edits to this packet, the roadmap, the
-  corpus split implementation/tests, the test-environment instructions and
-  the October 5 evaluator report. They passed the local gates recorded in the
-  roadmap and were committed and pushed in commit `245a708`.
+- Earlier follow-up edits to this packet, the roadmap, corpus split
+  implementation/tests, test-environment instructions and evaluator report
+  were committed and pushed in `245a708`. The current I8 changes are integrated
+  locally in `224c862`, `925f72a` and `3a678f1`; the branch has not been pushed.
 
 ## Rights review: TinyPython candidate
 
