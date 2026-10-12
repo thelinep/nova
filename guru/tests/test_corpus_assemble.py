@@ -34,6 +34,7 @@ def corpus_items(count: int = 40) -> list[CorpusItem]:
         item_id=f"item-{index:03d}", task_id=f"task-{index:03d}",
         prompt=f"Implement function {index}", target=f"def f{index}(): return {index}",
         target_source="teacher", teacher_lineage_id="teacher-1", source_digest=f"{index:064x}",
+        metadata={"leakage_group": f"task-{index:03d}"},
     ) for index in range(count)]
 
 
@@ -125,7 +126,8 @@ class CorpusAssemblyTests(unittest.TestCase):
 
     def test_sft_allows_human_item_without_optional_teacher_lineage(self) -> None:
         item = CorpusItem(item_id="item-human", task_id="task-000", prompt="prompt", target="answer",
-                          target_source="human", source_digest="c" * 64)
+                          target_source="human", source_digest="c" * 64,
+                          metadata={"leakage_group": "task-000"})
         with TemporaryDirectory() as directory:
             manifest = assemble(kind="c_sft", task_manifest=task_rows(1), teacher_registry=[],
                                 admission_audit=[admission_row(item)], items=[item], corpus_id="exp", version="v1",
@@ -174,14 +176,78 @@ class CorpusAssemblyTests(unittest.TestCase):
             self.assertFalse(actual["train"] & actual["val"])
             self.assertFalse(actual["train"] & actual["test"])
             self.assertFalse(actual["val"] & actual["test"])
-            self.assertIn("floor(0.8N)", result.split_rule)
+            self.assertIn("floor(0.8G)", result.split_rule)
             self.assertIn("provenance only", result.split_rule)
+            self.assertEqual(result.split_algorithm, "leakage-group-sha256-v1")
+            self.assertEqual(result.split_group_count, 40)
+            self.assertEqual(result.split_group_counts, {"train": 32, "val": 4, "test": 4})
+            self.assertRegex(result.split_assignment_digest, r"^[0-9a-f]{64}$")
+
+    def test_related_tasks_sharing_a_leakage_group_stay_together(self) -> None:
+        items = corpus_items(40)
+        # Two distinct tasks share repository/family ancestry, represented by
+        # the curator's transitive leakage-group identifier.
+        items[0] = items[0].model_copy(update={"metadata": {"leakage_group": "shared-family"}})
+        items[1] = items[1].model_copy(update={"metadata": {"leakage_group": "shared-family"}})
+        rows = [*admission_rows(40)]
+        rows[0]["item_digest"] = items[0].canonical_digest()
+        rows[1]["item_digest"] = items[1].canonical_digest()
+        with TemporaryDirectory() as directory:
+            manifest = assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
+                                admission_audit=rows, items=items, corpus_id="exp", version="v1",
+                                split_seed="seed", output_root=directory)
+            root = Path(directory) / "exp" / "v1"
+            containing = [split for split in ("train", "val", "test")
+                          if all(f'"task_id":"task-{index:03d}"' in
+                                 (root / f"items.{split}.jsonl").read_text()
+                                 for index in (0, 1))]
+            self.assertEqual(len(containing), 1)
+            self.assertEqual(manifest.split_group_count, 39)
+
+    def test_admitted_item_without_leakage_group_blocks_assembly(self) -> None:
+        item = corpus_items(1)[0].model_copy(update={"metadata": {}})
+        with TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "missing leakage_group"):
+                assemble(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                         admission_audit=[admission_row(item)], items=[item], corpus_id="exp", version="v1",
+                         split_seed="seed", output_root=directory)
+            self.assertFalse((Path(directory) / "exp").exists())
+
+    def test_item_split_declaration_conflicting_with_group_assignment_blocks(self) -> None:
+        items = corpus_items(40)
+        groups = sorted((item.metadata["leakage_group"] for item in items),
+                        key=lambda group_id: (hashlib.sha256(group_id.encode("utf-8")).digest(), group_id))
+        declared = "test" if groups.index("task-000") < 32 else "train"
+        items[0] = items[0].model_copy(update={"metadata": {"leakage_group": "task-000", "split": declared}})
+        rows = [*admission_rows(40)]
+        rows[0]["item_digest"] = items[0].canonical_digest()
+        with TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "declares a split that conflicts"):
+                assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
+                         admission_audit=rows, items=items, corpus_id="exp", version="v1",
+                         split_seed="seed", output_root=directory)
+
+    def test_validation_split_alias_is_accepted_for_assigned_validation_group(self) -> None:
+        items = corpus_items(40)
+        groups = sorted((item.metadata["leakage_group"] for item in items),
+                        key=lambda group_id: (hashlib.sha256(group_id.encode("utf-8")).digest(), group_id))
+        item_index = int(groups[32].rsplit("-", 1)[1])
+        items[item_index] = items[item_index].model_copy(update={
+            "metadata": {"leakage_group": groups[32], "split": "validation"},
+        })
+        rows = [*admission_rows(40)]
+        rows[item_index]["item_digest"] = items[item_index].canonical_digest()
+        with TemporaryDirectory() as directory:
+            manifest = assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
+                                admission_audit=rows, items=items, corpus_id="exp", version="v1",
+                                split_seed="seed", output_root=directory)
+            self.assertEqual(manifest.split_counts["val"], 4)
 
     def test_all_items_for_a_task_stay_in_the_same_split(self) -> None:
         rows = [*corpus_items(40), CorpusItem(
             item_id="item-duplicate-example", task_id="task-000", prompt="another view",
             target="def other(): return 0", target_source="teacher", teacher_lineage_id="teacher-1",
-            source_digest="f" * 64,
+            source_digest="f" * 64, metadata={"leakage_group": "task-000"},
         )]
         extra = rows[-1]
         with TemporaryDirectory() as directory:
@@ -199,7 +265,9 @@ class CorpusAssemblyTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             CorpusManifest(
                 corpus_id="c1", version="v1", kind=CorpusKind.C_SFT, status=CorpusStatus.FROZEN,
-                split_seed="seed", split_rule="deterministic", item_count=0,
+                split_seed="seed", split_rule="deterministic", split_algorithm="test-v1",
+                split_group_count=0, split_group_counts={"train": 0, "val": 0, "test": 0},
+                split_assignment_digest="0" * 64, item_count=0,
                 split_counts={"train": 0, "val": 0, "test": 0},
                 item_file_digests={name: "0" * 64 for name in ("items.train.jsonl", "items.val.jsonl", "items.test.jsonl")},
                 items_digest="0" * 64,
@@ -218,7 +286,9 @@ class CorpusAssemblyTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             CorpusManifest(
                 corpus_id="c1", version="v1", kind=CorpusKind.C_SFT, status=CorpusStatus.DRAFT,
-                split_seed="seed", split_rule="deterministic", item_count=0,
+                split_seed="seed", split_rule="deterministic", split_algorithm="test-v1",
+                split_group_count=0, split_group_counts={"train": 0, "val": 0, "test": 0},
+                split_assignment_digest="0" * 64, item_count=0,
                 split_counts={"train": 0, "val": 0, "test": 0},
                 item_file_digests={name: "0" * 64 for name in ("items.train.jsonl", "items.val.jsonl", "items.test.jsonl")},
                 items_digest="0" * 64, excluded_task_ids=["task-x"],

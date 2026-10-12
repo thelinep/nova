@@ -52,10 +52,12 @@ blocking item is closed and linked to evidence:
 3. An owner-approved student-base checkpoint and tokenizer with immutable
    digests and at least 4096-token context.
 4. At least 500 validator-clean, small executable Python tasks in the complete
-   pool. Sort by SHA-256 of UTF-8 `task_id` bytes (task ID breaks any hash
-   tie), assign `floor(0.8N)` rows to train, the next `floor(0.1N)` to
-   validation, and the remainder to hidden test. Freeze all task-ID lists and
-   the held-out set before teacher generation.
+   pool, each with a reviewed transitive leakage-group ID. Sort unique UTF-8
+   group IDs by SHA-256 digest (group ID breaks ties), assign `floor(0.8G)`
+   groups to train, the next `floor(0.1G)` to validation, and the remainder to
+   hidden test. Keep every task and related item in one group together. Record
+   the group assignment digest and resulting item/task counts; freeze all
+   partitions and the held-out set before teacher generation.
 5. A separate `guru-eval-v1` executable held-out suite with a committed digest,
    deterministic acceptance checks, and security tasks covering auth, secrets,
    sandboxing and evaluator behavior. It must not be exposed to the teacher,

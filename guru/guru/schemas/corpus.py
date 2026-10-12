@@ -28,6 +28,10 @@ class CorpusManifest(StrictModel):
     owner_approval: dict[str, str] | None = None
     split_seed: str = Field(min_length=1)
     split_rule: str
+    split_algorithm: str = Field(min_length=1)
+    split_group_count: int = Field(ge=0)
+    split_group_counts: dict[str, int]
+    split_assignment_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     item_count: int = Field(ge=0)
     split_counts: dict[str, int]
     teacher_ids: list[str] = Field(default_factory=list)
@@ -38,6 +42,15 @@ class CorpusManifest(StrictModel):
 
     @model_validator(mode="after")
     def validate_freeze_and_exclusions(self) -> CorpusManifest:
+        expected_partitions = {"train", "val", "test"}
+        if set(self.split_counts) != expected_partitions or set(self.split_group_counts) != expected_partitions:
+            raise ValueError("split_counts and split_group_counts must define train, val, and test")
+        if sum(self.split_counts.values()) != self.item_count:
+            raise ValueError("split_counts must sum to item_count")
+        if sum(self.split_group_counts.values()) != self.split_group_count:
+            raise ValueError("split_group_counts must sum to split_group_count")
+        if self.split_group_count > self.item_count or (self.item_count and self.split_group_count == 0):
+            raise ValueError("split_group_count must be between one and item_count for a non-empty corpus")
         if self.status is CorpusStatus.FROZEN and not self.owner_approval:
             raise ValueError("FROZEN requires owner_approval")
         missing = [task_id for task_id in self.excluded_task_ids

@@ -251,23 +251,48 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
     if not admitted:
         raise CorpusAssemblyBlocked(["no admitted items are available for assembly"])
 
-    # Split at task granularity so multiple examples for one task cannot leak
-    # across partitions. Match exp-rd-vs-sft-001's preregistered deterministic
-    # rule: sort unique UTF-8 task IDs by SHA-256 (task ID breaks hash ties),
-    # then allocate floor(80% N), floor(10% N), and the remainder.
-    task_ids_by_hash = sorted(
-        {item.task_id for item in admitted},
-        key=lambda task_id: (hashlib.sha256(task_id.encode("utf-8")).digest(), task_id),
+    # Group related examples before splitting. The curator assigns one
+    # transitive leakage_group ID to all items linked by repository, source,
+    # task family, duplicate, or trajectory ancestry. The task constraint is
+    # checked here as a second guard: one task cannot span groups/partitions.
+    group_by_task: dict[str, str] = {}
+    for item in admitted:
+        group_id = item.metadata.get("leakage_group")
+        if not isinstance(group_id, str) or not group_id.strip():
+            raise CorpusAssemblyError(
+                f"admitted item {item.item_id!r} is missing leakage_group metadata"
+            )
+        previous_group = group_by_task.setdefault(item.task_id, group_id)
+        if previous_group != group_id:
+            raise CorpusAssemblyError(
+                f"task {item.task_id!r} is assigned to conflicting leakage groups"
+            )
+    group_ids_by_hash = sorted(
+        {item.metadata["leakage_group"] for item in admitted},
+        key=lambda group_id: (hashlib.sha256(group_id.encode("utf-8")).digest(), group_id),
     )
-    train_end = len(task_ids_by_hash) * 80 // 100
-    val_end = train_end + len(task_ids_by_hash) * 10 // 100
-    split_by_task = {
-        task_id: ("train" if index < train_end else "val" if index < val_end else "test")
-        for index, task_id in enumerate(task_ids_by_hash)
+    train_end = len(group_ids_by_hash) * 80 // 100
+    val_end = train_end + len(group_ids_by_hash) * 10 // 100
+    split_by_group = {
+        group_id: ("train" if index < train_end else "val" if index < val_end else "test")
+        for index, group_id in enumerate(group_ids_by_hash)
     }
+    for item in admitted:
+        declared_split = item.metadata.get("split")
+        normalized_declared = {"validation": "val"}.get(declared_split, declared_split)
+        if normalized_declared is not None and normalized_declared != split_by_group[item.metadata["leakage_group"]]:
+            raise CorpusAssemblyError(
+                f"item {item.item_id!r} declares a split that conflicts with its leakage-group assignment"
+            )
     buckets: dict[str, list[CorpusItem]] = {"train": [], "val": [], "test": []}
     for item in sorted(admitted, key=lambda entry: (entry.task_id, entry.item_id)):
-        buckets[split_by_task[item.task_id]].append(item)
+        buckets[split_by_group[item.metadata["leakage_group"]]].append(item)
+    assignment = {group_id: split_by_group[group_id] for group_id in group_ids_by_hash}
+    split_group_counts = {split: sum(assigned == split for assigned in assignment.values())
+                          for split in ("train", "val", "test")}
+    split_assignment_digest = hashlib.sha256(json.dumps(
+        assignment, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")).hexdigest()
 
     base = Path(output_root) if output_root is not None else REPO_GURU_ROOT / "corpora"
     corpus_parent = base / corpus_id
@@ -284,7 +309,13 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
         corpus_id=corpus_id, version=version, kind=corpus_kind,
         status=CorpusStatus.FROZEN if owner_approval else CorpusStatus.DRAFT,
         owner_approval=owner_approval, split_seed=split_seed,
-        split_rule="split_seed is recorded as provenance only; sort unique UTF-8 task_id by SHA-256 digest (task_id breaks ties); floor(0.8N) train, next floor(0.1N) val, remainder test",
+        split_rule=("split_seed is recorded as provenance only; assign transitive leakage_group IDs "
+                    "before splitting; sort unique UTF-8 group IDs by SHA-256 digest (group ID breaks "
+                    "ties); floor(0.8G) groups train, next floor(0.1G) validation, remainder test; "
+                    "all items for a task/group stay together"),
+        split_algorithm="leakage-group-sha256-v1", split_group_count=len(group_ids_by_hash),
+        split_group_counts=split_group_counts,
+        split_assignment_digest=split_assignment_digest,
         item_count=len(admitted), split_counts={name: len(rows) for name, rows in buckets.items()},
         teacher_ids=sorted(teachers_used), excluded_task_ids=sorted(exclusions),
         exclusion_reasons=exclusions, item_file_digests=file_digests, items_digest=items_digest,

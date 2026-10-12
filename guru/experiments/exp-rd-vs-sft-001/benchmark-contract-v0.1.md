@@ -52,12 +52,16 @@ silently grow beyond the qualified context and resource envelope.
 
 1. Deduplicate and assign leakage groups before split assignment.
 2. Freeze at least 500 eligible task IDs and their source/group digests.
-3. Apply the existing deterministic task-ID split: sort unique UTF-8 task IDs
-   by SHA-256 bytes (task ID breaks a digest tie), then allocate floor(80% N)
-   to train, floor(10% N) to validation, and the remainder to test.
-4. Keep all rows in one leakage group in the same partition. If group-aware
-   assignment changes the exact 80/10/10 counts, record the deterministic
-   group-level algorithm and resulting counts before any teacher generation.
+3. Require a transitive leakage-group ID for each item. Related items linked
+   by repository, source, task family, duplicate, or trajectory ancestry must
+   share the same group ID; all items for one task must resolve to one group.
+4. Apply the deterministic leakage-group split: sort unique UTF-8 group IDs
+   by SHA-256 bytes (group ID breaks a digest tie), then allocate
+   floor(80% G) groups to train, floor(10% G) to validation, and the remainder
+   to test. All tasks/items in a group stay together. Record group counts,
+   item counts, algorithm version, and assignment digest before teacher
+   generation. The exact item percentages may differ from 80/10/10 because
+   indivisible groups are the unit of assignment.
 5. Maintain a separate `guru-eval-v1` executable suite with its own pinned
    digest. It must include target-free held-out tasks and security cases; no
    hidden prompt, target, expected patch, or test oracle may enter teacher
