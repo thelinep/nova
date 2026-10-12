@@ -90,7 +90,9 @@ def run_synthetic_lora_smoke(*, seed: int = 17, steps: int = 2) -> dict:
         reload_base = GPT2LMHeadModel(config)
         torch.set_rng_state(caller_rng_state)
         reload_base.load_state_dict(base_state)
+        adapter_rng_state = torch.get_rng_state()
         reloaded = PeftModel.from_pretrained(reload_base, output, is_trainable=True)
+        torch.set_rng_state(adapter_rng_state)
         reloaded.eval()
         model.eval()
         with torch.no_grad():

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import torch
 
 from guru.lora_smoke import run_synthetic_lora_smoke
 
@@ -18,6 +19,7 @@ def test_synthetic_lora_smoke_trains_saves_reloads_and_continues_offline(monkeyp
         return directory
 
     monkeypatch.setattr("guru.lora_smoke.tempfile.TemporaryDirectory", track_temporary_directory)
+    torch_rng_before = torch.get_rng_state().clone()
     result = run_synthetic_lora_smoke(seed=17, steps=2)
 
     assert result["schema_version"] == "guru-synthetic-lora-smoke-v1"
@@ -34,6 +36,7 @@ def test_synthetic_lora_smoke_trains_saves_reloads_and_continues_offline(monkeyp
     assert result["persistent_output_written"] is False
     assert len(created_dirs) == 1
     assert not Path(created_dirs[0]).exists()
+    assert torch.equal(torch_rng_before, torch.get_rng_state())
 
 
 @pytest.mark.parametrize("steps", [0, 1, True, 2.0])
