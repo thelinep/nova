@@ -14,13 +14,17 @@ provider prices are planning snapshots and must be rechecked before any launch.
 - Evaluator evidence contract: `5f24668`.
 - Item-bound quality decisions, duplicate-decision rejection and corpus teacher
   lineage binding: `d1bd36d`, `6981a0f`, `244d6f3`.
-- Deterministic quality checks and tri-state report: `7177e61`, `e374e96`.
+- Deterministic quality checks and tri-state report: `7177e61`, `e374e96`,
+  `b4461aa`.
   The report covers all eight check categories, but TESTS and LICENSE remain
   UNAVAILABLE, and no admission-audit orchestrator exists.
-- The documented CPU apparatus suite now passes **115 tests** on the available
-  Python 3.12 environment. A broader `pytest tests/` attempt returned 147
-  passed, 1 skipped and 3 failed because SentencePiece is missing from that
-  lightweight environment.
+- The documented CPU apparatus suite now passes **116 tests** on the available
+  Python 3.12 environment. Plain `pytest tests/` in the lightweight environment
+  lacks SentencePiece for tokenizer tests. With a temporary SentencePiece 0.2.2
+  wheel on `PYTHONPATH`, the broader suite passes **173 tests**, with 1 skipped
+  and 5 warnings. This used the existing
+  Anaconda environment; a clean, full-dependency test environment and lock have
+  not been verified.
 - Maataa's full Node suite passed 768 tests, with 1 skipped. Coding Studio and
   App Builder Playwright specs passed 13 tests using simulated model responses;
   this is UI workflow evidence, not exact-model qualification.
