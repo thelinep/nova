@@ -627,6 +627,83 @@ def test_runner_with_partial_provider_evidence_never_decides_or_audits(tmp_path,
     assert not audit_path.exists()
 
 
+@pytest.mark.parametrize("evaluator_statuses,expected_decision", [
+    (("pass", "pass"), "admit"),
+    (("pass", "fail"), "quarantine"),
+])
+def test_complete_quality_run_audit_replays_through_preflight_and_assembly(
+    tmp_path, monkeypatch, evaluator_statuses, expected_decision,
+):
+    """Synthetic complete measurements persist and replay only their measured outcome."""
+    from guru.corpus.assemble import (
+        CorpusAssemblyBlocked, assemble, preflight,
+    )
+    from guru.quality import gate, runner
+
+    input_root = tmp_path / "inputs"
+    input_root.mkdir()
+    manifest_path, manifest_digest, source_digest = _source_manifest(input_root)
+    # A single group is assigned to the test partition by assembly. Leave the
+    # optional declared split unset so this fixture tests audit replay only.
+    item = CorpusItem.model_validate(_item(
+        source_digest=source_digest,
+        metadata={"leakage_group": "family-1"},
+    ))
+    audit_path = tmp_path / "audit" / "quality.jsonl"
+    monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
+
+    report, admission = runner.run_item_quality(
+        item,
+        tier=QualityTier.C,
+        source_manifest_path=manifest_path,
+        source_manifest_digest=manifest_digest,
+        corpus_items=[],
+        group_assignments={"family-1": "train"},
+        evaluator_provider=_FakeEvaluatorProvider(
+            _evaluator_inputs(item, statuses=evaluator_statuses)),
+        rights_provider=_FakeRightsProvider(_rights_inputs(item)),
+    )
+
+    assert admission.decision.value == expected_decision
+    assert len(report.records) == len(REQUIRED_AUTO_CHECKS)
+    rows = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["decision"] == expected_decision
+    assert row["item_digest"] == item.canonical_digest()
+    assert len(row["checks"]) == len(REQUIRED_AUTO_CHECKS)
+    assert {check["name"] for check in row["checks"]} == {
+        name.value for name in REQUIRED_AUTO_CHECKS
+    }
+    assert all(check["item_digest"] == item.canonical_digest() for check in row["checks"])
+
+    tasks = [{"id": item.task_id}]
+    preflight_result = preflight(
+        kind="c_sft", task_manifest=tasks, teacher_registry=[],
+        admission_audit=audit_path,
+    )
+    if expected_decision == "admit":
+        assert preflight_result["ready"] is True
+        assert preflight_result["blockers"] == []
+        manifest = assemble(
+            kind="c_sft", task_manifest=tasks, teacher_registry=[],
+            admission_audit=audit_path, items=[item], corpus_id="synthetic-e2e",
+            version="v1", split_seed="synthetic-only", output_root=tmp_path / "corpora",
+        )
+        assert manifest.item_count == 1
+        assert manifest.item_file_digests
+    else:
+        assert preflight_result["ready"] is False
+        assert "admission audit contains no admitted items" in preflight_result["blockers"]
+        with pytest.raises(CorpusAssemblyBlocked, match="no admitted items"):
+            assemble(
+                kind="c_sft", task_manifest=tasks, teacher_registry=[],
+                admission_audit=audit_path, items=[item], corpus_id="synthetic-e2e",
+                version="v1", split_seed="synthetic-only", output_root=tmp_path / "corpora",
+            )
+        assert not (tmp_path / "corpora" / "synthetic-e2e" / "v1").exists()
+
+
 def test_only_quality_runner_calls_low_level_item_decision():
     package_root = Path(__file__).resolve().parents[1] / "guru"
     callers = []
