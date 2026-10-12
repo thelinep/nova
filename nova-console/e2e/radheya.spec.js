@@ -37,7 +37,11 @@ test('WIP limits come from settings and block an extra card', async ({ page }) =
     await page.getByRole('button', { name: 'Add card' }).click();
     await expect(page.locator('#rdDetailTitle')).toHaveText(t);
     await page.locator('#rdMoveTo').selectOption('ready');
+    await expect(page.getByRole('region', { name: 'Ready' }).getByRole('button', { name: new RegExp(t) })).toBeVisible();
     await page.locator('#rdMoveTo').selectOption('doing');
+    if (t === 'WIP one') {
+      await expect(page.getByRole('region', { name: 'Doing' }).getByRole('button', { name: /WIP one/ })).toBeVisible();
+    }
   }
   await expect(page.locator('#toast')).toContainText('WIP limit');
   await expect(page.getByRole('region', { name: 'Doing' })).toContainText('1 / 1');

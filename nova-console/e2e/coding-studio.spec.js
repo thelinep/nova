@@ -1,7 +1,8 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 
-const fixtureRoot = '/private/tmp/nova-e2e-workspace';
+const fixtureRoot = process.env.NOVA_E2E_WORKSPACE;
+if (!fixtureRoot) throw new Error('NOVA_E2E_WORKSPACE must be set by Playwright config.');
 const digestQualified = 'a'.repeat(64);
 const digestUnqualified = 'b'.repeat(64);
 

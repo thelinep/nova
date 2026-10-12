@@ -1,4 +1,6 @@
 const { test, expect } = require('@playwright/test');
+const e2eWorkspace = process.env.NOVA_E2E_WORKSPACE;
+if (!e2eWorkspace) throw new Error('NOVA_E2E_WORKSPACE must be set by Playwright config.');
 
 test.describe('NOVA Console interactions', () => {
   test('keeps the composer visible and sends a message in a new session', async ({ page }) => {
@@ -236,7 +238,7 @@ test.describe('NOVA Console interactions', () => {
   test('drafts a patch and checks it in an isolated workspace copy', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-view="workspace"]').click();
-    await page.getByLabel('Local folder path').fill('/private/tmp/nova-e2e-workspace');
+    await page.getByLabel('Local folder path').fill(e2eWorkspace);
     await page.getByLabel('Folder label').fill('Writable test copy');
     await page.getByRole('button', { name: 'Approve root' }).click();
     await expect(page.getByRole('status')).toContainText('Local root approved.');
@@ -284,7 +286,7 @@ test.describe('NOVA Console interactions', () => {
   test('shows Git evidence and requires exact staged-file review for a commit draft', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-view="workspace"]').click();
-    await page.getByLabel('Local folder path').fill('/private/tmp/nova-e2e-workspace');
+    await page.getByLabel('Local folder path').fill(e2eWorkspace);
     await page.getByLabel('Folder label').fill('Git review fixture');
     await page.getByRole('button', { name: 'Approve root' }).click();
     await expect(page.getByRole('status')).toContainText('Local root approved.');
@@ -313,7 +315,7 @@ test.describe('NOVA Console interactions', () => {
   test('reviews and applies an ordered multi-file batch with rollback evidence', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-view="workspace"]').click();
-    await page.getByLabel('Local folder path').fill('/private/tmp/nova-e2e-workspace');
+    await page.getByLabel('Local folder path').fill(e2eWorkspace);
     await page.getByLabel('Folder label').fill('Batch fixture');
     await page.getByRole('button', { name: 'Approve root' }).click();
     await expect(page.getByRole('status')).toContainText('Local root approved.'); // the view re-renders after approval; fill the form after that
