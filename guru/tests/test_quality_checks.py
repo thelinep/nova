@@ -46,20 +46,65 @@ def _item(**overrides):
 
 
 def _source_manifest(tmp_path: Path) -> tuple[Path, str, str]:
-    artifact = b"synthetic pinned source artifact"
+    from guru.coding import canonical_sha256
+
+    artifact = b"synthetic pinned source artifact one"
+    artifact_two = b"synthetic pinned source artifact two"
     license_text = b"Synthetic fixture license text"
     artifact_path = tmp_path / "artifact.bin"
+    artifact_two_path = tmp_path / "artifact-two.bin"
     license_path = tmp_path / "LICENSE.txt"
     artifact_path.write_bytes(artifact)
+    artifact_two_path.write_bytes(artifact_two)
     license_path.write_bytes(license_text)
+    item_one = b"synthetic reviewed source item one"
+    item_two = b"synthetic reviewed source item two"
+    item_one_path = tmp_path / "source-item-one.json"
+    item_two_path = tmp_path / "source-item-two.json"
+    item_one_path.write_bytes(item_one)
+    item_two_path.write_bytes(item_two)
+    task_one = {
+        "schema_version": "guru-code-task-v1", "id": "task-1", "split": "train",
+        "language": "python", "prompt": "Synthetic training task",
+        "target": {"summary": "Add greeting", "files": [{"path": "main.py", "content": "print('hi')\n"}],
+                   "tests": ["python main.py"]},
+        "provenance": {"kind": "reviewed_source", "description": "Synthetic fixture",
+                       "source_refs": [{"source_id": "source-1", "item_id": "source-item-one",
+                                         "item_path": item_one_path.name,
+                                         "item_sha256": hashlib.sha256(item_one).hexdigest(),
+                                         "transformation": "synthetic test fixture"}]},
+        "rubric": {"expected_files": ["main.py"], "required_symbols": {},
+                   "required_test_snippets": []},
+        "leakage_group": "synthetic-train-group",
+    }
+    task_eval = {
+        "schema_version": "guru-code-task-v1", "id": "task-eval", "split": "eval",
+        "language": "python", "prompt": "Synthetic held-out task",
+        "provenance": {"kind": "reviewed_source", "description": "Synthetic fixture",
+                       "source_refs": [{"source_id": "source-2", "item_id": "source-item-two",
+                                         "item_path": item_two_path.name,
+                                         "item_sha256": hashlib.sha256(item_two).hexdigest(),
+                                         "transformation": "synthetic test fixture"}]},
+        "rubric": {"expected_files": ["main.py"], "required_symbols": {},
+                   "required_test_snippets": []},
+        "leakage_group": "synthetic-eval-group",
+    }
+    task_hashes = {task_one["id"]: canonical_sha256(task_one),
+                   task_eval["id"]: canonical_sha256(task_eval)}
     manifest = {
         "schema_version": "guru-code-source-manifest-v1",
-        "sources": [{
-            "source_id": "source-1",
-            "uri": "https://example.invalid/source-1",
-            "revision": "immutable-rev-1",
-            "artifact_path": artifact_path.name,
-            "artifact_sha256": hashlib.sha256(artifact).hexdigest(),
+        "sources": [],
+    }
+    for source_id, source_artifact, source_file, task_id, allowed_use in (
+        ("source-1", artifact, artifact_path, "task-1", "train_sft"),
+        ("source-2", artifact_two, artifact_two_path, "task-eval", "evaluation"),
+    ):
+        manifest["sources"].append({
+            "source_id": source_id,
+            "uri": f"https://example.invalid/{source_id}",
+            "revision": f"immutable-rev-{source_id}",
+            "artifact_path": source_file.name,
+            "artifact_sha256": hashlib.sha256(source_artifact).hexdigest(),
             "attribution": "Synthetic test fixture attribution",
             "license": {
                 "id": "LicenseRef-Test-Only",
@@ -71,13 +116,16 @@ def _source_manifest(tmp_path: Path) -> tuple[Path, str, str]:
                 "status": "approved",
                 "reviewer": "synthetic-fixture-reviewer",
                 "reviewed_at": "2026-10-12T00:00:00Z",
-                "allowed_uses": ["train_sft"],
+                "allowed_uses": [allowed_use],
             },
-            "task_hashes": {"synthetic-task": "b" * 64},
-        }],
-    }
+            "task_hashes": {task_id: task_hashes[task_id]},
+        })
     manifest_path = tmp_path / "source-manifest.json"
     manifest_path.write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
+    task_manifest_path = tmp_path / "tasks.jsonl"
+    task_manifest_path.write_text("\n".join(json.dumps(row, sort_keys=True)
+                                             for row in (task_one, task_eval)) + "\n",
+                                  encoding="utf-8")
     manifest_digest = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     return manifest_path, manifest_digest, hashlib.sha256(artifact).hexdigest()
 
@@ -199,6 +247,7 @@ def _runner_report(tmp_path: Path, *, raw_item=None, evaluator_provider=None, ri
     item = CorpusItem.model_validate(raw_item or _item(source_digest=source_digest))
     return checks.run_deterministic_checks(
         item, source_manifest_path=manifest_path, source_manifest_digest=manifest_digest,
+        task_manifest_path=tmp_path / "tasks.jsonl",
         corpus_items=[], group_assignments={"family-1": "train"},
         evaluator_provider=evaluator_provider or _FakeEvaluatorProvider(_evaluator_inputs(item)),
         rights_provider=rights_provider,
@@ -290,7 +339,8 @@ def test_each_direct_producer_binds_exact_canonical_item_digest(tmp_path):
         checks.secret_check(item),
         checks.security_check(item),
         checks.provenance_check(item, manifest_path=manifest_path,
-                                expected_manifest_digest=manifest_digest),
+                                expected_manifest_digest=manifest_digest,
+                                task_manifest_path=tmp_path / "tasks.jsonl"),
         checks.duplicate_check(item, corpus_items=[]),
         checks.leakage_check(item, group_assignments={"family-1": "train"}),
     ]
@@ -324,33 +374,104 @@ def test_item_mutation_changes_binding_and_stales_prior_check_evidence():
 
 def test_provenance_requires_pinned_manifest_and_matches_digest_membership():
     with pytest.raises(checks.CheckUnavailableError, match="not supplied"):
-        checks.provenance_check(_item(), manifest_path=None, expected_manifest_digest=None)
+        checks.provenance_check(_item(), manifest_path=None, expected_manifest_digest=None,
+                                task_manifest_path=None)
 
 
 def test_provenance_requires_digest_pin_and_validated_manifest(tmp_path):
     manifest_path, manifest_digest, source_digest = _source_manifest(tmp_path)
     with pytest.raises(checks.CheckUnavailableError, match="digest pin"):
         checks.provenance_check(_item(source_digest=source_digest),
-                                manifest_path=manifest_path, expected_manifest_digest=None)
+                                manifest_path=manifest_path, expected_manifest_digest=None,
+                                task_manifest_path=tmp_path / "tasks.jsonl")
     item = _item(source_digest=source_digest)
     passed = checks.provenance_check(item, manifest_path=manifest_path,
-                                     expected_manifest_digest=manifest_digest)
+                                     expected_manifest_digest=manifest_digest,
+                                     task_manifest_path=tmp_path / "tasks.jsonl")
     wrong_pin = checks.provenance_check(item, manifest_path=manifest_path,
-                                        expected_manifest_digest="0" * 64)
+                                        expected_manifest_digest="0" * 64,
+                                        task_manifest_path=tmp_path / "tasks.jsonl")
     absent_member = checks.provenance_check(_item(source_digest="c" * 64),
                                             manifest_path=manifest_path,
-                                            expected_manifest_digest=manifest_digest)
+                                            expected_manifest_digest=manifest_digest,
+                                            task_manifest_path=tmp_path / "tasks.jsonl")
     assert passed.name is AutoCheckName.PROVENANCE and passed.passed is True
     assert wrong_pin.passed is False
     assert absent_member.passed is False
 
 
+def test_provenance_rejects_unknown_task_id(tmp_path):
+    manifest_path, manifest_digest, source_digest = _source_manifest(tmp_path)
+    result = checks.provenance_check(
+        _item(task_id="task-unknown", source_digest=source_digest),
+        manifest_path=manifest_path, expected_manifest_digest=manifest_digest,
+        task_manifest_path=tmp_path / "tasks.jsonl",
+    )
+    assert result.passed is False
+
+
+def test_provenance_rejects_artifact_membership_without_item_task_link(tmp_path):
+    manifest_path, manifest_digest, source_digest = _source_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert source_digest in {row["artifact_sha256"] for row in manifest["sources"]}
+    # source-1 is present in the manifest, but task-eval references source-2.
+    result = checks.provenance_check(
+        _item(task_id="task-eval", source_digest=source_digest),
+        manifest_path=manifest_path, expected_manifest_digest=manifest_digest,
+        task_manifest_path=tmp_path / "tasks.jsonl",
+    )
+    assert result.passed is False
+
+
+def test_provenance_rejects_unrelated_source_digest(tmp_path):
+    manifest_path, manifest_digest, _source_digest = _source_manifest(tmp_path)
+    result = checks.provenance_check(
+        _item(source_digest="c" * 64),
+        manifest_path=manifest_path, expected_manifest_digest=manifest_digest,
+        task_manifest_path=tmp_path / "tasks.jsonl",
+    )
+    assert result.passed is False
+
+
+def test_provenance_rejects_mutated_task_after_review(tmp_path):
+    manifest_path, manifest_digest, source_digest = _source_manifest(tmp_path)
+    task_path = tmp_path / "tasks.jsonl"
+    rows = [json.loads(line) for line in task_path.read_text(encoding="utf-8").splitlines()]
+    rows[0]["prompt"] = "Mutated after source review"
+    task_path.write_text("\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n",
+                         encoding="utf-8")
+    with pytest.raises(checks.CheckInputError, match="task/source manifests failed Guru release validation"):
+        checks.provenance_check(
+            _item(source_digest=source_digest), manifest_path=manifest_path,
+            expected_manifest_digest=manifest_digest, task_manifest_path=task_path,
+        )
+
+
+def test_provenance_requires_task_manifest_input(tmp_path):
+    manifest_path, manifest_digest, source_digest = _source_manifest(tmp_path)
+    with pytest.raises(checks.CheckUnavailableError, match="task manifest path was not supplied"):
+        checks.provenance_check(
+            _item(source_digest=source_digest), manifest_path=manifest_path,
+            expected_manifest_digest=manifest_digest, task_manifest_path=None,
+        )
+    report = checks.run_deterministic_checks(
+        _item(source_digest=source_digest), source_manifest_path=manifest_path,
+        source_manifest_digest=manifest_digest, corpus_items=[],
+        group_assignments={"family-1": "train"},
+    )
+    assert {record.name: record.status for record in report.records}[
+        AutoCheckName.PROVENANCE
+    ] is checks.CheckRunStatus.UNAVAILABLE
+
+
 def test_provenance_rejects_invalid_manifest_contract(tmp_path):
+    _source_manifest(tmp_path)
     bad_path = tmp_path / "bad.json"
     bad_path.write_text('{"schema_version":"wrong","sources":[]}', encoding="utf-8")
     with pytest.raises(checks.CheckInputError, match="failed Guru release validation"):
         checks.provenance_check(_item(), manifest_path=bad_path,
-                                expected_manifest_digest=hashlib.sha256(bad_path.read_bytes()).hexdigest())
+                                expected_manifest_digest=hashlib.sha256(bad_path.read_bytes()).hexdigest(),
+                                task_manifest_path=tmp_path / "tasks.jsonl")
 
 
 def test_duplicate_check_detects_exact_model_facing_pair_and_requires_corpus():
@@ -619,11 +740,13 @@ def test_runner_with_partial_provider_evidence_never_decides_or_audits(tmp_path,
     monkeypatch.setattr(runner, "item_decision", lambda **kwargs: pytest.fail("incomplete run decided"))
     root = tmp_path / "partial"
     root.mkdir()
+    manifest_path, manifest_digest, _ = _source_manifest(root)
     with pytest.raises(checks.IncompleteCheckRunError, match="unavailable check"):
         runner.run_item_quality(item, tier=QualityTier.C, evaluator_provider=provider,
                                 corpus_items=[], group_assignments={"family-1": "train"},
-                                source_manifest_path=_source_manifest(root)[0],
-                                source_manifest_digest=_source_manifest(root)[1])
+                                source_manifest_path=manifest_path,
+                                source_manifest_digest=manifest_digest,
+                                task_manifest_path=root / "tasks.jsonl")
     assert not audit_path.exists()
 
 
@@ -657,6 +780,7 @@ def test_complete_quality_run_audit_replays_through_preflight_and_assembly(
         tier=QualityTier.C,
         source_manifest_path=manifest_path,
         source_manifest_digest=manifest_digest,
+        task_manifest_path=input_root / "tasks.jsonl",
         corpus_items=[],
         group_assignments={"family-1": "train"},
         evaluator_provider=_FakeEvaluatorProvider(

@@ -16,6 +16,7 @@ def run_item_quality(
     raw_item: CorpusItem | Mapping[str, Any], *, tier: QualityTier,
     source_manifest_path: str | Path | None = None,
     source_manifest_digest: str | None = None,
+    task_manifest_path: str | Path | None = None,
     corpus_items: Sequence[CorpusItem | Mapping[str, Any]] | None = None,
     group_assignments: Mapping[str, str | Sequence[str]] | None = None,
     evaluator_provider: EvaluatorEvidenceProvider | None = None,
@@ -30,6 +31,7 @@ def run_item_quality(
     report = run_deterministic_checks(
         raw_item, source_manifest_path=source_manifest_path,
         source_manifest_digest=source_manifest_digest,
+        task_manifest_path=task_manifest_path,
         corpus_items=corpus_items, group_assignments=group_assignments,
         evaluator_provider=evaluator_provider,
         rights_provider=rights_provider,

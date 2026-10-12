@@ -31,14 +31,14 @@ from guru.teacher.intake import validate_teacher
 from guru.quality.providers import EvaluatorEvidenceProvider, RightsEvidenceProvider
 
 
-TOOL_VERSION = "guru-deterministic-checks/1.1.0"
+TOOL_VERSION = "guru-deterministic-checks/1.2.0"
 POLICY_VERSIONS: dict[AutoCheckName, str] = {
     AutoCheckName.SCHEMA: "corpus-item-schema-v1",
     AutoCheckName.SYNTAX: "python-ast-parse-v1",
     AutoCheckName.TESTS: "qualified-evaluator-required-v1",
     AutoCheckName.SECURITY: "security-cot-and-secrets-v1",
     AutoCheckName.LICENSE: "scoped-owner-rights-evidence-required-v1",
-    AutoCheckName.PROVENANCE: "pinned-release-source-manifest-v1",
+    AutoCheckName.PROVENANCE: "pinned-release-task-source-linkage-v2",
     AutoCheckName.DUPLICATE: "exact-model-facing-example-v1",
     AutoCheckName.LEAKAGE: "single-experiment-split-per-group-v1",
 }
@@ -265,21 +265,25 @@ def provenance_check(
     raw_item: CorpusItem | Mapping[str, Any], *,
     manifest_path: str | Path | None,
     expected_manifest_digest: str | None,
+    task_manifest_path: str | Path | None = None,
 ) -> AutoCheckResult:
-    """Require source-digest membership in a validated, byte-pinned manifest.
+    """Require a validated task/source link to the item's pinned source.
 
-    The manifest is parsed and its referenced artifact/license files are
-    checked by Guru's release source-manifest validator. Membership compares
-    ``CorpusItem.source_digest`` with a validated source ``artifact_sha256``.
-    The caller's pin must equal the digest of the exact manifest bytes. This
-    proves integrity relative to that supplied pin; it does not prove manifest
-    authenticity, rights, or license permission.
+    Guru's task loader validates the task JSONL. Guru's release source validator
+    then checks reviewed source artifacts, saved license files, task hashes,
+    and source references. The item's task must exist, and at least one source
+    referenced by that task must have an ``artifact_sha256`` equal to
+    ``CorpusItem.source_digest``. The caller's pin proves integrity relative to
+    that supplied pin; it does not prove either manifest's authenticity, rights,
+    or license permission.
     """
     item = _valid_item(raw_item)
     if manifest_path is None:
         raise CheckUnavailableError("source manifest path was not supplied")
     if expected_manifest_digest is None:
         raise CheckUnavailableError("source manifest digest pin was not supplied")
+    if task_manifest_path is None:
+        raise CheckUnavailableError("task manifest path was not supplied")
     if (not isinstance(expected_manifest_digest, str) or len(expected_manifest_digest) != 64
             or any(c not in "0123456789abcdef" for c in expected_manifest_digest)):
         raise CheckInputError("source manifest pin must be a lowercase SHA-256 digest")
@@ -287,20 +291,45 @@ def provenance_check(
         # Reuse the current release contract: source and saved license bytes
         # are digest-verified, rights review is structurally checked, and the
         # parsed source entries are returned only after manifest validation.
-        from guru.coding import CodingDataError, _read_release_sources
+        from guru.coding import (
+            CodingDataError, _read_release_sources, _validate_reviewed_tasks,
+            canonical_sha256, read_tasks,
+        )
 
-        sources, actual_manifest_digest, _manifest_dir = _read_release_sources([], str(manifest_path))
+        tasks = read_tasks(str(task_manifest_path))
+        sources, actual_manifest_digest, manifest_dir = _read_release_sources(
+            tasks, str(manifest_path))
+        _validate_reviewed_tasks(tasks, sources, manifest_dir)
     except (OSError, CodingDataError, ValueError) as exc:
-        raise CheckInputError("source manifest failed Guru release validation") from exc
+        raise CheckInputError("task/source manifests failed Guru release validation") from exc
     pin_matches = actual_manifest_digest == expected_manifest_digest
     artifact_digests = sorted(source["artifact_sha256"] for source in sources.values())
     member = item.source_digest in artifact_digests
-    return _result(AutoCheckName.PROVENANCE, pin_matches and member, {
+    task_by_id = {task["id"]: task for task in tasks}
+    task = task_by_id.get(item.task_id)
+    if task is None:
+        task_linkage = False
+        task_source_ids: set[str] = set()
+        task_digest = None
+    else:
+        refs = task["provenance"].get("source_refs", [])
+        task_source_ids = {ref["source_id"] for ref in refs}
+        task_linkage = any(
+            source_id in sources
+            and sources[source_id]["artifact_sha256"] == item.source_digest
+            for source_id in task_source_ids
+        )
+        task_digest = canonical_sha256(task)
+    return _result(AutoCheckName.PROVENANCE, pin_matches and member and task_linkage, {
         "item_digest": item.canonical_digest(), "source_digest": item.source_digest,
         "expected_manifest_digest": expected_manifest_digest,
         "actual_manifest_digest": actual_manifest_digest,
         "manifest_pin_matches": pin_matches,
         "artifact_membership": member,
+        "task_id_digest": _digest(item.task_id),
+        "task_manifest_task_digest": task_digest,
+        "task_source_reference_count": len(task_source_ids),
+        "task_source_linkage": task_linkage,
         "artifact_digest_set_digest": _digest(artifact_digests),
     })
 
@@ -426,6 +455,7 @@ def run_deterministic_checks(
     raw_item: CorpusItem | Mapping[str, Any], *,
     source_manifest_path: str | Path | None = None,
     source_manifest_digest: str | None = None,
+    task_manifest_path: str | Path | None = None,
     corpus_items: Sequence[CorpusItem | Mapping[str, Any]] | None = None,
     group_assignments: Mapping[str, str | Sequence[str]] | None = None,
     evaluator_provider: EvaluatorEvidenceProvider | None = None,
@@ -434,6 +464,8 @@ def run_deterministic_checks(
     """Run available producers and report all required checks as tri-state.
 
     This function never invokes ``item_decision`` and never writes an audit.
+    PROVENANCE requires both a pinned source manifest and the task JSONL whose
+    canonical rows are reviewed by that manifest.
     TESTS and LICENSE stay UNAVAILABLE unless separately controlled provider
     implementations load externally pinned qualification and approved rights
     records. There are no production provider implementations in this slice.
@@ -572,7 +604,8 @@ def run_deterministic_checks(
         license_status,
         _run_one(AutoCheckName.PROVENANCE, provenance_check, raw_item, bound_item_digest=item_digest,
                  manifest_path=source_manifest_path,
-                 expected_manifest_digest=source_manifest_digest),
+                 expected_manifest_digest=source_manifest_digest,
+                 task_manifest_path=task_manifest_path),
         _run_one(AutoCheckName.DUPLICATE, duplicate_check, raw_item, bound_item_digest=item_digest,
                  corpus_items=corpus_items),
         _run_one(AutoCheckName.LEAKAGE, leakage_check, raw_item, bound_item_digest=item_digest,
