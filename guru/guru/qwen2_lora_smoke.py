@@ -8,12 +8,22 @@ capability.
 from __future__ import annotations
 
 import hashlib
+import math
 import tempfile
 from pathlib import Path
 
 import torch
 
 from guru.ephemeral import training_scratch_root
+from guru.lora_recipe import load_lora_recipe
+
+
+_RECIPE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "experiments"
+    / "recipes"
+    / "qwen25_coder_15b_lora_sft.v1.json"
+)
 
 
 class _SyntheticTaskSampler:
@@ -96,6 +106,7 @@ def run_synthetic_qwen2_lora_smoke(*, seed: int = 23, steps: int = 2) -> dict:
         raise ValueError("steps must be no greater than 32 for the bounded smoke")
 
     scratch_root = training_scratch_root()
+    recipe = load_lora_recipe(_RECIPE_PATH)
     try:
         from peft import LoraConfig, PeftModel, get_peft_model
         from transformers import Qwen2Config, Qwen2ForCausalLM
@@ -120,29 +131,52 @@ def run_synthetic_qwen2_lora_smoke(*, seed: int = 23, steps: int = 2) -> dict:
         initial_base = Qwen2ForCausalLM(config)
         base_state = {name: value.detach().clone() for name, value in initial_base.state_dict().items()}
         del initial_base
-        lora = LoraConfig(
-            r=2,
-            lora_alpha=4,
-            lora_dropout=0.0,
-            target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
-            task_type="CAUSAL_LM",
-        )
-
         def make_model():
             # Reuse fixed random adapter initialization while keeping the full
             # smoke's RNG effects private to this function.
             torch.manual_seed(seed + 1)
             base = Qwen2ForCausalLM(config)
             base.load_state_dict(base_state)
-            return get_peft_model(base, lora)
+            return get_peft_model(
+                base,
+                LoraConfig(
+                    r=recipe.lora.rank,
+                    lora_alpha=recipe.lora.alpha,
+                    lora_dropout=recipe.lora.dropout,
+                    target_modules=list(recipe.lora.target_modules),
+                    task_type="CAUSAL_LM",
+                ),
+            )
 
         def make_optimizer(model):
+            trainable = [
+                param for name, param in model.named_parameters()
+                if param.requires_grad and "lora_" in name
+            ]
+            if not trainable:
+                raise RuntimeError("synthetic smoke did not construct trainable LoRA adapters")
+            if any(
+                param.requires_grad and "lora_" not in name
+                for name, param in model.named_parameters()
+            ):
+                raise RuntimeError("synthetic smoke exposed non-adapter trainable parameters")
             optimizer = torch.optim.AdamW(
-                (param for param in model.parameters() if param.requires_grad), lr=1e-3
+                trainable,
+                lr=recipe.sft.learning_rate,
+                betas=(recipe.sft.beta1, recipe.sft.beta2),
+                eps=recipe.sft.epsilon,
+                weight_decay=recipe.sft.weight_decay,
             )
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, T_max=steps + 1, eta_min=0.0
-            )
+            warmup_steps = math.ceil((steps + 1) * recipe.sft.warmup_ratio)
+
+            def scale(step):
+                if warmup_steps and step < warmup_steps:
+                    return min(1.0, (step + 1) / warmup_steps)
+                decay_steps = max(1, steps + 1 - warmup_steps)
+                progress = min(1.0, max(0.0, (step - warmup_steps) / decay_steps))
+                return max(0.0, 0.5 * (1.0 + math.cos(math.pi * progress)))
+
+            scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scale)
             return optimizer, scheduler
 
         input_ids = torch.tensor(
@@ -168,6 +202,14 @@ def run_synthetic_qwen2_lora_smoke(*, seed: int = 23, steps: int = 2) -> dict:
                 if not torch.isfinite(loss):
                     raise RuntimeError("synthetic Qwen2 LoRA smoke produced a non-finite loss")
                 loss.backward()
+                trainable = [
+                    param for param in model.parameters() if param.requires_grad
+                ]
+                if not trainable or any(
+                    param.grad is not None and not torch.isfinite(param.grad).all()
+                    for param in trainable
+                ):
+                    raise RuntimeError("synthetic Qwen2 LoRA smoke produced invalid adapter gradients")
                 optimizer.step()
                 scheduler.step()
                 losses.append(float(loss.detach()))
@@ -194,7 +236,7 @@ def run_synthetic_qwen2_lora_smoke(*, seed: int = 23, steps: int = 2) -> dict:
 
         with tempfile.TemporaryDirectory(prefix="guru-qwen2-lora-smoke-", dir=scratch_root) as tmp:
             config.save_pretrained(tmp)
-            lora.base_model_name_or_path = tmp
+            model.peft_config["default"].base_model_name_or_path = tmp
             adapter_path = Path(tmp) / "adapter-before-resume"
             model.save_pretrained(adapter_path, safe_serialization=True)
             adapter_file = adapter_path / "adapter_model.safetensors"
@@ -229,17 +271,19 @@ def run_synthetic_qwen2_lora_smoke(*, seed: int = 23, steps: int = 2) -> dict:
                         "global_step", "task_sampler_position", "task_sampler",
                         "optimizer", "scheduler", "cpu_rng_state"
                     }
+                    or type(checkpoint["global_step"]) is not int
                     or checkpoint["global_step"] != steps
                     or type(checkpoint["task_sampler_position"]) is not int
-                    or checkpoint["task_sampler_position"] != steps
                     or not isinstance(checkpoint["cpu_rng_state"], torch.Tensor)
-                    or checkpoint["cpu_rng_state"].dtype != torch.uint8):
+                    or checkpoint["cpu_rng_state"].dtype != torch.uint8
+                    or checkpoint["cpu_rng_state"].device.type != "cpu"):
                 raise RuntimeError("Qwen2 LoRA smoke checkpoint structure is invalid")
             resumed_sampler.load_state_dict(checkpoint["task_sampler"])
             if resumed_sampler.draws != checkpoint["task_sampler_position"]:
                 raise RuntimeError("Qwen2 LoRA smoke sampler cursor does not match the saved position")
             resumed_scheduler.load_state_dict(checkpoint["scheduler"])
             resumed_optimizer.load_state_dict(checkpoint["optimizer"])
+            saved_cpu_rng_state = checkpoint["cpu_rng_state"].clone()
             torch.set_rng_state(saved_logits_rng)
             resumed.eval()
             with torch.no_grad():
@@ -249,7 +293,7 @@ def run_synthetic_qwen2_lora_smoke(*, seed: int = 23, steps: int = 2) -> dict:
 
             # Restore the captured RNG after model construction and verification
             # inference, then continue one update from the saved global step.
-            torch.set_rng_state(checkpoint["cpu_rng_state"])
+            torch.set_rng_state(saved_cpu_rng_state)
             resumed_losses, resumed_task_indices = take_steps(
                 resumed, resumed_optimizer, resumed_scheduler, resumed_sampler, 1
             )
@@ -299,7 +343,7 @@ def run_synthetic_qwen2_lora_smoke(*, seed: int = 23, steps: int = 2) -> dict:
         "architecture": "random tiny Qwen2ForCausalLM config; not the selected Qwen2.5-Coder checkpoint",
         "architecture_compatibility_only": True,
         "method": "PEFT LoRA; adapter-only optimizer updates",
-        "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
+        "target_modules": list(recipe.lora.target_modules),
         "steps_before_save": steps,
         "continued_steps_after_reload": 1,
         "resume_state_restored": True,
