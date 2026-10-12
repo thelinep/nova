@@ -52,16 +52,17 @@ task rows) and an isolated evaluator before it can be admitted.
 
 The current 7B recipe trains from scratch: about 140B tokens, an estimated $15.6k
 or more of GPU time, and a trainer that does not yet fit an 80 GB GPU. A
-fine-tune is likely cheaper. The owner selected the pinned
-`Qwen/Qwen2.5-Coder-1.5B-Instruct` candidate at revision
+fine-tune is likely cheaper. The owner selected the pinned base-model
+candidate `Qwen/Qwen2.5-Coder-1.5B` (not Instruct) at revision
 `ccb64f03a691be46ba6b4e4c91f396c247aa66c7` with LoRA/SFT on 2026-10-13.
-This selects the student candidate and method only. It does not authorize a
-download or training run. Exact weight/tokenizer digests, license and derivative
+The pinned revision resolves to the base-model repository. This selects the
+student candidate and method only. It does not authorize a download or training
+run. Exact weight/tokenizer digests, license and derivative
 permissions, an admitted model intake (`../data/coding/model-intake.example.json`),
 and a compatible training path still need verification. No data-use or
 weight-distribution permission follows from selecting a base.
 
-- [x] Yes, select `Qwen/Qwen2.5-Coder-1.5B-Instruct` at the pinned revision with LoRA/SFT
+- [x] Yes, select `Qwen/Qwen2.5-Coder-1.5B` base model (not Instruct) at the pinned revision with LoRA/SFT
 - [ ] No, keep the from-scratch plan
 - Owner decision received / date: 2026-10-13
 
