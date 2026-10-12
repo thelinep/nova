@@ -11,6 +11,29 @@ provider prices are planning snapshots and must be rechecked before any launch.
 
 ### Latest local integration evidence (2026-10-12)
 
+- D4 synthetic CPU SFT resume smoke is integrated as `0bab8d2`. Independent
+  review covered tokenized-data identity, recipe budget/cadence, CPU RNG resume,
+  model-mode restoration and fail-closed DDP/MPS behavior. Its 24 smoke tests
+  pass; the random-init run remains synthetic plumbing, not a coding model.
+- I10 assembly-time provenance replay is integrated as `41892e0`; its
+  readiness-CLI input gap was independently identified and closed in `0da40aa`.
+  CLI flags now accept the item file, task/source manifests and digest pins.
+  The pins establish consistency against supplied bytes, not authenticity or
+  rights.
+- After these integrations, `PYTHONPATH=/private/tmp/guru-sentencepiece-test-deps python -m pytest tests -q`
+  returned **258 passed, 1 skipped, 5 warnings in 15.32s**. The temporary
+  SentencePiece package path was required in this environment.
+- Fresh targeted Coding Studio/App Builder Playwright run passed **13 tests in
+  52.1 seconds**. It uses simulated model responses; it is not exact-model
+  qualification.
+- Fresh full `npm test` did not reach a clean completion. The sandboxed attempt
+  hit loopback `EPERM` on server tests; the elevated attempt reached a 60-second
+  OCR timeout in `tests/image-code.test.js` and remained stalled, so it was
+  interrupted. Do not report the full Maataa suite as green.
+- Fresh `preflight c_rd` still returns
+  `{"blockers":["missing admission audit"],"ready":false,"warnings":[]}`.
+  No empty audit or synthetic admission was created.
+
 - Evaluator evidence contract: `5f24668`.
 - Item-bound quality decisions, duplicate-decision rejection and corpus teacher
   lineage binding: `d1bd36d`, `6981a0f`, `244d6f3`.
@@ -21,14 +44,12 @@ provider prices are planning snapshots and must be rechecked before any launch.
   flows through audit, preflight and assembly. Normal operation still has no
   production evaluator or rights provider, so TESTS and LICENSE remain
   UNAVAILABLE and no real admission audit has been generated.
-- The focused quality/evaluator/corpus/intake/rights suites pass **124 tests**.
-  The complete Guru suite passes **212 tests, 1 skipped, 5 warnings** when run
-  with the existing temporary SentencePiece 0.2.2 package directory on
-  `PYTHONPATH`. This uses the existing Anaconda Python environment; the
-  lightweight environment without that dependency has three tokenizer/HF test
-  failures, and a clean full-dependency venv/lock has not been verified.
-- Fresh Maataa Coding Studio and App Builder Playwright specs passed **13 tests
-  in 53.1 seconds**, using simulated model responses. The test saved
+- The earlier focused quality/evaluator/corpus/intake/rights suites passed
+  **124 tests**. The pre-integration Guru suite passed **212 tests, 1 skipped,
+  5 warnings** in the existing Anaconda environment. A clean full-dependency
+  venv/lock has not been verified.
+- The earlier Maataa Coding Studio and App Builder Playwright specs passed **13
+  tests in 53.1 seconds**, using simulated model responses. The test saved
   `/private/tmp/guru-code-playwright-demo.webm`; this is UI workflow evidence,
   not exact-model qualification or a live Guru-Code demo.
 - Fresh `preflight c_rd` still returns only `missing admission audit`; no empty
