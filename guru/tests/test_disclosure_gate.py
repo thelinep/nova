@@ -16,6 +16,7 @@ from guru.schemas.disclosure import Classification, Decision, DisclosureRequest,
 from guru.schemas.teacher_lineage import (
     AccessMethod, InputDisclosure, InputType, OutputRights, ReviewStatus, TeacherLineage,
 )
+from guru.quality.use_scope import GuruUseScopePolicy
 
 
 def teacher(**overrides: Any) -> TeacherLineage:
@@ -43,6 +44,7 @@ class DisclosureGateTests(unittest.TestCase):
     def test_each_deny_reason(self) -> None:
         cases = [
             (teacher(review_status=ReviewStatus.PENDING, reviewed_by=None, reviewed_at=None), request(), Reason.TEACHER_NOT_APPROVED),
+            (teacher(), request(), Reason.EXTERNAL_PROVIDER_TRANSMISSION_DISABLED),
             (teacher(), request(input_type=InputType.LOGS), Reason.INPUT_TYPE_NOT_ALLOWED),
             (teacher(), request(confidentiality_required=True), Reason.CONFIDENTIALITY_NO_APPROVER),
             (teacher(input_disclosure=InputDisclosure(
@@ -83,7 +85,8 @@ class DisclosureGateTests(unittest.TestCase):
                 evaluate_disclosure(request(input_type=InputType.LOGS), teacher())
             records = [json.loads(line) for line in path.read_text().splitlines()]
             self.assertEqual(len(records), 2)
-            self.assertEqual([row["decision"] for row in records], ["allow", "deny"])
+            self.assertEqual([row["decision"] for row in records], ["deny", "deny"])
+            self.assertIn(Reason.EXTERNAL_PROVIDER_TRANSMISSION_DISABLED.value, records[0]["reasons"])
             self.assertTrue(all(row["payload_digest"] == "a" * 64 for row in records))
             self.assertNotIn("raw_payload", path.read_text())
 
@@ -105,35 +108,28 @@ class DisclosureGateTests(unittest.TestCase):
         self.assertNotIn("eyJhbGciOiJub25lIn0.signature.token", result.payload)
         self.assertNotIn("private bytes", result.payload)
 
-    def test_call_never_sends_after_deny_and_logs_redaction_before_send(self) -> None:
+    def test_i7_denies_otherwise_eligible_api_teacher_without_calling_sender(self) -> None:
         with TemporaryDirectory() as directory:
             audit = Path(directory) / "disclosure.jsonl"
             send_calls: list[object] = []
             with patch("guru.disclosure.gate.AUDIT_PATH", audit), patch("guru.disclosure.call.AUDIT_PATH", audit):
                 with self.assertRaises(DisclosureDenied):
                     call_remote_teacher(
-                        teacher=teacher(), request=request(input_type=InputType.LOGS),
-                        raw_payload="secret raw", send_fn=lambda payload: send_calls.append(payload) or "ok",
+                        teacher=teacher(), request=request(), raw_payload="ordinary source code",
+                        send_fn=lambda payload: send_calls.append(payload) or "must not be sent",
                     )
-                self.assertEqual(send_calls, [])
-                response = call_remote_teacher(
-                    teacher=teacher(), request=request(classification=Classification.PII,
-                                                       payload_digest=digest_json("email person@example.org")),
-                    raw_payload="email person@example.org",
-                    send_fn=lambda payload: send_calls.append(payload) or "ok",
-                )
-            self.assertEqual(response, "ok")
-            self.assertNotIn("person@example.org", str(send_calls[-1]))
+            self.assertEqual(send_calls, [])
             rows = [json.loads(line) for line in audit.read_text().splitlines()]
-            self.assertEqual([row["event"] for row in rows], [
-                "disclosure_decision", "disclosure_decision", "disclosure_redactions",
-            ])
+            self.assertEqual([row["event"] for row in rows], ["disclosure_decision"])
+            self.assertEqual(rows[0]["decision"], "deny")
+            self.assertEqual(rows[0]["reasons"], [Reason.EXTERNAL_PROVIDER_TRANSMISSION_DISABLED.value])
 
     def test_payload_digest_mismatch_stops_before_send(self) -> None:
         with TemporaryDirectory() as directory:
             path = Path(directory) / "disclosure.jsonl"
             sent: list[object] = []
-            with patch("guru.disclosure.gate.AUDIT_PATH", path), patch("guru.disclosure.call.AUDIT_PATH", path):
+            with patch("guru.disclosure.gate.AUDIT_PATH", path), patch("guru.disclosure.call.AUDIT_PATH", path), \
+                    patch.object(GuruUseScopePolicy, "permits_external_transmission", return_value=True):
                 with self.assertRaises(PayloadDigestMismatch):
                     call_remote_teacher(teacher=teacher(), request=request(), raw_payload="different bytes",
                                         send_fn=lambda payload: sent.append(payload) or "ok")
@@ -145,7 +141,7 @@ class DisclosureGateTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             audit = Path(directory) / "gate.jsonl"
             with patch("guru.disclosure.gate.AUDIT_PATH", audit), patch("guru.disclosure.call.AUDIT_PATH", audit):
-                with self.assertRaises(RedactionRequired):
+                with self.assertRaises(DisclosureDenied):
                     call_remote_teacher(teacher=teacher(), request=request(
                         classification=Classification.PII, payload_digest=digest_json("ordinary code")),
                                         raw_payload="ordinary code", send_fn=lambda payload: "not sent")

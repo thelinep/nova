@@ -5,10 +5,12 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from guru.coding import (CodingDataError, evaluate, read_tasks, validate_plan,
                          canonical_sha256, validate_task, write_sft)
+from guru.quality.use_scope import GuruUseScopePolicy
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,6 +79,30 @@ def reviewed_release_fixture(rows, tmp, *, train_uses=("train_sft",), eval_uses=
 
 
 class CodingDataTests(unittest.TestCase):
+    def setUp(self):
+        # Most cases exercise the source-manifest validation algorithm under
+        # an explicitly permissive project policy. I7 denial has a separate
+        # regression test below and uses the real default policy.
+        policy_patch = patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True)
+        policy_patch.start()
+        self.addCleanup(policy_patch.stop)
+
+    def test_i7_policy_blocks_all_persisted_sft_profiles_before_creating_output(self):
+        rows = read_tasks(TASKS)
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+            GuruUseScopePolicy, "permits_persisted_corpus", return_value=False,
+        ):
+            output = os.path.join(tmp, "pairs.jsonl")
+            with self.assertRaisesRegex(CodingDataError, "persisted SFT export is disabled"):
+                write_sft(rows, output, profile="smoke")
+            self.assertFalse(os.path.exists(output))
+
+            manifest = os.path.join(tmp, "sources.json")
+            with self.assertRaisesRegex(CodingDataError, "persisted SFT export is disabled"):
+                write_sft(rows, output, profile="release", source_manifest=manifest)
+            self.assertFalse(os.path.exists(output))
+            self.assertFalse(os.path.exists(output + ".provenance.json"))
+
     def test_task_corpus_cannot_mix_schema_versions(self):
         rows = json.loads(json.dumps(read_tasks(TASKS)))
         rows[0]["schema_version"] = "guru-code-task-v2"

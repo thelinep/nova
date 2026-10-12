@@ -87,16 +87,24 @@ class QualityGateTests(unittest.TestCase):
                                 tier_mix={QualityTier.B: 50}, outcomes=outcomes)
         self.assertEqual(result.decision, AdmissionDecision.CONTINUE)
 
-    def test_all_decisions_are_logged_without_item_content(self) -> None:
+    def test_low_level_item_decision_does_not_write_authoritative_audit(self) -> None:
         path = Path(self.temp.name) / "quality.jsonl"
         decision = item_decision(item_id="item-7", item_digest="b" * 64, tier=QualityTier.C,
                                  auto_checks=checks(), human_review=None)
-        records = [json.loads(line) for line in path.read_text().splitlines()]
-        self.assertEqual(len(records), 1)
-        self.assertEqual(records[0]["event"], "item_admission")
-        self.assertRegex(records[0]["payload_digest"], r"^[0-9a-f]{64}$")
-        self.assertEqual(records[0]["item_digest"], decision.item_digest)
-        self.assertNotIn("prompt", path.read_text())
+        self.assertEqual(decision.decision, AdmissionDecision.ADMIT)
+        self.assertFalse(path.exists())
+
+    def test_generic_gate_audit_helper_cannot_write_item_admission(self) -> None:
+        from guru.quality import gate
+        from guru.audit_log import append_audit_line
+
+        with self.assertRaisesRegex(ValueError, "only permits batch_admission"):
+            gate._audit("item_admission", payload_digest="c" * 64,
+                        fields={"item_id": "fabricated"})
+        with self.assertRaisesRegex(ValueError, "only be written by the quality runner"):
+            append_audit_line(self.audit_path, event="item_admission",
+                              payload_digest="c" * 64, fields={"item_id": "fabricated"})
+        self.assertFalse(self.audit_path.exists())
 
     def test_item_decision_requires_lowercase_sha256_content_digest(self) -> None:
         with self.assertRaisesRegex(ValueError, "item_digest"):

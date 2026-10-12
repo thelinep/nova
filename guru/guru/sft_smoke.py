@@ -16,7 +16,7 @@ import torch
 
 from .config import GuruConfig
 from .model import GuruForCausalLM
-from .train import train
+from .train import _train_synthetic_sft_smoke
 
 
 MANIFEST_VERSION = "guru-synthetic-sft-smoke-manifest-v4"
@@ -125,14 +125,14 @@ def run_synthetic_sft_smoke(out_dir: str | os.PathLike[str], *, total_steps: int
     prior_threads = torch.get_num_threads()
     try:
         torch.set_num_threads(1)
-        train(
+        _train_synthetic_sft_smoke(
             size="nano", data_dir=str(target), out_dir=str(target),
             tokenizer_path=str(tokenizer_path), tokens=seq_len * total_steps, micro_bs=1,
             sft=str(fixture_path), eval_every=1, seed=seed, device="cpu",
             overrides={key: value for key, value in json.loads(config.to_json()).items() if key != "name"},
             tokenizer_override=ByteTokenizer(), stop_at_step=1,
         )
-        train(
+        _train_synthetic_sft_smoke(
             size="nano", data_dir=str(target), out_dir=str(target),
             tokenizer_path=str(tokenizer_path), tokens=seq_len * total_steps, micro_bs=1,
             sft=str(fixture_path), eval_every=1, seed=seed, device="cpu", resume=True,

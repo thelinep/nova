@@ -14,7 +14,6 @@ from guru.audit_log import append_audit_line
 from guru.schemas.quality import (
     AdmissionDecision, AutoCheckName, AutoCheckResult, BatchAdmission,
     HumanReviewRecord, ItemAdmission, QualityTier, REQUIRED_AUTO_CHECKS,
-    QualityAdmissionPayload, QualityCheckSummary,
 )
 
 AUDIT_PATH = Path(__file__).resolve().parents[2] / "audit" / "quality.jsonl"
@@ -42,6 +41,8 @@ def _payload_digest(value: object) -> str:
 
 
 def _audit(event: str, *, payload_digest: str, fields: dict) -> None:
+    if event != "batch_admission":
+        raise QualityInputError("quality gate audit helper only permits batch_admission")
     append_audit_line(AUDIT_PATH, event=event, payload_digest=payload_digest, fields=fields)
 
 
@@ -113,27 +114,12 @@ def item_decision(*, item_id: str, item_digest: str, tier: QualityTier,
         decision, reasons = AdmissionDecision.REJECT, ["tier_c_review_rejected"]
     else:
         decision, reasons = AdmissionDecision.ADMIT, ["tier_c_auto_admit"]
-    result = ItemAdmission(
+    return ItemAdmission(
         item_id=item_id, tier=tier, auto_checks=checks, human_review=review,
         decision=decision, reason_codes=reasons,
         item_digest=item_digest,
         decided_at=datetime.now(timezone.utc),
     )
-    payload = QualityAdmissionPayload(
-        item_id=item_id, item_digest=item_digest, tier=tier, decision=decision,
-        reason_codes=reasons, human_review=review,
-        checks=[QualityCheckSummary(name=check.name,
-                                    status="PASS" if check.passed else "FAIL",
-                                    evidence_digest=check.evidence_digest,
-                                    item_digest=check.item_digest,
-                                    tool_version=check.tool_version,
-                                    policy_version=check.policy_version)
-                for check in checks],
-    )
-    payload_dict = payload.model_dump(mode="json")
-    digest = _payload_digest(payload_dict)
-    _audit("item_admission", payload_digest=digest, fields=payload_dict)
-    return result
 
 
 def _upper_confidence_bound(failures: int, sample_count: int, confidence_level: float) -> float:

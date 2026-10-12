@@ -7,8 +7,8 @@
   prepare    build + tokenizer + encode
   train      train a size (nano, mini, small, base-1b, 7b)
   teach      instruction-tune a trained model on question/answer pairs (JSONL)
-  code-data  validate experimental coding tasks and export the train split for teach
-  code-eval  score JSON proposal outputs against held-out coding fixtures
+  code-data  disabled: persistent transformed-data export is denied by I7
+  code-eval  disabled: source rights and qualified local evaluator are required
   ask        let a trained model continue text or answer
   check      run Guru-Panini on a piece of text (script and Ashtadhyayi citations)
   sutra      show Ashtadhyayi sutras by number, or find them by words
@@ -42,14 +42,14 @@ def main(argv=None):
     tr.add_argument("--benchmark-steps", type=int, help="run exactly N synthetic optimizer steps; writes no checkpoint and proves no training capacity")
     tr.add_argument("--benchmark-seq-len", type=int, help="synthetic benchmark sequence length (at most the selected model context)")
     tr.add_argument("--benchmark-accumulation", type=int, default=1, help="synthetic benchmark microbatches per optimizer step")
-    te = sub.add_parser("teach"); te.add_argument("--size", default="nano"); te.add_argument("--pairs", default=""); te.add_argument("--panini", action="store_true", help="add question/answer pairs built from the Ashtadhyayi and Dhatupatha"); te.add_argument("--minutes", type=float, default=20); te.add_argument("--device")
-    cd = sub.add_parser("code-data", help="validate Guru-Code tasks and write Guru teach-compatible training pairs")
+    te = sub.add_parser("teach", help="disabled by I7: persistent SFT data is not permitted"); te.add_argument("--size", default="nano"); te.add_argument("--pairs", default=""); te.add_argument("--panini", action="store_true", help="add question/answer pairs built from the Ashtadhyayi and Dhatupatha"); te.add_argument("--minutes", type=float, default=20); te.add_argument("--device")
+    cd = sub.add_parser("code-data", help="disabled by I7: transformed-data export may not be retained")
     cd.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
     cd.add_argument("--sft-out", default=os.path.join(OUT, "guru-code-sft.jsonl"))
     cd.add_argument("--profile", choices=("smoke", "release"), default="smoke",
                     help="smoke accepts only marked synthetic fixtures; release requires reviewed source evidence")
     cd.add_argument("--source-manifest", default="", help="reviewed source manifest required by the release profile")
-    ce = sub.add_parser("code-eval", help="score held-out Guru-Code proposal JSONL (does not execute code)")
+    ce = sub.add_parser("code-eval", help="disabled by I7 until source rights and a local evaluator are qualified")
     ce.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
     ce.add_argument("--predictions", required=True, help="JSONL records with id and output (output is a JSON string)")
     ce.add_argument("--out", default="", help="optional JSON report path")
@@ -62,6 +62,26 @@ def main(argv=None):
     ex = sub.add_parser("export"); ex.add_argument("--size", default="nano"); ex.add_argument("--instruct", action="store_true"); ex.add_argument("--ollama", default=""); ex.add_argument("--no-gguf", action="store_true")
     sub.add_parser("sizes")
     args = ap.parse_args(argv)
+
+    if args.cmd == "code-data":
+        sys.exit(
+            "code-data is disabled by I7: it writes transformed training examples to persistent storage; "
+            "use only the fixed temporary synthetic CPU smoke path"
+        )
+    if args.cmd == "code-eval":
+        sys.exit(
+            "code-eval is disabled by I7: evaluation requires approved source rights and a qualified local evaluator"
+        )
+    if args.cmd in {"corpus", "build", "tokenizer", "encode", "prepare"}:
+        sys.exit(
+            "persistent corpus/tokenizer transforms are disabled by I7: transformed data may be ephemeral only; "
+            "the Guru corpus pipeline is blocked until an ephemeral pipeline exists"
+        )
+    if args.cmd == "train" and args.benchmark_steps is None:
+        sys.exit(
+            "training from persistent train.bin/val.bin is disabled by I7: transformed data is ephemeral-only; "
+            "only the synthetic benchmark and fixed synthetic CPU SFT smoke are enabled"
+        )
 
     from .config import PRESETS, preset
     vocab_for = lambda size, v: v or PRESETS[size]["vocab_size"]
@@ -177,30 +197,10 @@ def main(argv=None):
               benchmark_steps=args.benchmark_steps, benchmark_seq_len=args.benchmark_seq_len,
               benchmark_accumulation=args.benchmark_accumulation); return
     if args.cmd == "teach":
-        from .train import train
-        base = os.path.join(out_for(args.size), "best.pt")
-        if not os.path.exists(base):
-            sys.exit(f"Train {args.size} first: {base} is missing.")
-        pairs = args.pairs
-        if args.panini:
-            from .sutra import teach_pairs
-            pairs = os.path.join(DATA, "teach-combined.jsonl")
-            with open(pairs, "w", encoding="utf-8") as f:
-                if args.pairs:
-                    f.write(open(args.pairs, encoding="utf-8").read().rstrip("\n") + "\n")
-                for r in teach_pairs():
-                    f.write(json.dumps(r, ensure_ascii=False) + "\n")
-                from . import prakriya
-                if prakriya.available():
-                    extra = prakriya.teach_pairs()
-                    for r in extra:
-                        f.write(json.dumps(r, ensure_ascii=False) + "\n")
-                    print(f"Added {len(extra):,} verified derivation pairs (Maataa AAI).")
-                else:
-                    print("Tip: pip install vidyut adds verified derivation pairs (Maataa AAI).")
-        if not pairs:
-            sys.exit("Give --pairs FILE, --panini, or both.")
-        train(args.size, DATA, out_for(args.size, True), tok_path, minutes=args.minutes, sft=pairs, init_from=base, device=args.device, eval_every=50); return
+        sys.exit(
+            "SFT training is disabled by I7: transformed data is ephemeral-only. "
+            "The fixed synthetic CPU smoke path is for trainer plumbing only."
+        )
     if args.cmd == "ask":
         import torch
         from .config import GuruConfig

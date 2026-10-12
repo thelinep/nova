@@ -1,17 +1,20 @@
 """Mock-only tests for evaluator policy and lifecycle (not isolation tests)."""
 import os
 import sys
+from io import BytesIO
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from guru.code_evaluator import (
     DockerCliEngine, EngineResult, EvaluationError, EvaluationPolicy,
-    evaluate, _docker_options,
+    evaluate, _docker_options, _evaluate_with_engine,
 )
 
 
 IMAGE = "registry.example.invalid/guru-runner@sha256:" + "a" * 64
 CONTAINER_ID = "b" * 64
+LOCAL_ENDPOINT = "unix:///var/run/docker.sock"
 
 
 class FakeEngine:
@@ -68,6 +71,8 @@ class EvaluationPolicyTests(unittest.TestCase):
         self.assertIn("--memory-swap", args)
         self.assertIn("--pids-limit", args)
         self.assertIn("--tmpfs", args)
+        self.assertIn("--log-driver", args)
+        self.assertIn("none", args)
         self.assertFalse(any(x in {"--mount", "-v", "--volume", "--env", "-e", "--env-file", "--privileged", "--device"} for x in args))
         self.assertFalse(any("secret" in x.lower() or "token" in x.lower() for x in args))
 
@@ -77,9 +82,66 @@ class EvaluationPolicyTests(unittest.TestCase):
 
 
 class EvaluationLifecycleTests(unittest.TestCase):
+    def test_default_engine_requires_an_explicit_local_endpoint(self):
+        with self.assertRaisesRegex(EvaluationError, "explicit local Docker endpoint"):
+            evaluate(b"payload", policy())
+
+    def test_public_evaluator_does_not_accept_engine_injection(self):
+        fake = FakeEngine()
+        with self.assertRaises(TypeError):
+            evaluate(b"payload", policy(), fake)
+        self.assertEqual(fake.created, [])
+
+    def test_cli_argv_pins_create_start_and_remove_to_local_endpoint(self):
+        class FakeProcess:
+            def __init__(self, stdout=b""):
+                self.stdin = BytesIO()
+                self.stdout = BytesIO(stdout)
+                self.stderr = BytesIO()
+                self.returncode = 0
+
+            def wait(self, timeout=None):
+                return self.returncode
+
+            def poll(self):
+                return self.returncode
+
+            def kill(self):
+                self.returncode = -9
+
+        engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT)
+        processes = [
+            FakeProcess((CONTAINER_ID + "\n").encode()),
+            FakeProcess(),
+            FakeProcess(),
+        ]
+        with patch.dict(os.environ, {
+            "DOCKER_HOST": "tcp://remote.example:2376",
+            "DOCKER_CONTEXT": "remote-context",
+        }), patch("guru.code_evaluator.subprocess.Popen", side_effect=processes) as popen:
+            self.assertEqual(engine.create(policy(), "guru-eval-" + "c" * 32), CONTAINER_ID)
+            engine.start(CONTAINER_ID, b"payload", policy())
+            engine.remove(CONTAINER_ID, policy())
+
+        argv = [call.args[0] for call in popen.call_args_list]
+        self.assertEqual(len(argv), 3)
+        for command in argv:
+            self.assertEqual(command[0:3], ["docker", "--host", LOCAL_ENDPOINT])
+        self.assertEqual(argv[0][3], "create")
+        self.assertEqual(argv[1][3:6], ["start", "--attach", "--interactive"])
+        self.assertEqual(argv[2][3:6], ["rm", "--force", "--volumes"])
+        for call in popen.call_args_list:
+            self.assertNotIn("DOCKER_HOST", call.kwargs["env"])
+            self.assertNotIn("DOCKER_CONTEXT", call.kwargs["env"])
+
+    def test_engine_rejects_non_local_endpoint(self):
+        for endpoint in ("tcp://remote.example:2376", "ssh://host", "unix://"):
+            with self.subTest(endpoint=endpoint), self.assertRaises(ValueError):
+                DockerCliEngine(endpoint=endpoint)
+
     def test_happy_path_records_hash_and_cleanup(self):
         fake = FakeEngine(EngineResult(7, b"bounded stdout", b"diagnostic"))
-        evidence = evaluate(b"opaque request", policy(), fake)
+        evidence = _evaluate_with_engine(b"opaque request", policy(), fake)
         self.assertEqual(evidence.exit_code, 7)
         self.assertEqual(len(evidence.input_sha256), 64)
         self.assertTrue(evidence.container_removed)
@@ -89,23 +151,23 @@ class EvaluationLifecycleTests(unittest.TestCase):
     def test_removes_container_after_start_failure(self):
         fake = FakeEngine(fail_start=True)
         with self.assertRaisesRegex(RuntimeError, "mock start failure"):
-            evaluate(b"payload", policy(), fake)
+            _evaluate_with_engine(b"payload", policy(), fake)
         self.assertEqual(fake.removed, [CONTAINER_ID])
 
     def test_cleanup_failure_fails_closed(self):
         fake = FakeEngine(fail_remove=True)
         with self.assertRaisesRegex(RuntimeError, "mock cleanup failure"):
-            evaluate(b"payload", policy(), fake)
+            _evaluate_with_engine(b"payload", policy(), fake)
 
     def test_rejects_oversized_input_before_creating_container(self):
         fake = FakeEngine()
         with self.assertRaisesRegex(EvaluationError, "input exceeds"):
-            evaluate(b"12345", policy(input_limit_bytes=4), fake)
+            _evaluate_with_engine(b"12345", policy(input_limit_bytes=4), fake)
         self.assertEqual(fake.created, [])
 
     def test_bounds_combined_evidence_output(self):
         fake = FakeEngine(EngineResult(0, b"a" * 1200, b"b" * 100, output_limited=True))
-        evidence = evaluate(b"x", policy(output_limit_bytes=1024), fake)
+        evidence = _evaluate_with_engine(b"x", policy(output_limit_bytes=1024), fake)
         self.assertLessEqual(len(evidence.stdout) + len(evidence.stderr), 1024)
         self.assertTrue(evidence.output_limited)
         self.assertTrue(evidence.stdout_truncated)

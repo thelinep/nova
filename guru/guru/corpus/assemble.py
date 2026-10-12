@@ -14,6 +14,7 @@ from guru.schemas.corpus_item import CorpusItem
 from guru.schemas.teacher_lineage import TeacherLineage
 from guru.schemas.quality import AutoCheckName, QualityAdmissionPayload
 from guru.teacher.intake import load_registry, validate_teacher
+from guru.quality.use_scope import GURU_USE_SCOPE_POLICY
 
 REPO_GURU_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TASK_MANIFEST = REPO_GURU_ROOT / "data" / "coding" / "tasks.jsonl"
@@ -235,6 +236,10 @@ def preflight(*, kind: CorpusKind | str,
         blockers.append("admission audit has no decisions")
     admitted = [row for row in audit_rows if row.get("event") in ("item_admission", None)
                 and row.get("decision") in ADMITTED_DECISIONS]
+    if admitted and not GURU_USE_SCOPE_POLICY.permits_persisted_corpus():
+        blockers.append(
+            "I7 policy allows ephemeral transformed data only; persistent corpus assembly is disabled"
+        )
     blockers.extend(_provenance_replay_blockers(
         admitted_rows=admitted, items=items, task_manifest=task_source,
         task_manifest_digest=task_manifest_digest, source_manifest=source_manifest,

@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+from urllib.parse import urlsplit
 
 import torch
 
@@ -80,8 +81,9 @@ Part of **Guru**, MAATAA's own language model family, trained from scratch (no p
 {sources or 'See data/SOURCES.md.'}
 
 ## Licence
-Code: Apache-2.0. Weights: chosen by the owner. The training text includes CC BY-SA 4.0 material, so keep the attribution above;
-whether share-alike terms reach trained weights is not settled law, so check before publishing the weights.
+Code: Apache-2.0. Guru-Code checkpoints and exports are private local artifacts;
+distribution is disabled by the owner-selected I7 use-scope policy. A local format
+conversion does not grant permission to share the resulting weights.
 
 ## Limits
 A small model trained on a modest corpus: it writes fluent-looking text but knows little and makes things up. Do not rely on its facts.
@@ -119,10 +121,66 @@ def modelfile(gguf_name, cfg: GuruConfig):
     return "\n".join(lines) + "\n"
 
 
+def _local_ollama_host(configured_host: str | None) -> str:
+    """Return a normalized loopback Ollama URL or reject a remote destination.
+
+    Ollama defaults OLLAMA_HOST to 127.0.0.1:11434. It also accepts host:port
+    without a scheme, so parse that form using the same local default. Only
+    localhost names and literal loopback IP addresses are allowed here.
+    """
+    import ipaddress
+
+    raw = (configured_host or "").strip()
+    if not raw:
+        return "http://127.0.0.1:11434"
+
+    has_scheme = "://" in raw
+    parsed = urlsplit(raw if has_scheme else "//" + raw)
+    scheme = parsed.scheme.lower() if has_scheme else "http"
+    if scheme not in {"http", "https"}:
+        raise ValueError("Ollama destination must use a local HTTP endpoint")
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError("Ollama destination must not include credentials")
+    if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        raise ValueError("Ollama destination must be a local server origin without a path")
+    try:
+        host = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("Ollama destination has an invalid host or port") from exc
+    if not host:
+        raise ValueError("Ollama destination must name a local host")
+
+    normalized_host = host.rstrip(".").lower()
+    if normalized_host != "localhost":
+        try:
+            address = ipaddress.ip_address(normalized_host)
+        except ValueError as exc:
+            raise ValueError("Ollama destination must be localhost or a loopback IP address") from exc
+        if not address.is_loopback:
+            raise ValueError("remote Ollama destinations are disabled by the I7 private-local policy")
+        normalized_host = f"[{address.compressed}]" if address.version == 6 else address.compressed
+
+    if port is None:
+        if has_scheme:
+            port = 80 if scheme == "http" else 443
+        else:
+            port = 11434
+    if not 1 <= port <= 65535:
+        raise ValueError("Ollama destination port must be between 1 and 65535")
+    return f"{scheme}://{normalized_host}:{port}"
+
+
 def to_ollama(gguf_file, name, cfg: GuruConfig, ollama="ollama"):
+    # Validate before creating or changing the Modelfile. Pass an explicit,
+    # normalized loopback target so the child process cannot inherit a remote
+    # OLLAMA_HOST configuration.
+    local_host = _local_ollama_host(os.environ.get("OLLAMA_HOST"))
+    child_env = os.environ.copy()
+    child_env["OLLAMA_HOST"] = local_host
     folder = os.path.dirname(os.path.abspath(gguf_file))
     mf = os.path.join(folder, "Modelfile")
     with open(mf, "w", encoding="utf-8") as f:
         f.write(modelfile(os.path.basename(gguf_file), cfg))
-    subprocess.run([ollama, "create", name, "-f", mf], check=True, cwd=folder)
+    subprocess.run([ollama, "create", name, "-f", mf], check=True, cwd=folder, env=child_env)
     return name

@@ -16,6 +16,7 @@ class Decision(str, Enum):
 
 class Reason(str, Enum):
     TEACHER_NOT_APPROVED = "teacher_not_approved"
+    EXTERNAL_PROVIDER_TRANSMISSION_DISABLED = "external_provider_transmission_disabled"
     INPUT_TYPE_NOT_ALLOWED = "input_type_not_allowed"
     CONFIDENTIALITY_NO_APPROVER = "confidentiality_no_approver"
     PROVIDER_TRAINS_ON_INPUTS = "provider_trains_on_inputs"

@@ -320,13 +320,46 @@ def sample(model, tok, prompt, device, n=48, eos_id=None):
     return tok.decode(out[0].tolist())
 
 
-def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minutes=None, tokens=None, micro_bs=None,
+_SYNTHETIC_SMOKE_AUTHORIZATION = object()
+
+
+def _validate_synthetic_smoke_scope(*, sft, data_dir, out_dir, tokenizer_path, device, init_from):
+    if device != "cpu":
+        raise ValueError("synthetic SFT smoke is CPU-only")
+    if init_from is not None:
+        raise ValueError("synthetic SFT smoke does not accept an initial checkpoint")
+    for label, path in (("SFT fixture", sft), ("data directory", data_dir),
+                        ("output directory", out_dir), ("tokenizer", tokenizer_path)):
+        if not path or not _inside_system_temp(path):
+            raise ValueError(f"synthetic SFT smoke {label} must be below the system temporary directory")
+    if not os.path.isfile(sft) or os.path.islink(sft) or _read_bytes(sft) != _canonical_synthetic_smoke_sft():
+        raise ValueError("synthetic SFT smoke accepts only its fixed authored fixture")
+
+
+def _read_bytes(path: str | os.PathLike[str]) -> bytes:
+    with open(path, "rb") as stream:
+        return stream.read()
+
+
+def _train_impl(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minutes=None, tokens=None, micro_bs=None,
           resume=False, device=None, sft=None, init_from=None, eval_every=200, seed=1337, compile_model=False,
           overrides=None, benchmark_steps=None, benchmark_seq_len=None, benchmark_accumulation=1,
-          tokenizer_override=None, stop_at_step=None):
+          tokenizer_override=None, stop_at_step=None, _synthetic_smoke_authorization=None):
+    if sft is not None:
+        if _synthetic_smoke_authorization is not _SYNTHETIC_SMOKE_AUTHORIZATION:
+            raise ValueError("SFT training is disabled by I7: transformed data is ephemeral-only")
+        _validate_synthetic_smoke_scope(
+            sft=sft, data_dir=data_dir, out_dir=out_dir, tokenizer_path=tokenizer_path,
+            device=device, init_from=init_from,
+        )
     if stop_at_step is not None and (not isinstance(stop_at_step, int) or isinstance(stop_at_step, bool) or stop_at_step < 1):
         raise ValueError("stop_at_step must be a positive integer")
     benchmark = benchmark_steps is not None
+    if not benchmark and sft is None:
+        raise ValueError(
+            "training from persistent train.bin/val.bin is disabled by I7: transformed data is ephemeral-only; "
+            "only the synthetic benchmark and fixed synthetic CPU SFT smoke are enabled"
+        )
     if benchmark:
         if not isinstance(benchmark_steps, int) or isinstance(benchmark_steps, bool) or benchmark_steps < 1:
             raise ValueError("benchmark_steps must be a positive integer")
@@ -364,7 +397,9 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
     ckpt = None
     if init_from or resume:
         src = init_from or os.path.join(out_dir, "last.pt")
-        ckpt = torch.load(src, map_location="cpu", weights_only=False)
+        # Checkpoints are untrusted files. The approved smoke path stores only
+        # tensors and primitive containers, so do not permit pickle globals.
+        ckpt = torch.load(src, map_location="cpu", weights_only=True)
         cfg = GuruConfig.from_dict(ckpt["config"])
     else:
         preset_options = dict(overrides or {})
@@ -552,3 +587,70 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
     if ddp:
         dist.destroy_process_group()
     return out_dir
+
+
+_SYNTHETIC_SMOKE_ROWS = (
+    {"prompt": "Write add(a, b).", "answer": "def add(a, b):\n    return a + b"},
+    {"prompt": "Write a zero function.", "answer": "def zero():\n    return 0"},
+)
+
+
+def _canonical_synthetic_smoke_sft() -> bytes:
+    return b"".join(
+        (json.dumps(row, sort_keys=True, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+        for row in _SYNTHETIC_SMOKE_ROWS
+    )
+
+
+def _inside_system_temp(path: str | os.PathLike[str]) -> bool:
+    import tempfile
+    root = os.path.realpath(tempfile.gettempdir())
+    resolved = os.path.realpath(os.fspath(path))
+    return resolved != root and os.path.commonpath((root, resolved)) == root
+
+
+def _train_synthetic_sft_smoke(*, sft: str, data_dir: str, out_dir: str, tokenizer_path: str,
+                               device: str, **kwargs):
+    """Private-use training route for the fixed synthetic CPU smoke fixture only."""
+    init_from = kwargs.get("init_from")
+    _validate_synthetic_smoke_scope(
+        sft=sft, data_dir=data_dir, out_dir=out_dir, tokenizer_path=tokenizer_path,
+        device=device, init_from=init_from,
+    )
+    if os.path.islink(out_dir) or not os.path.isdir(out_dir):
+        raise ValueError("synthetic SFT smoke output must be an existing owned directory, not a symlink")
+    expected_inputs = {"synthetic-sft.jsonl", "synthetic-byte-tokenizer.json"}
+    if os.path.basename(sft) != "synthetic-sft.jsonl" or os.path.basename(tokenizer_path) != "synthetic-byte-tokenizer.json":
+        raise ValueError("synthetic SFT smoke requires the standard fixture and tokenizer paths")
+    expected_entries = set(expected_inputs)
+    if kwargs.get("resume"):
+        expected_entries.update({"config.json", "log.jsonl", "best.pt", "last.pt", "summary.json"})
+    actual_entries = set(os.listdir(out_dir))
+    if actual_entries != expected_entries:
+        raise ValueError("synthetic SFT smoke output directory is not fresh or is not owned by this smoke run")
+    if any(os.path.islink(os.path.join(out_dir, name)) or not os.path.isfile(os.path.join(out_dir, name))
+           for name in actual_entries):
+        raise ValueError("synthetic SFT smoke output directory contains an unexpected file type")
+    return _train_impl(data_dir=data_dir, out_dir=out_dir, tokenizer_path=tokenizer_path,
+                       device=device, sft=sft,
+                       _synthetic_smoke_authorization=_SYNTHETIC_SMOKE_AUTHORIZATION, **kwargs)
+
+
+def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minutes=None, tokens=None, micro_bs=None,
+          resume=False, device=None, sft=None, init_from=None, eval_every=200, seed=1337, compile_model=False,
+          overrides=None, benchmark_steps=None, benchmark_seq_len=None, benchmark_accumulation=1,
+          tokenizer_override=None, stop_at_step=None):
+    """Train Guru. Persistent SFT is disabled by the owner-selected I7 scope."""
+    if sft is not None:
+        raise ValueError(
+            "SFT training is disabled by I7: transformed data is ephemeral-only; "
+            "use the fixed synthetic CPU smoke helper for trainer plumbing only"
+        )
+    return _train_impl(
+        size=size, data_dir=data_dir, out_dir=out_dir, tokenizer_path=tokenizer_path,
+        minutes=minutes, tokens=tokens, micro_bs=micro_bs, resume=resume, device=device,
+        sft=None, init_from=init_from, eval_every=eval_every, seed=seed,
+        compile_model=compile_model, overrides=overrides, benchmark_steps=benchmark_steps,
+        benchmark_seq_len=benchmark_seq_len, benchmark_accumulation=benchmark_accumulation,
+        tokenizer_override=tokenizer_override, stop_at_step=stop_at_step,
+    )

@@ -88,6 +88,7 @@ class EvaluatorQualificationEvidence(StrictModel):
 
     schema_version: Literal["guru-evaluator-qualification-v1"]
     qualification_id: str = Field(min_length=1)
+    execution_scope: Literal["local"]
     config_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     image_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     report_digest: str = Field(pattern=r"^[0-9a-f]{64}$")

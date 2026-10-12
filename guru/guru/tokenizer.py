@@ -17,6 +17,7 @@ import unicodedata
 import sentencepiece as spm
 
 from . import lipi
+from .quality.use_scope import GURU_USE_SCOPE_POLICY
 
 UNK, BOS, EOS = 0, 1, 2
 
@@ -45,6 +46,10 @@ def load_dhatus(path: str):
 
 def train(corpus_path: str, out_prefix: str, vocab_size: int, dhatus_path: str = None, max_sentences: int = 4_000_000, threads: int = None):
     """Trains <out_prefix>.model / .vocab. Returns the list of dhatu pieces that were kept."""
+    if not GURU_USE_SCOPE_POLICY.permits_transformed_data_retention():
+        raise PermissionError(
+            "persistent tokenizer training is disabled by I7; transformed data retention is ephemeral only"
+        )
     dhatus = load_dhatus(dhatus_path)
     os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
     spm.SentencePieceTrainer.train(

@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -26,6 +27,7 @@ from guru.schemas.teacher_lineage import (
     AccessMethod, InputDisclosure, InputType, OutputRights, ReviewStatus, TeacherLineage,
 )
 from guru.schemas.quality import AdmissionDecision, AutoCheckName, QualityTier, REQUIRED_AUTO_CHECKS
+from guru.quality.use_scope import GuruUseScopePolicy
 
 from guru.evaluator_evidence import _ZERO_DIGEST, seal_case
 
@@ -178,6 +180,7 @@ def _evaluator_inputs(item: CorpusItem, *, statuses=("pass", "pass"), **override
     )
     qualification = EvaluatorQualificationEvidence(
         schema_version="guru-evaluator-qualification-v1", qualification_id="synthetic-qualification",
+        execution_scope="local",
         config_digest=config_digest, image_digest=image_digest, report_digest="f" * 64,
         qualified_at=datetime(2026, 10, 12, tzinfo=timezone.utc),
     )
@@ -210,7 +213,7 @@ def _approved_teacher(*, status=ReviewStatus.APPROVED) -> TeacherLineage:
     )
 
 
-def _rights_inputs(item: CorpusItem, *, allow_training=True, allow_retention=True,
+def _rights_inputs(item: CorpusItem, *, allow_training=True, allow_evaluation=True, allow_retention=True,
                    artifact_digest=None, approved_artifact_digest=None, manifest_digest="9" * 64,
                    trusted_manifest_digest="9" * 64, teacher_registry_digest="8" * 64,
                    trusted_teacher_registry_digest="8" * 64,
@@ -221,7 +224,7 @@ def _rights_inputs(item: CorpusItem, *, allow_training=True, allow_retention=Tru
         artifact_sha256=artifact_digest or item.source_digest,
         provenance_statement="synthetic fixture only", authority_basis=RightsAuthorityBasis.OWNER_ATTESTATION,
         authority_description="synthetic test approval", rights=SourceRights(
-            allow_training=allow_training, allow_evaluation=True,
+            allow_training=allow_training, allow_evaluation=allow_evaluation,
             allow_transformed_data_retention=allow_retention,
             allow_provider_transmission=False, allow_weight_distribution=False),
         reviewer="synthetic-owner", decided_at=datetime(2026, 10, 12, tzinfo=timezone.utc),
@@ -574,7 +577,7 @@ def test_runner_marks_missing_required_inputs_unavailable():
     assert len(report.records) == len(checks.REQUIRED_AUTO_CHECKS)
 
 
-def test_complete_measured_failure_converts_and_quality_gate_quarantines(tmp_path, monkeypatch):
+def test_low_level_decision_quarantines_but_does_not_write_audit(tmp_path, monkeypatch):
     from guru.quality import gate
 
     # Synthetic complete evidence isolates conversion behavior; it is not a
@@ -608,9 +611,7 @@ def test_complete_measured_failure_converts_and_quality_gate_quarantines(tmp_pat
     )
     assert decision.decision is AdmissionDecision.QUARANTINE
     assert "failed_auto_check:syntax" in decision.reason_codes
-    audit_rows = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]
-    assert len(audit_rows) == 1
-    assert audit_rows[0]["decision"] == AdmissionDecision.QUARANTINE.value
+    assert not audit_path.exists()
 
 
 def test_mixed_item_run_is_rejected_before_any_audit_write(tmp_path, monkeypatch):
@@ -647,7 +648,7 @@ def test_orchestrator_without_typed_providers_writes_no_decision_or_audit(tmp_pa
     assert {r.name: r.status for r in report.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
     assert {r.name: r.status for r in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
     with pytest.raises(checks.IncompleteCheckRunError):
-        monkeypatch.setattr(runner, "item_decision", lambda **kwargs: pytest.fail("decision must not run"))
+        monkeypatch.setattr(runner.gate, "item_decision", lambda **kwargs: pytest.fail("decision must not run"))
         runner.run_item_quality(_item(), tier=QualityTier.C, corpus_items=[_item()],
                                 group_assignments={"family-1": "train"})
     assert not audit_path.exists()
@@ -665,7 +666,8 @@ def test_untyped_request_time_evidence_cannot_self_pin_tests_or_license():
 def test_fake_provider_aggregates_complete_pinned_case_set_pass_and_fail(tmp_path):
     item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
     passed, _ = _runner_report(tmp_path / "pass", raw_item=item.model_dump(mode="json"),
-                               evaluator_provider=_FakeEvaluatorProvider(_evaluator_inputs(item)))
+                               evaluator_provider=_FakeEvaluatorProvider(_evaluator_inputs(item)),
+                               rights_provider=_FakeRightsProvider(_rights_inputs(item)))
     statuses = {record.name: record.status for record in passed.records}
     assert statuses[AutoCheckName.TESTS] is checks.CheckRunStatus.PASS
 
@@ -673,8 +675,31 @@ def test_fake_provider_aggregates_complete_pinned_case_set_pass_and_fail(tmp_pat
     failed_root.mkdir()
     failed_inputs = _evaluator_inputs(item, statuses=("pass", "fail"))
     failed, _ = _runner_report(failed_root, raw_item=item.model_dump(mode="json"),
-                               evaluator_provider=_FakeEvaluatorProvider(failed_inputs))
+                               evaluator_provider=_FakeEvaluatorProvider(failed_inputs),
+                               rights_provider=_FakeRightsProvider(_rights_inputs(item)))
     assert {record.name: record.status for record in failed.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.FAIL
+
+
+def test_i7_prevents_license_clear_when_project_policy_denies_persistence(tmp_path):
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    report, _ = _runner_report(
+        tmp_path, raw_item=item.model_dump(mode="json"),
+        rights_provider=_FakeRightsProvider(_rights_inputs(item)),
+    )
+    license_record = next(record for record in report.records if record.name is AutoCheckName.LICENSE)
+    assert license_record.status is checks.CheckRunStatus.FAIL
+
+
+def test_i7_evaluation_requires_explicit_source_permission(tmp_path):
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    report, _ = _runner_report(
+        tmp_path, raw_item=item.model_dump(mode="json"),
+        evaluator_provider=_FakeEvaluatorProvider(_evaluator_inputs(item)),
+        rights_provider=_FakeRightsProvider(_rights_inputs(item, allow_evaluation=False)),
+    )
+    record = next(record for record in report.records if record.name is AutoCheckName.TESTS)
+    assert record.status is checks.CheckRunStatus.UNAVAILABLE
+    assert record.reason_code == "source rights do not explicitly permit local evaluation"
 
 
 @pytest.mark.parametrize("override", [
@@ -715,7 +740,8 @@ def test_case_item_candidate_image_config_and_suite_mismatches_do_not_pass(tmp_p
     corrupted_set = case_set.model_copy(update={"cases": cases})
     report, _ = _runner_report(
         tmp_path, raw_item=item.model_dump(mode="json"),
-        evaluator_provider=_FakeEvaluatorProvider(replace(inputs, case_set=corrupted_set)))
+        evaluator_provider=_FakeEvaluatorProvider(replace(inputs, case_set=corrupted_set)),
+        rights_provider=_FakeRightsProvider(_rights_inputs(item)))
     assert {record.name: record.status for record in report.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
 
 
@@ -724,9 +750,10 @@ def test_rights_provider_requires_exact_manifest_artifact_and_approved_teacher(t
         target_source="teacher", teacher_lineage_id="teacher-1",
         source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
     approved = _FakeRightsProvider(_rights_inputs(teacher_item))
-    report, _ = _runner_report(tmp_path, raw_item=teacher_item.model_dump(mode="json"),
-                               rights_provider=approved)
-    assert {record.name: record.status for record in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.PASS
+    with patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True):
+        report, _ = _runner_report(tmp_path, raw_item=teacher_item.model_dump(mode="json"),
+                                   rights_provider=approved)
+        assert {record.name: record.status for record in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.PASS
 
     failures = [
         _rights_inputs(teacher_item, artifact_digest="0" * 64),
@@ -735,11 +762,12 @@ def test_rights_provider_requires_exact_manifest_artifact_and_approved_teacher(t
         _rights_inputs(teacher_item, trusted_teacher_registry_digest="0" * 64),
         _rights_inputs(teacher_item, teacher_status=ReviewStatus.PENDING),
     ]
-    for inputs in failures:
-        failed_report, _ = _runner_report(
-            tmp_path, raw_item=teacher_item.model_dump(mode="json"),
-            rights_provider=_FakeRightsProvider(inputs))
-        assert {record.name: record.status for record in failed_report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
+    with patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True):
+        for inputs in failures:
+            failed_report, _ = _runner_report(
+                tmp_path, raw_item=teacher_item.model_dump(mode="json"),
+                rights_provider=_FakeRightsProvider(inputs))
+            assert {record.name: record.status for record in failed_report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
 
 
 @pytest.mark.parametrize("allow_training,allow_retention", [(False, True), (True, False)])
@@ -758,7 +786,7 @@ def test_runner_with_partial_provider_evidence_never_decides_or_audits(tmp_path,
     monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
     item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
     provider = _FakeEvaluatorProvider(_evaluator_inputs(item))
-    monkeypatch.setattr(runner, "item_decision", lambda **kwargs: pytest.fail("incomplete run decided"))
+    monkeypatch.setattr(runner.gate, "item_decision", lambda **kwargs: pytest.fail("incomplete run decided"))
     root = tmp_path / "partial"
     root.mkdir()
     manifest_path, manifest_digest, _ = _source_manifest(root)
@@ -784,6 +812,11 @@ def test_complete_quality_run_audit_replays_through_preflight_and_assembly(
         CorpusAssemblyBlocked, assemble, preflight,
     )
     from guru.quality import gate, runner
+
+    # This integration test exercises the full admitted-audit path under an
+    # explicitly permissive project policy. Dedicated I7 tests cover the
+    # default deny for persistent transformed data.
+    monkeypatch.setattr(GuruUseScopePolicy, "permits_persisted_corpus", lambda _self: True)
 
     input_root = tmp_path / "inputs"
     input_root.mkdir()
@@ -825,27 +858,36 @@ def test_complete_quality_run_audit_replays_through_preflight_and_assembly(
     assert all(check["item_digest"] == item.canonical_digest() for check in row["checks"])
 
     tasks = [{"id": item.task_id}]
-    preflight_result = preflight(
-        kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
-        admission_audit=audit_path, items=[item],
-        task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
-        source_manifest=manifest_path, source_manifest_digest=manifest_digest,
-    )
     if expected_decision == "admit":
-        assert preflight_result["ready"] is True
-        assert preflight_result["blockers"] == []
-        manifest = assemble(
-            kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
-            admission_audit=audit_path, items=[item], corpus_id="synthetic-e2e",
-            version="v1", split_seed="synthetic-only", output_root=tmp_path / "corpora",
-            task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
-            source_manifest=manifest_path, source_manifest_digest=manifest_digest,
-        )
+        # Exercise the downstream replay/assembly machinery under a separately
+        # permissive project policy. The default I7 denial is tested directly
+        # in the corpus assembly policy suite.
+        with patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True):
+            preflight_result = preflight(
+                kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
+                admission_audit=audit_path, items=[item],
+                task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+                source_manifest=manifest_path, source_manifest_digest=manifest_digest,
+            )
+            assert preflight_result["ready"] is True
+            manifest = assemble(
+                kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
+                admission_audit=audit_path, items=[item], corpus_id="synthetic-e2e",
+                version="v1", split_seed="synthetic-only", output_root=tmp_path / "corpora",
+                task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+                source_manifest=manifest_path, source_manifest_digest=manifest_digest,
+            )
         assert manifest.item_count == 1
         assert manifest.item_file_digests
         assert manifest.task_manifest_digest == _task_manifest_digest(input_root / "tasks.jsonl")
         assert manifest.source_manifest_digest == manifest_digest
     else:
+        preflight_result = preflight(
+            kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
+            admission_audit=audit_path, items=[item],
+            task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+            source_manifest=manifest_path, source_manifest_digest=manifest_digest,
+        )
         assert preflight_result["ready"] is False
         assert "admission audit contains no admitted items" in preflight_result["blockers"]
         with pytest.raises(CorpusAssemblyBlocked, match="no admitted items"):
@@ -870,14 +912,15 @@ def _produce_pinned_admission(tmp_path: Path, monkeypatch):
         source_digest=source_digest, metadata={"leakage_group": "family-1"}))
     audit_path = tmp_path / "audit" / "quality.jsonl"
     monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
-    _report, admission = runner.run_item_quality(
-        item, tier=QualityTier.C, source_manifest_path=source_path,
-        source_manifest_digest=source_pin, task_manifest_path=input_root / "tasks.jsonl",
-        task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
-        corpus_items=[], group_assignments={"family-1": "train"},
-        evaluator_provider=_FakeEvaluatorProvider(_evaluator_inputs(item)),
-        rights_provider=_FakeRightsProvider(_rights_inputs(item)),
-    )
+    with patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True):
+        _report, admission = runner.run_item_quality(
+            item, tier=QualityTier.C, source_manifest_path=source_path,
+            source_manifest_digest=source_pin, task_manifest_path=input_root / "tasks.jsonl",
+            task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+            corpus_items=[], group_assignments={"family-1": "train"},
+            evaluator_provider=_FakeEvaluatorProvider(_evaluator_inputs(item)),
+            rights_provider=_FakeRightsProvider(_rights_inputs(item)),
+        )
     assert admission.decision.value == "admit"
     return input_root, source_path, source_pin, item, audit_path
 
@@ -980,6 +1023,8 @@ def test_assembly_preflight_rejects_tampered_provenance_summary(tmp_path, monkey
 def test_only_quality_runner_calls_low_level_item_decision():
     package_root = Path(__file__).resolve().parents[1] / "guru"
     callers = []
+    item_audit_writers = []
+    generic_item_audit_writers = []
     for source_path in package_root.rglob("*.py"):
         if "tests" in source_path.parts:
             continue
@@ -991,4 +1036,13 @@ def test_only_quality_runner_calls_low_level_item_decision():
                     function.attr if isinstance(function, ast.Attribute) else None)
                 if called_name == "item_decision":
                     callers.append(source_path.relative_to(package_root).as_posix())
+                if called_name == "append_audit_line":
+                    event = next((keyword.value for keyword in node.keywords
+                                  if keyword.arg == "event"), None)
+                    if isinstance(event, ast.Constant) and event.value == "item_admission":
+                        generic_item_audit_writers.append(source_path.relative_to(package_root).as_posix())
+                if called_name == "_append_quality_runner_item_admission":
+                    item_audit_writers.append(source_path.relative_to(package_root).as_posix())
     assert callers == ["quality/runner.py"]
+    assert item_audit_writers == ["quality/runner.py"]
+    assert generic_item_audit_writers == []

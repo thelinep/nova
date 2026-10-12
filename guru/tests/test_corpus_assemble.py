@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from pydantic import ValidationError
 
@@ -17,6 +18,7 @@ from guru.schemas.corpus import CorpusKind, CorpusManifest, CorpusStatus
 from guru.schemas.corpus_item import CorpusItem
 from guru.schemas.teacher_lineage import AccessMethod, InputDisclosure, InputType, OutputRights, ReviewStatus, TeacherLineage
 from guru.schemas.quality import AutoCheckName, QualityAdmissionPayload, QualityCheckSummary, QualityTier
+from guru.quality.use_scope import GuruUseScopePolicy
 
 
 def approved_teacher() -> TeacherLineage:
@@ -188,6 +190,25 @@ def assemble(*, task_manifest, items, admission_audit, output_root, **kwargs):
 
 
 class CorpusAssemblyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # These tests exercise split/provenance/serialization behavior under a
+        # separately permissive policy. I7's actual denial is asserted below.
+        policy_patch = patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True)
+        policy_patch.start()
+        self.addCleanup(policy_patch.stop)
+
+    def test_i7_policy_blocks_preflight_for_admitted_rows(self) -> None:
+        item = corpus_items(1)[0]
+        with patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=False):
+            report = preflight(kind="c_rd", task_manifest=task_rows(1),
+                               teacher_registry=[approved_teacher()],
+                               admission_audit=[admission_row(item)], items=[item])
+        self.assertFalse(report["ready"])
+        self.assertIn(
+            "I7 policy allows ephemeral transformed data only; persistent corpus assembly is disabled",
+            report["blockers"],
+        )
+
     def test_preflight_names_missing_approved_teacher_and_admission_audit(self) -> None:
         with TemporaryDirectory() as directory:
             missing_registry = Path(directory) / "missing-teachers.jsonl"

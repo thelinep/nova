@@ -1,12 +1,13 @@
-"""Deterministic, non-executing quality check producers.
+"""Deterministic quality check producers and fail-closed check aggregation.
 
-These helpers produce individual automatic check results. They deliberately
-do not assemble all required checks, execute code, make rights decisions, or
-write admission/audit records. A missing authoritative input raises a typed
-error; a scanner failure becomes a failed check. The experiment split labels
-are exactly ``train``, ``validation`` and ``test``. This module does not
-interpret the separate legacy task-loader labels (``train``/``eval`` or its
-versioned ``validation`` form).
+The runner emits status records for every required check, but it does not
+execute candidate code or make admission/audit decisions. Evaluator and rights
+records remain UNAVAILABLE unless trusted typed providers supply the pinned
+evidence required by the selected use-scope policy. Missing authoritative
+inputs raise typed errors; scanner failures become measured failures. The
+experiment split labels are exactly ``train``, ``validation`` and ``test``.
+This module does not interpret the separate legacy task-loader labels
+(``train``/``eval`` or its versioned ``validation`` form).
 """
 from __future__ import annotations
 
@@ -28,16 +29,19 @@ from guru.schemas.rights_decision import RightsDecision
 from guru.schemas.teacher_lineage import TeacherLineage
 from guru.schemas.quality import AutoCheckName, AutoCheckResult, REQUIRED_AUTO_CHECKS
 from guru.teacher.intake import validate_teacher
-from guru.quality.providers import EvaluatorEvidenceProvider, RightsEvidenceProvider
+from guru.quality.providers import (
+    ApprovedRightsInputs, EvaluatorEvidenceProvider, RightsEvidenceProvider,
+)
+from guru.quality.use_scope import GURU_USE_SCOPE_POLICY
 
 
-TOOL_VERSION = "guru-deterministic-checks/1.3.0"
+TOOL_VERSION = "guru-deterministic-checks/1.4.0"
 POLICY_VERSIONS: dict[AutoCheckName, str] = {
     AutoCheckName.SCHEMA: "corpus-item-schema-v1",
     AutoCheckName.SYNTAX: "python-ast-parse-v1",
-    AutoCheckName.TESTS: "qualified-evaluator-required-v1",
+    AutoCheckName.TESTS: "local-qualified-evaluator-required-v2",
     AutoCheckName.SECURITY: "security-cot-and-secrets-v1",
-    AutoCheckName.LICENSE: "scoped-owner-rights-evidence-required-v1",
+    AutoCheckName.LICENSE: "owner-rights-and-i7-use-scopes-v2",
     AutoCheckName.PROVENANCE: "pinned-release-task-source-linkage-v3",
     AutoCheckName.DUPLICATE: "exact-model-facing-example-v1",
     AutoCheckName.LEAKAGE: "single-experiment-split-per-group-v1",
@@ -79,10 +83,10 @@ class CheckRunReport:
     """Status-only report. It has no audit side effects.
 
     Conversion requires one evidenced PASS or FAIL for every required check.
-    The runner below always leaves evaluator and license checks UNAVAILABLE
-    until authoritative providers are implemented, so current runner reports
-    cannot be converted for admission. A complete measured failure can be
-    converted so the separate quality gate can record a rejection/quarantine.
+    Evaluator and license checks remain UNAVAILABLE until authoritative
+    providers return complete, externally pinned evidence. A complete measured
+    failure can be converted so the separate quality gate can record a
+    rejection/quarantine; an incomplete run cannot be converted.
     """
 
     records: tuple[CheckStatusRecord, ...]
@@ -182,6 +186,42 @@ def schema_check(raw_item: CorpusItem | Mapping[str, Any]) -> AutoCheckResult:
 def _valid_item(raw_item: CorpusItem | Mapping[str, Any]) -> CorpusItem:
     item = _as_item(raw_item)
     return item
+
+
+def _validated_rights_for_item(
+    item: CorpusItem, rights_provider: RightsEvidenceProvider | None,
+) -> tuple[RightsDecision, bool]:
+    """Load source rights pinned to this exact artifact before use."""
+    if rights_provider is None or not isinstance(rights_provider, RightsEvidenceProvider):
+        raise CheckUnavailableError("typed source-rights provider is unavailable")
+    supplied = rights_provider.load_for(item)
+    if supplied is None or not isinstance(supplied, ApprovedRightsInputs):
+        raise CheckUnavailableError("rights provider has no typed approved record for this item")
+    decision = supplied.decision
+    if not isinstance(decision, RightsDecision):
+        raise CheckUnavailableError("rights provider returned an untyped RightsDecision")
+    if (supplied.rights_manifest_digest != supplied.trusted_rights_manifest_digest or
+            supplied.approved_artifact_digest != item.source_digest or
+            decision.artifact_sha256 != supplied.approved_artifact_digest or
+            len(supplied.trusted_rights_manifest_digest) != 64 or
+            any(c not in "0123456789abcdef" for c in supplied.trusted_rights_manifest_digest) or
+            len(supplied.rights_manifest_digest) != 64 or
+            any(c not in "0123456789abcdef" for c in supplied.rights_manifest_digest)):
+        raise CheckUnavailableError("rights record is not bound to the pinned approved manifest/artifact")
+    teacher_ok = True
+    if item.teacher_lineage_id is not None:
+        teachers = supplied.teachers
+        if (teachers is None or supplied.teacher_registry_digest is None or
+                supplied.teacher_registry_digest != supplied.trusted_teacher_registry_digest or
+                len(supplied.teacher_registry_digest) != 64 or
+                any(c not in "0123456789abcdef" for c in supplied.teacher_registry_digest)):
+            raise CheckUnavailableError("separately validated teacher record is unavailable or unpinned")
+        matches = [teacher for teacher in teachers if isinstance(teacher, TeacherLineage)
+                   and teacher.teacher_id == item.teacher_lineage_id]
+        teacher_ok = len(matches) == 1 and validate_teacher(matches[0])["admissible"]
+        if not teacher_ok:
+            raise CheckUnavailableError("separately validated teacher rights are not admissible")
+    return decision, teacher_ok
 
 
 def syntax_check(raw_item: CorpusItem | Mapping[str, Any]) -> AutoCheckResult:
@@ -485,25 +525,43 @@ def run_deterministic_checks(
     canonical rows are reviewed by that manifest.
     TESTS and LICENSE stay UNAVAILABLE unless separately controlled provider
     implementations load externally pinned qualification and approved rights
-    records. There are no production provider implementations in this slice.
+    records. TESTS additionally requires explicit per-source evaluation
+    permission and a qualification record scoped to local execution. There are
+    no production provider implementations in this slice.
     Those states cannot be overridden by caller booleans or hand-built
     ``AutoCheckResult`` values. ``CheckRunReport.as_auto_checks`` refuses every
     incomplete or non-passing run.
     """
     item_digest = _item_binding(raw_item)
+    item_value = _valid_item(raw_item)
+    rights_decision: RightsDecision | None = None
+    teacher_ok = False
+    rights_error: str | None = None
+    try:
+        rights_decision, teacher_ok = _validated_rights_for_item(item_value, rights_provider)
+    except CheckUnavailableError as exc:
+        rights_error = str(exc)
+    except (ValueError, TypeError, AttributeError) as exc:
+        rights_error = "rights evidence invalid: " + str(exc)
     tests_status = _status_without_result(AutoCheckName.TESTS, CheckRunStatus.UNAVAILABLE,
         "externally pinned evaluator qualification and complete case-set provider are unavailable",
         item_digest=item_digest)
     if evaluator_provider is not None:
         try:
+            if rights_decision is None:
+                raise CheckUnavailableError("source rights must be pinned before evaluation: " +
+                                            (rights_error or "rights evidence unavailable"))
+            if not GURU_USE_SCOPE_POLICY.permits_evaluation(rights_decision.rights, "local"):
+                raise CheckUnavailableError("source rights do not explicitly permit local evaluation")
             if not isinstance(evaluator_provider, EvaluatorEvidenceProvider):
                 raise CheckUnavailableError("evaluator evidence provider is not trusted/typed")
-            item_value = _valid_item(raw_item)
             supplied = evaluator_provider.load_for(item_value)
             if supplied is None:
                 raise CheckUnavailableError("evaluator provider has no evidence for this item")
             evaluator_case_set = supplied.case_set
             evaluator_qualification = supplied.qualification
+            if evaluator_qualification.execution_scope != "local":
+                raise CheckUnavailableError("evaluation evidence is not from the approved local scope")
             expected_qualification_digest = supplied.qualification_digest
             expected_test_suite_digest = supplied.test_suite_digest
             expected_case_ids = supplied.expected_case_ids
@@ -561,58 +619,31 @@ def run_deterministic_checks(
                 "evaluator evidence invalid: " + str(exc), item_digest=item_digest)
     license_status = _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
         "typed owner/source rights evidence provider is unavailable", item_digest=item_digest)
-    if rights_provider is not None:
-        try:
-            if not isinstance(rights_provider, RightsEvidenceProvider):
-                raise CheckUnavailableError("rights evidence provider is not trusted/typed")
-            item = _valid_item(raw_item)
-            supplied_rights = rights_provider.load_for(item)
-            if supplied_rights is None:
-                raise CheckUnavailableError("rights provider has no approved record for this item artifact")
-            rights_decision = supplied_rights.decision
-            teacher_records = supplied_rights.teachers
-            if not isinstance(rights_decision, RightsDecision):
-                raise CheckUnavailableError("rights provider returned an untyped RightsDecision")
-            rights_digest = _digest(rights_decision.model_dump(mode="json"))
-            if (supplied_rights.rights_manifest_digest != supplied_rights.trusted_rights_manifest_digest or
-                    supplied_rights.approved_artifact_digest != item.source_digest or
-                    rights_decision.artifact_sha256 != supplied_rights.approved_artifact_digest or
-                    len(supplied_rights.trusted_rights_manifest_digest) != 64 or
-                    any(c not in "0123456789abcdef" for c in supplied_rights.trusted_rights_manifest_digest) or
-                    len(supplied_rights.rights_manifest_digest) != 64 or
-                    any(c not in "0123456789abcdef" for c in supplied_rights.rights_manifest_digest)):
-                raise CheckUnavailableError("rights record is not bound to the pinned approved manifest/artifact")
-            item = _valid_item(raw_item)
-            rights_ok = (rights_decision.rights.allow_training and
-                         rights_decision.rights.allow_transformed_data_retention)
-            teacher_ok = True
-            if item.teacher_lineage_id is not None:
-                if teacher_records is None:
-                    raise CheckUnavailableError("separately validated teacher record is unavailable")
-                if (supplied_rights.teacher_registry_digest is None or
-                        supplied_rights.teacher_registry_digest != supplied_rights.trusted_teacher_registry_digest or
-                        len(supplied_rights.teacher_registry_digest) != 64 or
-                        any(c not in "0123456789abcdef" for c in supplied_rights.teacher_registry_digest)):
-                    raise CheckUnavailableError("teacher record is not bound to the approved registry pin")
-                matches = [t for t in teacher_records if isinstance(t, TeacherLineage)
-                           and t.teacher_id == item.teacher_lineage_id]
-                teacher_ok = len(matches) == 1 and validate_teacher(matches[0])["admissible"]
-                if not teacher_ok:
-                    raise CheckUnavailableError("separately validated teacher rights are not admissible")
-            rdigest = rights_digest
-            license_status = _status_from_result(_result(AutoCheckName.LICENSE, rights_ok, {
-                "item_digest": item_digest, "artifact_digest": rights_decision.artifact_sha256,
-                "rights_decision_digest": rdigest,
-                "allow_training": rights_decision.rights.allow_training,
-                "allow_transformed_data_retention": rights_decision.rights.allow_transformed_data_retention,
-                "teacher_rights_validated": teacher_ok,
-            }))
-        except CheckUnavailableError as exc:
-            license_status = _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
-                str(exc), item_digest=item_digest)
-        except (ValueError, TypeError, AttributeError) as exc:
-            license_status = _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
-                "rights evidence invalid: " + str(exc), item_digest=item_digest)
+    if rights_decision is not None:
+        rights_digest = _digest(rights_decision.model_dump(mode="json"))
+        # A source license cannot widen the owner-selected project scope. The
+        # current release path persists corpus rows, so LICENSE_CLEAR must fail
+        # until persistent transformed-data use is permitted or an ephemeral
+        # training path is implemented.
+        rights_ok = (rights_decision.rights.allow_training and
+                     rights_decision.rights.allow_transformed_data_retention and teacher_ok and
+                     GURU_USE_SCOPE_POLICY.permits_persisted_corpus())
+        license_status = _status_from_result(_result(AutoCheckName.LICENSE, rights_ok, {
+            "item_digest": item_digest, "artifact_digest": rights_decision.artifact_sha256,
+            "rights_decision_digest": rights_digest,
+            "use_scope_policy": GURU_USE_SCOPE_POLICY.version,
+            "allow_training": rights_decision.rights.allow_training,
+            "allow_evaluation": rights_decision.rights.allow_evaluation,
+            "allow_provider_transmission": rights_decision.rights.allow_provider_transmission,
+            "allow_transformed_data_retention": rights_decision.rights.allow_transformed_data_retention,
+            "allow_weight_distribution": rights_decision.rights.allow_weight_distribution,
+            "project_persisted_transformed_data_allowed":
+                GURU_USE_SCOPE_POLICY.permits_persisted_corpus(),
+            "teacher_rights_validated": teacher_ok,
+        }))
+    elif rights_error:
+        license_status = _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
+            rights_error, item_digest=item_digest)
     records = [
         _run_one(AutoCheckName.SCHEMA, schema_check, raw_item, bound_item_digest=item_digest),
         _run_one(AutoCheckName.SYNTAX, syntax_check, raw_item, bound_item_digest=item_digest),

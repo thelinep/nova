@@ -23,11 +23,23 @@ import urllib.request
 import numpy as np
 
 from . import panini
-from .tokenizer import Tokenizer, EOS
+from .quality.use_scope import GURU_USE_SCOPE_POLICY
 
 DATASET = "wikimedia/wikipedia"
 SNAPSHOT = "20231101"
 DEFAULT_CAPS_MB = {"sa": 80, "hi": 250, "en": 250}  # text megabytes kept per language
+
+
+class PersistentTransformDisabled(PermissionError):
+    """Raised when a data API would retain transformed training material."""
+
+
+def _require_ephemeral_transform(operation):
+    if not GURU_USE_SCOPE_POLICY.permits_transformed_data_retention():
+        raise PersistentTransformDisabled(
+            f"{operation} is disabled by I7: transformed data may be ephemeral only; "
+            "the persistent Guru corpus pipeline is blocked until an ephemeral pipeline exists"
+        )
 
 
 def _get(url, dest=None, timeout=60):
@@ -57,6 +69,7 @@ def free_gb(path):
 
 def fetch_wikipedia(data_dir, langs=("sa", "hi", "en"), caps_mb=None, snapshot=SNAPSHOT):
     """Downloads Parquet shards per language until the text cap is reached; writes raw/wiki-<lang>.txt."""
+    _require_ephemeral_transform("Wikipedia fetch")
     import pyarrow.parquet as pq
     caps = {**DEFAULT_CAPS_MB, **(caps_mb or {})}
     raw = os.path.join(data_dir, "raw"); os.makedirs(raw, exist_ok=True)
@@ -145,6 +158,7 @@ def build_corpus(data_dir, own_weight=3, seed=7, panini_weight=3):
     The Panini texts in data/panini (Ashtadhyayi, Dhatupatha and companions) are
     always included, panini_weight times; 0 leaves them out.
     """
+    _require_ephemeral_transform("corpus build")
     random.seed(seed)
     raw = os.path.join(data_dir, "raw")
     docs, seen, stats = [], set(), {}
@@ -199,6 +213,7 @@ def iter_corpus_docs(path):
 
 def write_tokenizer_input(corpus_path, out_path, max_chars=400_000_000):
     """Plain text for SentencePiece: one paragraph per line, capped."""
+    _require_ephemeral_transform("tokenizer input generation")
     n = 0
     with open(out_path, "w", encoding="utf-8") as fo:
         for d in iter_corpus_docs(corpus_path):
@@ -211,6 +226,9 @@ def write_tokenizer_input(corpus_path, out_path, max_chars=400_000_000):
 
 
 def encode_corpus(data_dir, tokenizer_path, val_share=0.005, batch=512):
+    _require_ephemeral_transform("corpus tokenization")
+    from .tokenizer import Tokenizer, EOS
+
     tok = Tokenizer(tokenizer_path)
     if tok.vocab_size > 65535:
         raise SystemExit("Vocabulary too large for uint16 token files.")

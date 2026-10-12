@@ -45,44 +45,61 @@ because it has a temporary byte tokenizer and only 512 positions.
 
 ### Current blocking gates
 
-**Two independent gates block candidate-corpus use and `exp-rd-vs-sft-001`:
-rights for the candidate data and full qualification of the isolated
-evaluator.** Teacher admission is closed for the one Qwen2.5-Coder-7B entry
-recorded in `guru/data/coding/teacher-registry.jsonl`; that approval does not
-admit the candidate dataset. The experiment's primary metric, `executable_correctness`, is
-currently **unmeasurable**: the offline evaluator checks proposal shape, paths
-and Python syntax, while the October 5 Docker run exercised only synthetic
-security probes. It did not execute generated proposals against task tests.
-Therefore `tests_pass`, the experiment comparison and code-correctness claims
-remain blocked. Evaluator prequalification is useful evidence, but it is not
-the disposable-worker security gate. See the [Phase 5 execution packet](guru/CODING_PHASE5_EXECUTION_PACKET.md)
-and [evaluator prequalification record](guru/CODING_PHASE5_EVALUATOR_QUALIFICATION_2026-10-05.md).
+**Candidate-data rights and full qualification of the isolated evaluator
+remain co-equal blockers** for corpus use and `exp-rd-vs-sft-001`. Teacher
+admission is closed for the one Qwen2.5-Coder-7B entry recorded in
+`guru/data/coding/teacher-registry.jsonl`; that approval does not admit the
+candidate dataset. The owner has selected local qualified evaluation only,
+external transmission denied, ephemeral-only transformed data, and private
+local weights with no distribution. I7 enforcement blocks persistent corpus
+assembly, data/tokenizer
+transforms, `code-data`, `code-eval`, public file-based SFT, injected engines
+on the public evaluator API, external Ollama export, and unsafe pickle-based
+checkpoint loading. The CPU smoke route is limited to a fixed authored
+synthetic fixture and temporary paths. The rights-bound case-runner scaffold
+now uses data-only JSON call suites, keeps expected values in the outer
+evaluator, and executes each candidate call in a separate child process;
+synthetic tests confirm `os._exit(0)` cannot skip checks and report a pass,
+duplicate JSON keys fail closed, and a candidate descendant cannot hold the
+protocol pipe past the timeout. It still lacks production trusted providers
+and disposable-worker qualification, and its function-call contract has not
+been applied to real approved tasks.
 
-There is also a production-plumbing gap: the quality gate accepts eight
-caller-supplied check results, and the integrated deterministic producers cover
-only a subset. No admission orchestrator constructs the complete check set.
-The evaluator evidence contract and corpus item-digest binding have
-unit-tested plumbing, but neither executes candidate code nor creates real
-admission evidence. Duplicate admission rows are rejected during preflight and
+The experiment's primary metric, `executable_correctness`, is still
+**unmeasurable**. The offline evaluator checks proposal shape, paths and Python
+syntax; Docker has only run synthetic probes, not generated proposals against
+task tests. A fresh local Docker Desktop probe succeeded, but that persistent
+workstation VM is not the required disposable Linux worker. Therefore
+`tests_pass`, the experiment comparison and code-correctness claims remain
+blocked. See the [Phase 5
+execution packet](guru/CODING_PHASE5_EXECUTION_PACKET.md) and [evaluator
+prequalification record](guru/CODING_PHASE5_EVALUATOR_QUALIFICATION_2026-10-05.md).
+
+The quality apparatus now has a fail-closed `run_item_quality` orchestrator
+and deterministic producers for all eight status slots. However, trusted
+production evaluator and rights providers are not configured; TESTS and LICENSE
+remain unavailable without their externally pinned evidence. Synthetic
+provider-contract tests do not create an approved admission audit or qualify
+the evaluator. Duplicate admission rows are rejected during preflight and
 assembly. See the [atomic execution plan](guru/GURU_CODE_ATOMIC_PLAN.md) for
-the implementation sequence and remaining integrity work.
+remaining integrity work.
 
 | Immediate item | Status | Evidence / next action |
 | --- | --- | --- |
 | Preserve Guru-Code apparatus and direct test-environment files | **Done:** committed as `928a47b feat(guru): add corpus apparatus and CPU test setup`. | That commit includes the corpus, disclosure, quality and teacher-intake apparatus, `requirements-test.txt` and `CONTRIBUTING.md`. |
 | Reconcile the tied-embedding parameter count | **Implemented in current code; recheck any older saved manifest before reuse.** | `guru/train.py` reports `raw_model.num_parameters()`; `guru/model.py` counts `model.parameters()`; the exporter omits the tied `lm_head.weight`. A fresh 64-wide, 516-token-vocabulary check confirmed that raw `state_dict` summation adds exactly one 33,024-element tied matrix. |
-| Reproducible clean test environment | **Verified locally.** Python 3.12.1 clean virtualenv; 71 apparatus, intake, evaluator-mock, trajectory and experiment-decision tests passed; `uv pip check` found all 11 locked packages compatible. | `guru/requirements-test.lock` is hash-checked. The documented install was exercised from the lockfile; rerun on CI/another clean machine before treating it as portable certification. |
+| Reproducible clean test environment | **Partially verified.** The Python 3.12.1 hash-locked environment passed 71 apparatus, intake, evaluator-mock, trajectory and experiment-decision tests; `uv pip check` found all 11 locked packages compatible. | `guru/requirements-test.lock` intentionally covers the apparatus subset. The complete legacy Guru suite still needs its runtime dependencies (`torch` and `sentencepiece`) and was run with the available Anaconda environment plus a temporary SentencePiece path; a clean full-suite lock/install remains open. |
 | Corpus split contract | **Aligned with the experiment draft.** The assembler now sorts unique task IDs by SHA-256 and assigns floor-based 80/10/remainder splits; examples for one task stay in one partition. | Two fresh tests cover exact membership/counts and task grouping. Source/repository/family/duplicate leakage grouping still needs to be added before a real corpus is frozen. |
-| Preserve evaluator evidence and current roadmap updates | **Committed and pushed** in `245a708 docs(guru): align roadmap with current gates`. The phase packet and October 5 report distinguish real-container prequalification from full qualification. | No further action for this evidence group. |
+| Enforce owner-selected I7 use scopes | **Implemented and locally verified; evaluator remains unqualified.** Local qualified evaluation only, no external transmission, ephemeral-only transformed data, and private-local weights with no distribution. Direct tokenizer training now fails before input reads or output creation. `item_decision` is pure; public generic audit writes reject `item_admission`, which the quality runner writes only after complete checks. | Fresh full Guru suite: 319 passed, 1 skipped, 5 warnings. Focused I7/quality suite: 95 passed. Case-runner contract suite: 21 passed, including duplicate-key and attached/detached descendant timeout tests. Full UI Playwright: 66 passed. UI model responses are simulated; no Guru capability claim follows. Python private helpers are conventions, not a same-process security boundary. |
 
 | Phase | Result | Status and evidence |
 | --- | --- | --- |
 | 0. Governed local project foundation | Explicitly approved roots, bounded context, proposal review, isolated checks, approval-gated apply/rollback, command allowlists and reviewed Git actions | Existing Maataa workspace services; reused by this Studio rather than adding another write path. |
 | 1. Exact-model coding gate | Use a named Ollama model only when its current digest has passed the required coding workflow and clarification, timeout and cancellation controls | Implemented in `nova-console/lib/model-qualifications.js` and `nova-console/lib/code-planner.js`; explicit selection fails closed and preserves automatic selection when no model is named. |
-| 2. Guru-Code data/evaluation foundation | Versioned task format, provenance fields, train-only SFT export and target-free held-out fixture checks | Plumbing implemented in `guru/data/coding/`, `guru/guru/coding.py` and `guru/CODING.md`. V1 retains train/eval; v2 adds target-bearing validation and requires all three splits for release. Mixed schema versions are rejected. The checked-in examples remain synthetic smoke fixtures, not a representative corpus or capability benchmark. |
+| 2. Guru-Code data/evaluation foundation | Versioned task format, provenance fields, held-out fixture checks and evidence-bound quality plumbing | Plumbing implemented in `guru/data/coding/`, `guru/guru/coding.py` and `guru/CODING.md`. V1 retains train/eval; v2 adds target-bearing validation and requires all three splits for release. Mixed schema versions are rejected. Under I7, persistent corpus/tokenizer transforms, `code-data`, `code-eval`, corpus assembly and public file-based SFT are blocked; only fixed synthetic CPU smoke remains available. The v3 fail-closed data-only function-call protocol rejects duplicate JSON keys, keeps expected values outside candidate execution, and kills the candidate process group at timeout; these are synthetic contract tests, not qualification. It has no real approved task suites or production provider. An ephemeral real-data trainer does not exist. Checked-in examples remain synthetic fixtures, not a representative corpus or capability benchmark. |
 | 3. One-project Coding Studio | Readiness check, selected model, bounded request, reviewable proposal, existing validation/approval/apply/rollback flow, Guru readiness and read-only team status | Implemented in `nova-console/public/index.html`; help is in `nova-console/docs/help/41-coding-studio.md`; deterministic browser coverage is in `nova-console/e2e/coding-studio.spec.js`. |
 | 3b. App Builder and one-click start | Describe an app (any language) → template project → development loop with the selected qualified model → checked batch → approve/apply → run; chat requests to build an app open the same flow; `Maataa - Start coding.command` starts Ollama and Maataa, installs `qwen2.5-coder:7b` when disk allows, approves `~/Maataa Projects` and offers the coding checks | Implemented in `nova-console/lib/app-builder.js`, `/api/app-builder/*`, the Coding Studio panel and `routeAppBuildFromConversation`; unit/API tests in `tests/app-builder.test.js`, browser tests in `e2e/app-builder.spec.js`. No new write path: project creation, the dev loop and batch approval are the existing governed services. Guru-Code owner decisions are listed in `guru/decisions/README.md`. |
-| 4. Independent Agent Studio | Dispatch independent agents for bounded coding work; turn each result into a validated proposal; keep every result pending human review; allow writes only through Maataa's approved batch flow | Implemented for one local operator and one approved project. The Studio has bounded dispatch/retry/cancel/review routes in `nova-console/server.js`; exact-model, scoped-policy and budget gates plus startup recovery in `nova-console/lib/coding-agent-runtime.js`; a coding-only job bridge and cancellation/halt propagation; digest-bound proposal acceptance that creates the batch transactionally only after human review. Acceptance creates a draft batch only: existing validation, separate approval, apply and rollback remain in Maataa Local Workspace. The UI now renders proposal code, review notes and state-specific actions. Generic agent endpoints and non-coding job kinds remain separate. Full gate evidence is recorded below after the current complete run. |
+| 4. Independent Agent Studio | Dispatch independent agents for bounded coding work; turn each result into a validated proposal; keep every result pending human review; allow writes only through Maataa's approved batch flow | Implemented for one local operator and one approved project. The Studio has bounded dispatch/retry/cancel/review routes in `nova-console/server.js`; exact-model, scoped-policy and budget gates plus startup recovery in `nova-console/lib/coding-agent-runtime.js`; a coding-only job bridge and cancellation/halt propagation; digest-bound proposal acceptance that creates the batch transactionally only after human review. Acceptance creates a draft batch only: existing validation, separate approval, apply and rollback remain in Maataa Local Workspace. The UI now renders proposal code, review notes and state-specific actions. Generic agent endpoints and non-coding job kinds remain separate. Fresh focused Studio/App Builder Playwright passed 13/13 and the full UI suite passed 66/66; these use simulated model responses and do not qualify Guru. |
 | 5. Guru-Code capability release | Train, export and qualify a dedicated code model against representative held-out tasks | **Open; not reached is the expected state given the gates below, not a separate failure.** No release-capable or exportable Guru-Code checkpoint exists. The tiny CPU training-path smoke run is not a coding checkpoint: its temporary byte tokenizer and 512-position context make it non-exportable and non-qualifying. One teacher entry is approved; the external synthetic shard remains quarantined with dataset/source rights and quality unresolved. The host has no usable MPS/CUDA training runtime; the 7B trainer still needs a tested memory strategy. A real-container evaluator prequalification passed on October 5, but full qualification on a disposable Linux worker/VM remains open, so executable correctness is still unmeasurable. GPU spend remains research/preparation only unless explicitly approved. See [`guru/CODING_PHASE5_EXECUTION_PACKET.md`](guru/CODING_PHASE5_EXECUTION_PACKET.md). |
 
 ## Standalone Guru-Code training and qualification sequence

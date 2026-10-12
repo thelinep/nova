@@ -6,6 +6,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
@@ -122,7 +123,9 @@ class HFCompatTests(unittest.TestCase):
             tokdir = os.path.join(tmp, "tok"); os.makedirs(tokdir)
             corpus = os.path.join(tmp, "c.txt"); open(corpus, "w").write(SAMPLE)
             from guru.tokenizer import train
-            train(corpus, os.path.join(tokdir, "t"), 400)
+            with patch("guru.tokenizer.GURU_USE_SCOPE_POLICY",
+                       SimpleNamespace(permits_transformed_data_retention=lambda: True)):
+                train(corpus, os.path.join(tokdir, "t"), 400)
             ck = os.path.join(tmp, "best.pt")
             torch.save({"model": m.state_dict(), "config": json.loads(cfg.to_json()), "step": 0, "val_loss": None}, ck)
             hf = to_hf(ck, os.path.join(tmp, "hf"), os.path.join(tokdir, "t.model"), dtype=torch.float32)
@@ -142,7 +145,9 @@ class TokenizerTests(unittest.TestCase):
         try:
             corpus = os.path.join(tmp, "c.txt"); open(corpus, "w").write(SAMPLE)
             open(os.path.join(tmp, "dhatus.txt"), "w").write("# roots\nगम्\nकृ\n")
-            kept = train(corpus, os.path.join(tmp, "t"), 400, os.path.join(tmp, "dhatus.txt"))
+            with patch("guru.tokenizer.GURU_USE_SCOPE_POLICY",
+                       SimpleNamespace(permits_transformed_data_retention=lambda: True)):
+                kept = train(corpus, os.path.join(tmp, "t"), 400, os.path.join(tmp, "dhatus.txt"))
             self.assertEqual(kept, ["कृ", "गम्"])
             tok = Tokenizer(os.path.join(tmp, "t.model"))
             for text in ["गुरुः शिष्यं ज्ञानं ददाति।", "फ़िल्म की शूटिंग", "Call time 06:30", "ঈ unseen script 🙂"]:
@@ -201,7 +206,9 @@ class LipiTests(unittest.TestCase):
         tmp = tempfile.mkdtemp()
         try:
             corpus = os.path.join(tmp, "c.txt"); open(corpus, "w").write(SAMPLE)
-            train(corpus, os.path.join(tmp, "t"), 400)
+            with patch("guru.tokenizer.GURU_USE_SCOPE_POLICY",
+                       SimpleNamespace(permits_transformed_data_retention=lambda: True)):
+                train(corpus, os.path.join(tmp, "t"), 400)
             tok = Tokenizer(os.path.join(tmp, "t.model"))
             line = "गुरुः शिष्यं ज्ञानं ददाति।"
             base = tok.encode(line)

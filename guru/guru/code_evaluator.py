@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import os
 import re
 import subprocess
 import threading
@@ -101,7 +102,7 @@ def _docker_options(policy: EvaluationPolicy, name: str) -> list[str]:
         raise ValueError("invalid evaluator container name")
     memory = str(policy.memory_bytes)
     return [
-        "create", "--interactive", "--name", name,
+        "create", "--interactive", "--name", name, "--log-driver", "none",
         "--network", "none", "--read-only", "--user", "65534:65534",
         "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
         "--pids-limit", str(policy.pids_limit), "--memory", memory,
@@ -113,18 +114,39 @@ def _docker_options(policy: EvaluationPolicy, name: str) -> list[str]:
 
 
 class DockerCliEngine:
-    """Minimal Docker CLI adapter; its guarantees depend on daemon/VM setup."""
+    """Docker CLI adapter pinned to one explicit local Unix socket.
 
-    def __init__(self, executable: str = "docker"):
+    The socket must be selected and qualified by a trusted caller. Endpoint
+    overrides are removed from the child environment and every CLI call uses
+    ``--host`` so a later Docker context switch cannot redirect execution.
+    This primitive remains a probe/test boundary, not evaluator qualification.
+    """
+
+    def __init__(self, endpoint: str, executable: str = "docker"):
         if not executable or "\x00" in executable:
             raise ValueError("docker executable must be a non-empty path")
+        if not isinstance(endpoint, str) or not endpoint.startswith("unix:///") or "\x00" in endpoint:
+            raise ValueError("endpoint must be an explicit local Unix socket URI")
+        self.endpoint = endpoint
         self.executable = executable
+
+    def _argv(self, args: list[str]) -> list[str]:
+        return [self.executable, "--host", self.endpoint, *args]
+
+    @staticmethod
+    def _environment() -> dict[str, str]:
+        env = os.environ.copy()
+        # Keep endpoint resolution tied to the explicit --host argument above.
+        for name in ("DOCKER_HOST", "DOCKER_CONTEXT"):
+            env.pop(name, None)
+        return env
 
     def _control(self, args: list[str], timeout: float) -> subprocess.CompletedProcess[bytes]:
         try:
             proc = subprocess.Popen(
-                [self.executable, *args], stdin=subprocess.DEVNULL,
+                self._argv(args), stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, close_fds=True,
+                env=self._environment(),
             )
         except OSError as exc:
             raise EvaluationError("Docker control operation could not start") from exc
@@ -176,7 +198,7 @@ class DockerCliEngine:
             raise EvaluationError("Docker control response exceeded bound")
         with lock:
             result = subprocess.CompletedProcess(
-                args=[self.executable, *args], returncode=proc.returncode,
+                args=self._argv(args), returncode=proc.returncode,
                 stdout=bytes(captured["stdout"]), stderr=bytes(captured["stderr"]),
             )
         if result.returncode:
@@ -208,9 +230,9 @@ class DockerCliEngine:
             raise EvaluationError("invalid container identifier")
         try:
             proc = subprocess.Popen(
-                [self.executable, "start", "--attach", "--interactive", container_id],
+                self._argv(["start", "--attach", "--interactive", container_id]),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                shell=False, close_fds=True,
+                shell=False, close_fds=True, env=self._environment(),
             )
         except OSError as exc:
             raise EvaluationError("could not start evaluator container") from exc
@@ -284,13 +306,14 @@ class DockerCliEngine:
         self._control(["rm", "--force", "--volumes", container_id], policy.control_timeout_seconds)
 
 
-def evaluate(payload: bytes, policy: EvaluationPolicy, engine: ContainerEngine | None = None) -> EvaluationEvidence:
-    """Evaluate opaque bytes; callers must supply a reviewed runner payload format."""
+def _evaluate_with_engine(
+    payload: bytes, policy: EvaluationPolicy, engine: ContainerEngine,
+) -> EvaluationEvidence:
+    """Internal engine adapter for synthetic tests and probe wiring."""
     if not isinstance(payload, bytes):
         raise TypeError("payload must be bytes")
     if len(payload) > policy.input_limit_bytes:
         raise EvaluationError("evaluation input exceeds policy limit")
-    engine = engine or DockerCliEngine()
     started = time.monotonic()
     container_id: str | None = None
     result: EngineResult | None = None
@@ -316,3 +339,20 @@ def evaluate(payload: bytes, policy: EvaluationPolicy, engine: ContainerEngine |
         stderr_truncated=result.output_limited or len(result.stderr) > len(stderr),
         elapsed_ms=int((time.monotonic() - started) * 1000), container_removed=removed,
     )
+
+
+def evaluate(
+    payload: bytes, policy: EvaluationPolicy, *, local_endpoint: str | None = None,
+) -> EvaluationEvidence:
+    """Run an opaque probe payload on an explicitly pinned local Docker socket.
+
+    Engine injection is intentionally absent from this public entry point.
+    Synthetic unit tests use the private ``_evaluate_with_engine`` helper.
+    """
+    if local_endpoint is None:
+        raise EvaluationError("explicit local Docker endpoint is required")
+    try:
+        engine = DockerCliEngine(endpoint=local_endpoint)
+    except (TypeError, ValueError) as exc:
+        raise EvaluationError("Docker endpoint must be an explicit local Unix socket") from exc
+    return _evaluate_with_engine(payload, policy, engine)

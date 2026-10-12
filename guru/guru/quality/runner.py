@@ -5,10 +5,14 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from guru.audit_log import _append_quality_runner_item_admission
 from guru.quality.checks import CheckRunReport, run_deterministic_checks
-from guru.quality.gate import item_decision
+from guru.quality import gate
 from guru.schemas.corpus_item import CorpusItem
-from guru.schemas.quality import HumanReviewRecord, ItemAdmission, QualityTier
+from guru.schemas.quality import (
+    HumanReviewRecord, ItemAdmission, QualityAdmissionPayload,
+    QualityCheckSummary, QualityTier,
+)
 from guru.quality.providers import EvaluatorEvidenceProvider, RightsEvidenceProvider
 
 
@@ -43,6 +47,18 @@ def run_item_quality(
         raise IncompleteCheckRunError("unavailable check prevents decision and audit")
     checks = report.as_auto_checks()
     parsed = raw_item if isinstance(raw_item, CorpusItem) else CorpusItem.model_validate(dict(raw_item))
-    return report, item_decision(item_id=parsed.item_id,
-                                 item_digest=parsed.canonical_digest(), tier=tier,
-                                 auto_checks=checks, human_review=human_review)
+    admission = gate.item_decision(item_id=parsed.item_id,
+                                   item_digest=parsed.canonical_digest(), tier=tier,
+                                   auto_checks=checks, human_review=human_review)
+    payload = QualityAdmissionPayload(
+        item_id=admission.item_id, item_digest=admission.item_digest,
+        tier=admission.tier, decision=admission.decision,
+        reason_codes=admission.reason_codes, human_review=admission.human_review,
+        checks=[QualityCheckSummary(
+            name=check.name, status="PASS" if check.passed else "FAIL",
+            evidence_digest=check.evidence_digest, item_digest=check.item_digest,
+            tool_version=check.tool_version, policy_version=check.policy_version,
+        ) for check in admission.auto_checks],
+    )
+    _append_quality_runner_item_admission(gate.AUDIT_PATH, payload=payload)
+    return report, admission

@@ -19,6 +19,11 @@ use `qwen2.5-coder:7b` as its runtime coding model. D1 remains unanswered, and
 the current checkout does not establish that this exact runtime digest passed
 Maataa's 18-check qualification.
 
+Do not conflate it with the separate `qwen2.5:7b` runtime digest, which passed
+Maataa's six workflow capabilities in 18/18 trials on 2026-10-12. That result
+does not qualify `qwen2.5-coder:7b`: its recorded run was 15/18 with all three
+multi-file trials failing. No Guru-trained checkpoint exists.
+
 - Licence to verify on the model card before saying yes: Qwen2.5-Coder 7B is
   published under Apache-2.0. Other sizes have their own terms; the 3B size, for
   example, uses a research licence.
@@ -47,11 +52,11 @@ task rows) and an isolated evaluator before it can be admitted.
 
 The current 7B recipe trains from scratch: about 140B tokens, an estimated $15.6k
 or more of GPU time, and a trainer that does not yet fit an 80 GB GPU. A
-fine-tune is far cheaper. It starts from an open code model that already has a
-tokenizer and long context, for example Qwen2.5-Coder-1.5B-Instruct (Apache-2.0,
-32k context), and trains Guru's reviewed data and Brahmi behaviour on top of it.
-It needs one admitted model intake (`../data/coding/model-intake.example.json`)
-and a LoRA/SFT path, which is not written yet.
+fine-tune is likely cheaper. One candidate for owner review is
+Qwen2.5-Coder-1.5B-Instruct (Apache-2.0, 32k context), with LoRA/SFT, but no
+student base or method has been approved. It needs an admitted model intake
+(`../data/coding/model-intake.example.json`) and a compatible training path.
+No data-use or weight-distribution permission follows from selecting a base.
 
 - [ ] Yes, propose a fine-tune student base (name it: ____________)
 - [ ] No, keep the from-scratch plan
@@ -59,12 +64,13 @@ and a LoRA/SFT path, which is not written yet.
 
 ## D4 · GPU spending ceiling
 
-Nothing is rented and no account is configured. The packet's first proposed step
-is a measured pilot of about 4 hours on 2× H100, roughly $34 plus tax at the
-2026-10-04 list price, using `../cloud/benchmark-on-gpu.sh`. Recheck the price
-before launching.
+Owner decision: **research and prepare only**. No spend, account use, or
+instance launch is authorized. A planning-only option in the execution packet
+is a one-GPU H100 pilot with a four-hour hard stop and a proposed US$25
+all-in ceiling; region availability, current price, and tax remain unverified.
+Recheck every cost and obtain explicit launch approval before provisioning.
 
-- [ ] Approve a pilot up to $______  [ ] Not now
+- [ ] Approve a pilot up to $______  [x] Not now — research and prepare only
 - Provider / account owner: ______________________
 - Owner / date: ______________________
 

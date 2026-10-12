@@ -13,7 +13,10 @@ from guru.train import (
     PROMPT_TEMPLATE,
     SFTStream,
     _build_sft_training_identity,
+    _canonical_synthetic_smoke_sft,
     _validate_sft_resume_identity,
+    _train_impl,
+    _train_synthetic_sft_smoke,
     sample,
     train,
 )
@@ -103,38 +106,38 @@ def test_sft_stream_resume_restores_next_row_selection_not_initial_seed(tmp_path
     assert not np.array_equal(actual_next, restarted_from_seed)
 
 
-@pytest.mark.parametrize("missing_state", ["sft_stream_state", "torch_rng_state"])
-def test_sft_resume_fails_closed_when_sampler_or_torch_rng_state_is_missing(tmp_path, missing_state):
-    config = GuruConfig(vocab_size=258, d_model=32, n_layer=1, n_head=4, n_kv_head=2,
-                        ffn_dim=64, max_seq_len=128, batch_tokens=128)
-    model = GuruForCausalLM(config)
-    config.name = "guru-maataa-nano-instruct"
-    legacy = {
-        "model": model.state_dict(),
-        "config": json.loads(config.to_json()),
-        "optimizer": {},
-        "step": 1,
-    }
-    fixture = _write_jsonl(tmp_path / "pairs.jsonl", [{"prompt": "tiny", "answer": "answer"}])
-    tokenizer_path = tmp_path / "tokenizer.json"
-    tokenizer_path.write_text('{"type":"byte-v1","vocab_size":258}\n', encoding="utf-8")
-    stream = SFTStream(fixture, ByteTokenizer(), seq_len=128, seed=1337)
-    legacy["sft_training_identity"] = _build_sft_training_identity(
-        stream, ByteTokenizer(), tokenizer_path, config, micro_bs=1, accumulation=1,
-        world=1, device="cpu", peak_lr=config.lr * 0.1, warmup=20, seed=1337,
-        total_steps=2, eval_every=1,
-    )
-    legacy["sft_stream_state"] = stream.state_dict()
-    legacy["torch_rng_state"] = {"device": "cpu", "cpu": torch.get_rng_state().clone(), "cuda": None}
-    del legacy[missing_state]
-    with patch("guru.train.torch.load", return_value=legacy), \
-            patch("torch.optim.AdamW.load_state_dict", return_value=None):
-        expected = "without sampler RNG state" if missing_state == "sft_stream_state" else "without Torch RNG state"
-        with pytest.raises(ValueError, match=expected):
-            train(size="nano", data_dir=str(tmp_path), out_dir=str(tmp_path / "out"),
-                  tokenizer_path=str(tokenizer_path), tokens=256, micro_bs=1,
-                  resume=True, device="cpu", sft=str(fixture), eval_every=1,
-                  tokenizer_override=ByteTokenizer())
+def test_public_train_rejects_persistent_sft_before_loading_or_writing(tmp_path):
+    fixture = _write_jsonl(tmp_path / "pairs.jsonl", [{"prompt": "task", "answer": "answer"}])
+    output = tmp_path / "out"
+    with patch("guru.train.torch.load") as load_checkpoint:
+        with pytest.raises(ValueError, match="disabled by I7.*ephemeral-only"):
+            train(size="nano", data_dir=str(tmp_path), out_dir=str(output),
+                  tokenizer_path=str(tmp_path / "tokenizer.json"), sft=str(fixture), device="cpu")
+    load_checkpoint.assert_not_called()
+    assert not output.exists()
+
+
+def test_internal_train_impl_rejects_arbitrary_sft_without_smoke_authorization(tmp_path):
+    fixture = _write_jsonl(tmp_path / "pairs.jsonl", [{"prompt": "task", "answer": "arbitrary"}])
+    output = tmp_path / "out"
+    with patch("guru.train.torch.load") as load_checkpoint:
+        with pytest.raises(ValueError, match="disabled by I7"):
+            _train_impl(size="nano", data_dir=str(tmp_path), out_dir=str(output),
+                        tokenizer_path=str(tmp_path / "tokenizer.json"), sft=str(fixture), device="cpu")
+    load_checkpoint.assert_not_called()
+    assert not output.exists()
+
+
+def test_cli_teach_rejects_pairs_and_panini_before_creating_or_reading_files(tmp_path):
+    from guru.__main__ import main
+
+    pairs = tmp_path / "pairs.jsonl"
+    pairs.write_text('{"prompt":"task","answer":"answer"}\n', encoding="utf-8")
+    generated = tmp_path / "teach-combined.jsonl"
+    with patch("guru.__main__.DATA", str(tmp_path)):
+        with pytest.raises(SystemExit, match="disabled by I7.*ephemeral-only"):
+            main(["teach", "--pairs", str(pairs), "--panini"])
+    assert not generated.exists()
 
 
 @pytest.mark.parametrize("change", ["edit_data", "reorder_data", "tokenizer", "tokenizer_behavior",
@@ -211,64 +214,90 @@ def test_sample_restores_prior_model_training_mode_with_dropout():
     assert model.training is False
 
 
-def test_ddp_sft_resume_is_rejected_before_process_group_initialization(tmp_path):
+def test_sft_policy_blocks_before_ddp_process_group_initialization(tmp_path):
     fixture = _write_jsonl(tmp_path / "pairs.jsonl", [{"prompt": "tiny", "answer": "answer"}])
     with patch.dict(os.environ, {"WORLD_SIZE": "2"}):
-        with pytest.raises(ValueError, match="DDP SFT resume is unsupported"):
+        with patch("guru.train.dist.init_process_group") as init_group, \
+                pytest.raises(ValueError, match="disabled by I7"):
             train(size="nano", data_dir=str(tmp_path), out_dir=str(tmp_path / "out"),
                   tokens=256, micro_bs=1, resume=True, device="cpu", sft=str(fixture),
                   tokenizer_override=ByteTokenizer())
+    init_group.assert_not_called()
 
 
-def test_mps_sft_resume_is_rejected_before_loading_checkpoint(tmp_path):
+def test_sft_policy_blocks_before_device_selection_or_checkpoint_loading(tmp_path):
     fixture = _write_jsonl(tmp_path / "pairs.jsonl", [{"prompt": "tiny", "answer": "answer"}])
-    with patch("guru.train.pick_device", return_value="mps"), \
+    with patch("guru.train.pick_device") as choose_device, \
             patch("guru.train.torch.load") as load_checkpoint:
-        with pytest.raises(ValueError, match="MPS SFT resume is unsupported"):
+        with pytest.raises(ValueError, match="disabled by I7"):
             train(size="nano", data_dir=str(tmp_path), out_dir=str(tmp_path / "out"),
                   tokens=256, micro_bs=1, resume=True, sft=str(fixture),
                   tokenizer_override=ByteTokenizer())
+    choose_device.assert_not_called()
     load_checkpoint.assert_not_called()
 
 
-def test_dropout_sft_uninterrupted_and_resumed_weights_match(tmp_path):
-    seq_len = 128
-    rows = [{"prompt": "write add", "answer": "def add(a, b): return a + b"}]
-    fixture = _write_jsonl(tmp_path / "pairs.jsonl", rows)
-    tokenizer_path = tmp_path / "tokenizer.json"
-    tokenizer_path.write_text('{"type":"byte-v1","vocab_size":258}\n', encoding="utf-8")
-    overrides = {
-        "vocab_size": 258, "d_model": 16, "n_layer": 1, "n_head": 2,
-        "n_kv_head": 1, "ffn_dim": 32, "max_seq_len": seq_len,
-        "batch_tokens": seq_len, "train_tokens": seq_len * 2,
-        "lr": 3e-3, "dropout": 0.35,
+def test_direct_sft_entrypoint_rejects_even_temporary_custom_fixture(tmp_path):
+    fixture = _write_jsonl(tmp_path / "pairs.jsonl", [
+        {"prompt": "write add", "answer": "def add(a, b): return a + b"},
+    ])
+    with pytest.raises(ValueError, match="disabled by I7"):
+        train(size="nano", data_dir=str(tmp_path), out_dir=str(tmp_path / "out"),
+              tokenizer_path=str(tmp_path / "tokenizer.json"), tokens=256, micro_bs=1,
+              device="cpu", sft=str(fixture), tokenizer_override=ByteTokenizer())
+    assert not (tmp_path / "out").exists()
+
+
+def test_smoke_training_route_rejects_noncanonical_temp_fixture_before_training(tmp_path):
+    fixture = _write_jsonl(tmp_path / "pairs.jsonl", [
+        {"prompt": "task", "answer": "not the fixed smoke example"},
+    ])
+    tokenizer = tmp_path / "tokenizer.json"
+    tokenizer.write_text("synthetic tokenizer placeholder", encoding="utf-8")
+    with pytest.raises(ValueError, match="fixed authored fixture"):
+        _train_synthetic_sft_smoke(
+            sft=str(fixture), data_dir=str(tmp_path), out_dir=str(tmp_path / "out"),
+            tokenizer_path=str(tokenizer), device="cpu", size="nano", tokens=256,
+        )
+    assert not (tmp_path / "out").exists()
+
+
+def _seed_smoke_inputs(directory):
+    directory.mkdir()
+    fixture = directory / "synthetic-sft.jsonl"
+    fixture.write_bytes(_canonical_synthetic_smoke_sft())
+    tokenizer = directory / "synthetic-byte-tokenizer.json"
+    tokenizer.write_text("synthetic tokenizer", encoding="utf-8")
+    return fixture, tokenizer
+
+
+def test_smoke_training_route_rejects_any_initial_checkpoint(tmp_path):
+    fixture, tokenizer = _seed_smoke_inputs(tmp_path / "run")
+    with patch("guru.train.torch.load") as load_checkpoint:
+        with pytest.raises(ValueError, match="does not accept an initial checkpoint"):
+            _train_synthetic_sft_smoke(
+                sft=str(fixture), data_dir=str(fixture.parent), out_dir=str(fixture.parent),
+                tokenizer_path=str(tokenizer), device="cpu", size="nano", tokens=256,
+                init_from=str(tmp_path / "initial.pt"),
+            )
+    load_checkpoint.assert_not_called()
+    assert set(path.name for path in fixture.parent.iterdir()) == {
+        "synthetic-sft.jsonl", "synthetic-byte-tokenizer.json",
     }
 
-    def run(out_dir, tokens, *, resume=False, stop_at_step=None):
-        return train(
-            size="nano", data_dir=str(tmp_path), out_dir=str(out_dir),
-            tokenizer_path=str(tokenizer_path), tokens=tokens, micro_bs=1,
-            resume=resume, device="cpu", sft=str(fixture), seed=101,
-            eval_every=1, overrides=overrides, tokenizer_override=ByteTokenizer(),
-            stop_at_step=stop_at_step,
-        )
 
-    prior_threads = torch.get_num_threads()
-    try:
-        torch.set_num_threads(1)
-        uninterrupted_dir = tmp_path / "uninterrupted"
-        resumed_dir = tmp_path / "resumed"
-        run(uninterrupted_dir, seq_len * 2)
-        run(resumed_dir, seq_len * 2, stop_at_step=1)
-        run(resumed_dir, seq_len * 2, resume=True)
-    finally:
-        torch.set_num_threads(prior_threads)
-
-    uninterrupted = torch.load(uninterrupted_dir / "last.pt", map_location="cpu", weights_only=True)
-    resumed = torch.load(resumed_dir / "last.pt", map_location="cpu", weights_only=True)
-    assert uninterrupted["step"] == resumed["step"] == 2
-    assert all(torch.equal(uninterrupted["model"][key], resumed["model"][key])
-               for key in uninterrupted["model"])
+def test_smoke_training_route_rejects_existing_unowned_output_contents(tmp_path):
+    fixture, tokenizer = _seed_smoke_inputs(tmp_path / "run")
+    unexpected = fixture.parent / "keep-me.txt"
+    unexpected.write_text("pre-existing", encoding="utf-8")
+    with patch("guru.train.torch.load") as load_checkpoint:
+        with pytest.raises(ValueError, match="not fresh or is not owned"):
+            _train_synthetic_sft_smoke(
+                sft=str(fixture), data_dir=str(fixture.parent), out_dir=str(fixture.parent),
+                tokenizer_path=str(tokenizer), device="cpu", size="nano", tokens=256,
+            )
+    load_checkpoint.assert_not_called()
+    assert unexpected.read_text(encoding="utf-8") == "pre-existing"
 
 
 def test_cpu_synthetic_sft_updates_reloads_and_resumes_to_exact_budget(tmp_path):

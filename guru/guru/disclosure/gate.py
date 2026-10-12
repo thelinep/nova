@@ -6,9 +6,11 @@ from pathlib import Path
 from guru.audit_log import append_audit_line
 from guru.schemas.disclosure import Classification, Decision, DisclosureDecision, DisclosureRequest, Reason
 from guru.schemas.teacher_lineage import AccessMethod, ReviewStatus, TeacherLineage
+from guru.quality.use_scope import GURU_USE_SCOPE_POLICY
 
 AUDIT_PATH = Path(__file__).resolve().parents[2] / "audit" / "disclosure.jsonl"
 REASON_PRIORITY = (
+    Reason.EXTERNAL_PROVIDER_TRANSMISSION_DISABLED,
     Reason.TEACHER_NOT_APPROVED,
     Reason.INPUT_TYPE_NOT_ALLOWED,
     Reason.CONFIDENTIALITY_NO_APPROVER,
@@ -47,6 +49,12 @@ def evaluate_disclosure(request: DisclosureRequest, teacher: TeacherLineage) -> 
     if (teacher.access_method is not AccessMethod.API or teacher.review_status is not ReviewStatus.APPROVED
             or not teacher.reviewed_by or teacher.reviewed_at is None):
         failed.add(Reason.TEACHER_NOT_APPROVED)
+    # I7 owner policy: no external provider receives source or derived data.
+    # This denial is independent of provider terms, teacher license, and the
+    # teacher's separate input-disclosure record.
+    if (teacher.access_method is AccessMethod.API and
+            not GURU_USE_SCOPE_POLICY.permits_external_transmission()):
+        failed.add(Reason.EXTERNAL_PROVIDER_TRANSMISSION_DISABLED)
     if request.input_type not in disclosure.allowed_input_types:
         failed.add(Reason.INPUT_TYPE_NOT_ALLOWED)
     if ((request.confidentiality_required or disclosure.confidentiality_required)

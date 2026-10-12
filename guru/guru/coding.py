@@ -16,6 +16,8 @@ import tempfile
 import unicodedata
 from pathlib import PurePosixPath, PureWindowsPath
 
+from guru.quality.use_scope import GURU_USE_SCOPE_POLICY
+
 SCHEMA_VERSION = "guru-code-task-v1"
 SCHEMA_VERSION_V2 = "guru-code-task-v2"
 PLAN_SCHEMA = {
@@ -327,6 +329,10 @@ def write_sft(tasks: list[dict], destination: str, *, profile: str = "smoke", so
     versions = {row["schema_version"] for row in tasks}
     if len(versions) > 1:
         raise CodingDataError("task corpus cannot mix schema versions")
+    if not GURU_USE_SCOPE_POLICY.permits_persisted_corpus():
+        raise CodingDataError(
+            "I7 policy allows ephemeral transformed data only; persisted SFT export is disabled"
+        )
     if profile == "release":
         if not source_manifest:
             raise CodingDataError("release SFT export requires --source-manifest")

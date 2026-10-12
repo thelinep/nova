@@ -18,6 +18,22 @@ def digest_json(value: Any) -> str:
 def append_audit_line(path: Path, *, event: str, payload_digest: str | None,
                       fields: dict[str, Any]) -> None:
     """Append a single canonical event. Callers must pass metadata, never payloads."""
+    if event == "item_admission":
+        raise ValueError("item_admission records may only be written by the quality runner")
+    _append_audit_record(path, event=event, payload_digest=payload_digest, fields=fields)
+
+
+def _append_quality_runner_item_admission(path: Path, *, payload: Any) -> None:
+    """Write a typed item admission from the quality-runner integration path."""
+    from guru.schemas.quality import QualityAdmissionPayload
+
+    parsed = payload if isinstance(payload, QualityAdmissionPayload) else QualityAdmissionPayload.model_validate(payload)
+    fields = parsed.model_dump(mode="json")
+    _append_audit_record(path, event="item_admission", payload_digest=digest_json(fields), fields=fields)
+
+
+def _append_audit_record(path: Path, *, event: str, payload_digest: str | None,
+                         fields: dict[str, Any]) -> None:
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "event": event,
