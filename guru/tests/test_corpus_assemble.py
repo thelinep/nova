@@ -13,6 +13,7 @@ from guru.corpus.assemble import CorpusAssemblyBlocked, assemble, preflight
 from guru.schemas.corpus import CorpusKind, CorpusManifest, CorpusStatus
 from guru.schemas.corpus_item import CorpusItem
 from guru.schemas.teacher_lineage import AccessMethod, InputDisclosure, InputType, OutputRights, ReviewStatus, TeacherLineage
+from guru.schemas.quality import AutoCheckName, QualityAdmissionPayload, QualityCheckSummary, QualityTier
 
 
 def approved_teacher() -> TeacherLineage:
@@ -38,16 +39,21 @@ def corpus_items(count: int = 40) -> list[CorpusItem]:
     ) for index in range(count)]
 
 
-def admission_rows(count: int = 40) -> list[dict[str, str]]:
-    items = corpus_items(count)
-    return [{"event": "item_admission", "item_id": item.item_id, "decision": "admit",
-             "item_digest": item.canonical_digest(), "payload_digest": f"{index:064x}"}
-            for index, item in enumerate(items)]
+def admission_row(item: CorpusItem, decision: str = "admit") -> dict:
+    payload = QualityAdmissionPayload(
+        item_id=item.item_id, item_digest=item.canonical_digest(), tier=QualityTier.C,
+        decision=decision, reason_codes=["fixture"],
+        checks=[QualityCheckSummary(name=name, status="PASS", evidence_digest=f"{i + 1:064x}",
+                                    item_digest=item.canonical_digest(), tool_version="fixture/1",
+                                    policy_version="fixture/1")
+                for i, name in enumerate(AutoCheckName)],
+    ).model_dump(mode="json")
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    return {"event": "item_admission", **payload, "payload_digest": hashlib.sha256(raw).hexdigest()}
 
 
-def admission_row(item: CorpusItem) -> dict[str, str]:
-    return {"event": "item_admission", "item_id": item.item_id, "decision": "admit",
-            "item_digest": item.canonical_digest()}
+def admission_rows(count: int = 40) -> list[dict]:
+    return [admission_row(item) for item in corpus_items(count)]
 
 
 class CorpusAssemblyTests(unittest.TestCase):
@@ -75,6 +81,25 @@ class CorpusAssemblyTests(unittest.TestCase):
                            admission_audit=[row, dict(row)])
         self.assertFalse(report["ready"])
         self.assertIn("duplicate quality decisions for item 'item-000'", report["blockers"])
+
+    def test_legacy_or_tampered_admission_payload_blocks_preflight(self) -> None:
+        item = corpus_items(1)[0]
+        legacy = {"event": "item_admission", "item_id": item.item_id,
+                  "decision": "admit", "item_digest": item.canonical_digest()}
+        report = preflight(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                           admission_audit=[legacy])
+        self.assertFalse(report["ready"])
+        self.assertTrue(any("invalid or incomplete admission evidence" in value for value in report["blockers"]))
+
+        tampered = admission_row(item)
+        tampered["checks"][0]["evidence_digest"] = "f" * 64
+        duplicate_check = admission_row(item)
+        duplicate_check["checks"][1]["name"] = duplicate_check["checks"][0]["name"]
+        for attack in (tampered, duplicate_check):
+            report = preflight(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                               admission_audit=[attack])
+            self.assertFalse(report["ready"])
+            self.assertTrue(any("invalid or incomplete admission evidence" in value for value in report["blockers"]))
 
     def test_assemble_raises_typed_blocker_before_writing(self) -> None:
         with TemporaryDirectory() as directory:
@@ -189,9 +214,7 @@ class CorpusAssemblyTests(unittest.TestCase):
         # the curator's transitive leakage-group identifier.
         items[0] = items[0].model_copy(update={"metadata": {"leakage_group": "shared-family"}})
         items[1] = items[1].model_copy(update={"metadata": {"leakage_group": "shared-family"}})
-        rows = [*admission_rows(40)]
-        rows[0]["item_digest"] = items[0].canonical_digest()
-        rows[1]["item_digest"] = items[1].canonical_digest()
+        rows = [admission_row(item) for item in items]
         with TemporaryDirectory() as directory:
             manifest = assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
                                 admission_audit=rows, items=items, corpus_id="exp", version="v1",
@@ -219,8 +242,7 @@ class CorpusAssemblyTests(unittest.TestCase):
                         key=lambda group_id: (hashlib.sha256(group_id.encode("utf-8")).digest(), group_id))
         declared = "test" if groups.index("task-000") < 32 else "train"
         items[0] = items[0].model_copy(update={"metadata": {"leakage_group": "task-000", "split": declared}})
-        rows = [*admission_rows(40)]
-        rows[0]["item_digest"] = items[0].canonical_digest()
+        rows = [admission_row(item) for item in items]
         with TemporaryDirectory() as directory:
             with self.assertRaisesRegex(ValueError, "declares a split that conflicts"):
                 assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
@@ -235,8 +257,7 @@ class CorpusAssemblyTests(unittest.TestCase):
         items[item_index] = items[item_index].model_copy(update={
             "metadata": {"leakage_group": groups[32], "split": "validation"},
         })
-        rows = [*admission_rows(40)]
-        rows[item_index]["item_digest"] = items[item_index].canonical_digest()
+        rows = [admission_row(item) for item in items]
         with TemporaryDirectory() as directory:
             manifest = assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
                                 admission_audit=rows, items=items, corpus_id="exp", version="v1",
@@ -252,8 +273,7 @@ class CorpusAssemblyTests(unittest.TestCase):
         extra = rows[-1]
         with TemporaryDirectory() as directory:
             assemble(kind="c_rd", task_manifest=task_rows(), teacher_registry=[approved_teacher()],
-                     admission_audit=[*admission_rows(), {"event": "item_admission", "item_id": extra.item_id,
-                                                          "decision": "admit", "item_digest": extra.canonical_digest()}],
+                     admission_audit=[*admission_rows(), admission_row(extra)],
                      items=rows, corpus_id="exp", version="v1", split_seed="seed", output_root=directory)
             root = Path(directory) / "exp" / "v1"
             placements = [split for split in ("train", "val", "test")
@@ -309,8 +329,7 @@ class CorpusAssemblyTests(unittest.TestCase):
 
     def test_rejected_items_are_not_written_to_training_splits(self) -> None:
         items = corpus_items(2)
-        audit = admission_rows(1) + [{"event": "item_admission", "item_id": "item-001", "decision": "reject",
-                                      "item_digest": items[1].canonical_digest()}]
+        audit = admission_rows(1) + [admission_row(items[1], "reject")]
         with TemporaryDirectory() as directory:
             result = assemble(kind="c_rd", task_manifest=task_rows(2), teacher_registry=[approved_teacher()],
                               admission_audit=audit, items=items, corpus_id="exp", version="v1",
@@ -343,17 +362,18 @@ class CorpusAssemblyTests(unittest.TestCase):
                   "item_digest": "0" * 64}],
             ):
                 with self.subTest(audit=audit):
-                    with self.assertRaisesRegex(ValueError, "item_digest|content digest"):
+                    with self.assertRaises(CorpusAssemblyBlocked) as captured:
                         assemble(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
                                  admission_audit=audit, items=[item], corpus_id="exp", version="v1",
                                  split_seed="seed", output_root=Path(directory) / str(len(audit[0])))
+                    self.assertTrue(any("admission evidence" in blocker for blocker in captured.exception.blockers))
 
     def test_assembly_rejects_duplicate_or_conflicting_decisions(self) -> None:
         item = corpus_items(1)[0]
-        admitted = {"event": "item_admission", "item_id": item.item_id, "decision": "admit",
-                    "item_digest": item.canonical_digest()}
+        admitted = admission_row(item)
         with TemporaryDirectory() as directory:
-            for index, second in enumerate((dict(admitted), {**admitted, "decision": "reject"})):
+            rejected = admission_row(item, "reject")
+            for index, second in enumerate((dict(admitted), rejected)):
                 with self.subTest(second=second):
                     with self.assertRaises(CorpusAssemblyBlocked) as captured:
                         assemble(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],

@@ -17,7 +17,8 @@ from pydantic import ValidationError
 
 def checks(*, failed: AbstractSet[AutoCheckName] = frozenset()) -> list[dict[str, Any]]:
     return [{"name": name, "passed": name not in failed, "item_digest": "b" * 64,
-             "evidence_digest": "c" * 64}
+             "evidence_digest": "c" * 64, "tool_version": "test-tool/1",
+             "policy_version": "test-policy/1"}
             for name in AutoCheckName]
 
 

@@ -14,15 +14,11 @@ import os
 from pathlib import Path
 import tempfile
 import threading
-from typing import Iterator
+from typing import Iterator, NoReturn
 
 from pydantic import ValidationError
 
-from guru.schemas.evaluator_evidence import (
-    CaseStatus,
-    EvaluationCaseEvidence,
-)
-from guru.schemas.quality import AutoCheckName, AutoCheckResult
+from guru.schemas.evaluator_evidence import EvaluationCaseEvidence
 
 
 _ZERO_DIGEST = "0" * 64
@@ -186,42 +182,6 @@ def map_evidence_to_tests_check(
     *,
     expected_item_digest: str,
     expected_previous_record_digest: str = _ZERO_DIGEST,
-) -> AutoCheckResult:
-    """Map one case to TESTS; only sealed, complete PASS evidence passes."""
-    if not isinstance(expected_item_digest, str) or len(expected_item_digest) != 64 or any(
-        character not in "0123456789abcdef" for character in expected_item_digest
-    ):
-        raise ValueError("expected_item_digest must be a lowercase SHA-256 digest")
-    try:
-        parsed = record if isinstance(record, EvaluationCaseEvidence) else EvaluationCaseEvidence.model_validate(record)
-        # For this standalone mapper, recompute integrity. A dict without a valid
-        # chain/digest cannot be trusted even if its status says pass.
-        payload = parsed.model_dump(mode="json")
-        supplied_digest = payload.pop("record_digest")
-        integrity_ok = (
-            _digest(_canonical_bytes(payload)) == supplied_digest
-            and parsed.previous_record_digest == expected_previous_record_digest
-            and parsed.item_digest == expected_item_digest
-        )
-    except (ValidationError, TypeError, ValueError):
-        parsed = None
-        integrity_ok = False
-    passed = bool(
-        parsed is not None and integrity_ok
-        and parsed.status is CaseStatus.PASS
-        and parsed.exit_code == 0
-        and parsed.cleanup_confirmed
-        and not parsed.output_limited
-        and not parsed.stdout_truncated
-        and not parsed.stderr_truncated
-    )
-    if parsed is None:
-        return AutoCheckResult(name=AutoCheckName.TESTS, passed=False,
-                               item_digest=expected_item_digest)
-    detail = _digest((f"{parsed.status.value}:{parsed.exit_code}:{int(integrity_ok)}").encode())
-    return AutoCheckResult(
-        name=AutoCheckName.TESTS, passed=passed,
-        item_digest=expected_item_digest,
-        evidence_digest=parsed.record_digest,
-        detail_digest=detail,
-    )
+) -> NoReturn:
+    """Reject single-case mapping; TESTS requires a pinned complete case set."""
+    raise EvidenceLogError("single case evidence cannot map to TESTS; use the pinned case-set provider")

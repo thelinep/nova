@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from guru.schemas.corpus import CorpusKind, CorpusManifest, CorpusStatus
 from guru.schemas.corpus_item import CorpusItem
 from guru.schemas.teacher_lineage import TeacherLineage
+from guru.schemas.quality import QualityAdmissionPayload
 from guru.teacher.intake import load_registry, validate_teacher
 
 REPO_GURU_ROOT = Path(__file__).resolve().parents[2]
@@ -80,7 +81,26 @@ def _read_admission_rows(source: str | Path | Iterable[dict] | None) -> list[dic
 def _decision_rows_by_item(rows: Iterable[dict]) -> dict[str, dict]:
     decisions: dict[str, dict] = {}
     for row in rows:
-        if row.get("event") in ("item_admission", None) and isinstance(row.get("item_id"), str):
+        if not isinstance(row, dict):
+            raise CorpusAssemblyError("admission audit contains a non-object row")
+        if row.get("event") in ("item_admission", None):
+            try:
+                if not isinstance(row.get("item_id"), str) or not row["item_id"].strip():
+                    raise ValueError("admission row is missing item_id")
+                if row.get("event") != "item_admission":
+                    raise ValueError("legacy admission row lacks versioned event evidence")
+                digest = row.get("payload_digest")
+                payload_value = {key: value for key, value in row.items()
+                                 if key not in {"event", "timestamp", "payload_digest"}}
+                payload = QualityAdmissionPayload.model_validate(payload_value)
+                canonical = json.dumps(payload.model_dump(mode="json"), ensure_ascii=False,
+                                       sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+                if not isinstance(digest, str) or hashlib.sha256(canonical).hexdigest() != digest:
+                    raise ValueError("admission payload digest mismatch")
+                if payload.item_id != row["item_id"]:
+                    raise ValueError("admission payload item ID mismatch")
+            except (ValidationError, TypeError, ValueError) as exc:
+                raise CorpusAssemblyError(f"invalid or incomplete admission evidence for item {row.get('item_id')!r}") from exc
             item_id = row["item_id"]
             if item_id in decisions:
                 raise CorpusAssemblyError(f"duplicate quality decisions for item {item_id!r}")
@@ -100,6 +120,7 @@ def preflight(*, kind: CorpusKind | str,
     teacher_source = DEFAULT_TEACHER_REGISTRY if teacher_registry is None else teacher_registry
     audit_source = DEFAULT_ADMISSION_AUDIT if admission_audit is None else admission_audit
     blockers: list[str] = []
+    warnings: list[str] = []
     if isinstance(task_source, (str, Path)):
         if not Path(task_source).is_file():
             blockers.append("missing task manifest")
@@ -132,9 +153,11 @@ def preflight(*, kind: CorpusKind | str,
         blockers.append("admission audit has no decisions")
     admitted = [row for row in audit_rows if row.get("event") in ("item_admission", None)
                 and row.get("decision") in ADMITTED_DECISIONS]
+    if any(row.get("decision") == "admit_with_followup" for row in admitted):
+        warnings.append("ADMIT_WITH_FOLLOWUP remains admitted by current policy; owner policy review is open")
     if audit_rows and not admitted:
         blockers.append("admission audit contains no admitted items")
-    return {"ready": not blockers, "blockers": blockers, "warnings": []}
+    return {"ready": not blockers, "blockers": blockers, "warnings": warnings}
 
 
 def _task_ids(source: str | Path | Iterable[dict] | dict | None) -> set[str]:

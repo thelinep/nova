@@ -18,6 +18,26 @@
 
 ### Implementation evidence updated 2026-10-12
 
+#### Evaluator container prequalification (operator-reported, 2026-10-12)
+
+Docker Desktop probes used a pinned local `python` image (`sha256:02108f…`).
+Reported inspection showed network disabled, no mounts, read-only root, a
+nonprivileged identity, zero effective capabilities, `NoNewPrivs=1`, uid
+65534, 512 MiB memory and 32 PIDs. Synthetic probes reported blocked egress,
+denied `/etc` writes, allowed `/tmp` writes, no host-home visibility, cleanup,
+and separate timeout, output-cap and PID-cap cleanup checks. No candidate task
+or training data was evaluated. These container checks are prequalification
+only: they do not establish disposable-VM isolation, a qualified evaluator, or
+measurable `tests_pass`; the exact image digest and raw probe artifacts still
+need to be recorded in an independently reviewable qualification packet.
+
+#### Admission-policy open item
+
+`ADMIT_WITH_FOLLOWUP` continues to count as admitted under the existing
+assembler policy. Whether that outcome should be eligible for corpus assembly
+requires an owner policy decision; the current I8 work exposes it as a
+preflight warning and does not change its admitted semantics.
+
 | Work slice | Current implementation evidence | What remains open |
 | --- | --- | --- |
 | B0.1–B0.4 evaluator evidence contract | Commits `5f24668` (integrated from isolated agent branch); strict case schema, digest chain, durable atomic append/replay and fail-closed `TESTS` mapper. Focused evaluator suites: 22 passed. | No actual task runner/backend, disposable host, candidate-code execution, independent review or evaluator lock. This does not make executable correctness measurable. |

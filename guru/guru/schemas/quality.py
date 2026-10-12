@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 
@@ -41,7 +42,9 @@ class AutoCheckResult(StrictModel):
     name: AutoCheckName
     passed: bool
     item_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
-    evidence_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    evidence_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    tool_version: str = Field(min_length=1)
+    policy_version: str = Field(min_length=1)
     detail_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
 
@@ -76,6 +79,42 @@ class ItemAdmission(StrictModel):
     def checks_bind_to_admitted_item(self) -> ItemAdmission:
         if any(check.item_digest != self.item_digest for check in self.auto_checks):
             raise ValueError("every auto_check item_digest must match the admitted item_digest")
+        return self
+
+
+class QualityCheckSummary(StrictModel):
+    name: AutoCheckName
+    status: str = Field(pattern=r"^(PASS|FAIL)$")
+    evidence_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    item_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    tool_version: str = Field(min_length=1)
+    policy_version: str = Field(min_length=1)
+
+
+class QualityAdmissionPayload(StrictModel):
+    """Versioned, digest-covered audit payload consumed by corpus assembly."""
+
+    schema_version: Literal["guru-quality-admission-v2"] = "guru-quality-admission-v2"
+    item_id: str = Field(min_length=1)
+    item_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    tier: QualityTier
+    decision: AdmissionDecision
+    reason_codes: list[str]
+    human_review: HumanReviewRecord | None = None
+    checks: list[QualityCheckSummary]
+
+    @field_validator("checks")
+    @classmethod
+    def complete_unique_checks(cls, checks: list[QualityCheckSummary]) -> list[QualityCheckSummary]:
+        names = [check.name for check in checks]
+        if len(names) != len(set(names)) or set(names) != REQUIRED_AUTO_CHECKS:
+            raise ValueError("checks must contain each required check exactly once")
+        return checks
+
+    @model_validator(mode="after")
+    def check_bindings_match_item(self) -> QualityAdmissionPayload:
+        if any(check.item_digest != self.item_digest for check in self.checks):
+            raise ValueError("every check summary must bind to item_digest")
         return self
 
 

@@ -23,7 +23,12 @@ from pydantic import ValidationError
 
 from guru.disclosure import redact
 from guru.schemas.corpus_item import CorpusItem
+from guru.schemas.evaluator_evidence import CaseStatus, EvaluatorCaseSet, EvaluatorQualificationEvidence
+from guru.schemas.rights_decision import RightsDecision
+from guru.schemas.teacher_lineage import TeacherLineage
 from guru.schemas.quality import AutoCheckName, AutoCheckResult, REQUIRED_AUTO_CHECKS
+from guru.teacher.intake import validate_teacher
+from guru.quality.providers import EvaluatorEvidenceProvider, RightsEvidenceProvider
 
 
 TOOL_VERSION = "guru-deterministic-checks/1.1.0"
@@ -94,7 +99,9 @@ class CheckRunReport:
         return [AutoCheckResult(name=record.name,
                                 passed=record.status is CheckRunStatus.PASS,
                                 item_digest=record.item_digest,
-                                evidence_digest=record.evidence_digest)
+                                evidence_digest=record.evidence_digest,
+                                tool_version=record.tool_version,
+                                policy_version=record.policy_version)
                 for record in self.records]
 
 
@@ -125,7 +132,8 @@ def _result(name: AutoCheckName, passed: bool, evidence: Any) -> AutoCheckResult
         "result": evidence,
     }
     return AutoCheckResult(name=name, passed=passed, item_digest=item_digest,
-                           evidence_digest=_digest(versioned_evidence))
+                           evidence_digest=_digest(versioned_evidence),
+                           tool_version=TOOL_VERSION, policy_version=POLICY_VERSIONS[name])
 
 
 def _raw_item_digest(raw_item: Mapping[str, Any]) -> str:
@@ -420,27 +428,147 @@ def run_deterministic_checks(
     source_manifest_digest: str | None = None,
     corpus_items: Sequence[CorpusItem | Mapping[str, Any]] | None = None,
     group_assignments: Mapping[str, str | Sequence[str]] | None = None,
+    evaluator_provider: EvaluatorEvidenceProvider | None = None,
+    rights_provider: RightsEvidenceProvider | None = None,
 ) -> CheckRunReport:
     """Run available producers and report all required checks as tri-state.
 
     This function never invokes ``item_decision`` and never writes an audit.
-    TESTS stays UNAVAILABLE because there is no qualified evaluator provider;
-    LICENSE stays UNAVAILABLE because no scoped owner/source rights evidence
-    provider exists. Those states cannot be overridden by caller booleans or
-    hand-built ``AutoCheckResult`` values. ``CheckRunReport.as_auto_checks``
-    refuses every incomplete or non-passing run.
+    TESTS and LICENSE stay UNAVAILABLE unless separately controlled provider
+    implementations load externally pinned qualification and approved rights
+    records. There are no production provider implementations in this slice.
+    Those states cannot be overridden by caller booleans or hand-built
+    ``AutoCheckResult`` values. ``CheckRunReport.as_auto_checks`` refuses every
+    incomplete or non-passing run.
     """
     item_digest = _item_binding(raw_item)
+    tests_status = _status_without_result(AutoCheckName.TESTS, CheckRunStatus.UNAVAILABLE,
+        "externally pinned evaluator qualification and complete case-set provider are unavailable",
+        item_digest=item_digest)
+    if evaluator_provider is not None:
+        try:
+            if not isinstance(evaluator_provider, EvaluatorEvidenceProvider):
+                raise CheckUnavailableError("evaluator evidence provider is not trusted/typed")
+            item_value = _valid_item(raw_item)
+            supplied = evaluator_provider.load_for(item_value)
+            if supplied is None:
+                raise CheckUnavailableError("evaluator provider has no evidence for this item")
+            evaluator_case_set = supplied.case_set
+            evaluator_qualification = supplied.qualification
+            expected_qualification_digest = supplied.qualification_digest
+            expected_test_suite_digest = supplied.test_suite_digest
+            expected_case_ids = supplied.expected_case_ids
+            expected_case_test_digests = supplied.expected_case_test_digests
+            expected_task_digest = supplied.task_digest
+            if not isinstance(evaluator_case_set, EvaluatorCaseSet) or not isinstance(evaluator_qualification, EvaluatorQualificationEvidence):
+                raise CheckUnavailableError("evaluator provider returned untyped evidence")
+            qpayload = evaluator_qualification.model_dump(mode="json")
+            qdigest = _digest(qpayload)
+            if (expected_qualification_digest != qdigest or
+                    supplied.trusted_qualification_digest != qdigest or
+                    supplied.trusted_test_suite_digest != expected_test_suite_digest):
+                raise CheckUnavailableError("evaluator qualification or test-suite digest is not externally pinned")
+            if expected_case_ids is None or expected_case_test_digests is None:
+                raise CheckUnavailableError("frozen expected case IDs and test digests are unavailable")
+            if (evaluator_case_set.item_digest != item_digest or
+                    evaluator_case_set.config_digest != evaluator_qualification.config_digest or
+                    evaluator_case_set.test_suite_digest != expected_test_suite_digest or
+                    evaluator_case_set.expected_case_ids != list(expected_case_ids) or
+                    set(expected_case_test_digests) != set(expected_case_ids) or
+                    any(case.test_digest != expected_case_test_digests.get(case.case_id)
+                        for case in evaluator_case_set.cases) or
+                    any(case.task_digest != expected_task_digest for case in evaluator_case_set.cases) or
+                    any(case.candidate_digest != hashlib.sha256(item_value.target.encode("utf-8")).hexdigest()
+                        for case in evaluator_case_set.cases) or
+                    any(case.image_digest != evaluator_qualification.image_digest
+                        for case in evaluator_case_set.cases)):
+                raise CheckInputError("evaluator case set differs from item, pinned suite, or qualified config")
+            from guru.evaluator_evidence import _validate_sealed
+            previous = evaluator_case_set.starting_record_digest
+            parsed_cases = []
+            for case in evaluator_case_set.cases:
+                parsed_cases.append(_validate_sealed(case.model_dump(mode="json"), previous))
+                previous = case.record_digest
+            if any(case.status not in {CaseStatus.PASS, CaseStatus.FAIL} or
+                   not case.cleanup_confirmed or case.output_limited or
+                   case.stdout_truncated or case.stderr_truncated for case in parsed_cases):
+                raise CheckUnavailableError("case set contains incomplete or unbounded evaluator outcomes")
+            failed = [case.case_id for case in parsed_cases if case.status is CaseStatus.FAIL]
+            tests_status = _status_from_result(_result(AutoCheckName.TESTS, not failed, {
+                "item_digest": item_digest, "test_suite_digest": evaluator_case_set.test_suite_digest,
+                "config_digest": evaluator_case_set.config_digest,
+                "qualification_digest": qdigest,
+                "expected_case_ids_digest": _digest(evaluator_case_set.expected_case_ids),
+                "case_record_digests": [case.record_digest for case in parsed_cases],
+                "failed_case_ids_digest": _digest(failed),
+            }))
+        except CheckUnavailableError as exc:
+            tests_status = _status_without_result(AutoCheckName.TESTS, CheckRunStatus.UNAVAILABLE,
+                str(exc), item_digest=item_digest)
+        except (ValueError, TypeError, AttributeError) as exc:
+            tests_status = _status_without_result(AutoCheckName.TESTS, CheckRunStatus.UNAVAILABLE,
+                "evaluator evidence invalid: " + str(exc), item_digest=item_digest)
+    license_status = _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
+        "typed owner/source rights evidence provider is unavailable", item_digest=item_digest)
+    if rights_provider is not None:
+        try:
+            if not isinstance(rights_provider, RightsEvidenceProvider):
+                raise CheckUnavailableError("rights evidence provider is not trusted/typed")
+            item = _valid_item(raw_item)
+            supplied_rights = rights_provider.load_for(item)
+            if supplied_rights is None:
+                raise CheckUnavailableError("rights provider has no approved record for this item artifact")
+            rights_decision = supplied_rights.decision
+            teacher_records = supplied_rights.teachers
+            if not isinstance(rights_decision, RightsDecision):
+                raise CheckUnavailableError("rights provider returned an untyped RightsDecision")
+            rights_digest = _digest(rights_decision.model_dump(mode="json"))
+            if (supplied_rights.rights_manifest_digest != supplied_rights.trusted_rights_manifest_digest or
+                    supplied_rights.approved_artifact_digest != item.source_digest or
+                    len(supplied_rights.trusted_rights_manifest_digest) != 64 or
+                    any(c not in "0123456789abcdef" for c in supplied_rights.trusted_rights_manifest_digest) or
+                    len(supplied_rights.rights_manifest_digest) != 64 or
+                    any(c not in "0123456789abcdef" for c in supplied_rights.rights_manifest_digest)):
+                raise CheckUnavailableError("rights record is not bound to the pinned approved manifest/artifact")
+            item = _valid_item(raw_item)
+            rights_ok = (supplied_rights.approved_artifact_digest == item.source_digest and
+                         rights_decision.artifact_sha256 == supplied_rights.approved_artifact_digest and
+                         rights_decision.rights.allow_training and
+                         rights_decision.rights.allow_transformed_data_retention)
+            teacher_ok = True
+            if item.teacher_lineage_id is not None:
+                if teacher_records is None:
+                    raise CheckUnavailableError("separately validated teacher record is unavailable")
+                if (supplied_rights.teacher_registry_digest is None or
+                        supplied_rights.teacher_registry_digest != supplied_rights.trusted_teacher_registry_digest or
+                        len(supplied_rights.teacher_registry_digest) != 64 or
+                        any(c not in "0123456789abcdef" for c in supplied_rights.teacher_registry_digest)):
+                    raise CheckUnavailableError("teacher record is not bound to the approved registry pin")
+                matches = [t for t in teacher_records if isinstance(t, TeacherLineage)
+                           and t.teacher_id == item.teacher_lineage_id]
+                teacher_ok = len(matches) == 1 and validate_teacher(matches[0])["admissible"]
+                if not teacher_ok:
+                    raise CheckUnavailableError("separately validated teacher rights are not admissible")
+            rdigest = rights_digest
+            license_status = _status_from_result(_result(AutoCheckName.LICENSE, rights_ok, {
+                "item_digest": item_digest, "artifact_digest": rights_decision.artifact_sha256,
+                "rights_decision_digest": rdigest,
+                "allow_training": rights_decision.rights.allow_training,
+                "allow_transformed_data_retention": rights_decision.rights.allow_transformed_data_retention,
+                "teacher_rights_validated": teacher_ok,
+            }))
+        except CheckUnavailableError as exc:
+            license_status = _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
+                str(exc), item_digest=item_digest)
+        except (ValueError, TypeError, AttributeError) as exc:
+            license_status = _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
+                "rights evidence invalid: " + str(exc), item_digest=item_digest)
     records = [
         _run_one(AutoCheckName.SCHEMA, schema_check, raw_item, bound_item_digest=item_digest),
         _run_one(AutoCheckName.SYNTAX, syntax_check, raw_item, bound_item_digest=item_digest),
-        _status_without_result(AutoCheckName.TESTS, CheckRunStatus.UNAVAILABLE,
-                               "qualified evaluator evidence provider is unavailable",
-                               item_digest=item_digest),
+        tests_status,
         _run_one(AutoCheckName.SECURITY, security_check, raw_item, bound_item_digest=item_digest),
-        _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
-                               "scoped owner/source rights evidence provider is unavailable",
-                               item_digest=item_digest),
+        license_status,
         _run_one(AutoCheckName.PROVENANCE, provenance_check, raw_item, bound_item_digest=item_digest,
                  manifest_path=source_manifest_path,
                  expected_manifest_digest=source_manifest_digest),

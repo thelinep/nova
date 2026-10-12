@@ -167,7 +167,8 @@ def test_item_mutation_changes_binding_and_stales_prior_check_evidence():
     assert old_result.item_digest == old_digest
     current_checks = [
         checks.AutoCheckResult(name=name, passed=True, item_digest=changed_digest,
-                               evidence_digest="a" * 64)
+                               evidence_digest="a" * 64, tool_version="test-tool/1",
+                               policy_version="test-policy/1")
         for name in AutoCheckName
     ]
     stale_index = next(index for index, check in enumerate(current_checks)
@@ -350,3 +351,28 @@ def test_mixed_item_run_is_rejected_before_any_audit_write(tmp_path, monkeypatch
                            tier=QualityTier.C, auto_checks=mixed_auto_checks,
                            human_review=None)
     assert not audit_path.exists()
+
+
+def test_orchestrator_without_typed_providers_writes_no_decision_or_audit(tmp_path, monkeypatch):
+    from guru.quality import gate, runner
+
+    audit_path = tmp_path / "unavailable-audit.jsonl"
+    monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
+    report = checks.run_deterministic_checks(
+        _item(), corpus_items=[_item()], group_assignments={"family-1": "train"})
+    assert {r.name: r.status for r in report.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
+    assert {r.name: r.status for r in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
+    with pytest.raises(checks.IncompleteCheckRunError):
+        monkeypatch.setattr(runner, "item_decision", lambda **kwargs: pytest.fail("decision must not run"))
+        runner.run_item_quality(_item(), tier=QualityTier.C, corpus_items=[_item()],
+                                group_assignments={"family-1": "train"})
+    assert not audit_path.exists()
+
+
+def test_untyped_request_time_evidence_cannot_self_pin_tests_or_license():
+    report = checks.run_deterministic_checks(
+        _item(), evaluator_provider=object(), rights_provider=object(),
+        corpus_items=[_item()], group_assignments={"family-1": "train"})
+    statuses = {record.name: record.status for record in report.records}
+    assert statuses[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
+    assert statuses[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
