@@ -23,9 +23,9 @@
 | B0.1–B0.4 evaluator evidence contract | Commits `5f24668` (integrated from isolated agent branch); strict case schema, digest chain, durable atomic append/replay and fail-closed `TESTS` mapper. Focused evaluator suites: 22 passed. | No actual task runner/backend, disposable host, candidate-code execution, independent review or evaluator lock. This does not make executable correctness measurable. |
 | I2/I3 item-bound admission integrity | Commits `d1bd36d` and `6981a0f`; canonical digest covers every serialized `CorpusItem` field, quality decisions carry the digest, assembly recomputes it, and duplicate item decisions block preflight/assembly. Quality + corpus suites: 27 passed. | Other audit-record schema/integrity checks, item/source rights-scope validation, complete source-manifest verification, orchestration and group-aware splits remain open. |
 | I4 teacher-lineage binding | Integrated as `244d6f3`; admitted `c_rd`/`c_trace` items require a unique, admissible registry teacher reference; declared refs are checked for all corpus kinds. Focused corpus suite: 18 passed. | Source-level rights still need review; registry teacher admission does not approve individual item data or rights. C_TRACE currently assumes teacher-derived examples. |
-| I5 deterministic check producers | Integrated as `7177e61` from isolated commit `7fc0ea7`; pure schema, Python syntax, security diagnostic, source-digest membership, exact-duplicate and leakage check producers. Focused suite rerun after integration: 13 passed. | No orchestration; source rights/license evidence, teacher-registry check, frozen-snapshot verification and executable test evidence remain open. These producers do not decide rights or evaluate generated code. |
+| I5 deterministic check producers | Integrated across `7177e61` and `e374e96`; includes versioned evidence digests, canonical split-label validation, source-manifest validation against an explicit digest pin, and a tri-state report for all eight check categories. Focused checks: 19 passed; checks + coding tests: 47 passed. | TESTS and LICENSE remain UNAVAILABLE without qualified evaluator and scoped rights providers. The caller-supplied manifest pin still needs binding to an authoritative reviewed record; this runner cannot write admission audits or prove rights/authenticity. |
 | Maataa Coding Studio/App Builder | Commit `d94fec5` shortens the App Builder default-folder button label while preserving the full path in its title. Focused 390 px case passed; Playwright Coding Studio/App Builder specs: 13 passed. Full Maataa `npm test`: 768 passed, 0 failed, 1 skipped. | Playwright uses simulated model responses; it does not qualify a Guru checkpoint. |
-| Integrated CPU apparatus suite | Documented apparatus command includes evaluator evidence, deterministic quality checks and I4 lineage binding: 109 passed on the available Python 3.12 environment after integration. | Full `pytest tests/` was attempted and returned 147 passed, 1 skipped, 3 failed because SentencePiece is absent; these failures are outside the documented lightweight apparatus suite. Run a full training-dependency environment before treating all repository tests as verified. |
+| Integrated CPU apparatus suite | Documented apparatus command includes evaluator evidence, deterministic quality checks and I4 lineage binding: 115 passed on the available Python 3.12 environment after integration. | Full `pytest tests/` was attempted and returned 147 passed, 1 skipped, 3 failed because SentencePiece is absent; these failures are outside the documented lightweight apparatus suite. Run a full training-dependency environment before treating all repository tests as verified. |
 
 The source roadmap remains [CODING_STUDIO_ROADMAP.md](../CODING_STUDIO_ROADMAP.md), and rights/evaluator context is in [CODING_PHASE5_EXECUTION_PACKET.md](CODING_PHASE5_EXECUTION_PACKET.md). This file decomposes those gates into reviewable work units.
 The v1 benchmark proposal is in [benchmark-contract-v0.1.md](experiments/exp-rd-vs-sft-001/benchmark-contract-v0.1.md); it remains draft-only until owner ratification.
@@ -270,10 +270,10 @@ The queue distinguishes work that is safe to execute now from gates that need
 owner action or external infrastructure. “Parallel” does not mean one gate can
 be used as evidence for another.
 
-1. **Complete I5 and contract work:** add mutation-stable evidence/version
-   attribution where required, pin valid split labels and authoritative
-   manifest semantics, then review the deterministic-check API against I1/I2.
-   Keep this as the partial I5 implementation until its full exit criteria pass.
+1. **Complete I5 and contract work:** independently review the integrated
+   tri-state runner, bind the manifest digest pin to an authoritative reviewed
+   source record, and complete negative tests against I1/I2 inputs. Preserve
+   TESTS and LICENSE as unavailable until their real providers exist.
 2. **A1–A3 + B0.1–B0.4 + I1–I4 + I7:** finish the remaining contracts and
    integrity checks using clearly synthetic fixtures. Keep the evaluator
    result unavailable and do not write real admission records.

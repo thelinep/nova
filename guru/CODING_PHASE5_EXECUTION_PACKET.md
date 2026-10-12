@@ -14,9 +14,10 @@ provider prices are planning snapshots and must be rechecked before any launch.
 - Evaluator evidence contract: `5f24668`.
 - Item-bound quality decisions, duplicate-decision rejection and corpus teacher
   lineage binding: `d1bd36d`, `6981a0f`, `244d6f3`.
-- Partial deterministic quality check producers: `7177e61`; the complete
-  eight-check runner and licensed/executable evidence are still absent.
-- The documented CPU apparatus suite now passes **109 tests** on the available
+- Deterministic quality checks and tri-state report: `7177e61`, `e374e96`.
+  The report covers all eight check categories, but TESTS and LICENSE remain
+  UNAVAILABLE, and no admission-audit orchestrator exists.
+- The documented CPU apparatus suite now passes **115 tests** on the available
   Python 3.12 environment. A broader `pytest tests/` attempt returned 147
   passed, 1 skipped and 3 failed because SentencePiece is missing from that
   lightweight environment.
