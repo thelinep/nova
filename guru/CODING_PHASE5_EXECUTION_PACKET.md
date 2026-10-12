@@ -9,6 +9,26 @@ The tiny synthetic CPU smoke and evaluator prequalification probes are recorded
 separately; neither is a coding checkpoint or candidate evaluation. Current
 provider prices are planning snapshots and must be rechecked before any launch.
 
+### Latest local integration evidence (2026-10-12)
+
+- Evaluator evidence contract: `5f24668`.
+- Item-bound quality decisions, duplicate-decision rejection and corpus teacher
+  lineage binding: `d1bd36d`, `6981a0f`, `244d6f3`.
+- Partial deterministic quality check producers: `7177e61`; the complete
+  eight-check runner and licensed/executable evidence are still absent.
+- The documented CPU apparatus suite now passes **109 tests** on the available
+  Python 3.12 environment. A broader `pytest tests/` attempt returned 147
+  passed, 1 skipped and 3 failed because SentencePiece is missing from that
+  lightweight environment.
+- Maataa's full Node suite passed 768 tests, with 1 skipped. Coding Studio and
+  App Builder Playwright specs passed 13 tests using simulated model responses;
+  this is UI workflow evidence, not exact-model qualification.
+- Fresh `preflight c_rd` still returns only `missing admission audit`; no empty
+  audit or synthetic admission was created. Docker is available as persistent
+  Docker Desktop on macOS, not the required disposable Linux evaluator worker.
+- Ollama lists Qwen2.5-Coder-7B digest `dae161e27b0e`, but no exact-model
+  qualification record exists and no Guru-Code checkpoint is available.
+
 ## Current hard blockers
 
 **Candidate-data rights and full evaluator qualification are the co-equal
