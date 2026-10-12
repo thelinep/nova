@@ -4,6 +4,11 @@
 **State:** blocked draft; not pre-registered, not started
 **Scope:** one teacher, one student base, one Python task family, two arms, one frozen executable evaluation set
 
+The proposed v1 scope, task strata and benchmark bars are collected in
+[`benchmark-contract-v0.1.md`](benchmark-contract-v0.1.md). That contract is
+draft-only; its quotas and absolute release bars need owner ratification before
+registration. This experiment plan remains blocked and is not a preregistration.
+
 This plan compares reviewed teacher-response targets against ordinary SFT on
 the same tasks. It does not test logits/hidden states, on-policy distillation,
 multi-agent trajectory distillation, continued pretraining, weight merging,

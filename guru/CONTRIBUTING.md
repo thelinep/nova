@@ -15,11 +15,11 @@ source .venv/bin/activate
 uv pip sync requirements-test.lock
 ```
 
-Run the CPU apparatus, evaluator-mock, trajectory and experiment-decision suite
-from the same project root:
+Run the CPU apparatus, evaluator evidence, deterministic quality-check,
+trajectory and experiment-decision suite from the same project root:
 
 ```sh
-python -m pytest tests/test_disclosure_gate.py tests/test_quality_gate.py tests/test_corpus_assemble.py tests/test_teacher_intake.py tests/test_code_evaluator.py tests/test_trajectories.py tests/test_experiment_decision.py -q
+python -m pytest tests/test_disclosure_gate.py tests/test_quality_gate.py tests/test_quality_checks.py tests/test_corpus_assemble.py tests/test_teacher_intake.py tests/test_code_evaluator.py tests/test_evaluator_evidence.py tests/test_trajectories.py tests/test_experiment_decision.py -q
 ```
 
 `requirements-test.txt` pins the direct test dependencies. Regenerate the

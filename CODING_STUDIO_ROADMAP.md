@@ -2,6 +2,8 @@
 
 This roadmap records the agreed first-release scope and current evidence. It is
 not a claim that Guru-Code or autonomous agent execution is production-ready.
+The Guru-Code execution path is decomposed into atomic work units, dependencies
+and exit checks in [`guru/GURU_CODE_ATOMIC_PLAN.md`](guru/GURU_CODE_ATOMIC_PLAN.md).
 
 ## Product decisions
 
@@ -55,6 +57,15 @@ Therefore `tests_pass`, the experiment comparison and code-correctness claims
 remain blocked. Evaluator prequalification is useful evidence, but it is not
 the disposable-worker security gate. See the [Phase 5 execution packet](guru/CODING_PHASE5_EXECUTION_PACKET.md)
 and [evaluator prequalification record](guru/CODING_PHASE5_EVALUATOR_QUALIFICATION_2026-10-05.md).
+
+There is also a production-plumbing gap: the quality gate accepts eight
+caller-supplied check results, and the integrated deterministic producers cover
+only a subset. No admission orchestrator constructs the complete check set.
+The evaluator evidence contract and corpus item-digest binding have
+unit-tested plumbing, but neither executes candidate code nor creates real
+admission evidence. Duplicate admission rows are rejected during preflight and
+assembly. See the [atomic execution plan](guru/GURU_CODE_ATOMIC_PLAN.md) for
+the implementation sequence and remaining integrity work.
 
 | Immediate item | Status | Evidence / next action |
 | --- | --- | --- |
