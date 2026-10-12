@@ -1,0 +1,8 @@
+# Full Guru CPU suite on Python 3.12; lock is resolved for the local macOS arm64 host.
+# Keep requirements-test.txt/lock as the smaller apparatus-only environment.
+-r requirements-test.txt
+numpy==1.26.4
+torch==2.4.1
+sentencepiece==0.2.0
+safetensors==0.4.5
+transformers==4.45.2

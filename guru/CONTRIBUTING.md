@@ -28,3 +28,27 @@ hash-checked lockfile after an intentional dependency update with:
 ```sh
 uv pip compile --generate-hashes -o requirements-test.lock requirements-test.txt
 ```
+
+## Full Guru test suite
+
+The full suite also exercises model, training-smoke, SentencePiece tokenizer,
+and Hugging Face export paths. On macOS arm64 with Python 3.12, create a fresh
+environment from the separately resolved full-suite lock:
+
+```sh
+uv venv --python 3.12 .venv-full-test
+uv pip sync --python .venv-full-test/bin/python requirements-test-full.lock
+.venv-full-test/bin/python -m pytest tests -q
+```
+
+`requirements-test-full.lock` is platform-specific because PyTorch wheels are
+platform-specific. Regenerate it on the supported macOS arm64 host with:
+
+```sh
+uv pip compile --python-version 3.12 --generate-hashes \
+  -o requirements-test-full.lock requirements-test-full.txt
+```
+
+The apparatus lock remains the lightweight, platform-portable option for its
+documented subset. A full-suite result from one host does not establish
+cross-platform reproducibility.

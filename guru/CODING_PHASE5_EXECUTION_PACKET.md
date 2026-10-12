@@ -25,14 +25,14 @@ provider prices are planning snapshots and must be rechecked before any launch.
   task/source/artifact linkage against caller-supplied manifest pins; it does
   not establish authenticity or rights approval.
 - Fresh full suite after the I7 enforcement and follow-up bypass fixes:
-  `PYTHONPATH=/private/tmp/guru-sentencepiece-test-deps python -m pytest tests -q`
-  returned **319 passed, 1 skipped, 5 warnings in 30.90s** after closing the
-  direct tokenizer and admission-audit API bypasses. The focused I7/quality
-  suite returned **95 passed, 1 warning in 1.81s**. This used the
-  available Anaconda Python 3.12 and a temporary SentencePiece package path;
-  the hash-locked `requirements-test.lock` covers the apparatus subset, not all
-  legacy model tests. The full-suite dependency environment is not yet
-  reproducible from a clean lockfile.
+  `/private/tmp/guru-full-test-20261012/bin/python -m pytest tests -q`
+  returned **319 passed, 1 skipped in 26.12s** from a clean Python 3.12.4
+  macOS arm64 environment installed from the new hash-checked
+  `requirements-test-full.lock`. `uv pip check` found all 34 locked packages
+  compatible. The focused I7/quality suite returned **95 passed, 1 warning in
+  1.81s**. The separate `requirements-test.lock` remains the smaller apparatus
+  subset lock; the full-suite result does not establish cross-platform
+  reproduction.
 - After evaluator protocol hardening, `python -m pytest
   tests/test_evaluator_case_runner.py -q` returned **21 passed in 10.49s**.
   Added checks reject duplicate object keys in test-suite JSON and prove that
