@@ -17,9 +17,9 @@ const builder = require('../lib/app-builder');
 function memoryStore(){const stores=new Map();return{all(name){return[...(stores.get(name)?.values()||[])].map(r=>JSON.parse(JSON.stringify(r)));},get(name,id){const row=stores.get(name)?.get(id);return row?JSON.parse(JSON.stringify(row)):null;},put(name,row){if(!stores.has(name))stores.set(name,new Map());stores.get(name).set(row.id,JSON.parse(JSON.stringify(row)));return row;},delete(name,id){stores.get(name)?.delete(id);}};}
 function fakeOllama(replies,prompts){
   return {
-    status:async()=>({reachable:true,models:[{name:'coder:test'}]}),
+    status:async()=>({reachable:true,models:[{name:'coder:test',digest:'a'.repeat(64)}]}),
     show:async()=>({capabilities:['completion'],template:'x',details:{},model_info:{'llama.context_length':8192}}),
-    chatFull:async(_m,messages)=>{prompts.push(messages[messages.length-1].content);const next=replies.shift();return {message:{content:JSON.stringify(next)},done_reason:'stop'};},
+    chatFull:async(model,messages)=>{prompts.push(messages[messages.length-1].content);const next=replies.shift();return {model,message:{content:JSON.stringify(next)},done_reason:'stop'};},
   };
 }
 function setup(){

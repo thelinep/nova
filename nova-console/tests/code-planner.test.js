@@ -31,9 +31,10 @@ test('real-model planner capability-checks Ollama and creates a draft without wr
   db.put('models', { id: 'qwen:test', name: 'qwen:test', runtime: 'ollama' });
   let options;
   const ollama = {
-    status: async () => ({ reachable: true, models: [{ name: 'qwen:test' }] }),
+    host: 'http://127.0.0.1:11434',
+    status: async () => ({ reachable: true, models: [{ name: 'qwen:test', digest: 'a'.repeat(64) }] }),
     show: async () => metadata(),
-    chatFull: async (_model, _messages, inputOptions) => { options = inputOptions; return { message: { content: '{"summary":"Update value","acceptanceCriteria":[{"description":"a.js contains value 2"}],"changes":[{"relativePath":"a.js","find":"value = 1","replacement":"value = 2"}]}' } }; },
+    chatFull: async (_model, _messages, inputOptions) => { options = inputOptions; return { model: 'qwen:test', message: { content: '{"summary":"Update value","acceptanceCriteria":[{"description":"a.js contains value 2"}],"changes":[{"relativePath":"a.js","find":"value = 1","replacement":"value = 2"}]}' }, prompt_eval_count: 100, eval_count: 20 }; },
   };
   const result = await planner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'qwen:test', request: 'Change value in a.js to 2' });
   assert.equal(result.status, 'draft');
@@ -42,7 +43,60 @@ test('real-model planner capability-checks Ollama and creates a draft without wr
   assert.equal(result.planner.capabilityCheck.compatible, true);
   assert.equal(result.planner.capabilityCheck.contextLength, 8192);
   assert.equal(options.format, 'json');
+  assert.equal(options.options.num_ctx, 8192);
+  assert.equal(options.options.num_predict, 2048);
   assert.equal(fs.readFileSync(path.join(dir, 'a.js'), 'utf8'), 'const value = 1;\n');
+});
+
+test('planner routes both primary and repair generation through the injected local model adapter', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-plan-adapter-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'a.js'), 'const value = 1;\n');
+    const db = store();
+    const root = scanner.approveRoot(db, { path: dir });
+    db.put('models', { id: 'qwen:test', name: 'qwen:test', runtime: 'ollama' });
+    const ollama = { host: 'http://127.0.0.1:11434', status: async () => ({ reachable: true, models: [{ name: 'qwen:test', digest: 'a'.repeat(64) }] }), show: async () => metadata() };
+    const calls = [];
+    const adapter = {
+      id: 'qualified-local-checkpoint-adapter', localOnly: true,
+      async resolveModel(modelId) { return { modelId, digest: 'a'.repeat(64) }; },
+      async generate(request) {
+        calls.push(request);
+        return { text: calls.length === 1 ? 'not json' : JSON.stringify({ summary: 'Update value', acceptanceCriteria: [{ description: 'a.js contains value 2' }], changes: [{ relativePath: 'a.js', find: 'value = 1', replacement: 'value = 2' }] }), finishReason: 'stop', usage: { inputTokens: 12, outputTokens: 7 } };
+      },
+    };
+    const result = await productionPlanner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'qwen:test', request: 'Change value in a.js to 2' }, { qualificationBypass: true, modelAdapter: adapter });
+    assert.equal(result.status, 'draft');
+    assert.equal(result.planner.repairAttempted, true);
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].modelId, 'qwen:test');
+    assert.equal(calls[0].responseFormat, 'json');
+    assert.equal(calls[0].maxContextTokens, 8192);
+    assert.equal(calls[0].maxOutputTokens, 2048);
+    assert.equal(calls[0].modelDigest, 'a'.repeat(64));
+    assert.ok(calls[0].signal instanceof AbortSignal);
+    assert.equal(calls[1].modelId, calls[0].modelId);
+    assert.equal(calls[1].modelDigest, calls[0].modelDigest);
+    assert.match(calls[1].messages[0].content, /Repair one code-plan response/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('planner blocks an adapter whose resolved artifact differs from the selected digest', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-plan-digest-mismatch-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'a.js'), 'const value = 1;\n');
+    const db = store();
+    const root = scanner.approveRoot(db, { path: dir });
+    db.put('models', { id: 'qwen:test', name: 'qwen:test', runtime: 'ollama' });
+    let generated = false;
+    const digest = 'a'.repeat(64);
+    const ollama = { host: 'http://127.0.0.1:11434', status: async () => ({ reachable: true, models: [{ name: 'qwen:test', digest }] }), show: async () => metadata() };
+    const adapter = { id: 'mismatched-local', localOnly: true, async resolveModel(modelId) { return { modelId, digest: 'b'.repeat(64) }; }, async generate() { generated = true; return { text: '{}', usage: { inputTokens: 1, outputTokens: 1 } }; } };
+    await assert.rejects(() => productionPlanner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'qwen:test', request: 'Change a.js value to two' }, { qualificationBypass: true, modelAdapter: adapter }), /not bound to the exact installed and qualified model artifact/);
+    assert.equal(generated, false);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('capability report rejects models without completion, chat templates, or adequate context', () => {
@@ -58,7 +112,7 @@ test('planner rejects an installed but incapable model before inference', async 
   const db = store();
   const root = scanner.approveRoot(db, { path: dir });
   db.put('models', { id: 'embed:test', name: 'embed:test', runtime: 'ollama' });
-  const ollama = { status: async () => ({ reachable: true, models: [{ name: 'embed:test' }] }), show: async () => metadata({ capabilities: ['embedding'] }) };
+  const ollama = { host: 'http://127.0.0.1:11434', status: async () => ({ reachable: true, models: [{ name: 'embed:test', digest: 'a'.repeat(64) }] }), show: async () => metadata({ capabilities: ['embedding'] }) };
   await assert.rejects(() => planner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'embed:test', request: 'Change x in a.js to y' }), /cannot create production code plans.*completion/);
 });
 
@@ -67,7 +121,7 @@ test('planner rejects demo models, unavailable models, unsafe paths, and malform
   fs.writeFileSync(path.join(dir, 'a.js'), 'x\n');
   const db = store();
   const root = scanner.approveRoot(db, { path: dir });
-  const ollama = { status: async () => ({ reachable: true, models: [] }) };
+  const ollama = { host: 'http://127.0.0.1:11434', status: async () => ({ reachable: true, models: [] }) };
   db.put('models', { id: 'demo', runtime: 'llama.cpp' });
   await assert.rejects(() => planner.plan(db, scanner, changes, ollama, { rootId: root.id, modelId: 'demo', request: 'Change x in a.js to y' }), /Demo models cannot/);
   assert.throws(() => planner.validate({ changes: [{ relativePath: '../x', find: 'a', replacement: 'b' }] }), /unsafe path/);
@@ -91,12 +145,13 @@ test('explicit planner model is the model used and an unqualified choice never f
     }
     let calls = [];
     const ollama = {
+      host: 'http://127.0.0.1:11434',
       status: async () => ({ reachable: true, models: [
         { name: 'chosen:latest', digest: chosenDigest, details: { parameter_size: '8B' } },
         { name: 'fallback:latest', digest: fallbackDigest, details: { parameter_size: '8B' } },
       ] }),
       show: async model => { calls.push(['show', model]); return metadata(); },
-      chatFull: async model => { calls.push(['chat', model]); return { message: { content: '{"summary":"Update value","acceptanceCriteria":[{"description":"a.js contains value 2"}],"changes":[{"relativePath":"a.js","find":"value = 1","replacement":"value = 2"}]}' } }; },
+      chatFull: async model => { calls.push(['chat', model]); return { model, message: { content: '{"summary":"Update value","acceptanceCriteria":[{"description":"a.js contains value 2"}],"changes":[{"relativePath":"a.js","find":"value = 1","replacement":"value = 2"}]}' } }; },
     };
 
     const preview = await productionPlanner.preview(db, scanner, ollama, { rootId: root.id, modelId: 'chosen:latest', request: 'Change value in a.js to 2' });

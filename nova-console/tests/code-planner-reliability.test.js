@@ -10,8 +10,8 @@ const scanner = require('../lib/workspace-scanner');
 const changes = require('../lib/workspace-changes');
 const { memoryStore, fixtures, runFixture } = require('../scripts/validate-real-code-planner');
 const metadata = { capabilities: ['completion'], template: 'chat', model_info: { 'llama.context_length': 8192 } };
-function client(chatFull) { return { status: async () => ({ reachable: true, models: [{ name: 'test' }] }), show: async () => metadata, chatFull }; }
-function response(changes, acceptanceCriteria = [{ description: 'Requested file has the intended exact replacement.' }]) { return { message: { content: JSON.stringify({ acceptanceCriteria, changes }) } }; }
+function client(chatFull) { return { status: async () => ({ reachable: true, models: [{ name: 'test', digest: 'a'.repeat(64) }] }), show: async () => metadata, chatFull: async (...args) => { const result = await chatFull(...args); return { ...result, model: result?.model || 'test' }; } }; }
+function response(changes, acceptanceCriteria = [{ description: 'Requested file has the intended exact replacement.' }]) { return { model: 'test', message: { content: JSON.stringify({ acceptanceCriteria, changes }) }, prompt_eval_count: 100, eval_count: 20 }; }
 function setup(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-reliability-'));
   fs.writeFileSync(path.join(dir, 'a.js'), 'const x = 1;\n');

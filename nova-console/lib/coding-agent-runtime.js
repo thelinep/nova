@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const { JobEngine } = require('./jobs');
 const { AgentJobBridge } = require('./agent-job-bridge');
 const codingResult = require('./coding-agent-result');
+const codingModelAdapters = require('./coding-model-adapter');
 
 const JOB_KIND = 'agent.coding_task';
 const PLANNER_NAME = 'Maataa Coding Studio Planner';
@@ -25,6 +26,8 @@ class CodingAgentRuntime {
     }
     this.store = deps.store; this.registry = deps.registry; this.tasks = deps.tasks;
     this.scanner = deps.scanner; this.changes = deps.changes; this.planner = deps.planner; this.ollama = deps.ollama; this.policy = deps.policy;
+    this.codingModelAdapter = deps.codingModelAdapter || codingModelAdapters.ollamaCodingModelAdapter(this.ollama);
+    if (typeof this.codingModelAdapter.generate !== 'function') throw problem('Coding model adapter must implement generate(request).', 500, 'bad_runtime');
     this.audit = typeof deps.audit === 'function' ? deps.audit : () => {};
     this.budgets = deps.budgets || null;
     if (!this.budgets) throw problem('Coding Studio requires its bounded daily budget ledger.', 503, 'budget_unavailable');
@@ -84,6 +87,8 @@ class CodingAgentRuntime {
     if (typeof modelId !== 'string' || !modelId.trim()) throw problem('Choose an exact installed Ollama model.', 400, 'bad_model');
     if (typeof request !== 'string' || !request.trim() || Buffer.byteLength(request) > LIMITS.requestBytes) throw problem(`Request must be non-empty and at most ${LIMITS.requestBytes} bytes.`, 400, 'bad_request');
     if (input.brahmiComments != null && typeof input.brahmiComments !== 'boolean') throw problem('brahmiComments must be a boolean.', 400, 'bad_brahmi_comments');
+    try { codingModelAdapters.assertCodingModelAdapter(this.codingModelAdapter); }
+    catch (error) { throw problem(error.message, 503, error.code || 'external_transmission_denied'); }
     const normalized = { rootId: rootId.trim(), modelId: modelId.trim(), request: request.trim(), brahmiComments: input.brahmiComments === true };
     this._assertNoActiveTask();
     this.dispatching = true;
@@ -152,6 +157,8 @@ class CodingAgentRuntime {
     const feedback = typeof input.feedback === 'string' ? input.feedback.trim() : '';
     if (!feedback || Buffer.byteLength(feedback) > LIMITS.feedbackBytes) throw problem(`New feedback must be non-empty and at most ${LIMITS.feedbackBytes} bytes.`, 400, 'bad_feedback');
     if (this.isHalted()) throw problem('Maataa runtime is halted; retry is blocked.', 409, 'runtime_halted');
+    try { codingModelAdapters.assertCodingModelAdapter(this.codingModelAdapter); }
+    catch (error) { throw problem(error.message, 503, error.code || 'external_transmission_denied'); }
     const payload = parseJson(task.payload_json) || {};
     this.scanner.approvedRoot(this.store, payload.rootId);
     this._assertPolicy(task.assignee_id, payload.rootId);
@@ -269,10 +276,14 @@ class CodingAgentRuntime {
   async _execute(ctx) {
     const payload = ctx.task.payload;
     const abortSignal = ctx.signal;
+    try { codingModelAdapters.assertCodingModelAdapter(this.codingModelAdapter); }
+    catch (error) { throw problem(error.message, 503, error.code || 'external_transmission_denied'); }
     this._assertDispatchAllowed();
     this.scanner.approvedRoot(this.store, payload.rootId);
     this._agent(ctx.agent.id);
     this._assertPolicy(ctx.agent.id, payload.rootId);
+    const usageState = { tokens: 0, reserved: 0, incomplete: false };
+    this._usage = usageState;
     const modelClient = {
       status: async () => {
         if (abortSignal.aborted) throw abortSignal.reason;
@@ -282,41 +293,60 @@ class CodingAgentRuntime {
         return status;
       },
       show: (...args) => this.ollama.show(...args, abortSignal),
-      chatFull: async (...args) => {
+    };
+    const guardedModelAdapter = {
+      id: this.codingModelAdapter.id,
+      localOnly: this.codingModelAdapter.localOnly,
+      resolveModel: async (modelId, options = {}) => {
+        if (abortSignal.aborted) throw abortSignal.reason;
+        if (modelId !== payload.modelId) throw problem('Coding model adapter lookup did not match the task model.', 412, 'model_binding_mismatch');
+        const resolved = await this.codingModelAdapter.resolveModel(modelId, { ...options, signal: options.signal || abortSignal });
+        if (!resolved || resolved.modelId !== payload.modelId || resolved.digest !== payload.modelDigest) throw problem('Coding adapter artifact digest differs from the task qualification.', 412, 'model_digest_changed');
+        return resolved;
+      },
+      generate: async request => {
         if (abortSignal.aborted) throw abortSignal.reason;
         this._assertDispatchAllowed();
-        const freshStatus = await this.ollama.status();
-        const exact = freshStatus.models.find(model => model.name === payload.modelId);
-        if (!exact || exact.digest !== payload.modelDigest) throw problem('Selected model digest changed immediately before generation; coding plan stopped.', 412, 'model_digest_changed');
-        const generation = args[2] || {};
-        const requested = generation.options || {};
-        const context = Number(requested.num_ctx) || LIMITS.maxContextTokens;
-        if (context > LIMITS.maxContextTokens || context < 4096 || Number(requested.num_predict) > LIMITS.maxOutputTokens) throw problem('Planner call exceeded the fixed per-call generation limits.', 429, 'generation_limit_exceeded');
-        if (this._usage.reserved + context > LIMITS.maxTotalTokens) throw problem('No fixed context-token budget remains for another planner call.', 429, 'token_budget_exceeded');
-        this._usage.reserved += context;
-        this._usage.incomplete = true;
-        const callArgs = args.slice();
-        const signals = [abortSignal, generation.signal].filter(Boolean);
-        callArgs[2] = { ...generation, signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0] };
-        const response = await this.ollama.chatFull(...callArgs);
-        if (!Number.isSafeInteger(response.prompt_eval_count) || !Number.isSafeInteger(response.eval_count) || response.prompt_eval_count < 0 || response.eval_count < 0) { this._usage.tokens = this._usage.reserved; throw problem('Ollama did not return reliable token usage; the bounded context is charged and this task is stopped.', 502, 'usage_unavailable'); }
-        this._usage.tokens += response.prompt_eval_count + response.eval_count;
-        this._usage.incomplete = false;
-        if (this._usage.tokens > LIMITS.maxTotalTokens) throw problem('Coding task exceeded its fixed total-token budget.', 429, 'token_budget_exceeded');
+        if (!request || request.modelId !== payload.modelId) throw problem('Coding model adapter call did not match the task model.', 412, 'model_binding_mismatch');
+        if (request.modelDigest !== payload.modelDigest) throw problem('Coding adapter request is not bound to the task artifact digest.', 412, 'model_digest_changed');
+        const context = request.maxContextTokens;
+        const output = request.maxOutputTokens;
+        if (!Number.isSafeInteger(context) || context < 4096 || context > LIMITS.maxContextTokens ||
+            !Number.isSafeInteger(output) || output < 1 || output > LIMITS.maxOutputTokens) {
+          throw problem('Planner call exceeded the fixed per-call generation limits.', 429, 'generation_limit_exceeded');
+        }
+        if (usageState.reserved + context > LIMITS.maxTotalTokens) throw problem('No fixed context-token budget remains for another planner call.', 429, 'token_budget_exceeded');
+        usageState.reserved += context;
+        usageState.incomplete = true;
+        const signals = [abortSignal, request.signal].filter(Boolean);
+        try { codingModelAdapters.assertCodingModelAdapter(this.codingModelAdapter); }
+        catch (error) { throw problem(error.message, 503, error.code || 'external_transmission_denied'); }
+        const resolved = await guardedModelAdapter.resolveModel(request.modelId, { signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0] });
+        if (resolved.digest !== request.modelDigest) throw problem('The coding adapter resolved a different checkpoint immediately before generation.', 412, 'model_digest_changed');
+        const response = await this.codingModelAdapter.generate({ ...request, signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0] });
+        const inputTokens = response?.usage?.inputTokens;
+        const outputTokens = response?.usage?.outputTokens;
+        if (!Number.isSafeInteger(inputTokens) || !Number.isSafeInteger(outputTokens) || inputTokens < 0 || outputTokens < 0) { usageState.tokens = usageState.reserved; throw problem('Coding model adapter did not return reliable token usage; the bounded context is charged and this task is stopped.', 502, 'usage_unavailable'); }
+        if (inputTokens > context || outputTokens > output || inputTokens + outputTokens > context) {
+          usageState.tokens = usageState.reserved;
+          throw problem('Coding model adapter reported usage above the requested per-call limit; the reserved context is charged and the task is stopped.', 502, 'per_call_usage_exceeded');
+        }
+        usageState.tokens += inputTokens + outputTokens;
+        usageState.incomplete = false;
+        if (usageState.tokens > LIMITS.maxTotalTokens) throw problem('Coding task exceeded its fixed total-token budget.', 429, 'token_budget_exceeded');
         return response;
       },
     };
-    this._usage = { tokens: 0, reserved: 0, incomplete: false };
     try {
       const plan = await this.planner.plan(this.store, this.scanner, this.changes, modelClient,
         { rootId: payload.rootId, modelId: payload.modelId, request: payload.request, brahmiComments: payload.brahmiComments },
-        { draftOnly: true, signal: abortSignal, timeoutMs: LIMITS.timeoutMs, maxOutputTokens: LIMITS.maxOutputTokens, maxContextTokens: LIMITS.maxContextTokens, maxTotalTokens: LIMITS.maxTotalTokens, requiredModelDigest: payload.modelDigest, feedback: payload.feedback });
+        { draftOnly: true, signal: abortSignal, timeoutMs: LIMITS.timeoutMs, maxOutputTokens: LIMITS.maxOutputTokens, maxContextTokens: LIMITS.maxContextTokens, maxTotalTokens: LIMITS.maxTotalTokens, requiredModelDigest: payload.modelDigest, feedback: payload.feedback, modelAdapter: guardedModelAdapter });
       if (abortSignal.aborted) throw abortSignal.reason;
-      return { draft: { schema: codingResult.SCHEMA, version: codingResult.VERSION, summary: plan.draft.summary, changes: plan.draft.changes }, acceptanceChecks: plan.acceptanceChecks, planner: plan.planner, usage: { tokens: this._usage.tokens }, modelDigest: payload.modelDigest };
+      return { draft: { schema: codingResult.SCHEMA, version: codingResult.VERSION, summary: plan.draft.summary, changes: plan.draft.changes }, acceptanceChecks: plan.acceptanceChecks, planner: plan.planner, usage: { tokens: usageState.tokens }, modelDigest: payload.modelDigest };
     } finally {
-      const charged = Math.min(LIMITS.maxTotalTokens, this._usage.incomplete ? this._usage.reserved : this._usage.tokens);
+      const charged = Math.min(LIMITS.maxTotalTokens, usageState.incomplete ? usageState.reserved : usageState.tokens);
       if (charged > 0) this.budgets.charge(ctx.agent.id, 'tokens', charged, ctx.task.id);
-      this._usage = { tokens: 0, reserved: 0, incomplete: false };
+      if (this._usage === usageState) this._usage = { tokens: 0, reserved: 0, incomplete: false };
     }
   }
   async _reviewProposal(result, ctx) {

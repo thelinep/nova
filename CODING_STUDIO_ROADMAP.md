@@ -22,9 +22,11 @@ and exit checks in [`guru/GURU_CODE_ATOMIC_PLAN.md`](guru/GURU_CODE_ATOMIC_PLAN.
 ## Future: Ollama-independent Guru runtime
 
 The future direction is to let Maataa Workstation run Guru locally without
-requiring Ollama. The current Coding Studio remains Ollama-backed: model
-inventory, chat, planning and exact-digest qualification call the Ollama
-runtime directly.
+requiring Ollama. The current Coding Studio remains Ollama-backed for model
+inventory, metadata and qualification. Planning now goes through a
+provider-neutral local generation contract, whose only implementation is the
+numeric-loopback Ollama adapter; that seam does not yet provide an independent
+Guru runtime.
 
 Guru already has a checkpoint-to-Hugging-Face-to-GGUF export path using a
 pinned llama.cpp converter, followed by Ollama import. A future runtime phase
@@ -34,12 +36,14 @@ model identity and qualification: records must bind the exact model artifact
 digest, tokenizer, context, runtime version and tested capabilities. The
 Ollama adapter can remain available for other local models.
 
-This direction needs a shared local-runtime contract for discovery, metadata,
-load/unload, chat and streaming, cancellation, context reporting, resource
-status and digest identity; Maataa's planner, agent runtime and qualification
-suite must consume that contract instead of assuming Ollama. It is not
-implemented yet. The current local micro prototype cannot use this export path
-because it has a temporary byte tokenizer and only 512 positions.
+The adapter currently rejects remote Ollama endpoints and HTTP redirects,
+checks the selected digest before and after inference, and enforces the task's
+context/output-token limits. Ollama's chat API accepts a model name rather
+than an immutable digest, so these checks detect an observed retag but cannot
+atomically pin weights against a concurrent external model change. No direct
+llama.cpp or Apple-native runtime is implemented. The current local micro
+prototype cannot use the export path because it has a temporary byte tokenizer
+and only 512 positions.
 
 ## Phases and status
 
@@ -92,11 +96,12 @@ remaining integrity work.
 | Corpus split contract | **Aligned with the experiment draft.** The assembler now sorts unique task IDs by SHA-256 and assigns floor-based 80/10/remainder splits; examples for one task stay in one partition. | Two fresh tests cover exact membership/counts and task grouping. Source/repository/family/duplicate leakage grouping still needs to be added before a real corpus is frozen. |
 | Enforce owner-selected I7 use scopes | **Implemented and locally verified; evaluator remains unqualified.** Local qualified evaluation only, no external transmission, ephemeral-only transformed data, and private-local weights with no distribution. Direct tokenizer training now fails before input reads or output creation. `item_decision` is pure; public generic audit writes reject `item_admission`, which the quality runner writes only after complete checks. | Latest full Guru suite: 328 passed, 1 skipped. Focused I7/quality suite: 95 passed (historical focused run). Case-runner contract suite: 21 passed (historical focused run), including duplicate-key and attached/detached descendant timeout tests. Full UI Playwright: 66 passed. UI model responses are simulated; no Guru capability claim follows. Python private helpers are conventions, not a same-process security boundary. |
 | B3 abandoned-worker recovery | **Implementation pushed in `b76905f`; not evaluator-qualified.** Adds durable owner identity, serialized lifecycle/reaping, strict container labels/names, and thread-owned engine scopes. | Current full Guru suite: 328 passed, 1 skipped. Recovery tests mock Docker discovery/removal; a process-death test stubs the reaper. No actual abandoned container cleanup, daemon/host restart, or disposable Linux worker qualification was performed. |
+| Local generation adapter seam | **Implemented and locally tested; Ollama remains the only implementation.** Planning and agent execution use a provider-neutral request/response contract. | Remote endpoints and redirects are rejected; the selected digest is checked before/after generation; per-call usage and cancellation accounting are bounded. Full Maataa tests: 781 passed, 1 skipped; full Playwright: 66 passed. The Ollama model-name API cannot pin a digest atomically. This does not qualify Guru or an alternate runtime. |
 
 | Phase | Result | Status and evidence |
 | --- | --- | --- |
 | 0. Governed local project foundation | Explicitly approved roots, bounded context, proposal review, isolated checks, approval-gated apply/rollback, command allowlists and reviewed Git actions | Existing Maataa workspace services; reused by this Studio rather than adding another write path. |
-| 1. Exact-model coding gate | Use a named Ollama model only when its current digest has passed the required coding workflow and clarification, timeout and cancellation controls | Implemented in `nova-console/lib/model-qualifications.js` and `nova-console/lib/code-planner.js`; explicit selection fails closed and preserves automatic selection when no model is named. |
+| 1. Exact-model coding gate | Use a named Ollama model only when its current digest has passed the required coding workflow and clarification, timeout and cancellation controls | Implemented in `nova-console/lib/model-qualifications.js`, `nova-console/lib/code-planner.js` and the local generation adapter. Planning checks the digest at selection and around inference; Ollama's model-name API leaves a narrow concurrent-retag race that cannot be closed by this adapter alone. Explicit selection fails closed and never substitutes a model. |
 | 2. Guru-Code data/evaluation foundation | Versioned task format, provenance fields, held-out fixture checks and evidence-bound quality plumbing | Plumbing implemented in `guru/data/coding/`, `guru/guru/coding.py` and `guru/CODING.md`. V1 retains train/eval; v2 adds target-bearing validation and requires all three splits for release. Mixed schema versions are rejected. Under I7, persistent corpus/tokenizer transforms, `code-data`, `code-eval`, corpus assembly and public file-based SFT are blocked; only fixed synthetic CPU smoke remains available. The v3 fail-closed data-only function-call protocol rejects duplicate JSON keys, keeps expected values outside candidate execution, and kills the candidate process group at timeout; these are synthetic contract tests, not qualification. It has no real approved task suites or production provider. An ephemeral real-data trainer does not exist. Checked-in examples remain synthetic fixtures, not a representative corpus or capability benchmark. |
 | 3. One-project Coding Studio | Readiness check, selected model, bounded request, reviewable proposal, existing validation/approval/apply/rollback flow, Guru readiness and read-only team status | Implemented in `nova-console/public/index.html`; help is in `nova-console/docs/help/41-coding-studio.md`; deterministic browser coverage is in `nova-console/e2e/coding-studio.spec.js`. |
 | 3b. App Builder and one-click start | Describe an app (any language) → template project → development loop with the selected qualified model → checked batch → approve/apply → run; chat requests to build an app open the same flow; `Maataa - Start coding.command` starts Ollama and Maataa, installs `qwen2.5-coder:7b` when disk allows, approves `~/Maataa Projects` and offers the coding checks | Implemented in `nova-console/lib/app-builder.js`, `/api/app-builder/*`, the Coding Studio panel and `routeAppBuildFromConversation`; unit/API tests in `tests/app-builder.test.js`, browser tests in `e2e/app-builder.spec.js`. No new write path: project creation, the dev loop and batch approval are the existing governed services. Guru-Code owner decisions are listed in `guru/decisions/README.md`. |

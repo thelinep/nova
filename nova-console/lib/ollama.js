@@ -20,6 +20,12 @@ function withTimeout(ms) {
   return { signal: controller.signal, clear: () => clearTimeout(timer) };
 }
 
+// Inference prompts may contain private project code. Never follow a redirect
+// from a configured loopback daemon, which could forward the request body.
+function fetchOllama(url, options = {}) {
+  return globalThis.fetch(url, { ...options, redirect: 'error' });
+}
+
 class OllamaClient {
   constructor(host) {
     this.host = host || DEFAULT_HOST;
@@ -35,8 +41,8 @@ class OllamaClient {
     const signal = externalSignal ? AbortSignal.any([t.signal, externalSignal]) : t.signal;
     try {
       const [tagsRes, psRes] = await Promise.all([
-        fetch(this.url('/api/tags'), { signal }),
-        fetch(this.url('/api/ps'), { signal }).catch(() => null),
+        fetchOllama(this.url('/api/tags'), { signal }),
+        fetchOllama(this.url('/api/ps'), { signal }).catch(() => null),
       ]);
       if (!tagsRes.ok) throw new Error(`Ollama responded ${tagsRes.status}`);
       const tags = await tagsRes.json();
@@ -57,7 +63,7 @@ class OllamaClient {
 
   /** Read authoritative model metadata used by production capability gates. */
   async show(modelName, signal) {
-    const res = await fetch(this.url('/api/show'), {
+    const res = await fetchOllama(this.url('/api/show'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelName }),
@@ -70,7 +76,7 @@ class OllamaClient {
   /** Preload a model into memory without generating anything — Ollama's
    *  documented trick is an empty-prompt /api/generate call. */
   async load(modelName, keepAlive) {
-    const res = await fetch(this.url('/api/generate'), {
+    const res = await fetchOllama(this.url('/api/generate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelName, prompt: '', stream: false, keep_alive: keepAlive || '30m' }),
@@ -81,7 +87,7 @@ class OllamaClient {
 
   /** Evict a model from memory immediately (keep_alive:0). */
   async unload(modelName) {
-    const res = await fetch(this.url('/api/generate'), {
+    const res = await fetchOllama(this.url('/api/generate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelName, prompt: '', stream: false, keep_alive: 0 }),
@@ -94,7 +100,7 @@ class OllamaClient {
    *  prompt, timed by Ollama itself. Returns the raw response so the caller
    *  can derive prompt tok/s, decode tok/s, and TTFT from real counters. */
   async benchmark(modelName, prompt) {
-    const res = await fetch(this.url('/api/generate'), {
+    const res = await fetchOllama(this.url('/api/generate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -112,7 +118,7 @@ class OllamaClient {
    *  caller (the HTTP route) can pipe Ollama's newline-delimited JSON
    *  chunks straight through to the browser as they arrive. */
   async chatStream(modelName, messages, options, signal) {
-    const res = await fetch(this.url('/api/chat'), {
+    const res = await fetchOllama(this.url('/api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelName, messages, stream: true, options: options || {} }),
@@ -139,7 +145,7 @@ class OllamaClient {
     if (opts.tools && opts.tools.length) body.tools = opts.tools;
     if (opts.options) body.options = opts.options;
     if (opts.format) body.format = opts.format;
-    const res = await fetch(this.url('/api/chat'), {
+    const res = await fetchOllama(this.url('/api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -174,7 +180,7 @@ class OllamaClient {
   async embed(modelName, input) {
     const inputs = Array.isArray(input) ? input : [input];
     if (!inputs.length) return [];
-    let res = await fetch(this.url('/api/embed'), {
+    let res = await fetchOllama(this.url('/api/embed'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelName, input: inputs }),
@@ -183,7 +189,7 @@ class OllamaClient {
       // Older Ollama: one input per call against /api/embeddings.
       const out = [];
       for (const text of inputs) {
-        const r = await fetch(this.url('/api/embeddings'), {
+        const r = await fetchOllama(this.url('/api/embeddings'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: modelName, prompt: text }),

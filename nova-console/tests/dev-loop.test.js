@@ -26,11 +26,11 @@ function project(extra={}){
 }
 function fakeOllama(replies,prompts){
   return {
-    status:async()=>({reachable:true,models:[{name:'coder:test'}]}),
+    status:async()=>({reachable:true,models:[{name:'coder:test',digest:'a'.repeat(64)}]}),
     show:async()=>({capabilities:['completion'],template:'x',details:{},model_info:{'llama.context_length':8192}}),
     chatFull:async(_model,messages,opts)=>{prompts.push(messages[messages.length-1].content);const next=replies.shift();
-      if(typeof next==='function')return next(opts);
-      return {message:{content:JSON.stringify(next)},done_reason:'stop'};},
+      if(typeof next==='function')return Promise.resolve(next(opts)).then(result=>({...result,model:result?.model||_model}));
+      return {model:_model,message:{content:JSON.stringify(next)},done_reason:'stop'};},
   };
 }
 const plan=(summary,changesList)=>({summary,acceptanceCriteria:[{description:'tests pass'}],changes:changesList});
