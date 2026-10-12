@@ -462,6 +462,8 @@ def run_deterministic_checks(
             expected_task_digest = supplied.task_digest
             if not isinstance(evaluator_case_set, EvaluatorCaseSet) or not isinstance(evaluator_qualification, EvaluatorQualificationEvidence):
                 raise CheckUnavailableError("evaluator provider returned untyped evidence")
+            evaluator_case_set = EvaluatorCaseSet.model_validate(
+                evaluator_case_set.model_dump(mode="json"))
             qpayload = evaluator_qualification.model_dump(mode="json")
             qdigest = _digest(qpayload)
             if (expected_qualification_digest != qdigest or
@@ -525,15 +527,14 @@ def run_deterministic_checks(
             rights_digest = _digest(rights_decision.model_dump(mode="json"))
             if (supplied_rights.rights_manifest_digest != supplied_rights.trusted_rights_manifest_digest or
                     supplied_rights.approved_artifact_digest != item.source_digest or
+                    rights_decision.artifact_sha256 != supplied_rights.approved_artifact_digest or
                     len(supplied_rights.trusted_rights_manifest_digest) != 64 or
                     any(c not in "0123456789abcdef" for c in supplied_rights.trusted_rights_manifest_digest) or
                     len(supplied_rights.rights_manifest_digest) != 64 or
                     any(c not in "0123456789abcdef" for c in supplied_rights.rights_manifest_digest)):
                 raise CheckUnavailableError("rights record is not bound to the pinned approved manifest/artifact")
             item = _valid_item(raw_item)
-            rights_ok = (supplied_rights.approved_artifact_digest == item.source_digest and
-                         rights_decision.artifact_sha256 == supplied_rights.approved_artifact_digest and
-                         rights_decision.rights.allow_training and
+            rights_ok = (rights_decision.rights.allow_training and
                          rights_decision.rights.allow_transformed_data_retention)
             teacher_ok = True
             if item.teacher_lineage_id is not None:

@@ -1,9 +1,10 @@
 """Trust-boundary interfaces for external evaluator and rights registries.
 
-No production implementation is included here. Deployments must load pins and
-approved decisions from separately controlled, reviewed records rather than
-accepting request-time values. Until such a provider is configured, both
-checks remain UNAVAILABLE.
+No production implementation is included here. These abstract provider types
+are privileged interfaces: only the application composition root may create
+and inject implementations backed by separately controlled, reviewed records.
+Never construct them from request data. Until that composition-root provider is
+configured, both checks remain UNAVAILABLE.
 """
 from __future__ import annotations
 

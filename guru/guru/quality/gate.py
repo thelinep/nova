@@ -69,6 +69,12 @@ def promote_if_sensitive(tier: QualityTier, text: str) -> QualityTier:
 def item_decision(*, item_id: str, item_digest: str, tier: QualityTier,
                   auto_checks: Sequence[AutoCheckResult | dict],
                   human_review: HumanReviewRecord | dict | None) -> ItemAdmission:
+    """Low-level policy function; production orchestration must use runner.run_item_quality.
+
+    This function remains directly callable for unit tests and trusted
+    in-process policy use. It does not establish that caller-supplied check
+    results were produced by the configured evidence providers.
+    """
     if not isinstance(item_id, str) or not item_id.strip():
         raise QualityInputError("item_id must be non-empty")
     if not isinstance(item_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", item_digest):

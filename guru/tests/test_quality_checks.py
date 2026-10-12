@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import ast
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -8,7 +11,23 @@ from pathlib import Path
 import pytest
 
 from guru.quality import checks
+from guru.quality.providers import (
+    ApprovedRightsInputs, EvaluatorEvidenceProvider, PinnedEvaluatorInputs,
+    RightsEvidenceProvider,
+)
+from guru.schemas.corpus_item import CorpusItem
+from guru.schemas.evaluator_evidence import (
+    EvaluationCaseEvidence, EvaluatorCaseSet, EvaluatorQualificationEvidence,
+)
+from guru.schemas.rights_decision import (
+    RightsAuthorityBasis, RightsDecision, RightsEvidenceReference, SourceRights,
+)
+from guru.schemas.teacher_lineage import (
+    AccessMethod, InputDisclosure, InputType, OutputRights, ReviewStatus, TeacherLineage,
+)
 from guru.schemas.quality import AdmissionDecision, AutoCheckName, QualityTier, REQUIRED_AUTO_CHECKS
+
+from guru.evaluator_evidence import _ZERO_DIGEST, seal_case
 
 
 def _item(**overrides):
@@ -61,6 +80,129 @@ def _source_manifest(tmp_path: Path) -> tuple[Path, str, str]:
     manifest_path.write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
     manifest_digest = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     return manifest_path, manifest_digest, hashlib.sha256(artifact).hexdigest()
+
+
+def _case_record(item: CorpusItem, case_id: str, *, status: str, previous_digest: str,
+                 test_digest: str, task_digest: str, image_digest: str, config_digest: str) -> dict:
+    started = datetime(2026, 10, 12, tzinfo=timezone.utc)
+    return {
+        "schema_version": "guru-evaluator-case-v3", "case_id": case_id,
+        "item_digest": item.canonical_digest(), "task_digest": task_digest,
+        "candidate_digest": hashlib.sha256(item.target.encode("utf-8")).hexdigest(),
+        "test_digest": test_digest, "test_suite_digest": "c" * 64,
+        "image_digest": image_digest, "config_digest": config_digest,
+        "command": ["/runner", "--fixed-json-stdin"],
+        "limits": {"timeout_ms": 10_000, "memory_bytes": 512 * 1024 * 1024,
+                   "cpu_millis": 1000, "pids": 32, "output_bytes": 4096,
+                   "input_bytes": 65_536},
+        "started_at": started.isoformat(),
+        "finished_at": (started + timedelta(milliseconds=10)).isoformat(),
+        "status": status, "exit_code": 0 if status == "pass" else 1,
+        "cleanup_confirmed": True, "output_limited": False,
+        "stdout_truncated": False, "stderr_truncated": False,
+        "stdout_bytes": 0, "stderr_bytes": 0,
+        "stdout_digest": "1" * 64, "stderr_digest": "2" * 64,
+        "previous_record_digest": previous_digest, "record_digest": "0" * 64,
+    }
+
+
+def _evaluator_inputs(item: CorpusItem, *, statuses=("pass", "pass"), **overrides) -> PinnedEvaluatorInputs:
+    config_digest, image_digest, task_digest = "e" * 64, "d" * 64, "a" * 64
+    case_ids = ("case-1", "case-2")
+    test_digests = {"case-1": "4" * 64, "case-2": "5" * 64}
+    cases = []
+    previous = _ZERO_DIGEST
+    for case_id, status in zip(case_ids, statuses, strict=True):
+        case = seal_case(_case_record(item, case_id, status=status, previous_digest=previous,
+                                      test_digest=test_digests[case_id], task_digest=task_digest,
+                                      image_digest=image_digest, config_digest=config_digest),
+                         previous_record_digest=previous)
+        cases.append(case)
+        previous = case.record_digest
+    case_set = EvaluatorCaseSet(
+        schema_version="guru-evaluator-case-set-v1", item_digest=item.canonical_digest(),
+        test_suite_digest="c" * 64, config_digest=config_digest,
+        starting_record_digest=_ZERO_DIGEST, expected_case_ids=list(case_ids), cases=cases,
+    )
+    qualification = EvaluatorQualificationEvidence(
+        schema_version="guru-evaluator-qualification-v1", qualification_id="synthetic-qualification",
+        config_digest=config_digest, image_digest=image_digest, report_digest="f" * 64,
+        qualified_at=datetime(2026, 10, 12, tzinfo=timezone.utc),
+    )
+    qdigest = checks._digest(qualification.model_dump(mode="json"))
+    values = PinnedEvaluatorInputs(
+        case_set=case_set, qualification=qualification, qualification_digest=qdigest,
+        trusted_qualification_digest=qdigest, test_suite_digest="c" * 64,
+        trusted_test_suite_digest="c" * 64, expected_case_ids=case_ids,
+        expected_case_test_digests=test_digests, task_digest=task_digest,
+    )
+    return replace(values, **overrides) if overrides else values
+
+
+class _FakeEvaluatorProvider(EvaluatorEvidenceProvider):
+    def __init__(self, value: PinnedEvaluatorInputs):
+        self.value = value
+
+    def load_for(self, item: CorpusItem) -> PinnedEvaluatorInputs:
+        return self.value
+
+
+def _approved_teacher(*, status=ReviewStatus.APPROVED) -> TeacherLineage:
+    return TeacherLineage(
+        teacher_id="teacher-1", model_name="synthetic-teacher", license="Fixture",
+        access_method=AccessMethod.WEIGHTS, output_rights=OutputRights.MAY_TRAIN,
+        review_status=status, reviewed_by="owner" if status is ReviewStatus.APPROVED else None,
+        reviewed_at=datetime(2026, 10, 12, tzinfo=timezone.utc) if status is ReviewStatus.APPROVED else None,
+        model_digest=["3" * 64], input_disclosure=InputDisclosure(
+            allowed_input_types=[InputType.SOURCE_CODE], retention_bounded=True),
+    )
+
+
+def _rights_inputs(item: CorpusItem, *, allow_training=True, allow_retention=True,
+                   artifact_digest=None, approved_artifact_digest=None, manifest_digest="9" * 64,
+                   trusted_manifest_digest="9" * 64, teacher_registry_digest="8" * 64,
+                   trusted_teacher_registry_digest="8" * 64,
+                   teacher_status=ReviewStatus.APPROVED) -> ApprovedRightsInputs:
+    decision = RightsDecision(
+        schema_version="guru-source-rights-v1", source_id="synthetic-source",
+        uri="local:synthetic-source", revision="fixture-v1",
+        artifact_sha256=artifact_digest or item.source_digest,
+        provenance_statement="synthetic fixture only", authority_basis=RightsAuthorityBasis.OWNER_ATTESTATION,
+        authority_description="synthetic test approval", rights=SourceRights(
+            allow_training=allow_training, allow_evaluation=True,
+            allow_transformed_data_retention=allow_retention,
+            allow_provider_transmission=False, allow_weight_distribution=False),
+        reviewer="synthetic-owner", decided_at=datetime(2026, 10, 12, tzinfo=timezone.utc),
+        evidence_refs=[RightsEvidenceReference(evidence_id="fixture", uri="local:fixture", sha256="7" * 64)],
+    )
+    teachers = (_approved_teacher(status=teacher_status),) if item.teacher_lineage_id else ()
+    return ApprovedRightsInputs(
+        decision=decision, approved_artifact_digest=approved_artifact_digest or item.source_digest,
+        rights_manifest_digest=manifest_digest,
+        trusted_rights_manifest_digest=trusted_manifest_digest,
+        teachers=teachers, teacher_registry_digest=teacher_registry_digest if teachers else None,
+        trusted_teacher_registry_digest=(trusted_teacher_registry_digest if teachers else None),
+    )
+
+
+class _FakeRightsProvider(RightsEvidenceProvider):
+    def __init__(self, value: ApprovedRightsInputs):
+        self.value = value
+
+    def load_for(self, item: CorpusItem) -> ApprovedRightsInputs:
+        return self.value
+
+
+def _runner_report(tmp_path: Path, *, raw_item=None, evaluator_provider=None, rights_provider=None):
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    manifest_path, manifest_digest, source_digest = _source_manifest(tmp_path)
+    item = CorpusItem.model_validate(raw_item or _item(source_digest=source_digest))
+    return checks.run_deterministic_checks(
+        item, source_manifest_path=manifest_path, source_manifest_digest=manifest_digest,
+        corpus_items=[], group_assignments={"family-1": "train"},
+        evaluator_provider=evaluator_provider or _FakeEvaluatorProvider(_evaluator_inputs(item)),
+        rights_provider=rights_provider,
+    ), item
 
 
 def test_schema_check_passes_and_hashes_unicode_input():
@@ -376,3 +518,127 @@ def test_untyped_request_time_evidence_cannot_self_pin_tests_or_license():
     statuses = {record.name: record.status for record in report.records}
     assert statuses[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
     assert statuses[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
+
+
+def test_fake_provider_aggregates_complete_pinned_case_set_pass_and_fail(tmp_path):
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    passed, _ = _runner_report(tmp_path / "pass", raw_item=item.model_dump(mode="json"),
+                               evaluator_provider=_FakeEvaluatorProvider(_evaluator_inputs(item)))
+    statuses = {record.name: record.status for record in passed.records}
+    assert statuses[AutoCheckName.TESTS] is checks.CheckRunStatus.PASS
+
+    failed_root = tmp_path / "fail"
+    failed_root.mkdir()
+    failed_inputs = _evaluator_inputs(item, statuses=("pass", "fail"))
+    failed, _ = _runner_report(failed_root, raw_item=item.model_dump(mode="json"),
+                               evaluator_provider=_FakeEvaluatorProvider(failed_inputs))
+    assert {record.name: record.status for record in failed.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.FAIL
+
+
+@pytest.mark.parametrize("override", [
+    {"trusted_qualification_digest": "0" * 64},
+    {"trusted_test_suite_digest": "0" * 64},
+    {"expected_case_ids": ("case-1", "missing-case")},
+    {"expected_case_test_digests": {"case-1": "0" * 64, "case-2": "5" * 64}},
+    {"task_digest": "0" * 64},
+])
+def test_invalid_evaluator_trust_pins_and_case_bindings_stay_unavailable(tmp_path, override):
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    inputs = _evaluator_inputs(item, **override)
+    report, _ = _runner_report(tmp_path, raw_item=item.model_dump(mode="json"),
+                               evaluator_provider=_FakeEvaluatorProvider(inputs))
+    assert {record.name: record.status for record in report.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
+
+
+@pytest.mark.parametrize("case_binding", ["item", "candidate", "image", "config", "suite"])
+def test_case_item_candidate_image_config_and_suite_mismatches_do_not_pass(tmp_path, case_binding):
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    inputs = _evaluator_inputs(item)
+    case_set = inputs.case_set
+    case = case_set.cases[0]
+    changed = case.model_dump(mode="json")
+    if case_binding == "item":
+        changed["item_digest"] = "0" * 64
+    elif case_binding == "candidate":
+        changed["candidate_digest"] = "0" * 64
+    elif case_binding == "image":
+        changed["image_digest"] = "0" * 64
+    elif case_binding == "config":
+        changed["config_digest"] = "0" * 64
+    else:
+        changed["test_suite_digest"] = "0" * 64
+    cases = [seal_case(changed, previous_record_digest=_ZERO_DIGEST), case_set.cases[1]]
+    # Rechain the second case after changing the first record.
+    cases[1] = seal_case(cases[1], previous_record_digest=cases[0].record_digest)
+    corrupted_set = case_set.model_copy(update={"cases": cases})
+    report, _ = _runner_report(
+        tmp_path, raw_item=item.model_dump(mode="json"),
+        evaluator_provider=_FakeEvaluatorProvider(replace(inputs, case_set=corrupted_set)))
+    assert {record.name: record.status for record in report.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
+
+
+def test_rights_provider_requires_exact_manifest_artifact_and_approved_teacher(tmp_path):
+    teacher_item = CorpusItem.model_validate(_item(
+        target_source="teacher", teacher_lineage_id="teacher-1",
+        source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    approved = _FakeRightsProvider(_rights_inputs(teacher_item))
+    report, _ = _runner_report(tmp_path, raw_item=teacher_item.model_dump(mode="json"),
+                               rights_provider=approved)
+    assert {record.name: record.status for record in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.PASS
+
+    failures = [
+        _rights_inputs(teacher_item, artifact_digest="0" * 64),
+        _rights_inputs(teacher_item, approved_artifact_digest="0" * 64),
+        _rights_inputs(teacher_item, trusted_manifest_digest="0" * 64),
+        _rights_inputs(teacher_item, trusted_teacher_registry_digest="0" * 64),
+        _rights_inputs(teacher_item, teacher_status=ReviewStatus.PENDING),
+    ]
+    for inputs in failures:
+        failed_report, _ = _runner_report(
+            tmp_path, raw_item=teacher_item.model_dump(mode="json"),
+            rights_provider=_FakeRightsProvider(inputs))
+        assert {record.name: record.status for record in failed_report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
+
+
+@pytest.mark.parametrize("allow_training,allow_retention", [(False, True), (True, False)])
+def test_rights_provider_denied_training_or_retention_is_measured_fail(tmp_path, allow_training, allow_retention):
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    provider = _FakeRightsProvider(_rights_inputs(
+        item, allow_training=allow_training, allow_retention=allow_retention))
+    report, _ = _runner_report(tmp_path, raw_item=item.model_dump(mode="json"), rights_provider=provider)
+    assert {record.name: record.status for record in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.FAIL
+
+
+def test_runner_with_partial_provider_evidence_never_decides_or_audits(tmp_path, monkeypatch):
+    from guru.quality import gate, runner
+
+    audit_path = tmp_path / "partial-provider-audit.jsonl"
+    monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    provider = _FakeEvaluatorProvider(_evaluator_inputs(item))
+    monkeypatch.setattr(runner, "item_decision", lambda **kwargs: pytest.fail("incomplete run decided"))
+    root = tmp_path / "partial"
+    root.mkdir()
+    with pytest.raises(checks.IncompleteCheckRunError, match="unavailable check"):
+        runner.run_item_quality(item, tier=QualityTier.C, evaluator_provider=provider,
+                                corpus_items=[], group_assignments={"family-1": "train"},
+                                source_manifest_path=_source_manifest(root)[0],
+                                source_manifest_digest=_source_manifest(root)[1])
+    assert not audit_path.exists()
+
+
+def test_only_quality_runner_calls_low_level_item_decision():
+    package_root = Path(__file__).resolve().parents[1] / "guru"
+    callers = []
+    for source_path in package_root.rglob("*.py"):
+        if "tests" in source_path.parts:
+            continue
+        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                function = node.func
+                called_name = function.id if isinstance(function, ast.Name) else (
+                    function.attr if isinstance(function, ast.Attribute) else None)
+                if called_name == "item_decision":
+                    callers.append(source_path.relative_to(package_root).as_posix())
+    assert callers == ["quality/runner.py"]
