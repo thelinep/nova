@@ -49,3 +49,13 @@ def test_synthetic_lora_smoke_rejects_invalid_step_count_before_import(steps):
 def test_synthetic_lora_smoke_rejects_invalid_seed_before_import(seed):
     with pytest.raises(ValueError, match="non-negative integer"):
         run_synthetic_lora_smoke(seed=seed)
+
+
+def test_synthetic_lora_smoke_rejects_in_checkout_temp_root_before_training(monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    monkeypatch.setattr("guru.lora_smoke.tempfile.tempdir", str(repo_root / ".tmp-smoke"))
+
+    with pytest.raises(RuntimeError, match="outside the Guru checkout"):
+        run_synthetic_lora_smoke(seed=17, steps=2)
+
+    assert not (repo_root / ".tmp-smoke").exists()
