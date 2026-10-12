@@ -208,3 +208,28 @@ test('Coding Studio honors an explicit deny for the internal worker and approved
     assert.throws(() => env.runtime._assertPolicy(env.agents.worker.id, 'root_test'), /policy denied/i);
   } finally { close(env); }
 });
+
+test('failed Coding Studio tasks retry with fresh feedback after all dispatch gates pass', async () => {
+  const env = fixture();
+  try {
+    env.runtime.start();
+    const row = env.tasks.create({ creatorId: env.agents.planner.id, assigneeId: env.agents.worker.id, title: 'Coding Studio proposal', payload: { codingStudio: true, rootId: 'root_test', modelId: 'model:latest', modelDigest: env.digest, request: 'Create new.txt', brahmiComments: false, feedback: 'Earlier attempt feedback.' } });
+    env.tasks.start(row.id, env.agents.worker.id);
+    env.tasks.fail(row.id, 'synthetic model failure', env.agents.worker.id);
+
+    assert.equal(env.runtime.detail(row.id).controls.retry_available, true);
+    await assert.rejects(env.runtime.retryTask(row.id, { feedback: '  ' }), error => error.code === 'bad_feedback');
+    await assert.rejects(env.runtime.retryTask(row.id, { feedback: ' Earlier attempt feedback. ' }), error => error.code === 'unchanged_feedback');
+    env.planner.preview = async () => ({ ready: true, selectedModel: { id: 'model:latest', digest: 'sha256:' + 'c'.repeat(64) } });
+    await assert.rejects(env.runtime.retryTask(row.id, { feedback: 'Explain the correction.' }), error => error.code === 'model_digest_changed');
+    assert.equal(env.tasks.get(row.id).state, 'failed', 'a stale model cannot restart the failed task');
+    env.planner.preview = async () => ({ ready: true, selectedModel: { id: 'model:latest', digest: env.digest } });
+
+    const retried = await env.runtime.retryTask(row.id, { feedback: 'Use the requested project scope and explain the correction.' });
+    assert.equal(retried.task.state, 'running');
+    assert.equal(JSON.parse(env.tasks.get(row.id).payload_json).feedback, 'Use the requested project scope and explain the correction.');
+    await waitFor(() => env.tasks.get(row.id).state === 'awaiting_result_review');
+    assert.equal(env.runtime.detail(row.id).controls.retry_available, false);
+    assert.equal(env.budgetLedger.effectiveLimit(env.agents.worker.id, 'jobs').used, 1);
+  } finally { close(env); }
+});

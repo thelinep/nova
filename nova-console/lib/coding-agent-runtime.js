@@ -156,10 +156,11 @@ class CodingAgentRuntime {
     if (Object.keys(input).some(key => key !== 'feedback')) throw problem('Retry accepts only feedback.', 400, 'bad_retry_body');
     const feedback = typeof input.feedback === 'string' ? input.feedback.trim() : '';
     if (!feedback || Buffer.byteLength(feedback) > LIMITS.feedbackBytes) throw problem(`New feedback must be non-empty and at most ${LIMITS.feedbackBytes} bytes.`, 400, 'bad_feedback');
+    const payload = parseJson(task.payload_json) || {};
+    if (feedback === String(payload.feedback || '').trim()) throw problem('Retry feedback must add new instructions instead of repeating the previous feedback.', 400, 'unchanged_feedback');
     if (this.isHalted()) throw problem('Maataa runtime is halted; retry is blocked.', 409, 'runtime_halted');
     try { codingModelAdapters.assertCodingModelAdapter(this.codingModelAdapter); }
     catch (error) { throw problem(error.message, 503, error.code || 'external_transmission_denied'); }
-    const payload = parseJson(task.payload_json) || {};
     this.scanner.approvedRoot(this.store, payload.rootId);
     this._assertPolicy(task.assignee_id, payload.rootId);
     const preview = await this.planner.preview(this.store, this.scanner, this.ollama, { rootId: payload.rootId, modelId: payload.modelId, request: payload.request }, { timeoutMs: LIMITS.timeoutMs });
@@ -221,7 +222,7 @@ class CodingAgentRuntime {
     const task = this._codingTask(id);
     const events = this.tasks.events(id).map(event => ({ id: event.id, kind: event.kind, actor_id: event.actor_id, reason: event.reason, payload: safeEventPayload(parseJson(event.payload_json)), timestamp: event.timestamp }));
     const halted = this.isHalted();
-    return { task: this.serializeTask(task, true), events, controls: { runtime_halted: halted, execution_available: false, human_result_review_available: task.state === 'awaiting_result_review', retry_available: task.state === 'revision_requested' && !halted, cancel_available: ['assigned', 'running'].includes(task.state) } };
+    return { task: this.serializeTask(task, true), events, controls: { runtime_halted: halted, execution_available: false, human_result_review_available: task.state === 'awaiting_result_review', retry_available: ['revision_requested', 'failed'].includes(task.state) && !halted, cancel_available: ['assigned', 'running'].includes(task.state) } };
   }
 
   serializeTask(task, detail = false) {

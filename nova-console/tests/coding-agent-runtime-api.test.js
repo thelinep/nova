@@ -105,11 +105,24 @@ test('Coding Studio defers workspace batch creation until accept, then links a d
     assert.equal(JSON.stringify(detail).includes(rootPath), false, 'detail contains no absolute root path');
     assert.equal(JSON.stringify(detail).includes('copy.path'), false);
 
+    const failedRow = tasks.create({ creatorId: planner.id, assigneeId: worker.id, title: 'Coding Studio proposal', payload: { ...payload, request: 'create retry.txt', feedback: 'Earlier attempt feedback.' } });
+    tasks.start(failedRow.id, worker.id);
+    tasks.fail(failedRow.id, 'synthetic prior failure', worker.id);
+    const failedDetail = await request(app.base, `/api/agents/tasks/${failedRow.id}`);
+    assert.equal(JSON.parse(failedDetail.body).controls.retry_available, true, 'failed tasks expose the safe retry control');
+    const missingFeedback = await request(app.base, `/api/agents/tasks/${failedRow.id}/retry`, { method: 'POST', body: {} });
+    assert.equal(missingFeedback.status, 400, 'retry requires new feedback');
+    const repeatedFeedback = await request(app.base, `/api/agents/tasks/${failedRow.id}/retry`, { method: 'POST', body: { feedback: ' Earlier attempt feedback. ' } });
+    assert.equal(repeatedFeedback.status, 400, 'retry cannot simply repeat the previous note');
+    const unavailableRetry = await request(app.base, `/api/agents/tasks/${failedRow.id}/retry`, { method: 'POST', body: { feedback: 'Try the correction again.' } });
+    assert.ok([412, 503].includes(unavailableRetry.status), 'retry fails closed when the exact local model cannot be revalidated');
+    assert.equal(tasks.get(failedRow.id).state, 'failed', 'failed task remains failed when retry preflight is unavailable');
+
     const invalidCreate = await request(app.base, '/api/agents/coding/tasks', { method: 'POST', body: { rootId: root.id, modelId: 'fixture-model:latest', request: '' } });
     assert.equal(invalidCreate.status, 400, 'invalid requests are rejected before any model call');
     const unavailable = await request(app.base, '/api/agents/coding/tasks', { method: 'POST', body: { rootId: root.id, modelId: 'fixture-model:latest', request: 'create a new example.txt file', brahmiComments: false } });
     assert.ok([412, 503].includes(unavailable.status), 'dispatch fails closed when the selected model cannot be qualified or Ollama is unavailable');
-    assert.equal(store.agentTasksList({}).filter(row => JSON.parse(row.payload_json || '{}').codingStudio).length, 1, 'failed preflight creates no task');
+    assert.equal(store.agentTasksList({}).filter(row => JSON.parse(row.payload_json || '{}').codingStudio).length, 2, 'failed create preflight creates no task beyond the accepted and deliberately failed fixtures');
   } finally {
     if (db) db.close();
     if (app) await app.stop();

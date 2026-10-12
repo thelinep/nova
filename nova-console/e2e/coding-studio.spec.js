@@ -58,7 +58,7 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
       const url = new URL(request.url());
       const taskId = url.pathname.split('/')[4];
       if (request.method() === 'GET' && !url.pathname.endsWith('/review') && !url.pathname.endsWith('/retry') && !url.pathname.endsWith('/cancel')) {
-        return route.fulfill({ json: { task: agentFlow.detail(taskId) } });
+        return route.fulfill({ json: agentFlow.detail(taskId) });
       }
       if (request.method() === 'POST' && url.pathname.endsWith('/review')) {
         const body = request.postDataJSON();
@@ -130,6 +130,7 @@ function codingAgentFlow(page, rootId) {
   let task = null;
   let batch = null;
   let sequence = 0;
+  let exposeTaskControls = true;
   const controls = {
     runtime_halted: false, execution_available: true, execution_reason: null,
     human_result_review_available: true, human_result_review_reason: null,
@@ -147,7 +148,12 @@ function codingAgentFlow(page, rootId) {
       task = { id: `coding-task-e2e-${sequence}`, state: 'awaiting_result_review', codingStudio: true, rootId: body.rootId, modelId: body.modelId, batchId: null, result: result() };
       return { task };
     },
-    detail: id => id === task?.id ? structuredClone(task) : null,
+    detail: id => {
+      if (id !== task?.id) return null;
+      const detail = { task: structuredClone(task) };
+      if (exposeTaskControls) detail.controls = { runtime_halted: controls.runtime_halted, retry_available: ['revision_requested', 'failed'].includes(task.state) && !controls.runtime_halted, cancel_available: ['queued', 'assigned', 'running'].includes(task.state) };
+      return detail;
+    },
     review: async (id, body) => {
       expect(id).toBe(task.id);
       expect(body.reason).toBeTruthy();
@@ -165,6 +171,9 @@ function codingAgentFlow(page, rootId) {
     },
     retry: (id, body) => { expect(id).toBe(task.id); expect(body.feedback).toBeTruthy(); task.state = 'running'; return structuredClone(task); },
     cancel: id => { expect(id).toBe(task.id); task.state = 'cancelled'; return structuredClone(task); },
+    seedFailed: () => { sequence++; task = { id: `coding-task-e2e-${sequence}`, state: 'failed', codingStudio: true, rootId, modelId: 'guru-code-local', batchId: null, error: 'Coding task failed. Retry with specific feedback or check local runtime diagnostics.', result: result() }; },
+    omitTaskControls: () => { exposeTaskControls = false; },
+    controls,
   };
 }
 
@@ -308,6 +317,49 @@ test('agent revision, retry, cancellation and rejection never create or write a 
   await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'rejected');
   expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
   expect(await rootBatches(page, root.id)).toHaveLength(batchCountBefore);
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test('failed agent tasks can be retried only with fresh bounded feedback', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const flow = codingAgentFlow(page, root.id);
+  flow.seedFailed();
+  await openStudio(page, { roots: [root], agentFlow: flow });
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'failed');
+  await expect(page.locator('#studioAgentTask')).toContainText('failed');
+  await expect(page.getByRole('button', { name: 'Retry failed task' })).toBeVisible();
+  const feedback = page.getByLabel('Fresh retry feedback');
+  await expect(feedback).toHaveAttribute('maxlength', '1500');
+  await page.getByRole('button', { name: 'Retry failed task' }).click();
+  await expect(page.locator('#studioAgentError')).toContainText('Describe the correction before retrying.');
+  await feedback.fill('Use the requested project scope and explain the correction.');
+  await page.getByRole('button', { name: 'Retry failed task' }).click();
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'running');
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test('failed-task retry stays unavailable while the runtime is halted', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const flow = codingAgentFlow(page, root.id);
+  flow.seedFailed();
+  flow.controls.runtime_halted = true;
+  await openStudio(page, { roots: [root], agentFlow: flow });
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'failed');
+  await expect(page.locator('#studioAgentTask').getByRole('button', { name: 'Retry failed task' })).toHaveCount(0);
+  await expect(page.locator('#studioAgentTask').getByLabel('Fresh retry feedback')).toHaveCount(0);
+  await expect(page.locator('#codingstudioView')).toContainText('Agent runtime is halted.');
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test('failed-task retry stays unavailable when task controls are missing', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const flow = codingAgentFlow(page, root.id);
+  flow.seedFailed();
+  flow.omitTaskControls();
+  await openStudio(page, { roots: [root], agentFlow: flow });
+  await expect(page.locator('#studioAgentTask')).toHaveAttribute('data-state', 'failed');
+  await expect(page.locator('#studioAgentTask').getByRole('button', { name: 'Retry failed task' })).toHaveCount(0);
+  await expect(page.locator('#studioAgentTask').getByLabel('Fresh retry feedback')).toHaveCount(0);
   await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
 });
 
