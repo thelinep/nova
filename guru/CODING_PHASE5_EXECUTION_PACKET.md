@@ -12,18 +12,20 @@ provider prices are planning snapshots and must be rechecked before any launch.
 
 ### Fresh local verification (2026-10-13)
 
-- The full hash-locked Guru suite returned **365 passed, 1 skipped in 21.25s**
-  under the Python 3.12.4 macOS arm64 environment. The new D3 recipe suite
-  returned **18 passed**. The full Maataa `npm test` rerun with loopback access
-  returned **782 passed, 1 skipped, 0 failed**; the full Playwright suite
-  returned **69 passed in 2.2 minutes**; Rust packaging tests returned
-  **16 passed, 0 failed**. Playwright exercised simulated model responses,
-  not Guru checkpoint inference.
-- The bounded random-Qwen2 LoRA smoke now saves/restores adapter weights,
-  optimizer, scheduler, global step, sampler position and CPU RNG. Its resumed
-  adapter parameters and logits exactly match an uninterrupted synthetic run;
-  focused tests returned **10 passed**. This does not train or qualify the
-  selected Qwen2.5-Coder checkpoint.
+- The full hash-locked Guru suite returned **374 passed, 1 skipped in 21.54s**
+  under the Python 3.12.4 macOS arm64 environment. The D3 recipe suite returned
+  **18 passed**. The full Maataa `npm test` rerun with loopback access returned
+  **782 passed, 1 skipped, 0 failed**; the full Playwright suite returned
+  **72 passed in 2.5 minutes**; Rust packaging tests returned **16 passed, 0
+  failed**. The added Studio coverage exercises an allowlist gate, saved loop
+  recovery/cancellation, and a passing loop's review-only batch handoff; its
+  loop/model responses are fixtures, not live Guru inference.
+- The bounded random-Qwen2 LoRA smoke saves/restores adapter weights,
+  optimizer, scheduler, global step, deterministic synthetic task-sampler
+  order and RNG state. Resumed task indices, adapter parameters and logits
+  match uninterrupted random-initialized training, including an update after a
+  sampler-cycle boundary; focused tests returned **19 passed**. This does not
+  train or qualify the selected Qwen2.5-Coder checkpoint.
 - A draft-only selected-student recipe is checked in at
   `experiments/recipes/qwen25_coder_15b_lora_sft.v1.json`, canonical hash
   `6de60f1cb224dd06fec5462e48bb255e5056910145bca526c01784865aaa39b7`.
