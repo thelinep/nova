@@ -2,13 +2,20 @@
 import os
 import sys
 from io import BytesIO
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import threading
+import time
 import unittest
+from unittest.mock import Mock
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from guru.code_evaluator import (
     DockerCliEngine, EngineResult, EvaluationError, EvaluationPolicy,
-    evaluate, _docker_options, _evaluate_with_engine,
+    evaluate, _default_state_directory, _docker_options, _evaluate_with_engine,
 )
 
 
@@ -62,7 +69,9 @@ class EvaluationPolicyTests(unittest.TestCase):
                 policy(**kwargs)
 
     def test_constructed_container_has_no_network_mounts_or_credentials(self):
-        args = _docker_options(policy(), "guru-eval-" + "c" * 32)
+        args = _docker_options(
+            policy(), "guru-eval-" + "c" * 32, owner_token="f" * 64,
+        )
         self.assertIn("none", args)
         self.assertIn("--read-only", args)
         self.assertIn("--cap-drop", args)
@@ -72,13 +81,16 @@ class EvaluationPolicyTests(unittest.TestCase):
         self.assertIn("--pids-limit", args)
         self.assertIn("--tmpfs", args)
         self.assertIn("--log-driver", args)
+        self.assertIn("--label", args)
+        self.assertIn("io.brahmini.guru.evaluator-managed=v1", args)
+        self.assertIn("io.brahmini.guru.evaluator-owner=" + "f" * 64, args)
         self.assertIn("none", args)
         self.assertFalse(any(x in {"--mount", "-v", "--volume", "--env", "-e", "--env-file", "--privileged", "--device"} for x in args))
         self.assertFalse(any("secret" in x.lower() or "token" in x.lower() for x in args))
 
     def test_rejects_invalid_generated_name_before_docker_call(self):
         with self.assertRaises(ValueError):
-            _docker_options(policy(), "host-path")
+            _docker_options(policy(), "host-path", owner_token="f" * 64)
 
 
 class EvaluationLifecycleTests(unittest.TestCase):
@@ -109,35 +121,207 @@ class EvaluationLifecycleTests(unittest.TestCase):
             def kill(self):
                 self.returncode = -9
 
-        engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT)
         processes = [
             FakeProcess((CONTAINER_ID + "\n").encode()),
             FakeProcess(),
             FakeProcess(),
         ]
-        with patch.dict(os.environ, {
-            "DOCKER_HOST": "tcp://remote.example:2376",
-            "DOCKER_CONTEXT": "remote-context",
-        }), patch("guru.code_evaluator.subprocess.Popen", side_effect=processes) as popen:
-            self.assertEqual(engine.create(policy(), "guru-eval-" + "c" * 32), CONTAINER_ID)
-            engine.start(CONTAINER_ID, b"payload", policy())
-            engine.remove(CONTAINER_ID, policy())
+        with tempfile.TemporaryDirectory() as state_directory:
+            engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            with patch.dict(os.environ, {
+                "DOCKER_HOST": "tcp://remote.example:2376",
+                "DOCKER_CONTEXT": "remote-context",
+            }), patch("guru.code_evaluator.subprocess.Popen", side_effect=processes) as popen, \
+                    patch.object(engine, "_reap_abandoned_containers"):
+                with engine.evaluation_scope(policy()):
+                    self.assertEqual(engine.create(policy(), "guru-eval-" + "c" * 32), CONTAINER_ID)
+                    engine.start(CONTAINER_ID, b"payload", policy())
+                    engine.remove(CONTAINER_ID, policy())
 
-        argv = [call.args[0] for call in popen.call_args_list]
-        self.assertEqual(len(argv), 3)
-        for command in argv:
-            self.assertEqual(command[0:3], ["docker", "--host", LOCAL_ENDPOINT])
-        self.assertEqual(argv[0][3], "create")
-        self.assertEqual(argv[1][3:6], ["start", "--attach", "--interactive"])
-        self.assertEqual(argv[2][3:6], ["rm", "--force", "--volumes"])
-        for call in popen.call_args_list:
-            self.assertNotIn("DOCKER_HOST", call.kwargs["env"])
-            self.assertNotIn("DOCKER_CONTEXT", call.kwargs["env"])
+            argv = [call.args[0] for call in popen.call_args_list]
+            self.assertEqual(len(argv), 3)
+            for command in argv:
+                self.assertEqual(command[0:3], ["docker", "--host", LOCAL_ENDPOINT])
+            self.assertEqual(argv[0][3], "create")
+            self.assertEqual(argv[1][3:6], ["start", "--attach", "--interactive"])
+            self.assertEqual(argv[2][3:6], ["rm", "--force", "--volumes"])
+            for call in popen.call_args_list:
+                self.assertNotIn("DOCKER_HOST", call.kwargs["env"])
+                self.assertNotIn("DOCKER_CONTEXT", call.kwargs["env"])
 
     def test_engine_rejects_non_local_endpoint(self):
         for endpoint in ("tcp://remote.example:2376", "ssh://host", "unix://"):
             with self.subTest(endpoint=endpoint), self.assertRaises(ValueError):
                 DockerCliEngine(endpoint=endpoint)
+
+    def test_engine_operations_require_managed_lifecycle_scope(self):
+        with tempfile.TemporaryDirectory() as state_directory:
+            engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            with patch.object(engine, "_control") as control:
+                with self.assertRaisesRegex(EvaluationError, "active evaluator lifecycle"):
+                    engine.create(policy(), "guru-eval-" + "c" * 32)
+                with self.assertRaisesRegex(EvaluationError, "active evaluator lifecycle"):
+                    engine.start(CONTAINER_ID, b"payload", policy())
+                with self.assertRaisesRegex(EvaluationError, "active evaluator lifecycle"):
+                    engine.remove(CONTAINER_ID, policy())
+                control.assert_not_called()
+
+    def test_engine_operations_cannot_be_borrowed_from_another_thread(self):
+        with tempfile.TemporaryDirectory() as state_directory:
+            engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            failures = []
+            with patch.object(engine, "_reap_abandoned_containers"), patch.object(engine, "_control") as control:
+                with engine.evaluation_scope(policy()):
+                    def attempt(operation):
+                        try:
+                            operation()
+                        except EvaluationError as exc:
+                            failures.append(str(exc))
+
+                    operations = (
+                        lambda: engine.create(policy(), "guru-eval-" + "c" * 32),
+                        lambda: engine.start(CONTAINER_ID, b"payload", policy()),
+                        lambda: engine.remove(CONTAINER_ID, policy()),
+                    )
+                    threads = [threading.Thread(target=attempt, args=(op,)) for op in operations]
+                    for thread in threads:
+                        thread.start()
+                    for thread in threads:
+                        thread.join(timeout=2)
+                self.assertEqual(len(failures), 3)
+                self.assertTrue(all("active evaluator lifecycle" in failure for failure in failures))
+                control.assert_not_called()
+
+    def test_startup_reaper_removes_only_exact_managed_label(self):
+        with tempfile.TemporaryDirectory() as state_directory:
+            engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            calls = []
+
+            def control(args, timeout):
+                calls.append(args)
+                if args[0] == "ps":
+                    return Mock(stdout=(
+                        b"aaaaaaaaaaaa|guru-eval-" + b"a" * 32 + b"\n" +
+                        b"bbbbbbbbbbbb|guru-eval-" + b"b" * 32 + b"\n"
+                    ))
+                if args[0] == "inspect" and args[-1] == "aaaaaaaaaaaa":
+                    return Mock(stdout=json.dumps({
+                        "io.brahmini.guru.evaluator-managed": "v1",
+                        "io.brahmini.guru.evaluator-owner": "f" * 64,
+                    }).encode())
+                if args[0] == "inspect" and args[-1] == "bbbbbbbbbbbb":
+                    return Mock(stdout=json.dumps({
+                        "io.brahmini.guru.evaluator-managed": "v1",
+                        "io.brahmini.guru.evaluator-owner": "e" * 64,
+                    }).encode())
+                if args[0] == "rm":
+                    return Mock(stdout=b"")
+                raise AssertionError(args)
+
+            with patch.object(engine, "_owner_token", return_value="f" * 64):
+                engine._control = control
+                with engine.evaluation_scope(policy()):
+                    pass
+
+        removals = [args for args in calls if args[0] == "rm"]
+        self.assertEqual(removals, [["rm", "--force", "--volumes", "aaaaaaaaaaaa"]])
+        self.assertIn("label=io.brahmini.guru.evaluator-managed=v1", calls[0])
+        self.assertIn("label=io.brahmini.guru.evaluator-owner=" + "f" * 64, calls[0])
+
+    def test_owner_tokens_separate_private_evaluator_installations(self):
+        with tempfile.TemporaryDirectory() as first_state, tempfile.TemporaryDirectory() as second_state:
+            first = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=first_state)
+            same_install = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=first_state)
+            peer_install = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=second_state)
+            first_token = first._owner_token()
+            self.assertEqual(first_token, same_install._owner_token())
+            self.assertNotEqual(first_token, peer_install._owner_token())
+
+    def test_default_recovery_state_is_durable_and_per_installation(self):
+        root_a = _default_state_directory("/workspace/checkout-a")
+        root_a_again = _default_state_directory("/workspace/checkout-a")
+        root_b = _default_state_directory("/workspace/checkout-b")
+        self.assertEqual(root_a, root_a_again)
+        self.assertNotEqual(root_a, root_b)
+        self.assertFalse(root_a.is_relative_to(Path(tempfile.gettempdir())))
+
+    def test_symlink_state_directory_fails_closed(self):
+        with tempfile.TemporaryDirectory() as parent:
+            target = os.path.join(parent, "private")
+            link = os.path.join(parent, "linked")
+            os.mkdir(target, 0o700)
+            os.symlink(target, link)
+            engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=link)
+            with self.assertRaisesRegex(EvaluationError, "state directory"):
+                engine._owner_token()
+
+    def test_startup_reaper_malformed_inventory_blocks_evaluation(self):
+        with tempfile.TemporaryDirectory() as state_directory:
+            engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            engine._control = lambda args, timeout: Mock(stdout=b"not-a-container-id|guru-eval-" + b"c" * 32 + b"\n")
+            with self.assertRaisesRegex(EvaluationError, "invalid identifier"):
+                with engine.evaluation_scope(policy()):
+                    self.fail("evaluation must not proceed after unverified inventory")
+
+    def test_lifecycle_lock_serializes_concurrent_engines(self):
+        with tempfile.TemporaryDirectory() as state_directory:
+            first = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            second = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            second_entered = threading.Event()
+            with patch.object(first, "_reap_abandoned_containers"), \
+                    patch.object(second, "_reap_abandoned_containers") as reap_second:
+                first_scope = first.evaluation_scope(policy(control_timeout_seconds=2))
+                first_scope.__enter__()
+                thread = threading.Thread(
+                    target=lambda: self._enter_scope(second, second_entered), daemon=True,
+                )
+                thread.start()
+                time.sleep(0.15)
+                self.assertFalse(second_entered.is_set())
+                reap_second.assert_not_called()
+                first_scope.__exit__(None, None, None)
+                thread.join(timeout=2)
+                self.assertTrue(second_entered.is_set())
+                reap_second.assert_called_once()
+
+    def test_process_crash_releases_lock_for_next_startup_reaper(self):
+        with tempfile.TemporaryDirectory() as state_directory:
+            ready = os.path.join(state_directory, "child-ready")
+            module_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            child_code = (
+                "import sys,time; from pathlib import Path; "
+                "from guru.code_evaluator import DockerCliEngine,EvaluationPolicy; "
+                "p=EvaluationPolicy(image='registry.example.invalid/guru-runner@sha256:'+'a'*64,command=('/opt/runner',)); "
+                "e=DockerCliEngine('unix:///var/run/docker.sock',state_directory=sys.argv[1]); "
+                "e._reap_abandoned_containers=lambda policy: None; "
+                "scope=e.evaluation_scope(p); scope.__enter__(); "
+                "Path(sys.argv[2]).write_text('locked'); time.sleep(60)"
+            )
+            child_env = os.environ.copy()
+            child_env["PYTHONPATH"] = os.pathsep.join(filter(None, [module_root, child_env.get("PYTHONPATH", "")]))
+            child = subprocess.Popen(
+                [sys.executable, "-c", child_code, state_directory, ready],
+                env=child_env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+            )
+            deadline = time.monotonic() + 5
+            while not os.path.exists(ready) and time.monotonic() < deadline:
+                if child.poll() is not None:
+                    self.fail(child.stderr.read().decode("utf-8", "replace"))
+                time.sleep(0.02)
+            self.assertTrue(os.path.exists(ready), "child did not acquire evaluator lock")
+            child.kill()
+            child.wait(timeout=2)
+
+            next_start = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
+            with patch.object(next_start, "_reap_abandoned_containers") as reaper:
+                with next_start.evaluation_scope(policy()):
+                    pass
+            reaper.assert_called_once()
+
+    @staticmethod
+    def _enter_scope(engine, entered):
+        with engine.evaluation_scope(policy(control_timeout_seconds=2)):
+            entered.set()
 
     def test_happy_path_records_hash_and_cleanup(self):
         fake = FakeEngine(EngineResult(7, b"bounded stdout", b"diagnostic"))

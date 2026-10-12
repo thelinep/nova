@@ -6,15 +6,22 @@ testing are still required before this can safely execute generated code.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
+import fcntl
 import hashlib
+import json
 import os
+from pathlib import Path
 import re
+import secrets
 import subprocess
+import stat
+import sys
 import threading
 import time
 import uuid
-from typing import Protocol
+from typing import Iterator, Protocol
 
 
 class EvaluationError(RuntimeError):
@@ -26,7 +33,26 @@ _PINNED_IMAGE = re.compile(
     r"(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)*@sha256:[0-9a-f]{64}$"
 )
 _CONTAINER_ID = re.compile(r"^[0-9a-f]{64}$")
+_CONTAINER_ID_PREFIX = re.compile(r"^[0-9a-f]{12,64}$")
 _NAME = re.compile(r"^guru-eval-[0-9a-f]{32}$")
+_MANAGED_LABEL = "io.brahmini.guru.evaluator-managed"
+_MANAGED_LABEL_VALUE = "v1"
+_OWNER_LABEL = "io.brahmini.guru.evaluator-owner"
+_OWNER_TOKEN = re.compile(r"^[0-9a-f]{64}$")
+_LOCK_FILENAME = "docker-evaluator.lock"
+_OWNER_TOKEN_FILENAME = "docker-evaluator.owner"
+DOCKER_ENGINE_RECOVERY_VERSION = "guru-docker-engine-recovery-v1"
+
+
+def _default_state_directory(installation_root: str | os.PathLike[str] | None = None) -> Path:
+    """Return durable, per-user and per-checkout evaluator recovery state."""
+    root = Path(installation_root or Path(__file__).resolve().parents[1]).resolve()
+    installation_id = hashlib.sha256(os.fsencode(str(root))).hexdigest()
+    if sys.platform == "darwin":
+        state_home = Path.home() / "Library" / "Application Support" / "Brahmini" / "GuruEvaluator"
+    else:
+        state_home = Path.home() / ".local" / "state" / "brahmini" / "guru-evaluator"
+    return state_home / installation_id
 
 
 @dataclass(frozen=True)
@@ -97,12 +123,16 @@ class ContainerEngine(Protocol):
     def remove(self, container_id: str, policy: EvaluationPolicy) -> None: ...
 
 
-def _docker_options(policy: EvaluationPolicy, name: str) -> list[str]:
+def _docker_options(policy: EvaluationPolicy, name: str, *, owner_token: str) -> list[str]:
     if not _NAME.fullmatch(name):
         raise ValueError("invalid evaluator container name")
+    if not _OWNER_TOKEN.fullmatch(owner_token):
+        raise ValueError("invalid evaluator owner token")
     memory = str(policy.memory_bytes)
     return [
-        "create", "--interactive", "--name", name, "--log-driver", "none",
+        "create", "--interactive", "--name", name,
+        "--label", f"{_MANAGED_LABEL}={_MANAGED_LABEL_VALUE}",
+        "--label", f"{_OWNER_LABEL}={owner_token}", "--log-driver", "none",
         "--network", "none", "--read-only", "--user", "65534:65534",
         "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
         "--pids-limit", str(policy.pids_limit), "--memory", memory,
@@ -122,16 +152,185 @@ class DockerCliEngine:
     This primitive remains a probe/test boundary, not evaluator qualification.
     """
 
-    def __init__(self, endpoint: str, executable: str = "docker"):
+    def __init__(
+        self, endpoint: str, executable: str = "docker", *,
+        state_directory: str | os.PathLike[str] | None = None,
+        installation_root: str | os.PathLike[str] | None = None,
+    ):
         if not executable or "\x00" in executable:
             raise ValueError("docker executable must be a non-empty path")
         if not isinstance(endpoint, str) or not endpoint.startswith("unix:///") or "\x00" in endpoint:
             raise ValueError("endpoint must be an explicit local Unix socket URI")
         self.endpoint = endpoint
         self.executable = executable
+        if state_directory is not None and installation_root is not None:
+            raise ValueError("choose state_directory or installation_root, not both")
+        self.state_directory = (
+            Path(state_directory) if state_directory is not None
+            else _default_state_directory(installation_root)
+        )
+        self._scope_guard = threading.Lock()
+        self._scope_reserved = False
+        self._scope_owner_thread: int | None = None
+
+    @contextmanager
+    def evaluation_scope(self, policy: EvaluationPolicy) -> Iterator[None]:
+        """Serialize local evaluator lifecycles and reap abandoned workers.
+
+        The advisory lock is held across stale-worker cleanup, create, start,
+        and removal. A process crash releases the OS lock; the next process can
+        then remove only containers carrying Guru's dedicated ownership label.
+        This recovery mechanism is not proof of Docker/VM isolation.
+        """
+        with self._scope_guard:
+            if self._scope_reserved:
+                raise EvaluationError("Docker engine already has an active evaluator lifecycle")
+            self._scope_reserved = True
+        descriptor: int | None = None
+        locked = False
+        try:
+            descriptor = self._open_evaluator_lock()
+            deadline = time.monotonic() + policy.control_timeout_seconds
+            while True:
+                try:
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    locked = True
+                    break
+                except BlockingIOError as exc:
+                    if time.monotonic() >= deadline:
+                        raise EvaluationError("another local evaluator lifecycle did not release its lock") from exc
+                    time.sleep(0.05)
+            self._reap_abandoned_containers(policy)
+            with self._scope_guard:
+                self._scope_owner_thread = threading.get_ident()
+            try:
+                yield
+            finally:
+                with self._scope_guard:
+                    self._scope_owner_thread = None
+        finally:
+            if descriptor is not None:
+                if locked:
+                    fcntl.flock(descriptor, fcntl.LOCK_UN)
+                os.close(descriptor)
+            with self._scope_guard:
+                self._scope_reserved = False
+
+    def _open_evaluator_lock(self) -> int:
+        """Open a private local lock file without following symlinks."""
+        try:
+            self.state_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            directory_stat = self.state_directory.lstat()
+            if (not self.state_directory.is_dir() or self.state_directory.is_symlink() or
+                    directory_stat.st_uid != os.getuid() or directory_stat.st_mode & 0o077):
+                raise EvaluationError("evaluator state directory is not private and owner-controlled")
+            flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(self.state_directory / _LOCK_FILENAME, flags, 0o600)
+            file_stat = os.fstat(descriptor)
+            if (not stat.S_ISREG(file_stat.st_mode) or file_stat.st_uid != os.getuid() or
+                    file_stat.st_nlink != 1):
+                os.close(descriptor)
+                raise EvaluationError("evaluator lock is not a private owner-controlled regular file")
+            os.fchmod(descriptor, 0o600)
+            return descriptor
+        except EvaluationError:
+            raise
+        except OSError as exc:
+            raise EvaluationError("cannot open private evaluator lifecycle lock") from exc
+
+    def _owner_token(self) -> str:
+        """Read or create the random identity for this private evaluator install."""
+        try:
+            self.state_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            directory_stat = self.state_directory.lstat()
+            if (not self.state_directory.is_dir() or self.state_directory.is_symlink() or
+                    directory_stat.st_uid != os.getuid() or directory_stat.st_mode & 0o077):
+                raise EvaluationError("evaluator state directory is not private and owner-controlled")
+            path = self.state_directory / _OWNER_TOKEN_FILENAME
+            try:
+                descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            except FileNotFoundError:
+                token = secrets.token_hex(32)
+                flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_NOFOLLOW", 0)
+                try:
+                    descriptor = os.open(path, flags, 0o600)
+                except FileExistsError:
+                    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+                else:
+                    try:
+                        token_bytes = token.encode("ascii")
+                        written = 0
+                        while written < len(token_bytes):
+                            written += os.write(descriptor, token_bytes[written:])
+                        os.fsync(descriptor)
+                    finally:
+                        os.close(descriptor)
+                    directory_fd = os.open(self.state_directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+                    try:
+                        os.fsync(directory_fd)
+                    finally:
+                        os.close(directory_fd)
+                    return token
+            try:
+                file_stat = os.fstat(descriptor)
+                if (not stat.S_ISREG(file_stat.st_mode) or file_stat.st_uid != os.getuid() or
+                        file_stat.st_nlink != 1 or file_stat.st_mode & 0o077):
+                    raise EvaluationError("evaluator owner token is not private and owner-controlled")
+                contents = os.read(descriptor, 128)
+            finally:
+                os.close(descriptor)
+            token = contents.decode("ascii", "strict")
+            if not _OWNER_TOKEN.fullmatch(token):
+                raise EvaluationError("evaluator owner token is malformed")
+            return token
+        except EvaluationError:
+            raise
+        except (OSError, UnicodeError) as exc:
+            raise EvaluationError("cannot verify private evaluator owner token") from exc
+
+    def _reap_abandoned_containers(self, policy: EvaluationPolicy) -> None:
+        """Remove only containers carrying the exact evaluator ownership label."""
+        try:
+            owner_token = self._owner_token()
+            response = self._control([
+                "ps", "--all", "--filter", f"label={_MANAGED_LABEL}={_MANAGED_LABEL_VALUE}",
+                "--filter", f"label={_OWNER_LABEL}={owner_token}",
+                "--format", "{{.ID}}|{{.Names}}",
+            ], policy.control_timeout_seconds)
+            entries = response.stdout.decode("ascii", "strict").splitlines()
+            if len(entries) > 512:
+                raise EvaluationError("managed evaluator container inventory exceeded limit")
+            for entry in entries:
+                parts = entry.split("|")
+                if (len(parts) != 2 or not _CONTAINER_ID_PREFIX.fullmatch(parts[0]) or
+                        not _NAME.fullmatch(parts[1])):
+                    raise EvaluationError("managed evaluator inventory contained an invalid identifier")
+                identifier, name = parts
+                inspected = self._control([
+                    "inspect", "--format", "{{json .Config.Labels}}", identifier,
+                ], policy.control_timeout_seconds)
+                labels = json.loads(inspected.stdout.decode("utf-8", "strict"))
+                if not isinstance(labels, dict):
+                    raise EvaluationError("managed evaluator labels are unavailable")
+                if (labels.get(_MANAGED_LABEL) != _MANAGED_LABEL_VALUE or
+                        labels.get(_OWNER_LABEL) != owner_token or
+                        labels.get("com.docker.compose.project") is not None):
+                    # Recheck exact owner and isolate only Guru-named workers.
+                    continue
+                self._control(["rm", "--force", "--volumes", identifier], policy.control_timeout_seconds)
+        except EvaluationError:
+            raise
+        except (UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise EvaluationError("managed evaluator inventory could not be verified") from exc
 
     def _argv(self, args: list[str]) -> list[str]:
         return [self.executable, "--host", self.endpoint, *args]
+
+    def _require_evaluation_scope(self) -> None:
+        with self._scope_guard:
+            owns_scope = self._scope_owner_thread == threading.get_ident()
+        if not owns_scope:
+            raise EvaluationError("Docker engine operations require an active evaluator lifecycle")
 
     @staticmethod
     def _environment() -> dict[str, str]:
@@ -206,26 +405,21 @@ class DockerCliEngine:
         return result
 
     def create(self, policy: EvaluationPolicy, name: str) -> str:
-        try:
-            result = self._control(_docker_options(policy, name), policy.control_timeout_seconds)
-        except BaseException as create_error:
-            # A control-client timeout can occur after the daemon has created
-            # the named container. Best-effort cleanup is required before
-            # propagating the original failure.
-            try:
-                self._control(["rm", "--force", "--volumes", name], policy.control_timeout_seconds)
-            except BaseException as cleanup_error:
-                raise EvaluationError("container create failed and named-container cleanup failed") from cleanup_error
-            raise create_error
+        self._require_evaluation_scope()
+        result = self._control(
+            _docker_options(policy, name, owner_token=self._owner_token()),
+            policy.control_timeout_seconds,
+        )
         container_id = result.stdout.decode("ascii", "strict").strip()
         if not _CONTAINER_ID.fullmatch(container_id):
-            # Remove by our generated name if the daemon created a container but
-            # returned malformed output; cleanup failure is deliberately surfaced.
-            self._control(["rm", "--force", "--volumes", name], policy.control_timeout_seconds)
+            # Do not remove by an unverified name. If create reached the daemon
+            # before the control response failed, the next locked startup pass
+            # will discover and clean the exact owner-labeled container.
             raise EvaluationError("Docker create returned an invalid container identifier")
         return container_id
 
     def start(self, container_id: str, payload: bytes, policy: EvaluationPolicy) -> EngineResult:
+        self._require_evaluation_scope()
         if not _CONTAINER_ID.fullmatch(container_id):
             raise EvaluationError("invalid container identifier")
         try:
@@ -301,6 +495,7 @@ class DockerCliEngine:
         return EngineResult(proc.returncode if proc.returncode is not None else -1, out, err, timed_out, limited.is_set())
 
     def remove(self, container_id: str, policy: EvaluationPolicy) -> None:
+        self._require_evaluation_scope()
         if not _CONTAINER_ID.fullmatch(container_id):
             raise EvaluationError("invalid container identifier during cleanup")
         self._control(["rm", "--force", "--volumes", container_id], policy.control_timeout_seconds)
@@ -318,15 +513,18 @@ def _evaluate_with_engine(
     container_id: str | None = None
     result: EngineResult | None = None
     removed = False
-    try:
-        container_id = engine.create(policy, "guru-eval-" + uuid.uuid4().hex)
-        if not _CONTAINER_ID.fullmatch(container_id):
-            raise EvaluationError("engine returned an invalid container identifier")
-        result = engine.start(container_id, payload, policy)
-    finally:
-        if container_id is not None:
-            engine.remove(container_id, policy)
-            removed = True
+    scope_factory = getattr(engine, "evaluation_scope", None)
+    scope = scope_factory(policy) if callable(scope_factory) else nullcontext()
+    with scope:
+        try:
+            container_id = engine.create(policy, "guru-eval-" + uuid.uuid4().hex)
+            if not _CONTAINER_ID.fullmatch(container_id):
+                raise EvaluationError("engine returned an invalid container identifier")
+            result = engine.start(container_id, payload, policy)
+        finally:
+            if container_id is not None:
+                engine.remove(container_id, policy)
+                removed = True
     assert result is not None
     stdout = result.stdout[:policy.output_limit_bytes]
     stderr = result.stderr[:max(0, policy.output_limit_bytes - len(stdout))]

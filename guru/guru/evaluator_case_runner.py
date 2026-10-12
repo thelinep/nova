@@ -20,6 +20,7 @@ import subprocess
 from typing import Any
 
 from guru.code_evaluator import (
+    DOCKER_ENGINE_RECOVERY_VERSION,
     EvaluationError,
     EvaluationPolicy,
     evaluate,
@@ -217,6 +218,7 @@ def evaluator_config_digest(policy: EvaluationPolicy, *, docker_endpoint: str = 
     """Digest every evaluator setting and the fixed runner implementation."""
     return _canonical_digest({
         "runner_version": RUNNER_VERSION,
+        "engine_recovery_version": DOCKER_ENGINE_RECOVERY_VERSION,
         "docker_endpoint": docker_endpoint,
         "daemon_logging_policy": DAEMON_LOGGING_POLICY,
         "command": list(policy.command),
