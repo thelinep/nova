@@ -11,23 +11,7 @@ import tempfile
 from pathlib import Path
 
 import torch
-
-
-def _ephemeral_scratch_root() -> Path:
-    """Return the OS scratch root, refusing a misconfigured in-repo TMPDIR.
-
-    The smoke writes only synthetic adapter artifacts and removes them before
-    returning. Keeping the temporary directory outside the checkout prevents a
-    TMPDIR override from turning those transient artifacts into repository
-    files that could be mistaken for retained training outputs.
-    """
-    root = Path(tempfile.gettempdir()).resolve()
-    repo_root = Path(__file__).resolve().parents[1]
-    try:
-        root.relative_to(repo_root)
-    except ValueError:
-        return root
-    raise RuntimeError("synthetic LoRA scratch directory must be outside the Guru checkout")
+from guru.ephemeral import training_scratch_root
 
 
 def run_synthetic_lora_smoke(*, seed: int = 17, steps: int = 2) -> dict:
@@ -41,7 +25,7 @@ def run_synthetic_lora_smoke(*, seed: int = 17, steps: int = 2) -> dict:
     if type(steps) is not int or steps < 2:
         raise ValueError("steps must be an integer of at least 2")
 
-    scratch_root = _ephemeral_scratch_root()
+    scratch_root = training_scratch_root()
 
     try:
         from peft import LoraConfig, PeftModel, get_peft_model
