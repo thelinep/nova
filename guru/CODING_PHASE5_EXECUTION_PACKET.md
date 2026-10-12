@@ -12,6 +12,16 @@ provider prices are planning snapshots and must be rechecked before any launch.
 
 ### Fresh local verification (2026-10-13)
 
+- A new metadata-only local artifact inventory preflight was added for D3. It
+  accepts an explicit file list and exact recipe inventory pins, verifies the
+  locked training-stack file, and rejects symlinks, special files, path escapes,
+  missing/extra files, inventory drift, directory symlink substitution, and
+  same-size file mutation with restored mtime during scanning. Focused
+  inspector/recipe tests returned **34 passed**; the full Guru suite returned
+  **398 passed, 1 skipped in 21.23s** from a temporary CPython
+  3.12.1 venv installed offline from `requirements-test-full.lock`. The test
+  artifacts are synthetic. No model weights were present or loaded; the report
+  remains `pending_review`, and the utility does not approve or launch training.
 - The full hash-locked Guru suite returned **382 passed, 1 skipped in 21.24s**
   under the Python 3.12.4 macOS arm64 environment. The D3 recipe suite returned
   **18 passed**. The full Maataa `npm test` rerun with loopback access returned
