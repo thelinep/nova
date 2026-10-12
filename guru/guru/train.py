@@ -7,6 +7,7 @@ with the loss, speed and a short sample, and Guru-Panini's score of the sample.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -53,30 +54,85 @@ class TokenStream:
 class SFTStream:
     """Question/answer pairs in the Guru template; the loss counts only the answer tokens."""
     def __init__(self, path, tok: Tokenizer, seq_len, seed=0):
-        from .tokenizer import EOS
-
-        self.eos_id = EOS
+        eos_id = getattr(tok, "eos_id", None)
+        if eos_id is None:
+            from .tokenizer import EOS
+            eos_id = EOS
+        self.eos_id = int(eos_id)
         self.items = []
-        with open(path, encoding="utf-8") as f:
-            for line in f:
+        input_digest = hashlib.sha256()
+        tokenized_digest = hashlib.sha256()
+        with open(path, "rb") as f:
+            for line_number, raw_line in enumerate(f, 1):
+                input_digest.update(raw_line)
+                try:
+                    line = raw_line.decode("utf-8")
+                except UnicodeDecodeError as exc:
+                    raise ValueError(f"SFT data line {line_number} is not valid UTF-8") from exc
                 if not line.strip():
                     continue
-                r = json.loads(line)
-                p = tok.encode(PROMPT_TEMPLATE.format(prompt=r["prompt"].strip()), bos=True)
-                a = tok.encode(r["answer"].strip(), eos=True)
-                ids = (p + a)[: seq_len + 1]
-                mask = ([0] * len(p) + [1] * len(a))[: seq_len + 1]
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"SFT data line {line_number} is not valid JSON") from exc
+                if not isinstance(r, dict):
+                    raise ValueError(f"SFT data line {line_number} must be a JSON object")
+                prompt, answer = r.get("prompt"), r.get("answer")
+                if not isinstance(prompt, str) or not prompt.strip():
+                    raise ValueError(f"SFT data line {line_number} requires a non-empty string prompt")
+                if not isinstance(answer, str) or not answer.strip():
+                    raise ValueError(f"SFT data line {line_number} requires a non-empty string answer")
+                p = tok.encode(PROMPT_TEMPLATE.format(prompt=prompt.strip()), bos=True)
+                a = tok.encode(answer.strip(), eos=True)
+                if len(p) + len(a) > seq_len + 1:
+                    raise ValueError(
+                        f"SFT data line {line_number} has {len(p) + len(a) - 1} input tokens; "
+                        f"the configured sequence length is {seq_len}. Refusing to truncate the answer."
+                    )
+                ids = p + a
+                mask = [0] * len(p) + [1] * len(a)
                 if sum(mask[1:]) > 0:
                     self.items.append((ids, mask))
+                    tokenized_digest.update(json.dumps(
+                        {"ids": ids, "loss_mask": mask}, sort_keys=True, separators=(",", ":")
+                    ).encode("utf-8") + b"\n")
         if not self.items:
-            raise SystemExit("No usable question/answer pairs found.")
+            raise ValueError("No usable question/answer pairs found.")
+        self.input_sha256 = input_digest.hexdigest()
+        self.tokenized_sha256 = tokenized_digest.hexdigest()
         self.seq_len, self.rng = seq_len, np.random.default_rng(seed)
 
     def batch(self, bs, device):
-        pick = self.rng.integers(0, len(self.items), size=bs)
-        T = min(self.seq_len, max(len(self.items[i][0]) for i in pick) - 1)
+        pick = self.next_indices(bs)
+        return self.batch_indices(pick, device)
+
+    def next_indices(self, bs):
+        if type(bs) is not int or bs < 1:
+            raise ValueError("SFT batch size must be a positive integer")
+        return self.rng.integers(0, len(self.items), size=bs)
+
+    def state_dict(self):
+        return {"version": 1, "rng_state": self.rng.bit_generator.state}
+
+    def load_state_dict(self, state):
+        if not isinstance(state, dict) or state.get("version") != 1 or not isinstance(state.get("rng_state"), dict):
+            raise ValueError("SFT checkpoint is missing a supported sampler RNG state")
+        try:
+            self.rng.bit_generator.state = state["rng_state"]
+        except (TypeError, ValueError) as exc:
+            raise ValueError("SFT checkpoint sampler RNG state is invalid") from exc
+
+    def batch_indices(self, indices, device):
+        """Collate selected rows without changing the stream RNG (also useful for focused tests)."""
+        if len(indices) == 0:
+            raise ValueError("SFT batch requires at least one row")
+        if any(not isinstance(i, (int, np.integer)) or isinstance(i, (bool, np.bool_))
+               or i < 0 or i >= len(self.items) for i in indices):
+            raise IndexError("SFT batch row index is out of range")
+        T = min(self.seq_len, max(len(self.items[int(i)][0]) for i in indices) - 1)
+        bs = len(indices)
         x = torch.full((bs, T), self.eos_id, dtype=torch.long); y = torch.full((bs, T), -100, dtype=torch.long); m = torch.zeros((bs, T))
-        for r, i in enumerate(pick):
+        for r, i in enumerate(indices):
             ids, mask = self.items[i]
             n = min(len(ids) - 1, T)
             x[r, :n] = torch.tensor(ids[:n]); y[r, :n] = torch.tensor(ids[1:n + 1]); m[r, :n] = torch.tensor(mask[1:n + 1], dtype=torch.float)
@@ -88,6 +144,80 @@ def lr_at(step, total, peak, warmup):
         return peak * (step + 1) / warmup
     progress = min(1.0, (step - warmup) / max(1, total - warmup))
     return peak * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * progress)))
+
+
+def _build_sft_training_identity(stream, tok, tokenizer_path, cfg, *, micro_bs, accumulation,
+                                 world, device, peak_lr, warmup, seed, total_steps, eval_every,
+                                 initial_checkpoint_sha256=None):
+    """Bind resumable SFT to immutable bytes, tokenizer, model context, and recipe."""
+    try:
+        with open(tokenizer_path, "rb") as f:
+            tokenizer_bytes = f.read()
+    except OSError as exc:
+        raise ValueError("SFT tokenizer file must exist so its identity can be pinned") from exc
+    tokenizer_digest = hashlib.sha256(tokenizer_bytes).hexdigest()
+    bos_id = int(getattr(tok, "bos_id", 1))
+    eos_id = int(getattr(tok, "eos_id", stream.eos_id))
+    return {
+        "schema_version": "guru-sft-training-identity-v3",
+        "data_sha256": stream.input_sha256,
+        "tokenized_stream_sha256": stream.tokenized_sha256,
+        "tokenizer": {
+            "sha256": tokenizer_digest,
+            "implementation": f"{tok.__class__.__module__}.{tok.__class__.__qualname__}",
+            "vocab_size": int(tok.vocab_size),
+            "bos_id": bos_id,
+            "eos_id": eos_id,
+        },
+        "prompt_template": PROMPT_TEMPLATE,
+        "loss_mask_policy": "answer-only-including-eos-v1",
+        "sequence_length": stream.seq_len,
+        "model_config": json.loads(cfg.to_json()),
+        "recipe": {
+            "method": "native-full-parameter-answer-only-sft",
+            "optimizer": "AdamW",
+            "betas": [0.9, 0.95],
+            "epsilon": 1e-8,
+            "weight_decay_matrix": 0.1,
+            "weight_decay_vector": 0.0,
+            "max_grad_norm": 1.0,
+            "peak_learning_rate": peak_lr,
+            "schedule": "cosine-warmup-v1",
+            "warmup_steps": warmup,
+            "micro_batch_size_per_rank": micro_bs,
+            "gradient_accumulation_steps": accumulation,
+            "world_size": world,
+            "device": device,
+            "precision": "cuda-bfloat16-autocast" if device.startswith("cuda") else "fp32",
+            "seed": seed,
+            "total_optimizer_steps": total_steps,
+            "evaluation_and_sampling_cadence_steps": eval_every,
+        },
+        "initial_checkpoint_sha256": initial_checkpoint_sha256,
+    }
+
+
+def _validate_sft_resume_identity(checkpoint, current_identity):
+    if checkpoint.get("sft_training_identity") != current_identity:
+        raise ValueError("SFT resume training identity mismatch; data, tokenizer, model context, or recipe changed")
+
+
+def _capture_torch_rng_state(device):
+    return {
+        "device": device,
+        "cpu": torch.get_rng_state().clone(),
+        "cuda": torch.cuda.get_rng_state(device).cpu().clone() if device.startswith("cuda") else None,
+    }
+
+
+def _restore_torch_rng_state(state, device):
+    if not isinstance(state, dict) or state.get("device") != device or not isinstance(state.get("cpu"), torch.Tensor):
+        raise ValueError("SFT checkpoint is missing compatible Torch RNG state")
+    if device.startswith("cuda") and not isinstance(state.get("cuda"), torch.Tensor):
+        raise ValueError("SFT CUDA checkpoint is missing CUDA RNG state")
+    torch.set_rng_state(state["cpu"].cpu())
+    if device.startswith("cuda"):
+        torch.cuda.set_rng_state(state["cuda"].cpu(), device=device)
 
 
 def _synthetic_benchmark(model, raw_model, opt, cfg, *, steps, seq_len, micro_bs,
@@ -175,17 +305,27 @@ def _synthetic_benchmark(model, raw_model, opt, cfg, *, steps, seq_len, micro_bs
     return result
 
 
-def sample(model, tok, prompt, device, n=48):
-    from .tokenizer import EOS
-
+def sample(model, tok, prompt, device, n=48, eos_id=None):
+    if eos_id is None:
+        eos_id = getattr(tok, "eos_id", None)
+    if eos_id is None:
+        from .tokenizer import EOS
+        eos_id = EOS
     ids = torch.tensor([tok.encode(prompt, bos=True)], device=device)
-    out = model.generate(ids, max_new_tokens=n, temperature=0.8, top_k=40, eos_id=EOS)
+    was_training = model.training
+    try:
+        out = model.generate(ids, max_new_tokens=n, temperature=0.8, top_k=40, eos_id=eos_id)
+    finally:
+        model.train(was_training)
     return tok.decode(out[0].tolist())
 
 
 def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minutes=None, tokens=None, micro_bs=None,
           resume=False, device=None, sft=None, init_from=None, eval_every=200, seed=1337, compile_model=False,
-          overrides=None, benchmark_steps=None, benchmark_seq_len=None, benchmark_accumulation=1):
+          overrides=None, benchmark_steps=None, benchmark_seq_len=None, benchmark_accumulation=1,
+          tokenizer_override=None, stop_at_step=None):
+    if stop_at_step is not None and (not isinstance(stop_at_step, int) or isinstance(stop_at_step, bool) or stop_at_step < 1):
+        raise ValueError("stop_at_step must be a positive integer")
     benchmark = benchmark_steps is not None
     if benchmark:
         if not isinstance(benchmark_steps, int) or isinstance(benchmark_steps, bool) or benchmark_steps < 1:
@@ -200,16 +340,22 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
     elif benchmark_seq_len is not None or benchmark_accumulation != 1:
         raise ValueError("benchmark sequence length and accumulation require benchmark_steps")
     ddp = int(os.environ.get("WORLD_SIZE", "1")) > 1
+    if ddp and sft and resume:
+        raise ValueError("DDP SFT resume is unsupported: checkpoints currently store only rank-0 sampler and RNG state")
     rank = 0
     if ddp:
         dist.init_process_group("nccl"); rank = dist.get_rank()
         torch.cuda.set_device(int(os.environ["LOCAL_RANK"])); device = f"cuda:{int(os.environ['LOCAL_RANK'])}"
     device = pick_device(device)
+    if sft and resume and str(device).startswith("mps"):
+        raise ValueError("MPS SFT resume is unsupported until MPS RNG state is captured and restored")
     master = rank == 0
     torch.manual_seed(seed + rank)
     tokenizer_path = tokenizer_path or os.path.join(data_dir, "guru-dhatu.model")
     if benchmark:
         tok = None
+    elif tokenizer_override is not None:
+        tok = tokenizer_override
     else:
         from .tokenizer import Tokenizer
 
@@ -264,6 +410,30 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
         peak = cfg.lr
     warmup = min(500, max(20, total_steps // 20))
 
+    sft_training_identity = None
+    if sft:
+        if resume and ckpt and not init_from:
+            saved_identity = ckpt.get("sft_training_identity")
+            initial_checkpoint_sha256 = (saved_identity or {}).get("initial_checkpoint_sha256")
+        elif init_from:
+            with open(init_from, "rb") as f:
+                initial_checkpoint_sha256 = hashlib.sha256(f.read()).hexdigest()
+        else:
+            initial_checkpoint_sha256 = None
+        sft_training_identity = _build_sft_training_identity(
+            stream, tok, tokenizer_path, cfg, micro_bs=micro_bs, accumulation=accum,
+            world=world, device=device, peak_lr=peak, warmup=warmup, seed=seed,
+            total_steps=total_steps, eval_every=eval_every,
+            initial_checkpoint_sha256=initial_checkpoint_sha256,
+        )
+        if resume and ckpt and not init_from:
+            _validate_sft_resume_identity(ckpt, sft_training_identity)
+            if "sft_stream_state" not in ckpt:
+                raise ValueError("cannot resume SFT checkpoint without sampler RNG state; start a new run instead")
+            stream.load_state_dict(ckpt["sft_stream_state"])
+            if "torch_rng_state" not in ckpt:
+                raise ValueError("cannot resume SFT checkpoint without Torch RNG state; start a new run instead")
+
     decay = [p for n, p in raw_model.named_parameters() if p.dim() >= 2]
     nodecay = [p for n, p in raw_model.named_parameters() if p.dim() < 2]
     opt = torch.optim.AdamW([{"params": decay, "weight_decay": 0.1}, {"params": nodecay, "weight_decay": 0.0}],
@@ -271,6 +441,8 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
     step, best = 0, float("inf")
     if resume and ckpt and not init_from:
         opt.load_state_dict(ckpt["optimizer"]); step = ckpt["step"]; best = ckpt.get("best_val", best)
+        if sft:
+            _restore_torch_rng_state(ckpt["torch_rng_state"], device)
 
     amp = torch.autocast("cuda", dtype=torch.bfloat16) if device.startswith("cuda") else nullcontext()
     if benchmark:
@@ -307,6 +479,13 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
         # best.pt holds only the weights (small); last.pt also keeps the optimizer so training can resume.
         state = {"model": raw_model.state_dict(), "config": json.loads(cfg.to_json()),
                  "step": step, "best_val": best, "val_loss": val, "tokenizer": os.path.abspath(tokenizer_path)}
+        if isinstance(stream, SFTStream):
+            state["sft_stream_state"] = stream.state_dict()
+            state["sft_training_identity"] = sft_training_identity
+            state["sft_sampler_state_scope"] = "rank-0-only; DDP SFT resume unsupported" if ddp else "single-process"
+            state["sft_rank"] = rank
+            state["sft_world_size"] = world
+            state["torch_rng_state"] = _capture_torch_rng_state(device)
         if name == "last.pt":
             state["optimizer"] = opt.state_dict()
         tmp = os.path.join(out_dir, name + ".tmp")
@@ -314,7 +493,10 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
 
     model.train()
     stop_reason = "token budget"
-    while step < total_steps:
+    run_until_step = min(total_steps, stop_at_step) if stop_at_step is not None else total_steps
+    if step > run_until_step:
+        raise ValueError(f"stop_at_step {run_until_step} is behind resumed step {step}")
+    while step < run_until_step:
         lr = lr_at(step, total_steps, peak, warmup)
         for g in opt.param_groups:
             g["lr"] = lr
@@ -341,7 +523,8 @@ def train(size="nano", data_dir="data", out_dir="out", tokenizer_path=None, minu
             val = evaluate()
             dt = time.time() - t_last; t_last = time.time()
             rate = tok_count / max(dt, 1e-6); tok_count = 0
-            text = sample(raw_model, tok, SAMPLE_PROMPTS[(step // max(1, eval_every)) % len(SAMPLE_PROMPTS)], device)
+            text = sample(raw_model, tok, SAMPLE_PROMPTS[(step // max(1, eval_every)) % len(SAMPLE_PROMPTS)],
+                          device, eos_id=getattr(tok, "eos_id", None))
             check = panini.verify(text)
             rec = {"step": step, "of": total_steps, "loss": round(loss_sum, 4), "val": None if val is None else round(val, 4), "lr": lr,
                    "tok_per_s": round(rate), "minutes": round((time.time() - t_start) / 60, 1), "sample": text[:300], "panini_score": check["score"]}
