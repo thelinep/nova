@@ -22,7 +22,7 @@ def test_synthetic_qwen2_lora_smoke_roundtrips_and_continues_offline(monkeypatch
     rng_before = torch.get_rng_state().clone()
     result = run_synthetic_qwen2_lora_smoke(seed=23, steps=2)
 
-    assert result["schema_version"] == "guru-synthetic-qwen2-lora-smoke-v1"
+    assert result["schema_version"] == "guru-synthetic-qwen2-lora-smoke-v2"
     assert result["synthetic_only"] is True
     assert result["transformed_real_data_used"] is False
     assert result["network_used"] is False
@@ -37,6 +37,8 @@ def test_synthetic_qwen2_lora_smoke_roundtrips_and_continues_offline(monkeypatch
     assert result["trainable_parameters"] > 0
     assert result["initial_loss_finite"] is True
     assert result["reload_logits_equal"] is True
+    assert result["resume_state_restored"] is True
+    assert result["resumed_training_matches_uninterrupted"] is True
     assert result["continued_loss_finite"] is True
     assert len(result["adapter_sha256"]) == 64
     assert result["persistent_output_written"] is False
@@ -49,6 +51,11 @@ def test_synthetic_qwen2_lora_smoke_roundtrips_and_continues_offline(monkeypatch
 def test_synthetic_qwen2_lora_smoke_rejects_invalid_steps(steps):
     with pytest.raises(ValueError, match="at least 2"):
         run_synthetic_qwen2_lora_smoke(steps=steps)
+
+
+def test_synthetic_qwen2_lora_smoke_rejects_unbounded_step_count():
+    with pytest.raises(ValueError, match="no greater than 32"):
+        run_synthetic_qwen2_lora_smoke(steps=33)
 
 
 @pytest.mark.parametrize("seed", [-1, True, 1.5])
