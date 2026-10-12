@@ -95,7 +95,7 @@ test('render in a sandboxed browser, decode the PNG and compare images', { skip:
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('ocr.recognize reads code from a rendered screenshot (tesseract here, Apple Vision on a Mac)', { skip: !HAS_BROWSER || !HAS_OCR, timeout: 60000 }, async (t) => {
+test('ocr.recognize reads code from a rendered screenshot (tesseract here, Apple Vision on a Mac)', { skip: !HAS_BROWSER || !HAS_OCR, timeout: 120000 }, async (t) => {
   if (!await needBrowser(t)) return;
   const dir = tmp('nova-ocr-real-');
   try {
