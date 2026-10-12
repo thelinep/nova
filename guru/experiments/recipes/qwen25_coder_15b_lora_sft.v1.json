@@ -1,0 +1,68 @@
+{
+  "schema_version": "guru-lora-sft-recipe-v1",
+  "recipe_id": "qwen25-coder-15b-lora-sft-proposal-v1",
+  "status": "draft",
+  "hyperparameters_status": "proposed_unqualified",
+  "base_model": {
+    "model_id": "Qwen/Qwen2.5-Coder-1.5B",
+    "revision": "ccb64f03a691be46ba6b4e4c91f396c247aa66c7",
+    "weights_sha256": null,
+    "tokenizer_sha256": null
+  },
+  "training_stack": {
+    "python": "3.12.4",
+    "torch": "2.4.1",
+    "transformers": "4.45.2",
+    "peft": "0.13.2",
+    "lockfile": "requirements-test-full.lock",
+    "lockfile_sha256": "e82319be2e0d2bd2a8ec2c95db1762d6f3734ce4147d15dd89e24718f8aee0b2"
+  },
+  "lora": {
+    "rank": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"]
+  },
+  "sft": {
+    "sequence_length": 4096,
+    "micro_batch_size": 1,
+    "gradient_accumulation_steps": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0002,
+    "beta1": 0.9,
+    "beta2": 0.999,
+    "epsilon": 1e-8,
+    "weight_decay": 0.01,
+    "scheduler": "cosine",
+    "warmup_ratio": 0.03,
+    "precision": "bfloat16",
+    "gradient_checkpointing": true,
+    "seed": 20261013,
+    "data_order": "sha256(seed_ascii || NUL || task_id_utf8)_ascending",
+    "data_sampling": "uniform_per_approved_training_task",
+    "training_data_manifest_sha256": null,
+    "max_steps": 200,
+    "max_training_tokens": 13107200,
+    "checkpoint_every_steps": 50,
+    "save_optimizer_scheduler_rng_state": true,
+    "save_global_step_and_task_sampler_position": true,
+    "validation_every_steps": 50,
+    "validation_suite_sha256": null,
+    "evaluator_config_sha256": null,
+    "early_stopping_patience_evaluations": 3,
+    "early_stopping_metric": "validation_task_pass_rate",
+    "early_stopping_direction": "maximize",
+    "validation_hook": "local_qualified_evaluator"
+  },
+  "gates": {
+    "model_intake_approved": false,
+    "corpus_rights_approved": false,
+    "evaluator_qualified": false,
+    "compute_approved": false,
+    "run_authorized": false
+  },
+  "transformed_data_retention": "ephemeral",
+  "external_transmission": "denied",
+  "weight_distribution": "denied",
+  "checkpoint_storage": "private_local_only"
+}
