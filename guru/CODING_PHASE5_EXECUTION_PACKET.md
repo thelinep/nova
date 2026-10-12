@@ -12,6 +12,22 @@ provider prices are planning snapshots and must be rechecked before any launch.
 
 ### Latest local integration evidence (2026-10-12)
 
+- B3 abandoned-worker recovery implementation is integrated and pushed in
+  `b76905f`. It adds a durable per-checkout owner token, a serialized lifecycle
+  lock, exact managed/owner label and name checks, startup reaping, and
+  thread-owned engine scopes; the evaluator configuration digest includes the
+  recovery version. Fresh focused evaluator/case-runner tests passed **43**;
+  the fresh clean-environment full Guru suite passed **328, 1 skipped in
+  30.48s**. Recovery coverage uses mocked Docker inventory/removal. A process
+  death test releases the lock but stubs the reaper; no real orphan cleanup,
+  Docker daemon restart, host restart, disposable Linux worker, or candidate
+  code execution was performed. This is implementation evidence, not B1–B8
+  evaluator qualification.
+- Fresh `preflight c_rd` remains blocked with
+  `{"blockers":["missing admission audit"],"ready":false,"warnings":[]}`.
+  No empty audit or synthetic admission was created. The preflight blocker is
+  still downstream of real rights evidence and qualified evaluator results.
+
 - D4 synthetic CPU SFT resume smoke is integrated as `0bab8d2`. Independent
   review covered tokenized-data identity, recipe budget/cadence, CPU RNG resume,
   model-mode restoration and fail-closed DDP/MPS behavior. Its 24 smoke tests
@@ -24,7 +40,8 @@ provider prices are planning snapshots and must be rechecked before any launch.
 - Independent review of I9 commit `459ac93` found no must-fix issues. It confirms
   task/source/artifact linkage against caller-supplied manifest pins; it does
   not establish authenticity or rights approval.
-- Fresh full suite after the I7 enforcement and follow-up bypass fixes:
+- Previous full suite before B3 recovery implementation, after the I7
+  enforcement and follow-up bypass fixes:
   `/private/tmp/guru-full-test-20261012/bin/python -m pytest tests -q`
   returned **319 passed, 1 skipped in 26.12s** from a clean Python 3.12.4
   macOS arm64 environment installed from the new hash-checked
@@ -48,10 +65,11 @@ provider prices are planning snapshots and must be rechecked before any launch.
   The fixture path is now stable across Playwright config/worker processes, and
   a fresh complete run passed **66/66 tests in 2.2 minutes**. This verifies UI
   workflows; its model responses are simulated and do not qualify Guru.
-- The fresh full Maataa `npm test` rerun after the Playwright fixture
+- The prior full Maataa `npm test` rerun after Playwright fixture
   synchronization passed **768 tests, 1 skipped, 0 failed in 95.5 seconds**.
-  The earlier 39.2-second run after `aeb085d` is a historical result. An
-  initial sandboxed rerun hit loopback `EPERM`; the elevated rerun passed.
+  A fresh run during this evidence refresh passed **768 tests, 1 skipped,
+  0 failed in 118.70 seconds**. An initial sandboxed rerun hit loopback
+  `EPERM`; the elevated reruns passed.
 - Fresh `preflight c_rd` still returns
   `{"blockers":["missing admission audit"],"ready":false,"warnings":[]}`.
   No empty audit or synthetic admission was created.
