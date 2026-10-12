@@ -98,6 +98,23 @@ preset reaches 4096 tokens but requires GPU-cluster training resources; no
 eligible Guru base checkpoint or coding corpus is currently provided. See
 [`CODING.md`](CODING.md) for the gated SFT sequence.
 
+For admitted corpus rows, readiness preflight replays provenance against the
+current task and source manifests. Supply the exact input files and their
+SHA-256 pins; the teacher registry and admission audit default to the checked-in
+paths unless overridden:
+
+```bash
+python -m guru.corpus.cli preflight c_rd \
+  --items data/coding/items.jsonl \
+  --task-manifest data/coding/tasks.jsonl \
+  --task-manifest-digest <64-character-task-manifest-sha256> \
+  --source-manifest data/coding/source-manifest.json \
+  --source-manifest-digest <64-character-source-manifest-sha256>
+```
+
+These caller-supplied pins establish consistency with the provided bytes. They
+do not authenticate the manifests or establish rights approval.
+
 Training on NVIDIA GPUs: `torchrun --nproc_per_node 8 -m guru train --size base-1b --compile`. It uses bf16 and fused AdamW.
 
 ## How it is checked
