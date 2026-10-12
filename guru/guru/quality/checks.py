@@ -3,21 +3,41 @@
 These helpers produce individual automatic check results. They deliberately
 do not assemble all required checks, execute code, make rights decisions, or
 write admission/audit records. A missing authoritative input raises a typed
-error; a scanner failure becomes a failed check.
+error; a scanner failure becomes a failed check. The experiment split labels
+are exactly ``train``, ``validation`` and ``test``. This module does not
+interpret the separate legacy task-loader labels (``train``/``eval`` or its
+versioned ``validation`` form).
 """
 from __future__ import annotations
 
 import ast
+from dataclasses import dataclass
+from enum import Enum
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
 
 from guru.disclosure import redact
 from guru.schemas.corpus_item import CorpusItem
-from guru.schemas.quality import AutoCheckName, AutoCheckResult
+from guru.schemas.quality import AutoCheckName, AutoCheckResult, REQUIRED_AUTO_CHECKS
+
+
+TOOL_VERSION = "guru-deterministic-checks/1.1.0"
+POLICY_VERSIONS: dict[AutoCheckName, str] = {
+    AutoCheckName.SCHEMA: "corpus-item-schema-v1",
+    AutoCheckName.SYNTAX: "python-ast-parse-v1",
+    AutoCheckName.TESTS: "qualified-evaluator-required-v1",
+    AutoCheckName.SECURITY: "security-cot-and-secrets-v1",
+    AutoCheckName.LICENSE: "scoped-owner-rights-evidence-required-v1",
+    AutoCheckName.PROVENANCE: "pinned-release-source-manifest-v1",
+    AutoCheckName.DUPLICATE: "exact-model-facing-example-v1",
+    AutoCheckName.LEAKAGE: "single-experiment-split-per-group-v1",
+}
+CANONICAL_SPLIT_LABELS = frozenset({"train", "validation", "test"})
 
 
 class CheckInputError(ValueError):
@@ -26,6 +46,51 @@ class CheckInputError(ValueError):
 
 class CheckUnavailableError(ValueError):
     """A required authoritative input for a check was not supplied."""
+
+
+class IncompleteCheckRunError(ValueError):
+    """A partial or failing run cannot become admission-check inputs."""
+
+
+class CheckRunStatus(str, Enum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+    UNAVAILABLE = "UNAVAILABLE"
+
+
+@dataclass(frozen=True)
+class CheckStatusRecord:
+    name: AutoCheckName
+    status: CheckRunStatus
+    evidence_digest: str | None
+    tool_version: str
+    policy_version: str
+    reason_code: str | None = None
+
+
+@dataclass(frozen=True)
+class CheckRunReport:
+    """Status-only report. It has no audit side effects.
+
+    Conversion is deliberately restricted to a complete all-PASS set. The
+    runner below always leaves evaluator and license checks UNAVAILABLE until
+    authoritative providers are implemented, so current reports cannot be
+    converted for admission.
+    """
+
+    records: tuple[CheckStatusRecord, ...]
+
+    def as_auto_checks(self) -> list[AutoCheckResult]:
+        if {record.name for record in self.records} != REQUIRED_AUTO_CHECKS:
+            raise IncompleteCheckRunError("check run does not contain each required check exactly once")
+        if len(self.records) != len(REQUIRED_AUTO_CHECKS):
+            raise IncompleteCheckRunError("check run contains duplicate check names")
+        if any(record.status is not CheckRunStatus.PASS or not record.evidence_digest
+               for record in self.records):
+            raise IncompleteCheckRunError("incomplete or non-passing check run cannot be converted")
+        return [AutoCheckResult(name=record.name, passed=True,
+                                evidence_digest=record.evidence_digest)
+                for record in self.records]
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -43,7 +108,12 @@ def _digest(value: Any) -> str:
 
 
 def _result(name: AutoCheckName, passed: bool, evidence: Any) -> AutoCheckResult:
-    return AutoCheckResult(name=name, passed=passed, evidence_digest=_digest(evidence))
+    versioned_evidence = {
+        "tool_version": TOOL_VERSION,
+        "policy_version": POLICY_VERSIONS[name],
+        "result": evidence,
+    }
+    return AutoCheckResult(name=name, passed=passed, evidence_digest=_digest(versioned_evidence))
 
 
 def _as_item(raw_item: CorpusItem | Mapping[str, Any]) -> CorpusItem:
@@ -154,28 +224,45 @@ def security_check(raw_item: CorpusItem | Mapping[str, Any]) -> AutoCheckResult:
 
 def provenance_check(
     raw_item: CorpusItem | Mapping[str, Any], *,
-    pinned_manifest: Mapping[str, str] | None,
+    manifest_path: str | Path | None,
+    expected_manifest_digest: str | None,
 ) -> AutoCheckResult:
-    """Require the item's source digest to occur in an explicitly pinned map.
+    """Require source-digest membership in a validated, byte-pinned manifest.
 
-    The supplied mapping is interpreted as ``artifact identifier -> SHA-256``.
-    This verifies membership only; it does not establish licensing or rights.
+    The manifest is parsed and its referenced artifact/license files are
+    checked by Guru's release source-manifest validator. Membership compares
+    ``CorpusItem.source_digest`` with a validated source ``artifact_sha256``.
+    The caller's pin must equal the digest of the exact manifest bytes. This
+    proves integrity relative to that supplied pin; it does not prove manifest
+    authenticity, rights, or license permission.
     """
     item = _valid_item(raw_item)
-    if pinned_manifest is None:
-        raise CheckUnavailableError("pinned provenance manifest was not supplied")
-    if not isinstance(pinned_manifest, Mapping) or not pinned_manifest:
-        raise CheckInputError("pinned provenance manifest must be a non-empty mapping")
-    normalized: dict[str, str] = {}
-    for key, value in pinned_manifest.items():
-        if not isinstance(key, str) or not key.strip():
-            raise CheckInputError("pinned manifest artifact identifiers must be non-empty strings")
-        if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
-            raise CheckInputError("pinned manifest values must be lowercase SHA-256 digests")
-        normalized[key] = value
-    return _result(AutoCheckName.PROVENANCE, item.source_digest in normalized.values(), {
+    if manifest_path is None:
+        raise CheckUnavailableError("source manifest path was not supplied")
+    if expected_manifest_digest is None:
+        raise CheckUnavailableError("source manifest digest pin was not supplied")
+    if (not isinstance(expected_manifest_digest, str) or len(expected_manifest_digest) != 64
+            or any(c not in "0123456789abcdef" for c in expected_manifest_digest)):
+        raise CheckInputError("source manifest pin must be a lowercase SHA-256 digest")
+    try:
+        # Reuse the current release contract: source and saved license bytes
+        # are digest-verified, rights review is structurally checked, and the
+        # parsed source entries are returned only after manifest validation.
+        from guru.coding import CodingDataError, _read_release_sources
+
+        sources, actual_manifest_digest, _manifest_dir = _read_release_sources([], str(manifest_path))
+    except (OSError, CodingDataError, ValueError) as exc:
+        raise CheckInputError("source manifest failed Guru release validation") from exc
+    pin_matches = actual_manifest_digest == expected_manifest_digest
+    artifact_digests = sorted(source["artifact_sha256"] for source in sources.values())
+    member = item.source_digest in artifact_digests
+    return _result(AutoCheckName.PROVENANCE, pin_matches and member, {
         "item_digest": item.canonical_digest(), "source_digest": item.source_digest,
-        "manifest_digest": _digest(normalized), "policy": "source-membership-v1",
+        "expected_manifest_digest": expected_manifest_digest,
+        "actual_manifest_digest": actual_manifest_digest,
+        "manifest_pin_matches": pin_matches,
+        "artifact_membership": member,
+        "artifact_digest_set_digest": _digest(artifact_digests),
     })
 
 
@@ -216,7 +303,8 @@ def leakage_check(
 
     ``group_assignments`` maps group IDs to a split string (or an iterable of
     observed split strings). The item's ``metadata.leakage_group`` must map to
-    exactly one split; if metadata also has ``split``, it must match.
+    exactly one split; if metadata also has ``split``, it must match. Accepted
+    labels are exactly ``train``, ``validation`` and ``test``.
     """
     item = _valid_item(raw_item)
     if group_assignments is None:
@@ -238,15 +326,85 @@ def leakage_check(
             splits = list(value)
         else:
             raise CheckInputError("each leakage group assignment must be a split or split sequence")
-        if not splits or any(not isinstance(split, str) or not split.strip() for split in splits):
-            raise CheckInputError("leakage group splits must be non-empty strings")
+        if not splits or any(not isinstance(split, str) or split not in CANONICAL_SPLIT_LABELS
+                             for split in splits):
+            raise CheckInputError("leakage group split must be train, validation, or test")
         normalized[group_id] = sorted(set(splits))
     assigned = normalized[group]
     declared_split = item.metadata.get("split")
+    if declared_split is not None and declared_split not in CANONICAL_SPLIT_LABELS:
+        raise CheckInputError("item split must be train, validation, or test")
     passed = len(assigned) == 1 and (declared_split is None or declared_split == assigned[0])
     return _result(AutoCheckName.LEAKAGE, passed, {
         "item_digest": item.canonical_digest(), "group_id_digest": _digest(group),
         "group_splits": assigned,
         "declared_split_digest": _digest(declared_split) if declared_split is not None else None,
-        "assignments_digest": _digest(normalized), "policy": "single-split-per-leakage-group-v1",
+        "assignments_digest": _digest(normalized),
     })
+
+
+def _status_from_result(result: AutoCheckResult) -> CheckStatusRecord:
+    return CheckStatusRecord(
+        name=result.name,
+        status=CheckRunStatus.PASS if result.passed else CheckRunStatus.FAIL,
+        evidence_digest=result.evidence_digest,
+        tool_version=TOOL_VERSION,
+        policy_version=POLICY_VERSIONS[result.name],
+    )
+
+
+def _status_without_result(name: AutoCheckName, status: CheckRunStatus,
+                           reason_code: str) -> CheckStatusRecord:
+    tool_version = TOOL_VERSION
+    policy_version = POLICY_VERSIONS[name]
+    evidence_digest = _digest({
+        "check": name.value, "status": status.value,
+        "tool_version": tool_version, "policy_version": policy_version,
+        "reason_code": reason_code, "inputs_present": False,
+    })
+    return CheckStatusRecord(name, status, evidence_digest, tool_version,
+                             policy_version, reason_code)
+
+
+def _run_one(name: AutoCheckName, producer, *args, **kwargs) -> CheckStatusRecord:
+    try:
+        return _status_from_result(producer(*args, **kwargs))
+    except CheckUnavailableError as exc:
+        return _status_without_result(name, CheckRunStatus.UNAVAILABLE, str(exc))
+    except CheckInputError as exc:
+        return _status_without_result(name, CheckRunStatus.FAIL, str(exc))
+
+
+def run_deterministic_checks(
+    raw_item: CorpusItem | Mapping[str, Any], *,
+    source_manifest_path: str | Path | None = None,
+    source_manifest_digest: str | None = None,
+    corpus_items: Sequence[CorpusItem | Mapping[str, Any]] | None = None,
+    group_assignments: Mapping[str, str | Sequence[str]] | None = None,
+) -> CheckRunReport:
+    """Run available producers and report all required checks as tri-state.
+
+    This function never invokes ``item_decision`` and never writes an audit.
+    TESTS stays UNAVAILABLE because there is no qualified evaluator provider;
+    LICENSE stays UNAVAILABLE because no scoped owner/source rights evidence
+    provider exists. Those states cannot be overridden by caller booleans or
+    hand-built ``AutoCheckResult`` values. ``CheckRunReport.as_auto_checks``
+    refuses every incomplete or non-passing run.
+    """
+    records = [
+        _run_one(AutoCheckName.SCHEMA, schema_check, raw_item),
+        _run_one(AutoCheckName.SYNTAX, syntax_check, raw_item),
+        _status_without_result(AutoCheckName.TESTS, CheckRunStatus.UNAVAILABLE,
+                               "qualified evaluator evidence provider is unavailable"),
+        _run_one(AutoCheckName.SECURITY, security_check, raw_item),
+        _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
+                               "scoped owner/source rights evidence provider is unavailable"),
+        _run_one(AutoCheckName.PROVENANCE, provenance_check, raw_item,
+                 manifest_path=source_manifest_path,
+                 expected_manifest_digest=source_manifest_digest),
+        _run_one(AutoCheckName.DUPLICATE, duplicate_check, raw_item,
+                 corpus_items=corpus_items),
+        _run_one(AutoCheckName.LEAKAGE, leakage_check, raw_item,
+                 group_assignments=group_assignments),
+    ]
+    return CheckRunReport(tuple(records))
