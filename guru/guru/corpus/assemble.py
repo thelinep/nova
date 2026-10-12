@@ -70,6 +70,17 @@ def _read_admission_rows(source: str | Path | Iterable[dict] | None) -> list[dic
     return _jsonl_rows(source)
 
 
+def _decision_rows_by_item(rows: Iterable[dict]) -> dict[str, dict]:
+    decisions: dict[str, dict] = {}
+    for row in rows:
+        if row.get("event") in ("item_admission", None) and isinstance(row.get("item_id"), str):
+            item_id = row["item_id"]
+            if item_id in decisions:
+                raise CorpusAssemblyError(f"duplicate quality decisions for item {item_id!r}")
+            decisions[item_id] = row
+    return decisions
+
+
 def preflight(*, kind: CorpusKind | str,
               task_manifest: str | Path | Iterable[dict] | dict | None = None,
               teacher_registry: str | Path | Iterable | None = None,
@@ -104,6 +115,10 @@ def preflight(*, kind: CorpusKind | str,
             blockers.append("missing approved teacher")
 
     audit_rows = _read_admission_rows(audit_source)
+    try:
+        _decision_rows_by_item(audit_rows)
+    except CorpusAssemblyError as exc:
+        blockers.append(str(exc))
     if isinstance(audit_source, (str, Path)) and not Path(audit_source).is_file():
         blockers.append("missing admission audit")
     elif not audit_rows:
@@ -122,14 +137,9 @@ def _task_ids(source: str | Path | Iterable[dict] | dict | None) -> set[str]:
 
 
 def _admission_map(source: str | Path | Iterable[dict] | None) -> dict[str, dict]:
-    decisions: dict[str, dict] = {}
-    for row in _read_admission_rows(DEFAULT_ADMISSION_AUDIT if source is None else source):
-        if row.get("event") in ("item_admission", None) and isinstance(row.get("item_id"), str):
-            item_id = row["item_id"]
-            if item_id in decisions:
-                raise CorpusAssemblyError(f"duplicate quality decisions for item {item_id!r}")
-            decisions[item_id] = row
-    return decisions
+    return _decision_rows_by_item(
+        _read_admission_rows(DEFAULT_ADMISSION_AUDIT if source is None else source)
+    )
 
 
 def _read_items(source: str | Path | Iterable[dict | CorpusItem]) -> list[CorpusItem]:

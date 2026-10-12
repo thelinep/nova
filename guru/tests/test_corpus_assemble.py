@@ -63,6 +63,13 @@ class CorpusAssemblyTests(unittest.TestCase):
         self.assertFalse(report["ready"])
         self.assertIn("missing approved teacher", report["blockers"])
 
+    def test_duplicate_item_decisions_block_preflight(self) -> None:
+        row = admission_rows(1)[0]
+        report = preflight(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
+                           admission_audit=[row, dict(row)])
+        self.assertFalse(report["ready"])
+        self.assertIn("duplicate quality decisions for item 'item-000'", report["blockers"])
+
     def test_assemble_raises_typed_blocker_before_writing(self) -> None:
         with TemporaryDirectory() as directory:
             with self.assertRaises(CorpusAssemblyBlocked) as captured:
@@ -224,10 +231,11 @@ class CorpusAssemblyTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             for index, second in enumerate((dict(admitted), {**admitted, "decision": "reject"})):
                 with self.subTest(second=second):
-                    with self.assertRaisesRegex(ValueError, "duplicate quality decisions"):
+                    with self.assertRaises(CorpusAssemblyBlocked) as captured:
                         assemble(kind="c_rd", task_manifest=task_rows(1), teacher_registry=[approved_teacher()],
                                  admission_audit=[admitted, second], items=[item], corpus_id="exp", version="v1",
                                  split_seed="seed", output_root=Path(directory) / str(index))
+                    self.assertIn("duplicate quality decisions", captured.exception.blockers[0])
 
 
 if __name__ == "__main__":
