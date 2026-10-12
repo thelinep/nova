@@ -27,10 +27,11 @@ from guru.evaluator_case_runner import (
     _digest,
     evaluator_config_digest,
     run_python_case,
+    run_python_case_set,
 )
 from guru.quality.providers import ApprovedRightsInputs, RightsEvidenceProvider
 from guru.schemas.corpus_item import CorpusItem
-from guru.schemas.evaluator_evidence import CaseStatus, EvaluatorQualificationEvidence
+from guru.schemas.evaluator_evidence import CaseStatus, EvaluatorCaseSet, EvaluatorQualificationEvidence
 from guru.schemas.rights_decision import (
     RightsAuthorityBasis,
     RightsDecision,
@@ -159,6 +160,81 @@ class FakeAuthorizationProvider(LocalCaseRunnerAuthorizationProvider):
         )
 
 
+class FakeCaseSetAuthorizationProvider(FakeAuthorizationProvider):
+    def __init__(self, *, case_ids, test_sources, bad_case_manifest=False, bad_qualification_pin=False,
+                 bad_endpoint_pin=False, bad_logging_pin=False, bad_suite_pin=False,
+                 bad_config=False, bad_image=False, unavailable=False):
+        super().__init__(bad_qualification_pin=bad_qualification_pin,
+                         bad_endpoint_pin=bad_endpoint_pin,
+                         bad_logging_pin=bad_logging_pin, unavailable=unavailable)
+        self.case_ids = tuple(case_ids)
+        self.case_digests = {case_id: _digest(test_sources[case_id].encode()) for case_id in case_ids}
+        self.bad_case_manifest = bad_case_manifest
+        self.bad_suite_pin = bad_suite_pin
+        self.bad_config = bad_config
+        self.bad_image = bad_image
+
+    def load_for(self, corpus_item, *, config_digest, image_digest):
+        self.calls += 1
+        if self.unavailable:
+            return None
+        qualification = EvaluatorQualificationEvidence(
+            schema_version="guru-evaluator-qualification-v1",
+            qualification_id="synthetic-qualification", execution_scope="local",
+            config_digest="0" * 64 if self.bad_config else config_digest,
+            image_digest="0" * 64 if self.bad_image else image_digest,
+            report_digest=MANIFEST, qualified_at=NOW - timedelta(days=1),
+        )
+        qdigest = _digest(json.dumps(
+            qualification.model_dump(mode="json"), ensure_ascii=False,
+            sort_keys=True, separators=(",", ":"), allow_nan=False,
+        ).encode())
+        endpoint_digest = _digest(ENDPOINT.encode())
+        logging_digest = _digest(DAEMON_LOGGING_POLICY.encode())
+        cases_payload = {
+            "expected_case_ids": list(self.case_ids),
+            "expected_case_test_digests": {key: self.case_digests[key] for key in self.case_ids},
+        }
+        cases_digest = _digest(json.dumps(
+            cases_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False,
+        ).encode())
+        if self.bad_case_manifest:
+            cases_digest = "0" * 64
+        return PinnedLocalCaseRunnerInputs(
+            qualification=qualification, qualification_digest=qdigest,
+            trusted_qualification_digest="0" * 64 if self.bad_qualification_pin else qdigest,
+            test_digest="0" * 64, trusted_test_digest="0" * 64,
+            test_suite_digest=MANIFEST,
+            trusted_test_suite_digest="0" * 64 if self.bad_suite_pin else MANIFEST,
+            docker_endpoint_digest=endpoint_digest,
+            trusted_docker_endpoint_digest="0" * 64 if self.bad_endpoint_pin else endpoint_digest,
+            daemon_logging_policy_digest=logging_digest,
+            trusted_daemon_logging_policy_digest="0" * 64 if self.bad_logging_pin else logging_digest,
+            expected_case_ids=self.case_ids,
+            expected_case_test_digests=self.case_digests,
+            expected_cases_digest=cases_digest,
+            trusted_expected_cases_digest=cases_digest,
+        )
+
+
+class FakeEvaluatorSequence:
+    def __init__(self, outcomes):
+        self.outcomes = list(outcomes)
+        self.calls = []
+
+    def __call__(self, payload, policy, *, local_endpoint=None):
+        self.calls.append((payload, local_endpoint))
+        outcome = self.outcomes.pop(0) if self.outcomes else {}
+        if isinstance(outcome, Exception):
+            raise outcome
+        return SimpleNamespace(
+            exit_code=outcome.get("exit_code", 0), stdout=b"evidence", stderr=b"",
+            timed_out=outcome.get("timed_out", False), output_limited=outcome.get("output_limited", False),
+            stdout_truncated=outcome.get("output_limited", False), stderr_truncated=False,
+            container_removed=outcome.get("container_removed", True),
+        )
+
+
 class EvaluatorCaseRunnerTests(unittest.TestCase):
     def setUp(self):
         self.policy = EvaluationPolicy(image=IMAGE, command=RUNNER_COMMAND)
@@ -180,6 +256,26 @@ class EvaluatorCaseRunnerTests(unittest.TestCase):
             with patch("guru.evaluator_case_runner.evaluate", side_effect=fake):
                 result = run_python_case(**args)
         return result, fake
+
+    def run_case_set(self, evaluator, *, case_ids=None, test_sources=None, authorization_provider=None,
+                     starting_record_digest="0" * 64):
+        test_sources = test_sources or {
+            "case-b": '{"version":1,"cases":[{"function":"add","args":[1,2],"kwargs":{},"expected":3}]}',
+            "case-a": '{"version":1,"cases":[{"function":"add","args":[2,2],"kwargs":{},"expected":4}]}',
+        }
+        case_ids = list(case_ids or test_sources.keys())
+        auth = authorization_provider or FakeCaseSetAuthorizationProvider(
+            case_ids=case_ids, test_sources=test_sources,
+        )
+        with patch("guru.evaluator_case_runner._local_docker_endpoint", return_value=ENDPOINT):
+            with patch("guru.evaluator_case_runner.evaluate", side_effect=evaluator):
+                result = run_python_case_set(
+                    item=item(), candidate_source="def add(a, b): return a + b\n",
+                    case_ids=case_ids, test_sources=test_sources,
+                    rights_provider=self.rights_provider, authorization_provider=auth,
+                    policy=self.policy, starting_record_digest=starting_record_digest,
+                )
+        return result, auth
 
     def test_pass_and_fail_emit_only_digest_bound_records(self):
         for kwargs, expected in (
@@ -423,8 +519,12 @@ class EvaluatorCaseRunnerTests(unittest.TestCase):
             side_effect=[SimpleNamespace(stdout="default\n"),
                          SimpleNamespace(stdout=ENDPOINT + "\n"),
                          SimpleNamespace(stdout="none\n")],
-        ):
+        ) as docker_run:
             self.assertEqual(_local_docker_endpoint(), ENDPOINT)
+        self.assertEqual(
+            docker_run.call_args_list[-1].args[0],
+            ["docker", "--host", ENDPOINT, "info", "--format", "{{.LoggingDriver}}"],
+        )
 
     def test_truncated_output_is_not_a_completed_case(self):
         evidence, _ = self.run_case(FakeEvaluator(stdout=b"partial", output_limited=True))
@@ -448,6 +548,112 @@ class EvaluatorCaseRunnerTests(unittest.TestCase):
         self.assertEqual(decoded["test_source"], TEST_SOURCE)
         self.assertEqual(fake.local_endpoint, ENDPOINT)
         self.assertEqual(evidence.previous_record_digest, previous)
+
+    def test_case_set_preserves_frozen_order_and_chains_record_digests(self):
+        ids = ["case-b", "case-a"]
+        sources = {
+            "case-b": '{"version":1,"cases":[{"function":"add","args":[1,2],"kwargs":{},"expected":3}]}',
+            "case-a": '{"version":1,"cases":[{"function":"add","args":[2,2],"kwargs":{},"expected":4}]}',
+        }
+        start = "f" * 64
+        evaluator = FakeEvaluatorSequence([{}, {}])
+        result, auth = self.run_case_set(evaluator, case_ids=ids, test_sources=sources,
+                                         starting_record_digest=start)
+        self.assertIsInstance(result, EvaluatorCaseSet)
+        self.assertEqual(result.expected_case_ids, ids)
+        self.assertEqual([case.case_id for case in result.cases], ids)
+        self.assertEqual(result.starting_record_digest, start)
+        self.assertEqual(result.cases[0].previous_record_digest, start)
+        self.assertEqual(result.cases[1].previous_record_digest, result.cases[0].record_digest)
+        self.assertEqual([case.status for case in result.cases], [CaseStatus.PASS, CaseStatus.PASS])
+        self.assertEqual(len(evaluator.calls), 2)
+        self.assertEqual(auth.calls, 1)
+        self.assertEqual(self.rights_provider.calls, 1)
+
+    def test_case_set_preflights_every_case_pin_before_evaluation(self):
+        ids = ["case-b", "case-a"]
+        sources = {
+            "case-b": '{"version":1,"cases":[{"function":"add","args":[1,2],"kwargs":{},"expected":3}]}',
+            "case-a": '{"version":1,"cases":[{"function":"add","args":[2,2],"kwargs":{},"expected":4}]}',
+        }
+        auth = FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources, bad_case_manifest=True)
+        evaluator = FakeEvaluatorSequence([{}, {}])
+        with self.assertRaisesRegex(CaseRunnerAuthorizationError, "case manifest"):
+            self.run_case_set(evaluator, case_ids=ids, test_sources=sources, authorization_provider=auth)
+        self.assertEqual(evaluator.calls, [])
+
+    def test_case_set_rejects_id_and_test_digest_mismatch_before_evaluation(self):
+        ids = ["case-b", "case-a"]
+        sources = {
+            "case-b": '{"version":1,"cases":[{"function":"add","args":[1,2],"kwargs":{},"expected":3}]}',
+            "case-a": '{"version":1,"cases":[{"function":"add","args":[2,2],"kwargs":{},"expected":4}]}',
+        }
+        evaluator = FakeEvaluatorSequence([{}, {}])
+        auth = FakeCaseSetAuthorizationProvider(case_ids=["case-a", "case-b"], test_sources=sources)
+        with self.assertRaisesRegex(CaseRunnerAuthorizationError, "case IDs or test digests"):
+            self.run_case_set(evaluator, case_ids=ids, test_sources=sources, authorization_provider=auth)
+        self.assertEqual(evaluator.calls, [])
+
+    def test_case_set_preflights_rights_qualification_runtime_and_limits(self):
+        ids = ["case-b", "case-a"]
+        sources = {
+            "case-b": '{"version":1,"cases":[{"function":"add","args":[1,2],"kwargs":{},"expected":3}]}',
+            "case-a": '{"version":1,"cases":[{"function":"add","args":[2,2],"kwargs":{},"expected":4}]}',
+        }
+        bad_providers = (
+            FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources, bad_qualification_pin=True),
+            FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources, bad_endpoint_pin=True),
+            FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources, bad_logging_pin=True),
+            FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources, bad_suite_pin=True),
+            FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources, bad_config=True),
+            FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources, bad_image=True),
+        )
+        for auth in bad_providers:
+            with self.subTest(auth=auth):
+                evaluator = FakeEvaluatorSequence([{}, {}])
+                with self.assertRaises(CaseRunnerAuthorizationError):
+                    self.run_case_set(evaluator, case_ids=ids, test_sources=sources, authorization_provider=auth)
+                self.assertEqual(evaluator.calls, [])
+
+        evaluator = FakeEvaluatorSequence([{}, {}])
+        self.rights_provider = FakeRightsProvider(rights(allow_evaluation=False))
+        with self.assertRaisesRegex(CaseRunnerAuthorizationError, "do not permit"):
+            self.run_case_set(evaluator, case_ids=ids, test_sources=sources)
+        self.assertEqual(evaluator.calls, [])
+
+        self.rights_provider = FakeRightsProvider()
+        evaluator = FakeEvaluatorSequence([{}, {}])
+        tiny_policy = EvaluationPolicy(image=IMAGE, command=RUNNER_COMMAND, input_limit_bytes=1)
+        with patch("guru.evaluator_case_runner._local_docker_endpoint", return_value=ENDPOINT):
+            with patch("guru.evaluator_case_runner.evaluate", side_effect=evaluator):
+                with self.assertRaisesRegex(EvaluationError, "input exceeds"):
+                    run_python_case_set(
+                        item=item(), candidate_source="def add(a,b): return a+b",
+                        case_ids=ids, test_sources=sources, rights_provider=self.rights_provider,
+                        authorization_provider=FakeCaseSetAuthorizationProvider(case_ids=ids, test_sources=sources),
+                        policy=tiny_policy,
+                    )
+        self.assertEqual(evaluator.calls, [])
+
+    def test_case_set_continues_after_ordinary_failure(self):
+        evaluator = FakeEvaluatorSequence([{"exit_code": 1}, {}])
+        result, _ = self.run_case_set(evaluator)
+        self.assertEqual([case.status for case in result.cases], [CaseStatus.FAIL, CaseStatus.PASS])
+        self.assertEqual(len(evaluator.calls), 2)
+
+    def test_case_set_retains_incomplete_outcomes_but_never_reports_them_as_pass(self):
+        for first_outcome, expected in (
+            ({"timed_out": True}, CaseStatus.TIMEOUT),
+            ({"container_removed": False}, CaseStatus.INFRASTRUCTURE_ERROR),
+            ({"output_limited": True}, CaseStatus.UNAVAILABLE),
+        ):
+            with self.subTest(expected=expected):
+                evaluator = FakeEvaluatorSequence([first_outcome, {}])
+                result, _ = self.run_case_set(evaluator)
+                self.assertEqual([case.status for case in result.cases], [expected, CaseStatus.PASS])
+                self.assertEqual(len(evaluator.calls), 2)
+                self.assertFalse(result.cases[0].status is CaseStatus.PASS)
+                self.assertFalse(result.cases[0].cleanup_confirmed if expected is CaseStatus.INFRASTRUCTURE_ERROR else False)
 
 
 if __name__ == "__main__":

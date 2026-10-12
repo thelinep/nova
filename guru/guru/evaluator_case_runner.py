@@ -11,13 +11,14 @@ by this module.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
 import subprocess
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Mapping, Sequence
 
 from guru.code_evaluator import (
     DOCKER_ENGINE_RECOVERY_VERSION,
@@ -32,6 +33,7 @@ from guru.schemas.corpus_item import CorpusItem
 from guru.schemas.evaluator_evidence import (
     CaseStatus,
     EvaluationCaseEvidence,
+    EvaluatorCaseSet,
     EvaluatorQualificationEvidence,
     ResourceLimits,
 )
@@ -59,6 +61,10 @@ class PinnedLocalCaseRunnerInputs:
     trusted_docker_endpoint_digest: str
     daemon_logging_policy_digest: str
     trusted_daemon_logging_policy_digest: str
+    expected_case_ids: tuple[str, ...] | None = None
+    expected_case_test_digests: Mapping[str, str] | None = None
+    expected_cases_digest: str | None = None
+    trusted_expected_cases_digest: str | None = None
 
 
 class LocalCaseRunnerAuthorizationProvider(ABC):
@@ -258,7 +264,7 @@ def _local_docker_endpoint() -> str:
         if not endpoint.startswith("unix://"):
             raise CaseRunnerAuthorizationError("Docker endpoint is not a local Unix socket")
         logging_driver = subprocess.run(
-            ["docker", "info", "--format", "{{.LoggingDriver}}"],
+            ["docker", "--host", endpoint, "info", "--format", "{{.LoggingDriver}}"],
             check=True, capture_output=True, text=True, timeout=5, shell=False,
         ).stdout.strip()
     except CaseRunnerAuthorizationError:
@@ -344,9 +350,23 @@ def run_python_case(
             pinned.trusted_qualification_digest != qdigest or
             not _is_digest(pinned.trusted_qualification_digest)):
         raise CaseRunnerAuthorizationError("qualification evidence does not match trusted provider pin")
-    if (not _is_digest(pinned.test_digest) or
-            pinned.test_digest != pinned.trusted_test_digest or
-            not _is_digest(pinned.trusted_test_digest) or
+    if pinned.expected_case_test_digests is not None:
+        if (pinned.expected_case_ids is None or case_id not in pinned.expected_case_ids or
+                set(pinned.expected_case_test_digests) != set(pinned.expected_case_ids) or
+                any(not _is_digest(value) for value in pinned.expected_case_test_digests.values())):
+            raise CaseRunnerAuthorizationError("case IDs or test digests differ from the frozen provider pins")
+        case_manifest = _canonical_digest({
+            "expected_case_ids": list(pinned.expected_case_ids),
+            "expected_case_test_digests": {
+                key: pinned.expected_case_test_digests[key] for key in pinned.expected_case_ids
+            },
+        })
+        if (pinned.expected_cases_digest != case_manifest or
+                pinned.trusted_expected_cases_digest != case_manifest):
+            raise CaseRunnerAuthorizationError("frozen case manifest does not match trusted provider pin")
+    if ((pinned.expected_case_test_digests is None and
+         (not _is_digest(pinned.test_digest) or pinned.test_digest != pinned.trusted_test_digest or
+          not _is_digest(pinned.trusted_test_digest))) or
             not _is_digest(pinned.test_suite_digest) or
             pinned.test_suite_digest != pinned.trusted_test_suite_digest or
             not _is_digest(pinned.trusted_test_suite_digest)):
@@ -376,7 +396,10 @@ def run_python_case(
         raise ValueError("previous_record_digest must be a lowercase SHA-256 digest")
 
     test_digest = _digest(test_bytes)
-    if test_digest != pinned.test_digest:
+    expected_test_digest = pinned.test_digest
+    if pinned.expected_case_test_digests is not None:
+        expected_test_digest = pinned.expected_case_test_digests.get(case_id, "")
+    if test_digest != expected_test_digest:
         raise CaseRunnerAuthorizationError("test harness differs from trusted frozen test digest")
     payload = json.dumps({
         "candidate_source": candidate_source,
@@ -461,6 +484,191 @@ def run_python_case(
         "record_digest": _ZERO_DIGEST,
     }
     return seal_case(record, previous_record_digest=previous_record_digest)
+
+
+def run_python_case_set(
+    *,
+    item: CorpusItem,
+    candidate_source: str,
+    case_ids: Sequence[str],
+    test_sources: Mapping[str, str],
+    rights_provider: RightsEvidenceProvider,
+    authorization_provider: LocalCaseRunnerAuthorizationProvider,
+    policy: EvaluationPolicy,
+    starting_record_digest: str = _ZERO_DIGEST,
+) -> EvaluatorCaseSet:
+    """Run a frozen ordered suite after preflighting all case and runtime pins.
+
+    Cases execute sequentially through :func:`run_python_case`. Ordinary
+    failures do not stop the suite. Incomplete or infrastructure outcomes are
+    retained for diagnosis, but the quality ``TESTS`` mapper rejects them and
+    therefore cannot treat such a set as passing.
+    """
+    if not isinstance(item, CorpusItem):
+        raise CaseRunnerAuthorizationError("typed corpus item is required")
+    if not isinstance(candidate_source, str):
+        raise TypeError("candidate_source must be a string")
+    if not isinstance(case_ids, Sequence) or isinstance(case_ids, (str, bytes)):
+        raise CaseRunnerAuthorizationError("ordered frozen case IDs are required")
+    ids = list(case_ids)
+    if (not ids or any(not isinstance(case_id, str) or not case_id or len(case_id) > 256 for case_id in ids)
+            or len(ids) != len(set(ids))):
+        raise CaseRunnerAuthorizationError("frozen case IDs must be non-empty, unique strings")
+    if not isinstance(test_sources, Mapping) or set(test_sources) != set(ids):
+        raise CaseRunnerAuthorizationError("test sources must exactly match frozen case IDs")
+    if not _is_digest(starting_record_digest):
+        raise ValueError("starting_record_digest must be a lowercase SHA-256 digest")
+    if not isinstance(policy, EvaluationPolicy):
+        raise TypeError("policy must be an EvaluationPolicy")
+
+    try:
+        candidate_bytes = candidate_source.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise ValueError("candidate must contain valid UTF-8 text") from exc
+    checked_sources: dict[str, str] = {}
+    test_digests: dict[str, str] = {}
+    for case_id in ids:
+        source = test_sources[case_id]
+        if not isinstance(source, str):
+            raise TypeError("test_sources values must be strings")
+        try:
+            source_bytes = source.encode("utf-8")
+        except UnicodeEncodeError as exc:
+            raise ValueError("test suite must contain valid UTF-8 text") from exc
+        if len(_validate_test_suite(source)) != 1:
+            raise CaseRunnerAuthorizationError("each case source must contain exactly one test case")
+        payload = json.dumps(
+            {"candidate_source": candidate_source, "test_source": source},
+            ensure_ascii=False, separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+        if (len(candidate_bytes) + len(source_bytes) > policy.input_limit_bytes or
+                len(payload) > policy.input_limit_bytes):
+            raise EvaluationError("evaluation input exceeds policy limit")
+        checked_sources[case_id] = source
+        test_digests[case_id] = _digest(source_bytes)
+
+    # Validate all shared rights and runtime pins before the first backend call.
+    if not isinstance(rights_provider, RightsEvidenceProvider):
+        raise CaseRunnerAuthorizationError("trusted source-rights provider is required")
+    approved = rights_provider.load_for(item)
+    if not isinstance(approved, ApprovedRightsInputs):
+        raise CaseRunnerAuthorizationError("pinned approved source-rights record is unavailable")
+    rights_decision = approved.decision
+    if not isinstance(rights_decision, RightsDecision):
+        raise CaseRunnerAuthorizationError("typed source-rights decision is required")
+    if (approved.approved_artifact_digest != item.source_digest or
+            rights_decision.artifact_sha256 != item.source_digest):
+        raise CaseRunnerAuthorizationError("source rights are not pinned to this exact artifact")
+    if (approved.rights_manifest_digest != approved.trusted_rights_manifest_digest or
+            not _is_digest(approved.rights_manifest_digest)):
+        raise CaseRunnerAuthorizationError("source-rights manifest is not trusted-pinned")
+    if item.teacher_lineage_id is not None:
+        matches = [teacher for teacher in approved.teachers
+                   if isinstance(teacher, TeacherLineage) and teacher.teacher_id == item.teacher_lineage_id]
+        if (approved.teacher_registry_digest is None or
+                approved.teacher_registry_digest != approved.trusted_teacher_registry_digest or
+                not _is_digest(approved.teacher_registry_digest) or len(matches) != 1 or
+                not validate_teacher(matches[0])["admissible"]):
+            raise CaseRunnerAuthorizationError("teacher lineage or registry pin is unavailable")
+    if not GURU_USE_SCOPE_POLICY.permits_evaluation(rights_decision.rights, "local"):
+        raise CaseRunnerAuthorizationError("source rights do not permit local evaluation")
+    if not isinstance(authorization_provider, LocalCaseRunnerAuthorizationProvider):
+        raise CaseRunnerAuthorizationError("trusted local qualification provider is required")
+
+    endpoint = _local_docker_endpoint()
+    config_digest = evaluator_config_digest(policy, docker_endpoint=endpoint)
+    image_digest = _image_digest(policy.image)
+    pinned = authorization_provider.load_for(item, config_digest=config_digest, image_digest=image_digest)
+    if not isinstance(pinned, PinnedLocalCaseRunnerInputs):
+        raise CaseRunnerAuthorizationError("pinned local qualification and test suite are unavailable")
+    qualification = pinned.qualification
+    if not isinstance(qualification, EvaluatorQualificationEvidence):
+        raise CaseRunnerAuthorizationError("typed local evaluator qualification is required")
+    qdigest = _canonical_digest(qualification.model_dump(mode="json"))
+    if (pinned.qualification_digest != qdigest or pinned.trusted_qualification_digest != qdigest or
+            not _is_digest(qdigest)):
+        raise CaseRunnerAuthorizationError("qualification evidence does not match trusted provider pin")
+
+    if (pinned.expected_case_ids is None or pinned.expected_case_test_digests is None or
+            list(pinned.expected_case_ids) != ids or
+            set(pinned.expected_case_test_digests) != set(ids) or
+            any(pinned.expected_case_test_digests.get(case_id) != test_digests[case_id] for case_id in ids)):
+        raise CaseRunnerAuthorizationError("case IDs or test digests differ from the frozen provider pins")
+    case_manifest = _canonical_digest({
+        "expected_case_ids": ids,
+        "expected_case_test_digests": {case_id: test_digests[case_id] for case_id in ids},
+    })
+    if (pinned.expected_cases_digest != case_manifest or
+            pinned.trusted_expected_cases_digest != case_manifest):
+        raise CaseRunnerAuthorizationError("frozen case manifest does not match trusted provider pin")
+
+    endpoint_digest = _digest(endpoint.encode("utf-8"))
+    if (pinned.docker_endpoint_digest != endpoint_digest or
+            pinned.trusted_docker_endpoint_digest != endpoint_digest):
+        raise CaseRunnerAuthorizationError("local Docker endpoint does not match trusted qualification pin")
+    logging_digest = _digest(DAEMON_LOGGING_POLICY.encode("utf-8"))
+    if (pinned.daemon_logging_policy_digest != logging_digest or
+            pinned.trusted_daemon_logging_policy_digest != logging_digest):
+        raise CaseRunnerAuthorizationError("daemon log-retention policy is not pinned")
+    if (not _is_digest(pinned.test_suite_digest) or
+            pinned.test_suite_digest != pinned.trusted_test_suite_digest):
+        raise CaseRunnerAuthorizationError("test suite does not match trusted provider pin")
+    if (qualification.execution_scope != "local" or qualification.config_digest != config_digest or
+            qualification.image_digest != image_digest):
+        raise CaseRunnerAuthorizationError("qualification does not bind this local image and config")
+    if tuple(policy.command) != RUNNER_COMMAND:
+        raise CaseRunnerAuthorizationError("policy command differs from the fixed Python case runner")
+    now = datetime.now(timezone.utc)
+    qualified_at = qualification.qualified_at.astimezone(timezone.utc)
+    if qualified_at > now or now - qualified_at > MAX_QUALIFICATION_AGE:
+        raise CaseRunnerAuthorizationError("evaluator qualification is stale or future-dated")
+    if (policy.timeout_seconds <= 0 or policy.memory_bytes <= 0 or policy.cpu_count <= 0 or
+            policy.pids_limit <= 0 or policy.output_limit_bytes <= 0 or policy.input_limit_bytes <= 0):
+        raise CaseRunnerAuthorizationError("evaluator resource limits must be positive")
+    frozen_pinned = replace(
+        pinned,
+        expected_case_ids=tuple(ids),
+        expected_case_test_digests=MappingProxyType(
+            {case_id: test_digests[case_id] for case_id in ids}
+        ),
+    )
+
+    # Reuse the exact preflight snapshots for every case. The local runner
+    # repeats its checks, while these wrappers prevent a mutable external
+    # provider from swapping the approved record or frozen pins mid-suite.
+    class _FrozenRightsProvider(RightsEvidenceProvider):
+        def load_for(self, requested_item):
+            if requested_item.canonical_digest() != item.canonical_digest():
+                return None
+            return approved
+
+    class _FrozenAuthorizationProvider(LocalCaseRunnerAuthorizationProvider):
+        def load_for(self, requested_item, *, config_digest, image_digest):
+            if (requested_item.canonical_digest() != item.canonical_digest() or
+                    config_digest != qualification.config_digest or image_digest != qualification.image_digest):
+                return None
+            return frozen_pinned
+
+    frozen_rights_provider = _FrozenRightsProvider()
+    frozen_authorization_provider = _FrozenAuthorizationProvider()
+
+    records: list[EvaluationCaseEvidence] = []
+    previous = starting_record_digest
+    for case_id in ids:
+        record = run_python_case(
+            case_id=case_id, item=item, candidate_source=candidate_source,
+            test_source=checked_sources[case_id], rights_provider=frozen_rights_provider,
+            authorization_provider=frozen_authorization_provider, policy=policy,
+            previous_record_digest=previous,
+        )
+        records.append(record)
+        previous = record.record_digest
+    return EvaluatorCaseSet(
+        schema_version="guru-evaluator-case-set-v1",
+        item_digest=item.canonical_digest(), test_suite_digest=pinned.test_suite_digest,
+        config_digest=config_digest, starting_record_digest=starting_record_digest,
+        expected_case_ids=ids, cases=records,
+    )
 
 
 def _is_digest(value: str) -> bool:
