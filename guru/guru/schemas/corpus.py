@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Literal
 
 from pydantic import Field, model_validator
 
@@ -20,12 +21,14 @@ class CorpusStatus(str, Enum):
 
 
 class CorpusManifest(StrictModel):
-    schema_version: str = "guru-code-corpus-v1"
+    schema_version: Literal["guru-code-corpus-v2"] = "guru-code-corpus-v2"
     corpus_id: str = Field(min_length=1)
     version: str = Field(min_length=1)
     kind: CorpusKind
     status: CorpusStatus = CorpusStatus.DRAFT
     owner_approval: dict[str, str] | None = None
+    source_manifest_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    task_manifest_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     split_seed: str = Field(min_length=1)
     split_rule: str
     split_algorithm: str = Field(min_length=1)

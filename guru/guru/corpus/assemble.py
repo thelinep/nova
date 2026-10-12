@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from guru.schemas.corpus import CorpusKind, CorpusManifest, CorpusStatus
 from guru.schemas.corpus_item import CorpusItem
 from guru.schemas.teacher_lineage import TeacherLineage
-from guru.schemas.quality import QualityAdmissionPayload
+from guru.schemas.quality import AutoCheckName, QualityAdmissionPayload
 from guru.teacher.intake import load_registry, validate_teacher
 
 REPO_GURU_ROOT = Path(__file__).resolve().parents[2]
@@ -108,10 +108,91 @@ def _decision_rows_by_item(rows: Iterable[dict]) -> dict[str, dict]:
     return decisions
 
 
+def _provenance_replay_blockers(
+    *, admitted_rows: list[dict], items: str | Path | Iterable[dict | CorpusItem] | None,
+    task_manifest: str | Path | Iterable[dict] | dict | None,
+    task_manifest_digest: str | None, source_manifest: str | Path | None,
+    source_manifest_digest: str | None,
+) -> list[str]:
+    """Recompute audited provenance from current, caller-pinned release inputs.
+
+    This checks structural consistency against the supplied pins. It does not
+    establish that either manifest is authentic or that a rights decision was
+    actually authorized.
+    """
+    if not admitted_rows:
+        return []
+    missing = []
+    if not isinstance(task_manifest, (str, Path)):
+        missing.append("task manifest path required for provenance replay")
+    if not isinstance(task_manifest_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", task_manifest_digest):
+        missing.append("valid task manifest digest pin required for provenance replay")
+    if not isinstance(source_manifest, (str, Path)):
+        missing.append("source manifest path required for provenance replay")
+    if not isinstance(source_manifest_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", source_manifest_digest):
+        missing.append("valid source manifest digest pin required for provenance replay")
+    if items is None:
+        missing.append("corpus items required for provenance replay")
+    if missing:
+        return missing
+
+    from guru.quality.checks import CheckInputError, CheckUnavailableError, provenance_check
+
+    try:
+        parsed_items = _read_items(items)
+    except (CorpusAssemblyError, ValidationError, TypeError, ValueError) as exc:
+        return [f"cannot load corpus items for provenance replay: {exc}"]
+    items_by_id: dict[str, CorpusItem] = {}
+    for item in parsed_items:
+        if item.item_id in items_by_id:
+            return [f"duplicate corpus item {item.item_id!r} in provenance replay input"]
+        items_by_id[item.item_id] = item
+
+    blockers: list[str] = []
+    for row in admitted_rows:
+        item_id = row.get("item_id")
+        item = items_by_id.get(item_id)
+        if item is None:
+            blockers.append(f"admitted item {item_id!r} is missing from provenance replay input")
+            continue
+        try:
+            payload = QualityAdmissionPayload.model_validate({
+                key: value for key, value in row.items()
+                if key not in {"event", "timestamp", "payload_digest"}
+            })
+            summary = next(check for check in payload.checks
+                           if check.name is AutoCheckName.PROVENANCE)
+            if summary.status != "PASS":
+                blockers.append(f"admitted item {item_id!r} has non-PASS PROVENANCE evidence")
+                continue
+            result = provenance_check(
+                item,
+                manifest_path=source_manifest,
+                expected_manifest_digest=source_manifest_digest,
+                task_manifest_path=task_manifest,
+                expected_task_manifest_digest=task_manifest_digest,
+            )
+        except (ValidationError, CheckInputError, CheckUnavailableError, OSError, ValueError) as exc:
+            blockers.append(f"provenance replay failed for item {item_id!r}: {exc}")
+            continue
+        if not result.passed:
+            blockers.append(f"provenance replay did not pass for item {item_id!r}")
+        elif (summary.item_digest != item.canonical_digest()
+              or summary.evidence_digest != result.evidence_digest
+              or summary.tool_version != result.tool_version
+              or summary.policy_version != result.policy_version):
+            blockers.append(f"audited PROVENANCE evidence does not match replay for item {item_id!r}")
+    return blockers
+
+
 def preflight(*, kind: CorpusKind | str,
               task_manifest: str | Path | Iterable[dict] | dict | None = None,
               teacher_registry: str | Path | Iterable | None = None,
-              admission_audit: str | Path | Iterable[dict] | None = None) -> dict[str, Any]:
+              admission_audit: str | Path | Iterable[dict] | None = None,
+              items: str | Path | Iterable[dict | CorpusItem] | None = None,
+              task_manifest_digest: str | None = None,
+              source_manifest: str | Path | None = None,
+              source_manifest_digest: str | None = None) -> dict[str, Any]:
     try:
         corpus_kind = CorpusKind(kind)
     except ValueError as exc:
@@ -124,6 +205,7 @@ def preflight(*, kind: CorpusKind | str,
     if isinstance(task_source, (str, Path)):
         if not Path(task_source).is_file():
             blockers.append("missing task manifest")
+            task_rows = []
         else:
             task_rows = _jsonl_rows(task_source)
     else:
@@ -153,6 +235,11 @@ def preflight(*, kind: CorpusKind | str,
         blockers.append("admission audit has no decisions")
     admitted = [row for row in audit_rows if row.get("event") in ("item_admission", None)
                 and row.get("decision") in ADMITTED_DECISIONS]
+    blockers.extend(_provenance_replay_blockers(
+        admitted_rows=admitted, items=items, task_manifest=task_source,
+        task_manifest_digest=task_manifest_digest, source_manifest=source_manifest,
+        source_manifest_digest=source_manifest_digest,
+    ))
     if any(row.get("decision") == "admit_with_followup" for row in admitted):
         warnings.append("ADMIT_WITH_FOLLOWUP remains admitted by current policy; owner policy review is open")
     if audit_rows and not admitted:
@@ -201,6 +288,9 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
              admission_audit: str | Path | Iterable[dict] | None,
              items: str | Path | Iterable[dict | CorpusItem], corpus_id: str, version: str,
              split_seed: str, owner_approval: dict[str, str] | None = None,
+             task_manifest_digest: str | None = None,
+             source_manifest: str | Path | None = None,
+             source_manifest_digest: str | None = None,
              output_root: str | Path | None = None) -> CorpusManifest:
     try:
         corpus_kind = CorpusKind(kind)
@@ -208,12 +298,16 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
         raise CorpusAssemblyError("unknown corpus kind") from exc
     teacher_source = DEFAULT_TEACHER_REGISTRY if teacher_registry is None else teacher_registry
     teachers = _read_teacher_records(teacher_source)
-    check = preflight(kind=corpus_kind, task_manifest=task_manifest,
-                      teacher_registry=teachers, admission_audit=admission_audit)
-    if not check["ready"]:
-        raise CorpusAssemblyBlocked(check["blockers"])
     if items is None or (isinstance(items, (str, Path)) and not Path(items).is_file()):
         raise CorpusAssemblyBlocked(["missing corpus items"])
+    parsed_items = _read_items(items)
+    check = preflight(kind=corpus_kind, task_manifest=task_manifest,
+                      teacher_registry=teachers, admission_audit=admission_audit,
+                      items=parsed_items, task_manifest_digest=task_manifest_digest,
+                      source_manifest=source_manifest,
+                      source_manifest_digest=source_manifest_digest)
+    if not check["ready"]:
+        raise CorpusAssemblyBlocked(check["blockers"])
     for label, value in (("corpus_id", corpus_id), ("version", version)):
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value):
             raise CorpusAssemblyError(f"{label} must be a safe path component")
@@ -228,7 +322,7 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
     admitted: list[CorpusItem] = []
     exclusions: dict[str, str] = {}
     teachers_used: set[str] = set()
-    for item in _read_items(items):
+    for item in parsed_items:
         if task_ids and item.task_id not in task_ids:
             raise CorpusAssemblyError(f"item {item.item_id!r} references a task absent from task_manifest")
         record = decisions.get(item.item_id)
@@ -331,7 +425,10 @@ def assemble(*, kind: CorpusKind | str, task_manifest: str | Path | Iterable[dic
     manifest = CorpusManifest(
         corpus_id=corpus_id, version=version, kind=corpus_kind,
         status=CorpusStatus.FROZEN if owner_approval else CorpusStatus.DRAFT,
-        owner_approval=owner_approval, split_seed=split_seed,
+        owner_approval=owner_approval,
+        source_manifest_digest=source_manifest_digest,
+        task_manifest_digest=task_manifest_digest,
+        split_seed=split_seed,
         split_rule=("split_seed is recorded as provenance only; assign transitive leakage_group IDs "
                     "before splitting; sort unique UTF-8 group IDs by SHA-256 digest (group ID breaks "
                     "ties); floor(0.8G) groups train, next floor(0.1G) validation, remainder test; "

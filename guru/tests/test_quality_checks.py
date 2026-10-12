@@ -130,6 +130,10 @@ def _source_manifest(tmp_path: Path) -> tuple[Path, str, str]:
     return manifest_path, manifest_digest, hashlib.sha256(artifact).hexdigest()
 
 
+def _task_manifest_digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _case_record(item: CorpusItem, case_id: str, *, status: str, previous_digest: str,
                  test_digest: str, task_digest: str, image_digest: str, config_digest: str) -> dict:
     started = datetime(2026, 10, 12, tzinfo=timezone.utc)
@@ -248,6 +252,7 @@ def _runner_report(tmp_path: Path, *, raw_item=None, evaluator_provider=None, ri
     return checks.run_deterministic_checks(
         item, source_manifest_path=manifest_path, source_manifest_digest=manifest_digest,
         task_manifest_path=tmp_path / "tasks.jsonl",
+        task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"),
         corpus_items=[], group_assignments={"family-1": "train"},
         evaluator_provider=evaluator_provider or _FakeEvaluatorProvider(_evaluator_inputs(item)),
         rights_provider=rights_provider,
@@ -340,7 +345,8 @@ def test_each_direct_producer_binds_exact_canonical_item_digest(tmp_path):
         checks.security_check(item),
         checks.provenance_check(item, manifest_path=manifest_path,
                                 expected_manifest_digest=manifest_digest,
-                                task_manifest_path=tmp_path / "tasks.jsonl"),
+                                task_manifest_path=tmp_path / "tasks.jsonl",
+                                expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl")),
         checks.duplicate_check(item, corpus_items=[]),
         checks.leakage_check(item, group_assignments={"family-1": "train"}),
     ]
@@ -383,18 +389,22 @@ def test_provenance_requires_digest_pin_and_validated_manifest(tmp_path):
     with pytest.raises(checks.CheckUnavailableError, match="digest pin"):
         checks.provenance_check(_item(source_digest=source_digest),
                                 manifest_path=manifest_path, expected_manifest_digest=None,
-                                task_manifest_path=tmp_path / "tasks.jsonl")
+                                task_manifest_path=tmp_path / "tasks.jsonl",
+                                expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"))
     item = _item(source_digest=source_digest)
     passed = checks.provenance_check(item, manifest_path=manifest_path,
                                      expected_manifest_digest=manifest_digest,
-                                     task_manifest_path=tmp_path / "tasks.jsonl")
+                                     task_manifest_path=tmp_path / "tasks.jsonl",
+                                     expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"))
     wrong_pin = checks.provenance_check(item, manifest_path=manifest_path,
                                         expected_manifest_digest="0" * 64,
-                                        task_manifest_path=tmp_path / "tasks.jsonl")
+                                        task_manifest_path=tmp_path / "tasks.jsonl",
+                                        expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"))
     absent_member = checks.provenance_check(_item(source_digest="c" * 64),
                                             manifest_path=manifest_path,
                                             expected_manifest_digest=manifest_digest,
-                                            task_manifest_path=tmp_path / "tasks.jsonl")
+                                            task_manifest_path=tmp_path / "tasks.jsonl",
+                                            expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"))
     assert passed.name is AutoCheckName.PROVENANCE and passed.passed is True
     assert wrong_pin.passed is False
     assert absent_member.passed is False
@@ -406,6 +416,7 @@ def test_provenance_rejects_unknown_task_id(tmp_path):
         _item(task_id="task-unknown", source_digest=source_digest),
         manifest_path=manifest_path, expected_manifest_digest=manifest_digest,
         task_manifest_path=tmp_path / "tasks.jsonl",
+        expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"),
     )
     assert result.passed is False
 
@@ -419,6 +430,7 @@ def test_provenance_rejects_artifact_membership_without_item_task_link(tmp_path)
         _item(task_id="task-eval", source_digest=source_digest),
         manifest_path=manifest_path, expected_manifest_digest=manifest_digest,
         task_manifest_path=tmp_path / "tasks.jsonl",
+        expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"),
     )
     assert result.passed is False
 
@@ -429,6 +441,7 @@ def test_provenance_rejects_unrelated_source_digest(tmp_path):
         _item(source_digest="c" * 64),
         manifest_path=manifest_path, expected_manifest_digest=manifest_digest,
         task_manifest_path=tmp_path / "tasks.jsonl",
+        expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"),
     )
     assert result.passed is False
 
@@ -444,6 +457,7 @@ def test_provenance_rejects_mutated_task_after_review(tmp_path):
         checks.provenance_check(
             _item(source_digest=source_digest), manifest_path=manifest_path,
             expected_manifest_digest=manifest_digest, task_manifest_path=task_path,
+            expected_task_manifest_digest=_task_manifest_digest(task_path),
         )
 
 
@@ -453,6 +467,12 @@ def test_provenance_requires_task_manifest_input(tmp_path):
         checks.provenance_check(
             _item(source_digest=source_digest), manifest_path=manifest_path,
             expected_manifest_digest=manifest_digest, task_manifest_path=None,
+            expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"),
+        )
+    with pytest.raises(checks.CheckUnavailableError, match="task manifest digest pin"):
+        checks.provenance_check(
+            _item(source_digest=source_digest), manifest_path=manifest_path,
+            expected_manifest_digest=manifest_digest, task_manifest_path=tmp_path / "tasks.jsonl",
         )
     report = checks.run_deterministic_checks(
         _item(source_digest=source_digest), source_manifest_path=manifest_path,
@@ -471,7 +491,8 @@ def test_provenance_rejects_invalid_manifest_contract(tmp_path):
     with pytest.raises(checks.CheckInputError, match="failed Guru release validation"):
         checks.provenance_check(_item(), manifest_path=bad_path,
                                 expected_manifest_digest=hashlib.sha256(bad_path.read_bytes()).hexdigest(),
-                                task_manifest_path=tmp_path / "tasks.jsonl")
+                                task_manifest_path=tmp_path / "tasks.jsonl",
+                                expected_task_manifest_digest=_task_manifest_digest(tmp_path / "tasks.jsonl"))
 
 
 def test_duplicate_check_detects_exact_model_facing_pair_and_requires_corpus():
@@ -746,7 +767,8 @@ def test_runner_with_partial_provider_evidence_never_decides_or_audits(tmp_path,
                                 corpus_items=[], group_assignments={"family-1": "train"},
                                 source_manifest_path=manifest_path,
                                 source_manifest_digest=manifest_digest,
-                                task_manifest_path=root / "tasks.jsonl")
+                                task_manifest_path=root / "tasks.jsonl",
+                                task_manifest_digest=_task_manifest_digest(root / "tasks.jsonl"))
     assert not audit_path.exists()
 
 
@@ -781,6 +803,7 @@ def test_complete_quality_run_audit_replays_through_preflight_and_assembly(
         source_manifest_path=manifest_path,
         source_manifest_digest=manifest_digest,
         task_manifest_path=input_root / "tasks.jsonl",
+        task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
         corpus_items=[],
         group_assignments={"family-1": "train"},
         evaluator_provider=_FakeEvaluatorProvider(
@@ -803,29 +826,155 @@ def test_complete_quality_run_audit_replays_through_preflight_and_assembly(
 
     tasks = [{"id": item.task_id}]
     preflight_result = preflight(
-        kind="c_sft", task_manifest=tasks, teacher_registry=[],
-        admission_audit=audit_path,
+        kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
+        admission_audit=audit_path, items=[item],
+        task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+        source_manifest=manifest_path, source_manifest_digest=manifest_digest,
     )
     if expected_decision == "admit":
         assert preflight_result["ready"] is True
         assert preflight_result["blockers"] == []
         manifest = assemble(
-            kind="c_sft", task_manifest=tasks, teacher_registry=[],
+            kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
             admission_audit=audit_path, items=[item], corpus_id="synthetic-e2e",
             version="v1", split_seed="synthetic-only", output_root=tmp_path / "corpora",
+            task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+            source_manifest=manifest_path, source_manifest_digest=manifest_digest,
         )
         assert manifest.item_count == 1
         assert manifest.item_file_digests
+        assert manifest.task_manifest_digest == _task_manifest_digest(input_root / "tasks.jsonl")
+        assert manifest.source_manifest_digest == manifest_digest
     else:
         assert preflight_result["ready"] is False
         assert "admission audit contains no admitted items" in preflight_result["blockers"]
         with pytest.raises(CorpusAssemblyBlocked, match="no admitted items"):
             assemble(
-                kind="c_sft", task_manifest=tasks, teacher_registry=[],
+                kind="c_sft", task_manifest=input_root / "tasks.jsonl", teacher_registry=[],
                 admission_audit=audit_path, items=[item], corpus_id="synthetic-e2e",
                 version="v1", split_seed="synthetic-only", output_root=tmp_path / "corpora",
+                task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+                source_manifest=manifest_path, source_manifest_digest=manifest_digest,
             )
         assert not (tmp_path / "corpora" / "synthetic-e2e" / "v1").exists()
+
+
+def _produce_pinned_admission(tmp_path: Path, monkeypatch):
+    """Create a wholly synthetic admitted audit and its pinned release inputs."""
+    from guru.quality import gate, runner
+
+    input_root = tmp_path / "inputs"
+    input_root.mkdir()
+    source_path, source_pin, source_digest = _source_manifest(input_root)
+    item = CorpusItem.model_validate(_item(
+        source_digest=source_digest, metadata={"leakage_group": "family-1"}))
+    audit_path = tmp_path / "audit" / "quality.jsonl"
+    monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
+    _report, admission = runner.run_item_quality(
+        item, tier=QualityTier.C, source_manifest_path=source_path,
+        source_manifest_digest=source_pin, task_manifest_path=input_root / "tasks.jsonl",
+        task_manifest_digest=_task_manifest_digest(input_root / "tasks.jsonl"),
+        corpus_items=[], group_assignments={"family-1": "train"},
+        evaluator_provider=_FakeEvaluatorProvider(_evaluator_inputs(item)),
+        rights_provider=_FakeRightsProvider(_rights_inputs(item)),
+    )
+    assert admission.decision.value == "admit"
+    return input_root, source_path, source_pin, item, audit_path
+
+
+def _rewrite_audit(audit_path: Path, mutate) -> None:
+    row = json.loads(audit_path.read_text(encoding="utf-8").splitlines()[0])
+    provenance = next(check for check in row["checks"] if check["name"] == "provenance")
+    mutate(provenance)
+    payload = {key: value for key, value in row.items()
+               if key not in {"event", "timestamp", "payload_digest"}}
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                           separators=(",", ":"), allow_nan=False).encode("utf-8")
+    row["payload_digest"] = hashlib.sha256(canonical).hexdigest()
+    audit_path.write_text(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n",
+                          encoding="utf-8")
+
+
+def _preflight_pinned(input_root, source_path, source_pin, item, audit_path, **overrides):
+    from guru.corpus.assemble import preflight
+
+    values = {
+        "kind": "c_sft", "task_manifest": input_root / "tasks.jsonl",
+        "teacher_registry": [], "admission_audit": audit_path, "items": [item],
+        "task_manifest_digest": _task_manifest_digest(input_root / "tasks.jsonl"),
+        "source_manifest": source_path, "source_manifest_digest": source_pin,
+    }
+    values.update(overrides)
+    return preflight(**values)
+
+
+@pytest.mark.parametrize("missing", [
+    "task_pin", "source_pin", "task_input", "source_input", "items",
+])
+def test_assembly_preflight_requires_pinned_provenance_inputs(tmp_path, monkeypatch, missing):
+    input_root, source_path, source_pin, item, audit_path = _produce_pinned_admission(tmp_path, monkeypatch)
+    overrides = {
+        "task_pin": {"task_manifest_digest": None},
+        "source_pin": {"source_manifest_digest": None},
+        "task_input": {"task_manifest": input_root / "absent-tasks.jsonl"},
+        "source_input": {"source_manifest": input_root / "absent-sources.json"},
+        "items": {"items": None},
+    }[missing]
+    result = _preflight_pinned(input_root, source_path, source_pin, item, audit_path, **overrides)
+    assert result["ready"] is False
+    assert any("provenance replay" in blocker or "manifest" in blocker for blocker in result["blockers"])
+
+
+@pytest.mark.parametrize("pin", ["task_manifest_digest", "source_manifest_digest"])
+def test_assembly_preflight_rejects_wrong_provenance_pin(tmp_path, monkeypatch, pin):
+    input_root, source_path, source_pin, item, audit_path = _produce_pinned_admission(tmp_path, monkeypatch)
+    overrides = {pin: "0" * 64}
+    result = _preflight_pinned(input_root, source_path, source_pin, item, audit_path, **overrides)
+    assert result["ready"] is False
+    assert any("PROVENANCE evidence does not match replay" in blocker
+               or "provenance replay did not pass" in blocker for blocker in result["blockers"])
+
+
+@pytest.mark.parametrize("drift", ["task", "source_manifest", "source_artifact"])
+def test_assembly_preflight_rejects_release_input_byte_drift(tmp_path, monkeypatch, drift):
+    input_root, source_path, source_pin, item, audit_path = _produce_pinned_admission(tmp_path, monkeypatch)
+    if drift == "task":
+        task_path = input_root / "tasks.jsonl"
+        task_path.write_bytes(task_path.read_bytes() + b" ")
+    elif drift == "source_manifest":
+        source_path.write_bytes(source_path.read_bytes() + b" ")
+    else:
+        artifact = input_root / "artifact.bin"
+        artifact.write_bytes(artifact.read_bytes() + b"mutated")
+    result = _preflight_pinned(input_root, source_path, source_pin, item, audit_path)
+    assert result["ready"] is False
+    assert any("provenance replay" in blocker or "PROVENANCE evidence" in blocker
+               for blocker in result["blockers"])
+
+
+def test_assembly_preflight_rejects_item_task_source_mismatch(tmp_path, monkeypatch):
+    input_root, source_path, source_pin, item, audit_path = _produce_pinned_admission(tmp_path, monkeypatch)
+    mismatched = item.model_copy(update={"task_id": "task-eval"})
+    result = _preflight_pinned(input_root, source_path, source_pin, mismatched, audit_path)
+    assert result["ready"] is False
+    assert any("provenance replay" in blocker or "PROVENANCE evidence" in blocker
+               for blocker in result["blockers"])
+
+
+@pytest.mark.parametrize("tamper", ["evidence_digest", "status", "tool_version", "policy_version"])
+def test_assembly_preflight_rejects_tampered_provenance_summary(tmp_path, monkeypatch, tamper):
+    input_root, source_path, source_pin, item, audit_path = _produce_pinned_admission(tmp_path, monkeypatch)
+    def mutate(check):
+        if tamper == "evidence_digest":
+            check[tamper] = "0" * 64
+        elif tamper == "status":
+            check[tamper] = "FAIL"
+        else:
+            check[tamper] = "tampered/999"
+    _rewrite_audit(audit_path, mutate)
+    result = _preflight_pinned(input_root, source_path, source_pin, item, audit_path)
+    assert result["ready"] is False
+    assert any("PROVENANCE" in blocker for blocker in result["blockers"])
 
 
 def test_only_quality_runner_calls_low_level_item_decision():

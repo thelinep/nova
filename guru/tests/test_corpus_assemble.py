@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
@@ -9,7 +10,9 @@ import unittest
 
 from pydantic import ValidationError
 
-from guru.corpus.assemble import CorpusAssemblyBlocked, assemble, preflight
+from guru.corpus.assemble import CorpusAssemblyBlocked, assemble as _assemble, preflight
+from guru.coding import canonical_sha256
+from guru.quality.checks import provenance_check
 from guru.schemas.corpus import CorpusKind, CorpusManifest, CorpusStatus
 from guru.schemas.corpus_item import CorpusItem
 from guru.schemas.teacher_lineage import AccessMethod, InputDisclosure, InputType, OutputRights, ReviewStatus, TeacherLineage
@@ -30,11 +33,19 @@ def task_rows(count: int = 40) -> list[dict[str, str]]:
     return [{"id": f"task-{index:03d}"} for index in range(count)]
 
 
+def _artifact_bytes(task_id: str) -> bytes:
+    return f"synthetic source artifact for {task_id}".encode("utf-8")
+
+
+def _source_digest(task_id: str) -> str:
+    return hashlib.sha256(_artifact_bytes(task_id)).hexdigest()
+
+
 def corpus_items(count: int = 40) -> list[CorpusItem]:
     return [CorpusItem(
         item_id=f"item-{index:03d}", task_id=f"task-{index:03d}",
         prompt=f"Implement function {index}", target=f"def f{index}(): return {index}",
-        target_source="teacher", teacher_lineage_id="teacher-1", source_digest=f"{index:064x}",
+        target_source="teacher", teacher_lineage_id="teacher-1", source_digest=_source_digest(f"task-{index:03d}"),
         metadata={"leakage_group": f"task-{index:03d}"},
     ) for index in range(count)]
 
@@ -54,6 +65,126 @@ def admission_row(item: CorpusItem, decision: str = "admit") -> dict:
 
 def admission_rows(count: int = 40) -> list[dict]:
     return [admission_row(item) for item in corpus_items(count)]
+
+
+def _write_release_inputs(root: Path, items: list[CorpusItem], task_ids: list[str]):
+    """Build isolated schema-valid task/source manifests for assembly tests."""
+    root.mkdir(parents=True, exist_ok=True)
+    all_train_ids = sorted(set(task_ids) | {item.task_id for item in items})
+    eval_id = "fixture-heldout-eval"
+    while eval_id in all_train_ids:
+        eval_id += "-x"
+    tasks = []
+    source_specs = []
+    license_text = b"Synthetic fixture license text only"
+    license_path = root / "LICENSE.txt"
+    license_path.write_bytes(license_text)
+
+    def add_task(task_id: str, split: str):
+        source_id = f"source-{task_id}"
+        artifact_path = root / f"{source_id}.bin"
+        artifact = _artifact_bytes(task_id)
+        artifact_path.write_bytes(artifact)
+        item_bytes = f"synthetic source item for {task_id}".encode("utf-8")
+        item_path = root / f"item-{task_id}.json"
+        item_path.write_bytes(item_bytes)
+        task = {
+            "schema_version": "guru-code-task-v1", "id": task_id, "split": split,
+            "language": "python", "prompt": f"Synthetic task {task_id}",
+            "provenance": {
+                "kind": "synthetic_fixture", "description": "test-only task/source fixture",
+                "source_refs": [{
+                    "source_id": source_id, "item_id": f"item-{task_id}",
+                    "item_path": item_path.name,
+                    "item_sha256": hashlib.sha256(item_bytes).hexdigest(),
+                    "transformation": "synthetic fixture construction",
+                }],
+            },
+            "rubric": {"expected_files": ["main.py"], "required_symbols": {},
+                       "required_test_snippets": []},
+            "leakage_group": f"group-{task_id}",
+        }
+        if split == "train":
+            task["target"] = {
+                "summary": "Create a greeting", "files": [{"path": "main.py", "content": "print('hi')\n"}],
+                "tests": ["python main.py"],
+            }
+        tasks.append(task)
+        source_specs.append({
+            "source_id": source_id, "uri": f"https://example.invalid/{source_id}",
+            "revision": f"fixture-revision-{task_id}", "artifact_path": artifact_path.name,
+            "artifact_sha256": hashlib.sha256(artifact).hexdigest(),
+            "attribution": "Synthetic test fixture; not a rights claim",
+            "license": {"id": "LicenseRef-Test-Only", "text_uri": "local:LICENSE.txt",
+                        "text_path": license_path.name,
+                        "text_sha256": hashlib.sha256(license_text).hexdigest()},
+            "rights_review": {"status": "approved", "reviewer": "synthetic-test-reviewer",
+                              "reviewed_at": "2026-10-12T00:00:00Z",
+                              "allowed_uses": ["train_sft" if split == "train" else "evaluation"]},
+            "task_hashes": {task_id: canonical_sha256(task)},
+        })
+
+    for task_id in all_train_ids:
+        add_task(task_id, "train")
+    add_task(eval_id, "eval")
+    task_manifest_path = root / "tasks.jsonl"
+    task_manifest_path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in tasks),
+                                  encoding="utf-8")
+    source_manifest_path = root / "source-manifest.json"
+    source_manifest_path.write_text(json.dumps({
+        "schema_version": "guru-code-source-manifest-v1", "sources": source_specs,
+    }, sort_keys=True), encoding="utf-8")
+    task_digest = hashlib.sha256(task_manifest_path.read_bytes()).hexdigest()
+    source_digest = hashlib.sha256(source_manifest_path.read_bytes()).hexdigest()
+    return task_manifest_path, task_digest, source_manifest_path, source_digest
+
+
+def assemble(*, task_manifest, items, admission_audit, output_root, **kwargs):
+    """Test-only wrapper that supplies real-shaped, temp-only provenance inputs."""
+    item_rows = list(items)
+    item_rows = [row if isinstance(row, CorpusItem) else CorpusItem.model_validate(row)
+                 for row in item_rows]
+    task_ids = [row["id"] for row in task_manifest] if isinstance(task_manifest, list) else []
+    fixture_root = Path(output_root).parent / f".release-inputs-{kwargs['corpus_id']}-{kwargs['version']}"
+    task_path, task_pin, source_path, source_pin = _write_release_inputs(
+        fixture_root, item_rows, task_ids)
+    audit_rows = [deepcopy(row) for row in admission_audit] if not isinstance(admission_audit, (str, Path)) else [
+        json.loads(line) for line in Path(admission_audit).read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    # Replace only the fixture's explicit placeholder PROVENANCE summary. Tests
+    # that mutate evidence keep their mutation and are rejected by assembly.
+    for row in audit_rows:
+        if not isinstance(row, dict) or row.get("event") != "item_admission":
+            continue
+        item = next((candidate for candidate in item_rows if candidate.item_id == row.get("item_id")), None)
+        if item is None or not isinstance(row.get("checks"), list):
+            continue
+        try:
+            result = provenance_check(
+                item, manifest_path=source_path, expected_manifest_digest=source_pin,
+                task_manifest_path=task_path, expected_task_manifest_digest=task_pin,
+            )
+        except ValueError:
+            continue
+        for check in row["checks"]:
+            if (isinstance(check, dict) and check.get("name") == "provenance"
+                    and check.get("tool_version") == "fixture/1"
+                    and check.get("policy_version") == "fixture/1"):
+                check.update(status="PASS" if result.passed else "FAIL",
+                             evidence_digest=result.evidence_digest,
+                             item_digest=result.item_digest,
+                             tool_version=result.tool_version,
+                             policy_version=result.policy_version)
+                payload = {key: value for key, value in row.items()
+                           if key not in {"event", "timestamp", "payload_digest"}}
+                raw = json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                                 separators=(",", ":"), allow_nan=False).encode("utf-8")
+                row["payload_digest"] = hashlib.sha256(raw).hexdigest()
+    return _assemble(
+        task_manifest=task_path, items=item_rows, admission_audit=audit_rows,
+        task_manifest_digest=task_pin, source_manifest=source_path,
+        source_manifest_digest=source_pin, output_root=output_root, **kwargs,
+    )
 
 
 class CorpusAssemblyTests(unittest.TestCase):
@@ -113,10 +244,10 @@ class CorpusAssemblyTests(unittest.TestCase):
     def test_c_rd_and_c_trace_require_teacher_lineage_for_admitted_items(self) -> None:
         items = {
             "c_rd": CorpusItem(item_id="item-rd", task_id="task-000", prompt="prompt", target="answer",
-                               target_source="human", source_digest="a" * 64),
+                               target_source="human", source_digest=_source_digest("task-000")),
             "c_trace": CorpusItem(item_id="item-trace", task_id="task-000", prompt="prompt", target="answer",
                                   target_source="trajectory", trajectory_id="trajectory-1",
-                                  source_digest="b" * 64),
+                                  source_digest=_source_digest("task-000")),
         }
         with TemporaryDirectory() as directory:
             for kind, item in items.items():
@@ -151,7 +282,7 @@ class CorpusAssemblyTests(unittest.TestCase):
 
     def test_sft_allows_human_item_without_optional_teacher_lineage(self) -> None:
         item = CorpusItem(item_id="item-human", task_id="task-000", prompt="prompt", target="answer",
-                          target_source="human", source_digest="c" * 64,
+                          target_source="human", source_digest=_source_digest("task-000"),
                           metadata={"leakage_group": "task-000"})
         with TemporaryDirectory() as directory:
             manifest = assemble(kind="c_sft", task_manifest=task_rows(1), teacher_registry=[],
@@ -268,7 +399,7 @@ class CorpusAssemblyTests(unittest.TestCase):
         rows = [*corpus_items(40), CorpusItem(
             item_id="item-duplicate-example", task_id="task-000", prompt="another view",
             target="def other(): return 0", target_source="teacher", teacher_lineage_id="teacher-1",
-            source_digest="f" * 64, metadata={"leakage_group": "task-000"},
+            source_digest=_source_digest("task-000"), metadata={"leakage_group": "task-000"},
         )]
         extra = rows[-1]
         with TemporaryDirectory() as directory:

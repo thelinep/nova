@@ -31,14 +31,14 @@ from guru.teacher.intake import validate_teacher
 from guru.quality.providers import EvaluatorEvidenceProvider, RightsEvidenceProvider
 
 
-TOOL_VERSION = "guru-deterministic-checks/1.2.0"
+TOOL_VERSION = "guru-deterministic-checks/1.3.0"
 POLICY_VERSIONS: dict[AutoCheckName, str] = {
     AutoCheckName.SCHEMA: "corpus-item-schema-v1",
     AutoCheckName.SYNTAX: "python-ast-parse-v1",
     AutoCheckName.TESTS: "qualified-evaluator-required-v1",
     AutoCheckName.SECURITY: "security-cot-and-secrets-v1",
     AutoCheckName.LICENSE: "scoped-owner-rights-evidence-required-v1",
-    AutoCheckName.PROVENANCE: "pinned-release-task-source-linkage-v2",
+    AutoCheckName.PROVENANCE: "pinned-release-task-source-linkage-v3",
     AutoCheckName.DUPLICATE: "exact-model-facing-example-v1",
     AutoCheckName.LEAKAGE: "single-experiment-split-per-group-v1",
 }
@@ -266,6 +266,7 @@ def provenance_check(
     manifest_path: str | Path | None,
     expected_manifest_digest: str | None,
     task_manifest_path: str | Path | None = None,
+    expected_task_manifest_digest: str | None = None,
 ) -> AutoCheckResult:
     """Require a validated task/source link to the item's pinned source.
 
@@ -284,9 +285,14 @@ def provenance_check(
         raise CheckUnavailableError("source manifest digest pin was not supplied")
     if task_manifest_path is None:
         raise CheckUnavailableError("task manifest path was not supplied")
+    if expected_task_manifest_digest is None:
+        raise CheckUnavailableError("task manifest digest pin was not supplied")
     if (not isinstance(expected_manifest_digest, str) or len(expected_manifest_digest) != 64
             or any(c not in "0123456789abcdef" for c in expected_manifest_digest)):
         raise CheckInputError("source manifest pin must be a lowercase SHA-256 digest")
+    if (not isinstance(expected_task_manifest_digest, str) or len(expected_task_manifest_digest) != 64
+            or any(c not in "0123456789abcdef" for c in expected_task_manifest_digest)):
+        raise CheckInputError("task manifest pin must be a lowercase SHA-256 digest")
     try:
         # Reuse the current release contract: source and saved license bytes
         # are digest-verified, rights review is structurally checked, and the
@@ -296,13 +302,19 @@ def provenance_check(
             canonical_sha256, read_tasks,
         )
 
-        tasks = read_tasks(str(task_manifest_path))
+        task_path = Path(task_manifest_path)
+        task_digest_before = hashlib.sha256(task_path.read_bytes()).hexdigest()
+        tasks = read_tasks(str(task_path))
+        task_digest_after = hashlib.sha256(task_path.read_bytes()).hexdigest()
+        if task_digest_before != task_digest_after:
+            raise CheckInputError("task manifest changed while provenance was being validated")
         sources, actual_manifest_digest, manifest_dir = _read_release_sources(
             tasks, str(manifest_path))
         _validate_reviewed_tasks(tasks, sources, manifest_dir)
     except (OSError, CodingDataError, ValueError) as exc:
         raise CheckInputError("task/source manifests failed Guru release validation") from exc
     pin_matches = actual_manifest_digest == expected_manifest_digest
+    task_pin_matches = task_digest_after == expected_task_manifest_digest
     artifact_digests = sorted(source["artifact_sha256"] for source in sources.values())
     member = item.source_digest in artifact_digests
     task_by_id = {task["id"]: task for task in tasks}
@@ -320,11 +332,15 @@ def provenance_check(
             for source_id in task_source_ids
         )
         task_digest = canonical_sha256(task)
-    return _result(AutoCheckName.PROVENANCE, pin_matches and member and task_linkage, {
+    return _result(AutoCheckName.PROVENANCE,
+                   pin_matches and task_pin_matches and member and task_linkage, {
         "item_digest": item.canonical_digest(), "source_digest": item.source_digest,
         "expected_manifest_digest": expected_manifest_digest,
         "actual_manifest_digest": actual_manifest_digest,
         "manifest_pin_matches": pin_matches,
+        "expected_task_manifest_digest": expected_task_manifest_digest,
+        "actual_task_manifest_digest": task_digest_after,
+        "task_manifest_pin_matches": task_pin_matches,
         "artifact_membership": member,
         "task_id_digest": _digest(item.task_id),
         "task_manifest_task_digest": task_digest,
@@ -456,6 +472,7 @@ def run_deterministic_checks(
     source_manifest_path: str | Path | None = None,
     source_manifest_digest: str | None = None,
     task_manifest_path: str | Path | None = None,
+    task_manifest_digest: str | None = None,
     corpus_items: Sequence[CorpusItem | Mapping[str, Any]] | None = None,
     group_assignments: Mapping[str, str | Sequence[str]] | None = None,
     evaluator_provider: EvaluatorEvidenceProvider | None = None,
@@ -605,7 +622,8 @@ def run_deterministic_checks(
         _run_one(AutoCheckName.PROVENANCE, provenance_check, raw_item, bound_item_digest=item_digest,
                  manifest_path=source_manifest_path,
                  expected_manifest_digest=source_manifest_digest,
-                 task_manifest_path=task_manifest_path),
+                 task_manifest_path=task_manifest_path,
+                 expected_task_manifest_digest=task_manifest_digest),
         _run_one(AutoCheckName.DUPLICATE, duplicate_check, raw_item, bound_item_digest=item_digest,
                  corpus_items=corpus_items),
         _run_one(AutoCheckName.LEAKAGE, leakage_check, raw_item, bound_item_digest=item_digest,
