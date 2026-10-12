@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from guru.quality import checks
-from guru.schemas.quality import AutoCheckName
+from guru.schemas.quality import AdmissionDecision, AutoCheckName, QualityTier, REQUIRED_AUTO_CHECKS
 
 
 def _item(**overrides):
@@ -239,3 +239,40 @@ def test_runner_marks_missing_required_inputs_unavailable():
     assert statuses[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
     assert statuses[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
     assert len(report.records) == len(checks.REQUIRED_AUTO_CHECKS)
+
+
+def test_complete_measured_failure_converts_and_quality_gate_quarantines(tmp_path, monkeypatch):
+    from guru.quality import gate
+
+    # Synthetic complete evidence isolates conversion behavior; it is not a
+    # qualified evaluator or owner/source rights claim.
+    audit_path = tmp_path / "isolated-quality.jsonl"
+    monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
+    records = tuple(
+        checks.CheckStatusRecord(
+            name=name,
+            status=(checks.CheckRunStatus.FAIL if name is AutoCheckName.SYNTAX
+                    else checks.CheckRunStatus.PASS),
+            evidence_digest=(str(index + 1) * 64),
+            tool_version=checks.TOOL_VERSION,
+            policy_version=checks.POLICY_VERSIONS[name],
+        )
+        for index, name in enumerate(sorted(REQUIRED_AUTO_CHECKS, key=lambda value: value.value))
+    )
+    report = checks.CheckRunReport(records)
+    auto_checks = report.as_auto_checks()
+    assert len(auto_checks) == len(REQUIRED_AUTO_CHECKS)
+    assert all(check.passed is (check.name is not AutoCheckName.SYNTAX) for check in auto_checks)
+
+    decision = gate.item_decision(
+        item_id="synthetic-failed-item",
+        item_digest="d" * 64,
+        tier=QualityTier.C,
+        auto_checks=auto_checks,
+        human_review=None,
+    )
+    assert decision.decision is AdmissionDecision.QUARANTINE
+    assert "failed_auto_check:syntax" in decision.reason_codes
+    audit_rows = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]
+    assert len(audit_rows) == 1
+    assert audit_rows[0]["decision"] == AdmissionDecision.QUARANTINE.value

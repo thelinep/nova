@@ -49,7 +49,7 @@ class CheckUnavailableError(ValueError):
 
 
 class IncompleteCheckRunError(ValueError):
-    """A partial or failing run cannot become admission-check inputs."""
+    """A partial or unavailable run cannot become admission-check inputs."""
 
 
 class CheckRunStatus(str, Enum):
@@ -72,10 +72,11 @@ class CheckStatusRecord:
 class CheckRunReport:
     """Status-only report. It has no audit side effects.
 
-    Conversion is deliberately restricted to a complete all-PASS set. The
-    runner below always leaves evaluator and license checks UNAVAILABLE until
-    authoritative providers are implemented, so current reports cannot be
-    converted for admission.
+    Conversion requires one evidenced PASS or FAIL for every required check.
+    The runner below always leaves evaluator and license checks UNAVAILABLE
+    until authoritative providers are implemented, so current runner reports
+    cannot be converted for admission. A complete measured failure can be
+    converted so the separate quality gate can record a rejection/quarantine.
     """
 
     records: tuple[CheckStatusRecord, ...]
@@ -85,10 +86,12 @@ class CheckRunReport:
             raise IncompleteCheckRunError("check run does not contain each required check exactly once")
         if len(self.records) != len(REQUIRED_AUTO_CHECKS):
             raise IncompleteCheckRunError("check run contains duplicate check names")
-        if any(record.status is not CheckRunStatus.PASS or not record.evidence_digest
+        if any(record.status not in {CheckRunStatus.PASS, CheckRunStatus.FAIL}
+               or not record.evidence_digest
                for record in self.records):
-            raise IncompleteCheckRunError("incomplete or non-passing check run cannot be converted")
-        return [AutoCheckResult(name=record.name, passed=True,
+            raise IncompleteCheckRunError("incomplete or unavailable check run cannot be converted")
+        return [AutoCheckResult(name=record.name,
+                                passed=record.status is CheckRunStatus.PASS,
                                 evidence_digest=record.evidence_digest)
                 for record in self.records]
 
