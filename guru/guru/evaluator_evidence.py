@@ -184,9 +184,14 @@ def append_case_atomic(path: str | Path, record: EvaluationCaseEvidence | dict) 
 def map_evidence_to_tests_check(
     record: EvaluationCaseEvidence | dict,
     *,
+    expected_item_digest: str,
     expected_previous_record_digest: str = _ZERO_DIGEST,
 ) -> AutoCheckResult:
     """Map one case to TESTS; only sealed, complete PASS evidence passes."""
+    if not isinstance(expected_item_digest, str) or len(expected_item_digest) != 64 or any(
+        character not in "0123456789abcdef" for character in expected_item_digest
+    ):
+        raise ValueError("expected_item_digest must be a lowercase SHA-256 digest")
     try:
         parsed = record if isinstance(record, EvaluationCaseEvidence) else EvaluationCaseEvidence.model_validate(record)
         # For this standalone mapper, recompute integrity. A dict without a valid
@@ -196,6 +201,7 @@ def map_evidence_to_tests_check(
         integrity_ok = (
             _digest(_canonical_bytes(payload)) == supplied_digest
             and parsed.previous_record_digest == expected_previous_record_digest
+            and parsed.item_digest == expected_item_digest
         )
     except (ValidationError, TypeError, ValueError):
         parsed = None
@@ -210,10 +216,12 @@ def map_evidence_to_tests_check(
         and not parsed.stderr_truncated
     )
     if parsed is None:
-        return AutoCheckResult(name=AutoCheckName.TESTS, passed=False)
+        return AutoCheckResult(name=AutoCheckName.TESTS, passed=False,
+                               item_digest=expected_item_digest)
     detail = _digest((f"{parsed.status.value}:{parsed.exit_code}:{int(integrity_ok)}").encode())
     return AutoCheckResult(
         name=AutoCheckName.TESTS, passed=passed,
+        item_digest=expected_item_digest,
         evidence_digest=parsed.record_digest,
         detail_digest=detail,
     )

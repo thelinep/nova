@@ -63,6 +63,7 @@ class CheckStatusRecord:
     name: AutoCheckName
     status: CheckRunStatus
     evidence_digest: str | None
+    item_digest: str
     tool_version: str
     policy_version: str
     reason_code: str | None = None
@@ -92,6 +93,7 @@ class CheckRunReport:
             raise IncompleteCheckRunError("incomplete or unavailable check run cannot be converted")
         return [AutoCheckResult(name=record.name,
                                 passed=record.status is CheckRunStatus.PASS,
+                                item_digest=record.item_digest,
                                 evidence_digest=record.evidence_digest)
                 for record in self.records]
 
@@ -111,12 +113,35 @@ def _digest(value: Any) -> str:
 
 
 def _result(name: AutoCheckName, passed: bool, evidence: Any) -> AutoCheckResult:
+    item_digest = evidence.get("item_digest") if isinstance(evidence, Mapping) else None
+    if not isinstance(item_digest, str) or len(item_digest) != 64 or any(
+        character not in "0123456789abcdef" for character in item_digest
+    ):
+        raise CheckInputError("check evidence must bind to a canonical item digest")
     versioned_evidence = {
+        "item_digest": item_digest,
         "tool_version": TOOL_VERSION,
         "policy_version": POLICY_VERSIONS[name],
         "result": evidence,
     }
-    return AutoCheckResult(name=name, passed=passed, evidence_digest=_digest(versioned_evidence))
+    return AutoCheckResult(name=name, passed=passed, item_digest=item_digest,
+                           evidence_digest=_digest(versioned_evidence))
+
+
+def _raw_item_digest(raw_item: Mapping[str, Any]) -> str:
+    """Bind invalid schema results to the exact canonicalizable input bytes."""
+    return _digest(dict(raw_item))
+
+
+def _item_binding(raw_item: CorpusItem | Mapping[str, Any]) -> str:
+    if isinstance(raw_item, CorpusItem):
+        return raw_item.canonical_digest()
+    if not isinstance(raw_item, Mapping):
+        raise CheckInputError("corpus item must be an object")
+    try:
+        return _as_item(raw_item).canonical_digest()
+    except CheckInputError:
+        return _raw_item_digest(raw_item)
 
 
 def _as_item(raw_item: CorpusItem | Mapping[str, Any]) -> CorpusItem:
@@ -139,7 +164,10 @@ def schema_check(raw_item: CorpusItem | Mapping[str, Any]) -> AutoCheckResult:
     except CheckInputError:
         # Invalid raw input still receives a deterministic failure result when
         # it is canonicalizable; malformed/non-JSON data is a typed input error.
-        return _result(AutoCheckName.SCHEMA, False, {"raw_item": raw_item})
+        return _result(AutoCheckName.SCHEMA, False, {
+            "item_digest": _raw_item_digest(raw_item),
+            "raw_item_digest": _raw_item_digest(raw_item),
+        })
     return _result(AutoCheckName.SCHEMA, True, {"item_digest": item.canonical_digest()})
 
 
@@ -351,31 +379,39 @@ def _status_from_result(result: AutoCheckResult) -> CheckStatusRecord:
         name=result.name,
         status=CheckRunStatus.PASS if result.passed else CheckRunStatus.FAIL,
         evidence_digest=result.evidence_digest,
+        item_digest=result.item_digest,
         tool_version=TOOL_VERSION,
         policy_version=POLICY_VERSIONS[result.name],
     )
 
 
 def _status_without_result(name: AutoCheckName, status: CheckRunStatus,
-                           reason_code: str) -> CheckStatusRecord:
+                           reason_code: str, *, item_digest: str) -> CheckStatusRecord:
     tool_version = TOOL_VERSION
     policy_version = POLICY_VERSIONS[name]
     evidence_digest = _digest({
         "check": name.value, "status": status.value,
+        "item_digest": item_digest,
         "tool_version": tool_version, "policy_version": policy_version,
         "reason_code": reason_code, "inputs_present": False,
     })
-    return CheckStatusRecord(name, status, evidence_digest, tool_version,
+    return CheckStatusRecord(name, status, evidence_digest, item_digest, tool_version,
                              policy_version, reason_code)
 
 
-def _run_one(name: AutoCheckName, producer, *args, **kwargs) -> CheckStatusRecord:
+def _run_one(name: AutoCheckName, producer, raw_item, *, bound_item_digest: str,
+             **kwargs) -> CheckStatusRecord:
     try:
-        return _status_from_result(producer(*args, **kwargs))
+        result = producer(raw_item, **kwargs)
+        if result.item_digest != bound_item_digest:
+            raise CheckInputError("producer returned a different item binding")
+        return _status_from_result(result)
     except CheckUnavailableError as exc:
-        return _status_without_result(name, CheckRunStatus.UNAVAILABLE, str(exc))
+        return _status_without_result(name, CheckRunStatus.UNAVAILABLE, str(exc),
+                                      item_digest=bound_item_digest)
     except CheckInputError as exc:
-        return _status_without_result(name, CheckRunStatus.FAIL, str(exc))
+        return _status_without_result(name, CheckRunStatus.FAIL, str(exc),
+                                      item_digest=bound_item_digest)
 
 
 def run_deterministic_checks(
@@ -394,20 +430,23 @@ def run_deterministic_checks(
     hand-built ``AutoCheckResult`` values. ``CheckRunReport.as_auto_checks``
     refuses every incomplete or non-passing run.
     """
+    item_digest = _item_binding(raw_item)
     records = [
-        _run_one(AutoCheckName.SCHEMA, schema_check, raw_item),
-        _run_one(AutoCheckName.SYNTAX, syntax_check, raw_item),
+        _run_one(AutoCheckName.SCHEMA, schema_check, raw_item, bound_item_digest=item_digest),
+        _run_one(AutoCheckName.SYNTAX, syntax_check, raw_item, bound_item_digest=item_digest),
         _status_without_result(AutoCheckName.TESTS, CheckRunStatus.UNAVAILABLE,
-                               "qualified evaluator evidence provider is unavailable"),
-        _run_one(AutoCheckName.SECURITY, security_check, raw_item),
+                               "qualified evaluator evidence provider is unavailable",
+                               item_digest=item_digest),
+        _run_one(AutoCheckName.SECURITY, security_check, raw_item, bound_item_digest=item_digest),
         _status_without_result(AutoCheckName.LICENSE, CheckRunStatus.UNAVAILABLE,
-                               "scoped owner/source rights evidence provider is unavailable"),
-        _run_one(AutoCheckName.PROVENANCE, provenance_check, raw_item,
+                               "scoped owner/source rights evidence provider is unavailable",
+                               item_digest=item_digest),
+        _run_one(AutoCheckName.PROVENANCE, provenance_check, raw_item, bound_item_digest=item_digest,
                  manifest_path=source_manifest_path,
                  expected_manifest_digest=source_manifest_digest),
-        _run_one(AutoCheckName.DUPLICATE, duplicate_check, raw_item,
+        _run_one(AutoCheckName.DUPLICATE, duplicate_check, raw_item, bound_item_digest=item_digest,
                  corpus_items=corpus_items),
-        _run_one(AutoCheckName.LEAKAGE, leakage_check, raw_item,
+        _run_one(AutoCheckName.LEAKAGE, leakage_check, raw_item, bound_item_digest=item_digest,
                  group_assignments=group_assignments),
     ]
     return CheckRunReport(tuple(records))

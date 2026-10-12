@@ -9,14 +9,15 @@ import unittest
 from unittest.mock import patch
 
 from guru.quality.gate import batch_decision, classify_tier, item_decision, promote_if_sensitive
-from guru.schemas.quality import AdmissionDecision, AutoCheckName, QualityTier
+from guru.schemas.quality import AdmissionDecision, AutoCheckName, ItemAdmission, QualityTier
 from guru.schemas.experiment import Arm, ArmResult, CostLine, EvalMetrics, Experiment, REQUIRED_COST_CATEGORIES
 from guru.quality.calibration import track_reviewer_agreement
 from pydantic import ValidationError
 
 
 def checks(*, failed: AbstractSet[AutoCheckName] = frozenset()) -> list[dict[str, Any]]:
-    return [{"name": name, "passed": name not in failed, "evidence_digest": "b" * 64}
+    return [{"name": name, "passed": name not in failed, "item_digest": "b" * 64,
+             "evidence_digest": "c" * 64}
             for name in AutoCheckName]
 
 
@@ -28,37 +29,38 @@ def review(accepted: bool = True, tier: QualityTier = QualityTier.A) -> dict[str
 class QualityGateTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = TemporaryDirectory()
-        self.audit = patch("guru.quality.gate.AUDIT_PATH", Path(self.temp.name) / "quality.jsonl")
+        self.audit_path = Path(self.temp.name) / "quality.jsonl"
+        self.audit = patch("guru.quality.gate.AUDIT_PATH", self.audit_path)
         self.audit.start()
         self.addCleanup(self.audit.stop)
         self.addCleanup(self.temp.cleanup)
 
     def test_tier_a_requires_accepted_review(self) -> None:
-        self.assertEqual(item_decision(item_id="a", item_digest="a" * 64, tier=QualityTier.A, auto_checks=checks(),
+        self.assertEqual(item_decision(item_id="a", item_digest="b" * 64, tier=QualityTier.A, auto_checks=checks(),
                                        human_review=None).decision, AdmissionDecision.REJECT)
         self.assertEqual(item_decision(item_id="b", item_digest="b" * 64, tier=QualityTier.A, auto_checks=checks(),
                                        human_review=review(True)).decision, AdmissionDecision.ADMIT)
 
     def test_tier_b_followup_and_rejected_review_paths(self) -> None:
-        pending = item_decision(item_id="b1", item_digest="1" * 64, tier=QualityTier.B, auto_checks=checks(), human_review=None)
-        rejected = item_decision(item_id="b2", item_digest="2" * 64, tier=QualityTier.B, auto_checks=checks(),
+        pending = item_decision(item_id="b1", item_digest="b" * 64, tier=QualityTier.B, auto_checks=checks(), human_review=None)
+        rejected = item_decision(item_id="b2", item_digest="b" * 64, tier=QualityTier.B, auto_checks=checks(),
                                   human_review=review(False, QualityTier.B))
         self.assertEqual(pending.decision, AdmissionDecision.ADMIT_WITH_FOLLOWUP)
         self.assertEqual(rejected.decision, AdmissionDecision.REJECT)
 
     def test_tier_c_auto_admits(self) -> None:
-        result = item_decision(item_id="c", item_digest="c" * 64, tier=QualityTier.C, auto_checks=checks(), human_review=None)
+        result = item_decision(item_id="c", item_digest="b" * 64, tier=QualityTier.C, auto_checks=checks(), human_review=None)
         self.assertEqual(result.decision, AdmissionDecision.ADMIT)
 
     def test_failed_auto_check_rejects_a_b_and_quarantines_c(self) -> None:
         failed = {AutoCheckName.SECURITY}
-        self.assertEqual(item_decision(item_id="a", item_digest="a" * 64, tier=QualityTier.A,
+        self.assertEqual(item_decision(item_id="a", item_digest="b" * 64, tier=QualityTier.A,
                                        auto_checks=checks(failed=failed), human_review=review()).decision,
                          AdmissionDecision.REJECT)
         self.assertEqual(item_decision(item_id="b", item_digest="b" * 64, tier=QualityTier.B,
                                        auto_checks=checks(failed=failed), human_review=None).decision,
                          AdmissionDecision.REJECT)
-        self.assertEqual(item_decision(item_id="c", item_digest="c" * 64, tier=QualityTier.C,
+        self.assertEqual(item_decision(item_id="c", item_digest="b" * 64, tier=QualityTier.C,
                                        auto_checks=checks(failed=failed), human_review=None).decision,
                          AdmissionDecision.QUARANTINE)
 
@@ -86,7 +88,7 @@ class QualityGateTests(unittest.TestCase):
 
     def test_all_decisions_are_logged_without_item_content(self) -> None:
         path = Path(self.temp.name) / "quality.jsonl"
-        decision = item_decision(item_id="item-7", item_digest="7" * 64, tier=QualityTier.C,
+        decision = item_decision(item_id="item-7", item_digest="b" * 64, tier=QualityTier.C,
                                  auto_checks=checks(), human_review=None)
         records = [json.loads(line) for line in path.read_text().splitlines()]
         self.assertEqual(len(records), 1)
@@ -99,6 +101,29 @@ class QualityGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "item_digest"):
             item_decision(item_id="item", item_digest="not-a-digest", tier=QualityTier.C,
                           auto_checks=checks(), human_review=None)
+
+    def test_item_decision_rejects_checks_bound_to_another_item(self) -> None:
+        mismatched = checks()
+        mismatched[0]["item_digest"] = "d" * 64
+        with self.assertRaisesRegex(ValueError, "bind to the decision item_digest"):
+            item_decision(item_id="item", item_digest="b" * 64, tier=QualityTier.C,
+                          auto_checks=mismatched, human_review=None)
+        self.assertFalse(self.audit_path.exists())
+
+    def test_auto_check_schema_requires_an_item_binding(self) -> None:
+        unbound = checks()
+        for check in unbound:
+            check.pop("item_digest")
+        with self.assertRaises(ValidationError):
+            item_decision(item_id="item", item_digest="b" * 64, tier=QualityTier.C,
+                          auto_checks=unbound, human_review=None)
+
+    def test_item_admission_schema_rejects_mismatched_check_bindings(self) -> None:
+        with self.assertRaises(ValidationError):
+            ItemAdmission(
+                item_id="item", tier=QualityTier.C, auto_checks=checks(),
+                decision=AdmissionDecision.ADMIT, item_digest="d" * 64,
+            )
 
     def test_experiment_requires_every_cost_and_baseline_arm(self) -> None:
         costs = {name: CostLine(amount=None, not_applicable_reason="not incurred")

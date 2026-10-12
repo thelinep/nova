@@ -31,8 +31,9 @@ class ResourceLimits(StrictModel):
 class EvaluationCaseEvidence(StrictModel):
     """One immutable test-case outcome; stdout/stderr content is never stored."""
 
-    schema_version: Literal["guru-evaluator-case-v1"] = "guru-evaluator-case-v1"
+    schema_version: Literal["guru-evaluator-case-v2"] = "guru-evaluator-case-v2"
     case_id: str = Field(min_length=1, max_length=256)
+    item_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     task_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     candidate_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     test_digest: str = Field(pattern=r"^[0-9a-f]{64}$")

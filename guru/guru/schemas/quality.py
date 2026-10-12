@@ -40,6 +40,7 @@ class AdmissionDecision(str, Enum):
 class AutoCheckResult(StrictModel):
     name: AutoCheckName
     passed: bool
+    item_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     evidence_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     detail_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
@@ -70,6 +71,12 @@ class ItemAdmission(StrictModel):
         if len(names) != len(set(names)) or set(names) != REQUIRED_AUTO_CHECKS:
             raise ValueError("auto_checks must contain each of the 8 required names exactly once")
         return checks
+
+    @model_validator(mode="after")
+    def checks_bind_to_admitted_item(self) -> ItemAdmission:
+        if any(check.item_digest != self.item_digest for check in self.auto_checks):
+            raise ValueError("every auto_check item_digest must match the admitted item_digest")
+        return self
 
 
 class BatchAdmission(StrictModel):

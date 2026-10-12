@@ -29,13 +29,15 @@ HEX_B = "b" * 64
 HEX_C = "c" * 64
 HEX_D = "d" * 64
 HEX_E = "e" * 64
+HEX_F = "f" * 64
 
 
 def case_record(**overrides) -> dict:
     now = datetime.now(timezone.utc)
     record = {
-        "schema_version": "guru-evaluator-case-v1",
+        "schema_version": "guru-evaluator-case-v2",
         "case_id": "case-001",
+        "item_digest": HEX_F,
         "task_digest": HEX_A,
         "candidate_digest": HEX_B,
         "test_digest": HEX_C,
@@ -75,7 +77,8 @@ def sealed(**overrides) -> EvaluationCaseEvidence:
 
 class EvaluatorEvidenceSchemaTests(unittest.TestCase):
     def test_malformed_sha256_fields_are_rejected(self):
-        for field, value in (("task_digest", "not-a-digest"), ("stdout_digest", "A" * 64),
+        for field, value in (("item_digest", "not-a-digest"), ("task_digest", "not-a-digest"),
+                             ("stdout_digest", "A" * 64),
                              ("candidate_digest", "f" * 63)):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 seal_case(case_record(**{field: value}))
@@ -91,31 +94,37 @@ class EvaluatorEvidenceSchemaTests(unittest.TestCase):
     def test_completed_pass_and_fail_are_distinct(self):
         passed = sealed()
         failed = seal_case(case_record(status="fail", exit_code=1))
-        self.assertTrue(map_evidence_to_tests_check(passed).passed)
-        self.assertFalse(map_evidence_to_tests_check(failed).passed)
+        passed_check = map_evidence_to_tests_check(passed, expected_item_digest=HEX_F)
+        failed_check = map_evidence_to_tests_check(failed, expected_item_digest=HEX_F)
+        self.assertTrue(passed_check.passed)
+        self.assertFalse(failed_check.passed)
+        self.assertEqual(passed_check.item_digest, HEX_F)
+        self.assertEqual(failed_check.item_digest, HEX_F)
+        self.assertFalse(map_evidence_to_tests_check(passed, expected_item_digest=HEX_A).passed)
 
     def test_statuses_distinguish_unavailable_infrastructure_timeout_cancel_and_completion(self):
         for status in ("unavailable", "infrastructure_error", "timeout", "cancelled"):
             item = seal_case(case_record(status=status, exit_code=None))
             self.assertIs(item.status, CaseStatus(status))
-            self.assertFalse(map_evidence_to_tests_check(item).passed)
+            self.assertFalse(map_evidence_to_tests_check(item, expected_item_digest=HEX_F).passed)
 
     def test_incomplete_or_truncated_pass_never_yields_tests_pass(self):
-        self.assertFalse(map_evidence_to_tests_check(sealed(output_limited=True)).passed)
-        self.assertFalse(map_evidence_to_tests_check(sealed(stdout_truncated=True)).passed)
-        self.assertFalse(map_evidence_to_tests_check(sealed(stderr_truncated=True)).passed)
-        self.assertFalse(map_evidence_to_tests_check(sealed(status="infrastructure_error", exit_code=None)).passed)
+        self.assertFalse(map_evidence_to_tests_check(sealed(output_limited=True), expected_item_digest=HEX_F).passed)
+        self.assertFalse(map_evidence_to_tests_check(sealed(stdout_truncated=True), expected_item_digest=HEX_F).passed)
+        self.assertFalse(map_evidence_to_tests_check(sealed(stderr_truncated=True), expected_item_digest=HEX_F).passed)
+        self.assertFalse(map_evidence_to_tests_check(sealed(status="infrastructure_error", exit_code=None),
+                                                    expected_item_digest=HEX_F).passed)
 
     def test_malformed_or_tampered_record_never_yields_tests_pass(self):
         malformed = case_record(task_digest="invalid")
-        self.assertFalse(map_evidence_to_tests_check(malformed).passed)
+        self.assertFalse(map_evidence_to_tests_check(malformed, expected_item_digest=HEX_F).passed)
         item = sealed()
-        self.assertTrue(map_evidence_to_tests_check(item).passed)
+        self.assertTrue(map_evidence_to_tests_check(item, expected_item_digest=HEX_F).passed)
         tampered = item.model_dump(mode="json")
         tampered["candidate_digest"] = HEX_C
-        self.assertFalse(map_evidence_to_tests_check(tampered).passed)
+        self.assertFalse(map_evidence_to_tests_check(tampered, expected_item_digest=HEX_F).passed)
         wrong_parent = seal_case(case_record(), previous_record_digest=HEX_E)
-        self.assertFalse(map_evidence_to_tests_check(wrong_parent).passed)
+        self.assertFalse(map_evidence_to_tests_check(wrong_parent, expected_item_digest=HEX_F).passed)
 
     def test_schema_rejects_arbitrary_raw_output_fields(self):
         with self.assertRaises(ValueError):
@@ -134,8 +143,17 @@ class EvaluatorEvidencePersistenceTests(unittest.TestCase):
         append_case_atomic(self.path, second)
         replay = replay_cases(self.path)
         self.assertEqual([r.case_id for r in replay], ["case-001", "case-002"])
+        self.assertEqual(replay[0].item_digest, HEX_F)
+        self.assertEqual(replay[1].item_digest, HEX_F)
         self.assertEqual(replay[1].previous_record_digest, item.record_digest)
-        self.assertTrue(map_evidence_to_tests_check(replay[1], expected_previous_record_digest=item.record_digest).passed)
+        self.assertTrue(map_evidence_to_tests_check(
+            replay[1], expected_item_digest=HEX_F,
+            expected_previous_record_digest=item.record_digest,
+        ).passed)
+        self.assertFalse(map_evidence_to_tests_check(
+            replay[1], expected_item_digest=HEX_E,
+            expected_previous_record_digest=item.record_digest,
+        ).passed)
         persisted = self.path.read_bytes()
         self.assertNotIn(b"raw stdout", persisted)
         self.assertNotIn(b"raw stderr", persisted)

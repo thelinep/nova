@@ -80,6 +80,8 @@ def item_decision(*, item_id: str, item_digest: str, tier: QualityTier,
               for check in auto_checks]
     if {check.name for check in checks} != REQUIRED_AUTO_CHECKS or len(checks) != len(REQUIRED_AUTO_CHECKS):
         raise QualityInputError("all eight unique automatic checks are required")
+    if any(check.item_digest != item_digest for check in checks):
+        raise QualityInputError("every automatic check must bind to the decision item_digest")
     review = (human_review if isinstance(human_review, HumanReviewRecord)
               else HumanReviewRecord.model_validate(human_review) if human_review is not None else None)
     if review is not None and review.tier is not tier:

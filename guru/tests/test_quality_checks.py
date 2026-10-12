@@ -67,6 +67,7 @@ def test_schema_check_passes_and_hashes_unicode_input():
     result = checks.schema_check(_item())
     assert result.name is AutoCheckName.SCHEMA
     assert result.passed is True
+    assert result.item_digest == checks._item_binding(_item())
     assert result.evidence_digest and len(result.evidence_digest) == 64
 
 
@@ -76,6 +77,7 @@ def test_schema_check_fails_invalid_corpus_item():
     result = checks.schema_check(raw)
     assert result.name is AutoCheckName.SCHEMA
     assert result.passed is False
+    assert result.item_digest == checks._item_binding(raw)
     assert result.evidence_digest
 
 
@@ -133,6 +135,48 @@ def test_combined_security_check_is_one_fail_closed_security_result():
     assert checks.security_check(_item()).passed is True
     assert checks.security_check(_item(target="<think>reasoning</think>")).passed is False
     assert checks.security_check(_item(target="token = 'AKIA1234567890ABCDEF'")).passed is False
+
+
+def test_each_direct_producer_binds_exact_canonical_item_digest(tmp_path):
+    manifest_path, manifest_digest, source_digest = _source_manifest(tmp_path)
+    item = _item(source_digest=source_digest)
+    item_digest = checks._item_binding(item)
+    results = [
+        checks.schema_check(item),
+        checks.syntax_check(item),
+        checks.no_cot_check(item),
+        checks.secret_check(item),
+        checks.security_check(item),
+        checks.provenance_check(item, manifest_path=manifest_path,
+                                expected_manifest_digest=manifest_digest),
+        checks.duplicate_check(item, corpus_items=[]),
+        checks.leakage_check(item, group_assignments={"family-1": "train"}),
+    ]
+    assert all(result.item_digest == item_digest for result in results)
+
+
+def test_item_mutation_changes_binding_and_stales_prior_check_evidence():
+    from guru.quality import gate
+
+    original = _item()
+    changed = _item(target="print('changed')\n")
+    old_result = checks.syntax_check(original)
+    old_digest = checks._item_binding(original)
+    changed_digest = checks._item_binding(changed)
+    assert old_digest != changed_digest
+    assert old_result.item_digest == old_digest
+    current_checks = [
+        checks.AutoCheckResult(name=name, passed=True, item_digest=changed_digest,
+                               evidence_digest="a" * 64)
+        for name in AutoCheckName
+    ]
+    stale_index = next(index for index, check in enumerate(current_checks)
+                       if check.name is old_result.name)
+    current_checks[stale_index] = old_result
+    with pytest.raises(gate.QualityInputError, match="bind to the decision item_digest"):
+        gate.item_decision(item_id="item-1", item_digest=changed_digest,
+                           tier=QualityTier.C, auto_checks=current_checks,
+                           human_review=None)
 
 
 def test_provenance_requires_pinned_manifest_and_matches_digest_membership():
@@ -221,6 +265,8 @@ def test_runner_reports_tri_state_and_never_converts_incomplete_checks():
         item, corpus_items=[item], group_assignments={"family-1": "train"}
     )
     statuses = {record.name: record.status for record in report.records}
+    expected_item_digest = checks._item_binding(item)
+    assert all(record.item_digest == expected_item_digest for record in report.records)
     assert statuses[AutoCheckName.SCHEMA] is checks.CheckRunStatus.PASS
     assert statuses[AutoCheckName.SECURITY] is checks.CheckRunStatus.PASS
     assert statuses[AutoCheckName.TESTS] is checks.CheckRunStatus.UNAVAILABLE
@@ -233,6 +279,8 @@ def test_runner_reports_tri_state_and_never_converts_incomplete_checks():
 def test_runner_marks_missing_required_inputs_unavailable():
     report = checks.run_deterministic_checks(_item())
     statuses = {record.name: record.status for record in report.records}
+    expected_item_digest = checks._item_binding(_item())
+    assert all(record.item_digest == expected_item_digest for record in report.records)
     assert statuses[AutoCheckName.PROVENANCE] is checks.CheckRunStatus.UNAVAILABLE
     assert statuses[AutoCheckName.DUPLICATE] is checks.CheckRunStatus.UNAVAILABLE
     assert statuses[AutoCheckName.LEAKAGE] is checks.CheckRunStatus.UNAVAILABLE
@@ -254,6 +302,7 @@ def test_complete_measured_failure_converts_and_quality_gate_quarantines(tmp_pat
             status=(checks.CheckRunStatus.FAIL if name is AutoCheckName.SYNTAX
                     else checks.CheckRunStatus.PASS),
             evidence_digest=(str(index + 1) * 64),
+            item_digest="d" * 64,
             tool_version=checks.TOOL_VERSION,
             policy_version=checks.POLICY_VERSIONS[name],
         )
@@ -263,6 +312,7 @@ def test_complete_measured_failure_converts_and_quality_gate_quarantines(tmp_pat
     auto_checks = report.as_auto_checks()
     assert len(auto_checks) == len(REQUIRED_AUTO_CHECKS)
     assert all(check.passed is (check.name is not AutoCheckName.SYNTAX) for check in auto_checks)
+    assert all(check.item_digest == "d" * 64 for check in auto_checks)
 
     decision = gate.item_decision(
         item_id="synthetic-failed-item",
@@ -276,3 +326,27 @@ def test_complete_measured_failure_converts_and_quality_gate_quarantines(tmp_pat
     audit_rows = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]
     assert len(audit_rows) == 1
     assert audit_rows[0]["decision"] == AdmissionDecision.QUARANTINE.value
+
+
+def test_mixed_item_run_is_rejected_before_any_audit_write(tmp_path, monkeypatch):
+    from guru.quality import gate
+
+    audit_path = tmp_path / "mixed-run-audit.jsonl"
+    monkeypatch.setattr(gate, "AUDIT_PATH", audit_path)
+    records = tuple(
+        checks.CheckStatusRecord(
+            name=name,
+            status=checks.CheckRunStatus.PASS,
+            evidence_digest=(str(index + 1) * 64),
+            item_digest=("a" * 64 if index < len(REQUIRED_AUTO_CHECKS) - 1 else "b" * 64),
+            tool_version=checks.TOOL_VERSION,
+            policy_version=checks.POLICY_VERSIONS[name],
+        )
+        for index, name in enumerate(sorted(REQUIRED_AUTO_CHECKS, key=lambda value: value.value))
+    )
+    mixed_auto_checks = checks.CheckRunReport(records).as_auto_checks()
+    with pytest.raises(gate.QualityInputError, match="bind to the decision item_digest"):
+        gate.item_decision(item_id="synthetic-mixed-item", item_digest="a" * 64,
+                           tier=QualityTier.C, auto_checks=mixed_auto_checks,
+                           human_review=None)
+    assert not audit_path.exists()
