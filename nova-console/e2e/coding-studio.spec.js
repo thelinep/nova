@@ -142,8 +142,15 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
 function codingLoopFlow(rootId) {
   let loop = null;
   let starts = 0;
+  let delayedCancel = false;
+  let cancelPolls = 0;
   return {
-    list: () => loop ? [structuredClone(loop)] : [],
+    list: () => {
+      if (delayedCancel && loop?.status === 'running' && cancelPolls > 0 && ++cancelPolls >= 3) {
+        loop.status = 'cancelled'; loop.phase = null; loop.error = 'Cancelled.';
+      }
+      return loop ? [structuredClone(loop)] : [];
+    },
     start: body => {
       starts++;
       expect(body.rootId).toBe(rootId);
@@ -160,9 +167,11 @@ function codingLoopFlow(rootId) {
       return structuredClone(loop);
     },
     cancel: () => {
-      if (loop) { loop.status = 'cancelled'; loop.phase = null; loop.error = 'Cancelled.'; }
+      if (loop && delayedCancel) cancelPolls = 1;
+      else if (loop) { loop.status = 'cancelled'; loop.phase = null; loop.error = 'Cancelled.'; }
       return structuredClone(loop);
     },
+    deferCancellation: () => { delayedCancel = true; },
     seedReady: batchId => {
       loop = {
         id: 'loop-coding-studio-ready-e2e', type: 'dev-loop', rootId, modelId: 'guru-code-local',
@@ -297,6 +306,28 @@ test('Coding Studio starts, recovers, displays evidence for, and cancels a saved
 
   await page.getByRole('button', { name: 'Cancel test loop' }).click();
   await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'cancelled');
+  await expect(page.locator('#studioLoopStatus')).toContainText('Cancelled.');
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  expect(fs.readFileSync(`${fixtureRoot}/draft.json`, 'utf8')).toContain('0.1.0');
+
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test('Coding Studio keeps a loop running until delayed cancellation is confirmed by polling', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const approvedRoot = { ...root, path: fixtureRoot, commandAllowlist: { repositoryPath: fixtureRoot, actions: ['test'] } };
+  const flow = codingLoopFlow(root.id);
+  flow.deferCancellation();
+  await openStudio(page, { roots: [approvedRoot], loopFlow: flow });
+  await page.getByLabel('Local coding model').selectOption('guru-code-local');
+  await page.getByLabel('What should change?').fill('In feature.js, change enabled to true so the feature is enabled by default.');
+  await page.getByRole('button', { name: 'Run tests and refine' }).click();
+  await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'running');
+
+  await page.getByRole('button', { name: 'Cancel test loop' }).click();
+  await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'running');
+  await expect(page.getByRole('button', { name: 'Cancel test loop' })).toBeVisible();
+  await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'cancelled', { timeout: 5000 });
   await expect(page.locator('#studioLoopStatus')).toContainText('Cancelled.');
   expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
   expect(fs.readFileSync(`${fixtureRoot}/draft.json`, 'utf8')).toContain('0.1.0');
