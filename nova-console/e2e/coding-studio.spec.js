@@ -23,7 +23,7 @@ function qualification(digest, capabilities) {
   };
 }
 
-async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false, agentFlow = null, modelLabel = 'Guru-Code local' } = {}) {
+async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false, agentFlow = null, loopFlow = null, modelLabel = 'Guru-Code local' } = {}) {
   const base = 'http://127.0.0.1:8791';
   const headers = { Origin: base };
   let releasePreview, releasePlan, previewStarted, planStarted;
@@ -105,6 +105,19 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
     expect(body.request).toContain('Keep programming syntax, keywords, and identifiers conventional.');
     return route.fulfill({ status: 201, json: proposal });
   });
+  if (loopFlow) {
+    await page.route('**/api/workspace/loops', async route => {
+      if (route.request().method() === 'GET') return route.fulfill({ json: loopFlow.list() });
+      if (route.request().method() === 'POST') return route.fulfill({ status: 201, json: loopFlow.start(route.request().postDataJSON()) });
+      return route.continue();
+    });
+    await page.route('**/api/workspace/loops/**', async route => {
+      if (route.request().method() === 'POST' && route.request().url().endsWith('/cancel')) {
+        return route.fulfill({ json: loopFlow.cancel() });
+      }
+      return route.continue();
+    });
+  }
 
   await page.goto('/');
   await page.waitForLoadState('networkidle');
@@ -123,6 +136,45 @@ async function openStudio(page, { roots = [], readiness = 'ready', planError = n
     releasePreview: () => releasePreview?.(),
     planHasStarted,
     releasePlan: () => releasePlan?.(),
+  };
+}
+
+function codingLoopFlow(rootId) {
+  let loop = null;
+  let starts = 0;
+  return {
+    list: () => loop ? [structuredClone(loop)] : [],
+    start: body => {
+      starts++;
+      expect(body.rootId).toBe(rootId);
+      expect(body.modelId).toBe('guru-code-local');
+      expect(body.request).toContain('Keep programming syntax, keywords, and identifiers conventional.');
+      expect(body.maxAttempts).toBe(3);
+      loop = {
+        id: 'loop-coding-studio-e2e', type: 'dev-loop', rootId, modelId: body.modelId,
+        request: body.request, maxAttempts: 3, status: 'running', phase: 'attempt 1: running tests',
+        baseline: { status: 'passed', durationMs: 31, outputTail: '2 tests passed' },
+        attempts: [{ number: 1, status: 'testing', plan: { summary: 'Fix the requested behavior.', operations: [{ operation: 'edit', relativePath: 'feature.js' }] }, test: { status: 'failed', durationMs: 18, outputTail: 'Expected true but received false' } }],
+        batchId: null, error: null,
+      };
+      return structuredClone(loop);
+    },
+    cancel: () => {
+      if (loop) { loop.status = 'cancelled'; loop.phase = null; loop.error = 'Cancelled.'; }
+      return structuredClone(loop);
+    },
+    seedReady: batchId => {
+      loop = {
+        id: 'loop-coding-studio-ready-e2e', type: 'dev-loop', rootId, modelId: 'guru-code-local',
+        request: 'Create a tested-output.txt file with the expected content.', maxAttempts: 3,
+        status: 'ready', phase: null,
+        baseline: { status: 'passed', durationMs: 30, outputTail: '2 tests passed before changes' },
+        attempts: [{ number: 1, status: 'passed', plan: { summary: 'Create the requested output.', operations: [{ operation: 'create', relativePath: 'tested-output.txt' }] }, test: { status: 'passed', durationMs: 22, outputTail: '2 tests passed after the change' } }],
+        batchId, batchStatus: 'checks-passed', error: null,
+      };
+      return structuredClone(loop);
+    },
+    get starts() { return starts; },
   };
 }
 
@@ -202,6 +254,82 @@ test('Coding Studio gives a clear empty state when no project is approved', asyn
   await expect(page.getByRole('button', { name: 'Open Local Workspace' })).toBeVisible();
   await expect(page.locator('#studioCreateProposal')).toBeDisabled();
   await expect(page.getByText(/no trained Guru-Code checkpoint/i)).toBeVisible();
+});
+
+test('Coding Studio requires the approved project test-command allowlist', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  await openStudio(page, { roots: [root] });
+
+  await expect(page.getByRole('heading', { name: 'Test and refine in a private copy' })).toBeVisible();
+  await expect(page.getByText('Test command approval required')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Run tests and refine' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Review test command allowlist' }).click();
+  await expect(page.getByRole('heading', { name: 'Local Workspace' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Approve repository command allowlist' })).toBeVisible();
+
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test('Coding Studio starts, recovers, displays evidence for, and cancels a saved test loop', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const approvedRoot = { ...root, path: fixtureRoot, commandAllowlist: { repositoryPath: fixtureRoot, actions: ['test'] } };
+  const flow = codingLoopFlow(root.id);
+  await openStudio(page, { roots: [approvedRoot], loopFlow: flow });
+  await page.getByLabel('Local coding model').selectOption('guru-code-local');
+  await page.getByLabel('What should change?').fill('In feature.js, change enabled to true so the feature is enabled by default.');
+
+  await page.getByRole('button', { name: 'Run tests and refine' }).click();
+  await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'running');
+  await expect(page.locator('#studioLoopStatus')).toContainText('2 tests passed');
+  await expect(page.locator('#studioLoopStatus')).toContainText('Expected true but received false');
+  expect(flow.starts).toBe(1);
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  await page.evaluate(() => {
+    DB.models = [{ id: 'guru-code-local', name: 'Guru-Code local', runtime: 'ollama', digest: 'a'.repeat(64), details: { parameter_size: '7B' }, contextLength: 8192 }];
+  });
+  await page.locator('[data-view="codingstudio"]').click();
+  await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'running');
+  await expect(page.locator('#studioLoopStatus')).toContainText('loop-coding-studio-e2e');
+  await expect(page.locator('#studioLoopStatus')).toContainText('Attempt 1');
+
+  await page.getByRole('button', { name: 'Cancel test loop' }).click();
+  await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'cancelled');
+  await expect(page.locator('#studioLoopStatus')).toContainText('Cancelled.');
+  expect(fs.readFileSync(`${fixtureRoot}/feature.js`, 'utf8')).toContain('false');
+  expect(fs.readFileSync(`${fixtureRoot}/draft.json`, 'utf8')).toContain('0.1.0');
+
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
+});
+
+test('passing test evidence opens only a reviewable batch and leaves approval separate', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  const response = await page.request.post('http://127.0.0.1:8791/api/workspace/change-batches', {
+    headers: { Origin: 'http://127.0.0.1:8791' },
+    data: { rootId: root.id, summary: 'Create a test-verified fixture file', changes: [{ operation: 'create', relativePath: 'tested-output.txt', content: 'verified\n' }] },
+  });
+  expect(response.ok()).toBeTruthy();
+  const batch = await response.json();
+  const flow = codingLoopFlow(root.id);
+  flow.seedReady(batch.id);
+  const approvedRoot = { ...root, path: fixtureRoot, commandAllowlist: { repositoryPath: fixtureRoot, actions: ['test'] } };
+  await openStudio(page, { roots: [approvedRoot], loopFlow: flow });
+
+  await expect(page.locator('#studioLoopStatus')).toHaveAttribute('data-status', 'ready');
+  await expect(page.locator('#studioLoopStatus')).toContainText('Tests passed · batch ready for review');
+  await page.locator('#studioLoopStatus details summary').last().click();
+  await expect(page.getByLabel('Coding Studio test output')).toContainText('2 tests passed after the change');
+  await page.getByRole('button', { name: 'Review tested changes in Local Workspace' }).click();
+  await expect(page.getByRole('heading', { name: 'Local Workspace' })).toBeVisible();
+  await expect(page.getByLabel('Combined batch diff')).toContainText('+verified');
+  await expect(page.getByRole('button', { name: 'Validate entire batch' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Approve exact batch' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Apply atomically' })).toHaveCount(0);
+  expect(fs.existsSync(`${fixtureRoot}/tested-output.txt`)).toBe(false);
+
+  await page.request.delete(`http://127.0.0.1:8791/api/workspace/roots/${encodeURIComponent(root.id)}`, { headers: { Origin: 'http://127.0.0.1:8791' } });
 });
 
 test('unqualified model is identified and blocked by the read-only readiness gate', async ({ page }) => {

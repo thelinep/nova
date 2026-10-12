@@ -53,6 +53,22 @@ Press **Review exact diff and checks in Local Workspace** to inspect the existin
 
 If the project or request changes after the readiness check, check readiness again. If planning reports stale source, an unavailable model, or invalid output, the proposal remains blocked and the project is not written.
 
+## Run tests and refine a change
+
+For an existing project, **Run tests and refine** uses its own approved
+development loop. The project's `test` command must first be explicitly
+allowlisted in Local Workspace for that exact folder. The loop runs the
+baseline tests, then gives the selected local model up to three bounded
+attempts in a private working copy. You can inspect the baseline and attempt
+outputs, cancel a running loop, and reopen a saved loop after navigating away
+or reloading Coding Studio.
+
+If the tests pass, Maataa prepares a normal change batch from the private copy.
+Open it in Local Workspace, validate the full batch, approve that exact batch,
+and apply it as separate steps. A passing test loop does not itself approve or
+write to the project. Failed, cancelled, interrupted, or conflicting loops do
+not create an applied project change.
+
 ## Brahmi and Guru-Code status
 
 The optional Brahmi setting asks for comments and explanatory text in Brahmi. Programming syntax, keywords and identifiers remain conventional. This output is experimental and may be incomplete; inspect the exact diff and run suitable project checks.

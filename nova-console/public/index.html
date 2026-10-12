@@ -5039,9 +5039,10 @@ let workspaceSelectedProjectId = null;
 let workspaceRunPoll = null;
 let workspaceSelectedLoopId = null;
 let workspaceLoopPoll = null;
-let codingStudioState = { rootId:null, modelId:null, request:'', brahmiComments:true, readiness:null, proposal:null, agentTaskId:null, agentReason:'', agentFeedback:'', error:'', busy:'' };
+let codingStudioState = { rootId:null, modelId:null, request:'', brahmiComments:true, readiness:null, proposal:null, agentTaskId:null, agentReason:'', agentFeedback:'', loopId:null, loopError:'', error:'', busy:'' };
 let codingStudioRevision = 0;
 let codingStudioPollTimer = null;
+let codingStudioLoopPollTimer = null;
 let appBuilderState = { description:'', template:'', parentRootId:null, modelId:null, maxAttempts:3, buildId:null, build:null, run:null, busy:'', error:'', templates:null, projectsFolder:'' };
 let appBuilderPollTimer = null;
 async function appBuilderPost(url, body){
@@ -5184,6 +5185,12 @@ async function renderCodingStudioView(){
   if(!roots.some(root=>root.id===codingStudioState.rootId))codingStudioState.rootId=roots[0]?.id||null;
   const localModels=(DB.models||[]).filter(model=>model.runtime==='ollama'&&!model.example);
   if(!localModels.some(model=>model.id===codingStudioState.modelId))codingStudioState.modelId=localModels[0]?.id||null;
+  let codingLoops=[];
+  try{const response=await fetch(apiUrl('/api/workspace/loops'));if(response.ok)codingLoops=(await response.json()).filter(loop=>loop.rootId===codingStudioState.rootId);}catch(_){}
+  if(!codingLoops.some(loop=>loop.id===codingStudioState.loopId))codingStudioState.loopId=codingLoops.find(loop=>loop.status==='running')?.id||codingLoops[0]?.id||null;
+  const codingLoop=codingLoops.find(loop=>loop.id===codingStudioState.loopId)||null;
+  const selectedRoot=roots.find(root=>root.id===codingStudioState.rootId)||null;
+  const codingLoopTestAllowed=!!selectedRoot&&selectedRoot.commandAllowlist?.repositoryPath===selectedRoot.path&&selectedRoot.commandAllowlist?.actions?.includes('test');
   const qualificationsByDigest=new Map(qualifications.map(record=>[String(record.digest||'').replace(/^sha256:/i,''),record]));
   const selectedModel=localModels.find(model=>model.id===codingStudioState.modelId);
   const rootOptions=roots.map(root=>`<option value="${escapeHtml(root.id)}" ${root.id===codingStudioState.rootId?'selected':''}>${escapeHtml(root.label||root.path)} — ${escapeHtml(root.path)}</option>`).join('');
@@ -5234,6 +5241,10 @@ async function renderCodingStudioView(){
   const noRoots=!roots.length;
   const noModels=!localModels.length;
   const codingAgentActive=['queued','assigned','running'].includes(agentTask?.state)||!!activeTaskSummary;
+  const codingLoopRunning=codingLoop?.status==='running';
+  const codingLoopBadge=status=>status==='ready'?'badge-green':status==='running'?'badge-amber':['attempts-exhausted','error','conflict','checks-failed','cancelled','interrupted'].includes(status)?'badge-red':'';
+  const codingLoopAttempts=(codingLoop?.attempts||[]).map(attempt=>`<details style="padding:7px 0;border-top:1px solid var(--line-soft)" ${attempt===codingLoop.attempts[codingLoop.attempts.length-1]?'open':''}><summary><span class="badge ${attempt.status==='passed'?'badge-green':['tests-failed','apply-failed','plan-failed'].includes(attempt.status)?'badge-red':'badge-amber'}">${escapeHtml(attempt.status)}</span> Attempt ${attempt.number}${attempt.test?` · tests ${escapeHtml(attempt.test.status)}`:''}</summary>${attempt.plan?`<div class="coding-studio-meta" style="margin:6px 0">${escapeHtml(attempt.plan.summary||'')}${(attempt.plan.operations||[]).length?` · ${(attempt.plan.operations||[]).map(op=>escapeHtml(`${op.operation} ${op.relativePath}`)).join(', ')}`:''}</div>`:''}${attempt.applyError?`<p class="empty-hint">${escapeHtml(attempt.applyError)}</p>`:''}${(attempt.syntaxErrors||[]).length?`<pre class="coding-studio-code">${escapeHtml(attempt.syntaxErrors.join('\n'))}</pre>`:''}${attempt.test?`<details style="margin-top:6px"><summary>Test output · ${escapeHtml(attempt.test.status)} · ${attempt.test.durationMs||0} ms</summary><pre class="coding-studio-code" aria-label="Coding Studio test output">${escapeHtml(attempt.test.outputTail||'(no output)')}</pre></details>`:''}</details>`).join('');
+  const codingLoopHtml=`<section class="panel" id="studioTestLoop" style="padding:18px;margin-bottom:14px" aria-labelledby="studioTestLoopTitle"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div><h2 id="studioTestLoopTitle" style="font-size:16px;margin:0 0 5px">Test and refine in a private copy</h2><p class="empty-hint" style="margin:0">Maataa checks the project's tests before and after bounded model attempts in a private copy. Passing tests create a reviewable change batch; your project remains unchanged until you separately validate, approve, and apply it.</p></div><span class="badge">Human approval required</span></div>${codingLoopTestAllowed?'':`<div class="coding-studio-state" style="margin-top:10px" data-tone="bad"><strong>Test command approval required</strong><div class="empty-hint" style="margin-top:4px">Allowlist this project's test command in Local Workspace before starting a test loop.</div><button type="button" class="btn btn-line" id="studioLoopOpenAllowlist" style="margin-top:8px" ${noRoots?'disabled':''}>Review test command allowlist</button></div>`}${codingStudioState.loopError?`<div class="coding-studio-state" data-tone="bad" role="alert" style="margin-top:10px">${escapeHtml(codingStudioState.loopError)}</div>`:''}${codingLoop?`<article class="coding-studio-state" id="studioLoopStatus" data-status="${escapeHtml(codingLoop.status)}" role="status" aria-live="polite" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>${escapeHtml(codingLoop.status==='running'?'Test loop in progress':codingLoop.status==='ready'?'Tests passed · batch ready for review':`Test loop · ${codingLoop.status}`)}</strong><span class="badge ${codingLoopBadge(codingLoop.status)}">${escapeHtml(codingLoop.status)}</span></div><div class="coding-studio-meta" style="margin-top:6px"><span>${escapeHtml(codingLoop.id)}</span><span>Model ${escapeHtml(codingLoop.modelId||'selected local model')}</span>${codingLoop.phase?`<span>Now: ${escapeHtml(codingLoop.phase)}</span>`:''}<span>${(codingLoop.attempts||[]).length}/${codingLoop.maxAttempts} attempts</span></div>${codingLoop.error?`<p class="empty-hint">${escapeHtml(codingLoop.error)}</p>`:''}${codingLoop.baseline?`<details style="margin-top:8px"><summary>Baseline tests · <span class="badge ${codingLoop.baseline.status==='passed'?'badge-green':'badge-red'}">${escapeHtml(codingLoop.baseline.status)}</span> · ${codingLoop.baseline.durationMs||0} ms</summary><pre class="coding-studio-code" aria-label="Baseline test output">${escapeHtml(codingLoop.baseline.outputTail||'(no output)')}</pre></details>`:''}${codingLoopAttempts}${codingLoop.status==='running'?'<div class="coding-studio-actions" style="margin-top:10px"><button type="button" class="btn btn-line" id="studioLoopCancel">Cancel test loop</button></div>':''}${codingLoop.batchId?'<div class="coding-studio-actions" style="margin-top:10px"><button type="button" class="btn btn-amber" id="studioLoopOpenBatch">Review tested changes in Local Workspace</button></div><div class="empty-hint" style="margin-top:5px">Tests are evidence for the private copy. Maataa still requires separate batch validation, your approval, and an explicit apply.</div>':''}</article>`:''}<div class="coding-studio-actions" style="margin-top:12px"><button type="button" class="btn btn-line" id="studioLoopStart" ${!selectedRoot||!selectedModel||!codingLoopTestAllowed||noModels||codingStudioState.busy||codingLoopRunning?'disabled':''}>${codingStudioState.busy==='loop-start'?'Starting test loop…':'Run tests and refine'}</button><span class="empty-hint">Uses the task and local model selected above. Limit: 3 attempts. No changes are written to the approved project.</span></div></section>`;
   pad.innerHTML=`<div class="view-head"><div><h1 class="view-title">Coding Studio</h1><p class="view-desc">Give one approved local project a bounded coding task. Inspect the exact proposal in Local Workspace; Maataa checks it before you approve any write.</p></div></div>
     ${loadError?`<div class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(loadError)}</div>`:''}
     ${appBuilderPanelHtml(roots,localModels,qualificationsByDigest)}
@@ -5249,6 +5260,7 @@ async function renderCodingStudioView(){
         ${codingStudioState.error?`<div id="studioError" class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(codingStudioState.error)}<div class="empty-hint" style="margin-top:5px">Your project was not changed. Correct the request or refresh readiness before trying again.</div></div>`:''}
       </div>
     </section>
+    ${codingLoopHtml}
     ${proposal?`<section class="panel" id="studioProposal" style="padding:18px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div><h2 style="font-size:16px;margin:0 0 5px">Proposal ready for review</h2><div class="empty-hint">${escapeHtml(proposal.summary||proposal.impact||'Maataa prepared a code-change proposal.')}</div></div><span class="badge badge-amber">${escapeHtml(proposal.status||'draft')}</span></div><div class="coding-studio-meta" style="margin:10px 0"><span>Model: ${escapeHtml(proposal.modelId||selectedModel?.name||codingStudioState.modelId||'selected local model')}</span><span>Files: ${(proposal.changes||proposal.orderedFiles||[]).length}</span><span>No project write has occurred</span></div>${proposalChanges}<div class="coding-studio-actions" style="margin-top:12px"><button type="button" class="btn btn-amber" id="studioReviewProposal">Review exact diff and checks in Local Workspace</button><span class="empty-hint">The proposal must pass checks and receive your approval before Maataa can apply it.</span></div></section>`:''}
     <section class="panel" style="padding:18px;margin-bottom:14px"><h2 style="font-size:16px;margin:0 0 12px">Model readiness</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px">${guruHtml}<div class="coding-studio-state"><strong>Selected Ollama model</strong><div class="coding-studio-meta" style="margin-top:6px">${modelSummary}</div><div class="empty-hint" style="margin-top:6px">Maataa checks digest qualification, workflow size, model template and context for this exact request.</div></div></div></section>
     <section class="panel" style="padding:18px;margin-bottom:14px"><h2 style="font-size:16px;margin:0 0 12px">Multi-agent team</h2>${teamHtml}</section>`;
@@ -5267,13 +5279,25 @@ async function renderCodingStudioView(){
     const check=$('studioCheckReadiness');if(check)check.disabled=!codingStudioState.rootId||!codingStudioState.modelId||!codingStudioState.request.trim();
     $('studioProposal')?.remove();$('studioError')?.remove();
   };
-  ['studioRoot','studioModel','studioRequest','studioBrahmiComments'].forEach(id=>{const el=$(id);if(el)el.addEventListener(el.tagName==='TEXTAREA'?'input':'change',invalidate);});
+  ['studioRoot','studioModel','studioRequest','studioBrahmiComments'].forEach(id=>{const el=$(id);if(el)el.addEventListener(el.tagName==='TEXTAREA'?'input':'change',()=>{invalidate();if(id==='studioRoot')renderCodingStudioView();});});
   const runJson=async(url,body)=>{
     const response=await fetch(apiUrl(url),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await response.json().catch(()=>({error:'Maataa returned an unreadable response.'}));
     if(!response.ok)throw new Error(data.error||`Request failed (${response.status}).`);
     return data;
   };
+  if($('studioLoopStart'))$('studioLoopStart').onclick=async()=>{
+    if(codingStudioState.busy||!selectedRoot||!selectedModel||!codingLoopTestAllowed||codingLoopRunning)return;
+    codingStudioState.rootId=$('studioRoot').value||null;codingStudioState.modelId=$('studioModel').value||null;codingStudioState.request=$('studioRequest').value;codingStudioState.brahmiComments=$('studioBrahmiComments').checked;
+    if(!codingStudioState.request.trim()){codingStudioState.loopError='Describe a specific file and behavior before starting.';return renderCodingStudioView();}
+    codingStudioState.busy='loop-start';codingStudioState.loopError='';await renderCodingStudioView();
+    try{const loop=await runJson('/api/workspace/loops',{rootId:codingStudioState.rootId,modelId:codingStudioState.modelId,request:codingStudioTaskText(),maxAttempts:3});codingStudioState.loopId=loop.id;}
+    catch(error){codingStudioState.loopError=error.message;}
+    finally{codingStudioState.busy='';await renderCodingStudioView();}
+  };
+  if($('studioLoopOpenAllowlist'))$('studioLoopOpenAllowlist').onclick=()=>{if(!selectedRoot)return;workspaceSelectedRootId=selectedRoot.id;showView('workspace');setTimeout(()=>document.getElementById('workspaceAllowCommands')?.scrollIntoView({behavior:'smooth',block:'center'}),400);};
+  if($('studioLoopCancel'))$('studioLoopCancel').onclick=async()=>{try{await runJson('/api/workspace/loops/'+encodeURIComponent(codingLoop.id)+'/cancel',{});codingStudioState.loopError='';await renderCodingStudioView();}catch(error){codingStudioState.loopError=error.message;await renderCodingStudioView();}};
+  if($('studioLoopOpenBatch'))$('studioLoopOpenBatch').onclick=()=>{if(!codingLoop?.batchId)return;workspaceSelectedRootId=codingLoop.rootId;workspaceSelectedBatchId=codingLoop.batchId;showView('workspace');setTimeout(()=>[...document.querySelectorAll('.workspace-batch')].find(node=>node.dataset.id===codingLoop.batchId)?.scrollIntoView({behavior:'smooth',block:'center'}),500);};
   if($('studioDispatchAgent'))$('studioDispatchAgent').onclick=async()=>{
     if(!codingStudioState.readiness?.ready||codingStudioState.busy)return;
     codingStudioState.rootId=$('studioRoot').value||null;codingStudioState.modelId=$('studioModel').value||null;codingStudioState.request=$('studioRequest').value;codingStudioState.brahmiComments=$('studioBrahmiComments').checked;
@@ -5350,6 +5374,8 @@ async function renderCodingStudioView(){
   bindAppBuilder();
   if(codingStudioPollTimer){clearTimeout(codingStudioPollTimer);codingStudioPollTimer=null;}
   if(agentTask&&['queued','assigned','running'].includes(agentTask.state))codingStudioPollTimer=setTimeout(()=>{if(currentView==='codingstudio'&&codingStudioState.agentTaskId===agentTask.id)renderCodingStudioView();},1500);
+  if(codingStudioLoopPollTimer){clearTimeout(codingStudioLoopPollTimer);codingStudioLoopPollTimer=null;}
+  if(codingLoopRunning)codingStudioLoopPollTimer=setTimeout(()=>{codingStudioLoopPollTimer=null;if(currentView==='codingstudio'&&codingStudioState.loopId===codingLoop.id)renderCodingStudioView();},1500);
 }
 function workspaceBytes(bytes){ return bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KB':(bytes/1048576).toFixed(1)+' MB'; }
 function workspaceCitation(item){ return `<button class="tag-chip workspace-citation" data-citation="${escapeHtml(item.citation)}" title="Copy file citation">${escapeHtml(item.relativePath)}:${item.line||1}</button>`; }
