@@ -10,6 +10,7 @@
   code-data  disabled: persistent transformed-data export is denied by I7
   code-eval  disabled: source rights and qualified local evaluator are required
   trainer-stack-preflight compare installed Python/package pins with the draft Qwen2 LoRA stack
+  student-intake-preflight bind a supplied local student-base intake to the selected recipe
   ask        let a trained model continue text or answer
   check      run Guru-Panini on a piece of text (script and Ashtadhyayi citations)
   sutra      show Ashtadhyayi sutras by number, or find them by words
@@ -58,6 +59,12 @@ def main(argv=None):
         "trainer-stack-preflight",
         help="compare installed stack pins; does not load artifacts or train",
     )
+    si = sub.add_parser(
+        "student-intake-preflight",
+        help="bind local intake metadata; does not download/load artifacts or train",
+    )
+    si.add_argument("--intake", required=True, help="explicit local model-intake JSON record")
+    si.add_argument("--recipe", required=True, help="local selected-recipe JSON file")
     a = sub.add_parser("ask"); a.add_argument("text"); a.add_argument("--size", default="nano"); a.add_argument("--instruct", action="store_true"); a.add_argument("--tokens", type=int, default=120); a.add_argument("--temperature", type=float, default=0.8); a.add_argument("--script", default="devanagari", choices=["devanagari", "brahmi", "kharoshthi", "siddham"])
     ch = sub.add_parser("check"); ch.add_argument("text")
     su = sub.add_parser("sutra"); su.add_argument("query", nargs="+", help="a number like 1.1.1, a range like 1.1.1-1.1.10, or words to find"); su.add_argument("--script", default="devanagari", choices=["devanagari", "iast", "slp1", "brahmi", "kharoshthi", "siddham"])
@@ -84,6 +91,14 @@ def main(argv=None):
         report = inspect_training_stack_from_recipe_file(recipe_path, guru_root=HERE)
         print(render_json_report(report))
         if report["training_stack_status"] != "metadata_match":
+            raise SystemExit(1)
+        return
+    if args.cmd == "student-intake-preflight":
+        from .student_intake_binding import inspect_student_intake_files
+
+        report = inspect_student_intake_files(args.intake, args.recipe, guru_root=HERE)
+        print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+        if report["status"] != "matched":
             raise SystemExit(1)
         return
     if args.cmd in {"corpus", "build", "tokenizer", "encode", "prepare"}:

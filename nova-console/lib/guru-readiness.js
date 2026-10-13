@@ -7,6 +7,7 @@ const { spawnSync } = require('node:child_process');
 
 const RECIPE_RELATIVE = 'experiments/recipes/qwen25_coder_15b_lora_sft.v1.json';
 const MODEL_RELATIVE = 'data/coding/model.json';
+const STUDENT_INTAKE_RELATIVE = 'data/coding/student-base-intake.json';
 
 function sourceEvidence(repoRoot, relativePath, detail) {
   return { path: path.relative(repoRoot, path.join(repoRoot, 'guru', relativePath)).replaceAll(path.sep, '/'), detail };
@@ -89,6 +90,67 @@ function trainerStackEntry({ root, guruRoot, recipe, python, run }) {
   return item('trainer_environment', 'Trainer environment', status, detail, evidencePaths, report.blockers);
 }
 
+function studentIntakeBlockers({ root, guruRoot, recipe, python, run }) {
+  const evidencePaths = [
+    sourceEvidence(root, STUDENT_INTAKE_RELATIVE, 'Optional owner-supplied local student-base intake; absent records remain blocked.'),
+    sourceEvidence(root, RECIPE_RELATIVE, 'Selected recipe identity, revision, and exact model/tokenizer digest pins.'),
+    sourceEvidence(root, 'guru/student_intake_binding.py', 'Read-only fail-closed binding; license text does not grant permissions.'),
+  ];
+  const intakePath = path.join(guruRoot, STUDENT_INTAKE_RELATIVE);
+  const recipePath = path.join(guruRoot, RECIPE_RELATIVE);
+  let intakeStat;
+  try { intakeStat = fs.lstatSync(intakePath); }
+  catch (error) {
+    if (error?.code === 'ENOENT') {
+      return { status: 'blocked', blockers: ['Student-base intake is unavailable: required local record file is absent.'], evidencePaths };
+    }
+    return { status: 'unavailable', blockers: ['Student-base intake record could not be inspected.'], evidencePaths };
+  }
+  if (intakeStat.isSymbolicLink() || !intakeStat.isFile()) {
+    return { status: 'blocked', blockers: ['Student-base intake must be a regular local file, not a symbolic link.'], evidencePaths };
+  }
+  let result;
+  try {
+    result = run(python, ['-m', 'guru', 'student-intake-preflight', '--intake', intakePath, '--recipe', recipePath], {
+      cwd: guruRoot,
+      encoding: 'utf8',
+      timeout: 10_000,
+      maxBuffer: 1024 * 1024,
+      env: { ...process.env, PYTHONPATH: [guruRoot, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter) },
+    });
+  } catch (error) {
+    const blocker = error?.code === 'ENOENT'
+      ? `Python runtime '${python}' is not installed or not on PATH.`
+      : error?.code === 'ETIMEDOUT' ? 'Student-base intake preflight timed out.'
+        : `Student-base intake preflight could not run: ${error?.message || 'unknown error'}`;
+    return { status: 'unavailable', blockers: [blocker], evidencePaths };
+  }
+  if (result.error) {
+    const blocker = result.error.code === 'ENOENT'
+      ? `Python runtime '${python}' is not installed or not on PATH.`
+      : result.error.code === 'ETIMEDOUT' ? 'Student-base intake preflight timed out.'
+        : `Student-base intake preflight could not run: ${result.error.message}`;
+    return { status: 'unavailable', blockers: [blocker], evidencePaths };
+  }
+  let report;
+  try { report = JSON.parse(String(result.stdout || '')); }
+  catch (_) { report = null; }
+  const valid = report && typeof report === 'object' && !Array.isArray(report)
+    && report.schema === 'guru-student-intake-binding-v1'
+    && ['blocked', 'matched'].includes(report.status)
+    && Array.isArray(report.blockers) && report.blockers.every(value => typeof value === 'string')
+    && report.model_loading === false && report.tokenizer_loading === false
+    && report.download_started === false && report.training_started === false
+    && (report.status !== 'matched' || report.blockers.length === 0)
+    && (report.status !== 'blocked' || report.blockers.length > 0);
+  if (!valid) return { status: 'unavailable', blockers: ['Student-base intake preflight returned malformed or incomplete safety evidence.'], evidencePaths };
+  const expectedExit = report.status === 'matched' ? 0 : 1;
+  if (result.status !== expectedExit) {
+    return { status: 'unavailable', blockers: ['Student-base intake preflight exit status conflicts with its report.'], evidencePaths };
+  }
+  return { status: report.status === 'matched' ? 'ready' : 'blocked', blockers: report.blockers, evidencePaths };
+}
+
 function createGuruReadiness({ repoRoot, python = 'python3', run = spawnSync } = {}) {
   const root = path.resolve(repoRoot || path.join(__dirname, '..', '..'));
   const guruRoot = path.join(root, 'guru');
@@ -155,10 +217,12 @@ function createGuruReadiness({ repoRoot, python = 'python3', run = spawnSync } =
     if (!base.weights_sha256) modelBlockers.push('Exact base-weight digest is missing.');
     if (!base.tokenizer_sha256) modelBlockers.push('Exact tokenizer digest is missing.');
     if (recipe.gates?.model_intake_approved !== true) modelBlockers.push('Model intake is not approved.');
+    const intake = studentIntakeBlockers({ root, guruRoot, recipe, python, run });
+    modelBlockers.push(...intake.blockers);
     const modelStatus = !base.model_id || !base.revision ? 'blocked' : modelBlockers.length ? 'unverified' : 'ready';
     entries.push(item('student_model', 'Exact student model and tokenizer', modelStatus,
-      modelBlockers.length ? `${base.model_id || 'Student candidate'} is selected, but exact artifact identity/intake is pending.` : 'Exact model and tokenizer pins and intake approval are present.',
-      [evidence(RECIPE_RELATIVE, `Candidate: ${base.model_id || 'missing'} at revision ${base.revision || 'missing'}; weights/tokenizer digests and model-intake gate.`)], modelBlockers));
+      modelBlockers.length ? `${base.model_id || 'Student candidate'} is selected, but exact artifact identity, recipe binding, rights review, or model intake is pending.` : 'Exact model and tokenizer pins are bound to an approved intake record.',
+      [evidence(RECIPE_RELATIVE, `Candidate: ${base.model_id || 'missing'} at revision ${base.revision || 'missing'}; weights/tokenizer digests and model-intake gate.`), ...intake.evidencePaths], modelBlockers));
 
     const recipeBlockers = [];
     if (recipe.status !== 'launchable') recipeBlockers.push(`Recipe status is ${recipe.status || 'missing'}; it is not launchable.`);

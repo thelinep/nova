@@ -286,14 +286,40 @@ test('Guru readiness matrix identifies pending exact model pins as unverified an
   await openStudio(page, { roots: [root], guruReadiness: {
     schema: 'maataa-guru-readiness-v1', status: 'blocked', action: { enabled: false, reason: 'Model and evaluator are unqualified.' },
     entries: [
-      { id: 'student_model', label: 'Exact student model and tokenizer', status: 'unverified', summary: 'Candidate selected; exact model/tokenizer digests and intake approval are pending.', blockers: ['Exact tokenizer digest is missing.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Draft pin.' }] },
+      { id: 'student_model', label: 'Exact student model and tokenizer', status: 'unverified', summary: 'Candidate selected; exact artifact identity, recipe binding, rights review, or model intake is pending.', blockers: ['Exact tokenizer digest is missing.', 'Student-base intake review is not approved.', 'Student-base weight-use permission is not approved.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Draft pin.' }, { path: 'guru/data/coding/student-base-intake.json', detail: 'Optional owner-supplied local intake.' }] },
       { id: 'trainer_compatibility', label: 'Selected-model trainer compatibility', status: 'unverified', summary: 'Qwen2 LoRA scaffold exists; loader binding and exact-artifact compatibility are unverified.', blockers: ['Local-only model/tokenizer loader is not integrated.'], evidence: [{ path: 'guru/guru/qwen2_lora_engine.py', detail: 'Gated trainer mechanics.' }] },
       { id: 'evaluator', label: 'Isolated evaluator', status: 'blocked', summary: 'Evaluator qualification is missing.', blockers: ['Disposable evaluator is not qualified.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Evaluator gate.' }] },
     ],
   } });
   await expect(page.locator('#guruReadinessMatrix [data-status="unverified"]').filter({ hasText: 'Exact student model and tokenizer' })).toBeVisible();
+  const studentRow = page.locator('#guruReadinessMatrix [data-status="unverified"]').filter({ hasText: 'Exact student model and tokenizer' });
+  await expect(studentRow).toContainText('Student-base intake review is not approved');
+  await expect(studentRow).toContainText('guru/data/coding/student-base-intake.json');
   await expect(page.locator('#guruReadinessMatrix [data-status="unverified"]').filter({ hasText: 'Selected-model trainer compatibility' })).toBeVisible();
   await expect(page.locator('#guruReadinessMatrix [data-status="blocked"]')).toContainText('Isolated evaluator');
+  await expect(page.locator('#guruCodeAction')).toBeDisabled();
+});
+
+test('simulated absent student intake stays blocked and Guru action stays disabled', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  await openStudio(page, { roots: [root], guruReadiness: {
+    schema: 'maataa-guru-readiness-v1', status: 'blocked', action: { enabled: false, reason: 'Student-base intake is absent.' },
+    entries: [{ id: 'student_model', label: 'Exact student model and tokenizer', status: 'unverified', summary: 'No owner-supplied student intake record exists.', blockers: ['Student-base intake is unavailable: required local record file is absent.'], evidence: [{ path: 'guru/data/coding/student-base-intake.json', detail: 'Optional owner-supplied local intake.' }] }],
+  } });
+  const studentRow = page.locator('#guruReadinessMatrix [data-status="unverified"]').filter({ hasText: 'Exact student model and tokenizer' });
+  await expect(studentRow).toContainText('required local record file is absent');
+  await expect(page.locator('#guruCodeAction')).toBeDisabled();
+});
+
+test('simulated mismatched student intake stays blocked and Guru action stays disabled', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  await openStudio(page, { roots: [root], guruReadiness: {
+    schema: 'maataa-guru-readiness-v1', status: 'blocked', action: { enabled: false, reason: 'Student-base intake does not match the selected recipe.' },
+    entries: [{ id: 'student_model', label: 'Exact student model and tokenizer', status: 'unverified', summary: 'Intake identity does not match the selected student.', blockers: ['Intake model revision does not match the selected recipe.', 'Intake tokenizer digest does not match the selected recipe.'], evidence: [{ path: 'guru/data/coding/student-base-intake.json', detail: 'Simulated mismatch response; no intake was written.' }] }],
+  } });
+  const studentRow = page.locator('#guruReadinessMatrix [data-status="unverified"]').filter({ hasText: 'Exact student model and tokenizer' });
+  await expect(studentRow).toContainText('Intake model revision does not match the selected recipe');
+  await expect(studentRow).toContainText('Intake tokenizer digest does not match the selected recipe');
   await expect(page.locator('#guruCodeAction')).toBeDisabled();
 });
 

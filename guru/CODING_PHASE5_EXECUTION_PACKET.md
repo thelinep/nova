@@ -135,6 +135,15 @@ provider prices are planning snapshots and must be rechecked before any launch.
   digests, rights/intake approval, trainer compatibility, data, evaluator,
   compute approval and launch authorization remain open; no download or
   training is authorized by the selection.
+- Maataa's read-only `student_model` readiness row optionally reads an
+  owner-supplied record at `guru/data/coding/student-base-intake.json` through
+  `python -m guru student-intake-preflight`. The file is never created by the
+  check. The checker binds `recipe_id`, recipe schema version and canonical
+  recipe SHA-256, model/revision/weight digest, and tokenizer identity/revision/
+  digest. Missing exact pins, mismatches, pending review, or missing explicit
+  `weights_use` / `weights_modification` approvals block. License text grants
+  no permission. The check is metadata-only and does not download, load, or
+  train; a matching record alone is not a launch or release approval.
 - Fresh `preflight c_rd` remains blocked with
   `{"blockers":["missing admission audit"],"ready":false,"warnings":[]}`.
   The missing audit is real; no empty or synthetic admission was created.
