@@ -76,6 +76,7 @@ def _default_state_directory(installation_root: str | os.PathLike[str] | None = 
 class EvaluationPolicy:
     image: str
     command: tuple[str, ...]
+    entrypoint: str | None = None
     timeout_seconds: float = 10.0
     memory_bytes: int = 512 * 1024 * 1024
     cpu_count: float = 1.0
@@ -90,6 +91,11 @@ class EvaluationPolicy:
             raise ValueError("image must be pinned by sha256 digest")
         if not self.command or any(not isinstance(x, str) or not x or "\x00" in x for x in self.command):
             raise ValueError("command must be a non-empty fixed argv tuple")
+        if self.entrypoint is not None and (
+            not isinstance(self.entrypoint, str) or not self.entrypoint.startswith("/")
+            or "\x00" in self.entrypoint
+        ):
+            raise ValueError("entrypoint must be an absolute executable path")
         if any(x.startswith("--") and x.split("=", 1)[0] in {"--network", "--mount", "--volume", "--privileged", "--device", "--env", "--env-file", "--pid", "--ipc", "--userns", "--runtime"} for x in self.command):
             raise ValueError("runner command cannot override container isolation policy")
         if not (0 < self.timeout_seconds <= 300):
@@ -146,7 +152,7 @@ def _docker_options(policy: EvaluationPolicy, name: str, *, owner_token: str) ->
     if not _OWNER_TOKEN.fullmatch(owner_token):
         raise ValueError("invalid evaluator owner token")
     memory = str(policy.memory_bytes)
-    return [
+    options = [
         "create", "--interactive", "--name", name,
         "--label", f"{_MANAGED_LABEL}={_MANAGED_LABEL_VALUE}",
         "--label", f"{_OWNER_LABEL}={owner_token}", "--log-driver", "none",
@@ -156,8 +162,11 @@ def _docker_options(policy: EvaluationPolicy, name: str, *, owner_token: str) ->
         "--memory-swap", memory, "--cpus", str(policy.cpu_count),
         "--tmpfs", f"/tmp:rw,noexec,nosuid,nodev,size={policy.tmpfs_bytes},mode=1777",
         # No bind/volume mounts, environment injection, host PID/IPC, devices, or credentials.
-        policy.image, *policy.command,
     ]
+    if policy.entrypoint is not None:
+        options.extend(("--entrypoint", policy.entrypoint))
+    options.extend((policy.image, *policy.command))
+    return options
 
 
 class DockerCliEngine:

@@ -153,6 +153,20 @@ class EvaluationPolicyTests(unittest.TestCase):
         self.assertFalse(any(x in {"--mount", "-v", "--volume", "--env", "-e", "--env-file", "--privileged", "--device"} for x in args))
         self.assertFalse(any("secret" in x.lower() or "token" in x.lower() for x in args))
 
+    def test_fixed_probe_policy_overrides_image_entrypoint(self):
+        fixed = EvaluationPolicy(
+            image=policy().image, command=("-I", "-c", "print('fixed')"),
+            entrypoint="/usr/local/bin/python",
+        )
+        args = _docker_options(
+            fixed, "guru-eval-" + "c" * 32, owner_token="f" * 64,
+        )
+        self.assertEqual(args[args.index("--entrypoint") + 1], "/usr/local/bin/python")
+        entrypoint_index = args.index("--entrypoint")
+        image_index = args.index(fixed.image)
+        self.assertLess(entrypoint_index, image_index)
+        self.assertEqual(args[image_index + 1:], list(fixed.command))
+
     def test_rejects_invalid_generated_name_before_docker_call(self):
         with self.assertRaises(ValueError):
             _docker_options(policy(), "host-path", owner_token="f" * 64)
