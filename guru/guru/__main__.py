@@ -9,6 +9,7 @@
   teach      instruction-tune a trained model on question/answer pairs (JSONL)
   code-data  disabled: persistent transformed-data export is denied by I7
   code-eval  disabled: source rights and qualified local evaluator are required
+  trainer-stack-preflight compare installed Python/package pins with the draft Qwen2 LoRA stack
   ask        let a trained model continue text or answer
   check      run Guru-Panini on a piece of text (script and Ashtadhyayi citations)
   sutra      show Ashtadhyayi sutras by number, or find them by words
@@ -53,6 +54,10 @@ def main(argv=None):
     ce.add_argument("--tasks", default=os.path.join(DATA, "coding", "tasks.jsonl"))
     ce.add_argument("--predictions", required=True, help="JSONL records with id and output (output is a JSON string)")
     ce.add_argument("--out", default="", help="optional JSON report path")
+    sub.add_parser(
+        "trainer-stack-preflight",
+        help="compare installed stack pins; does not load artifacts or train",
+    )
     a = sub.add_parser("ask"); a.add_argument("text"); a.add_argument("--size", default="nano"); a.add_argument("--instruct", action="store_true"); a.add_argument("--tokens", type=int, default=120); a.add_argument("--temperature", type=float, default=0.8); a.add_argument("--script", default="devanagari", choices=["devanagari", "brahmi", "kharoshthi", "siddham"])
     ch = sub.add_parser("check"); ch.add_argument("text")
     su = sub.add_parser("sutra"); su.add_argument("query", nargs="+", help="a number like 1.1.1, a range like 1.1.1-1.1.10, or words to find"); su.add_argument("--script", default="devanagari", choices=["devanagari", "iast", "slp1", "brahmi", "kharoshthi", "siddham"])
@@ -72,6 +77,15 @@ def main(argv=None):
         sys.exit(
             "code-eval is disabled by I7: evaluation requires approved source rights and a qualified local evaluator"
         )
+    if args.cmd == "trainer-stack-preflight":
+        from .training_stack_inspector import inspect_training_stack_from_recipe_file, render_json_report
+
+        recipe_path = os.path.join(HERE, "experiments", "recipes", "qwen25_coder_15b_lora_sft.v1.json")
+        report = inspect_training_stack_from_recipe_file(recipe_path, guru_root=HERE)
+        print(render_json_report(report))
+        if report["training_stack_status"] != "metadata_match":
+            raise SystemExit(1)
+        return
     if args.cmd in {"corpus", "build", "tokenizer", "encode", "prepare"}:
         sys.exit(
             "persistent corpus/tokenizer transforms are disabled by I7: transformed data may be ephemeral only; "
