@@ -67,6 +67,16 @@ provider prices are planning snapshots and must be rechecked before any launch.
   container was never started. These checks remain implementation evidence,
   not B1–B8 qualification; other Engine versions may fail closed.
 
+- I7 rights checks now distinguish source permission to transform data
+  ephemerally from permission to retain transformed data. The strict
+  `guru-source-rights-v2` schema requires both explicit decisions, and the
+  `guru-use-scope-i7-v2` quality check requires training plus ephemeral
+  transformation permission and validated teacher rights. I7 continues to
+  deny persistent retention/corpus assembly; a LICENSE_CLEAR pass records a
+  rights predicate only and does not claim an ephemeral real-data trainer.
+  Focused rights, I7, quality and evaluator tests passed **104/104**; the full
+  Guru suite passed **415, skipped 1**. No real source permission was issued.
+
 - A new metadata-only local artifact inventory preflight was added for D3. It
   accepts an explicit file list and exact recipe inventory pins, verifies the
   locked training-stack file, and rejects symlinks, special files, path escapes,
@@ -253,7 +263,7 @@ the actual task tests and preserve their results.
 
 ### Owner-selected I7 use-scope policy
 
-The owner explicitly selected `guru-use-scope-i7-v1`:
+The owner explicitly selected `guru-use-scope-i7-v2`:
 
 | Use | Project scope | Enforcement and remaining boundary |
 | --- | --- | --- |

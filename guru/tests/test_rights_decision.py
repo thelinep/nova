@@ -10,7 +10,7 @@ from guru.schemas.rights_decision import RightsDecision
 
 def valid_record() -> dict:
     return {
-        "schema_version": "guru-source-rights-v1",
+        "schema_version": "guru-source-rights-v2",
         "source_id": "source-one",
         "uri": "https://example.invalid/repository",
         "revision": "commit:0123456789abcdef",
@@ -21,6 +21,7 @@ def valid_record() -> dict:
         "rights": {
             "allow_training": True,
             "allow_evaluation": True,
+            "allow_ephemeral_transformation": True,
             "allow_transformed_data_retention": False,
             "allow_provider_transmission": False,
             "allow_weight_distribution": False,
@@ -38,7 +39,7 @@ def valid_record() -> dict:
 class RightsDecisionTests(unittest.TestCase):
     def test_explicit_versioned_rights_decision_parses(self) -> None:
         decision = RightsDecision.model_validate(valid_record())
-        self.assertEqual(decision.schema_version, "guru-source-rights-v1")
+        self.assertEqual(decision.schema_version, "guru-source-rights-v2")
         self.assertTrue(decision.rights.allow_training)
         self.assertFalse(decision.rights.allow_provider_transmission)
 
@@ -47,7 +48,7 @@ class RightsDecisionTests(unittest.TestCase):
         record.pop("schema_version")
         with self.assertRaises(ValidationError):
             RightsDecision.model_validate(record)
-        record["schema_version"] = "guru-source-rights-v2"
+        record["schema_version"] = "guru-source-rights-v1"
         with self.assertRaises(ValidationError):
             RightsDecision.model_validate(record)
 
@@ -60,6 +61,12 @@ class RightsDecisionTests(unittest.TestCase):
                 record["rights"] = rights
                 with self.assertRaises(ValidationError):
                     RightsDecision.model_validate(record)
+
+    def test_ephemeral_transformation_permission_is_required(self) -> None:
+        record = valid_record()
+        record["rights"].pop("allow_ephemeral_transformation")
+        with self.assertRaises(ValidationError):
+            RightsDecision.model_validate(record)
 
     def test_unknown_authority_basis_and_extra_fields_are_rejected(self) -> None:
         record = valid_record()

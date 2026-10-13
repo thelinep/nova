@@ -213,18 +213,20 @@ def _approved_teacher(*, status=ReviewStatus.APPROVED) -> TeacherLineage:
     )
 
 
-def _rights_inputs(item: CorpusItem, *, allow_training=True, allow_evaluation=True, allow_retention=True,
+def _rights_inputs(item: CorpusItem, *, allow_training=True, allow_evaluation=True,
+                   allow_ephemeral=True, allow_retention=False,
                    artifact_digest=None, approved_artifact_digest=None, manifest_digest="9" * 64,
                    trusted_manifest_digest="9" * 64, teacher_registry_digest="8" * 64,
                    trusted_teacher_registry_digest="8" * 64,
                    teacher_status=ReviewStatus.APPROVED) -> ApprovedRightsInputs:
     decision = RightsDecision(
-        schema_version="guru-source-rights-v1", source_id="synthetic-source",
+        schema_version="guru-source-rights-v2", source_id="synthetic-source",
         uri="local:synthetic-source", revision="fixture-v1",
         artifact_sha256=artifact_digest or item.source_digest,
         provenance_statement="synthetic fixture only", authority_basis=RightsAuthorityBasis.OWNER_ATTESTATION,
         authority_description="synthetic test approval", rights=SourceRights(
             allow_training=allow_training, allow_evaluation=allow_evaluation,
+            allow_ephemeral_transformation=allow_ephemeral,
             allow_transformed_data_retention=allow_retention,
             allow_provider_transmission=False, allow_weight_distribution=False),
         reviewer="synthetic-owner", decided_at=datetime(2026, 10, 12, tzinfo=timezone.utc),
@@ -680,14 +682,15 @@ def test_fake_provider_aggregates_complete_pinned_case_set_pass_and_fail(tmp_pat
     assert {record.name: record.status for record in failed.records}[AutoCheckName.TESTS] is checks.CheckRunStatus.FAIL
 
 
-def test_i7_prevents_license_clear_when_project_policy_denies_persistence(tmp_path):
+def test_i7_license_clear_does_not_enable_persistent_corpus(tmp_path):
     item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
     report, _ = _runner_report(
         tmp_path, raw_item=item.model_dump(mode="json"),
         rights_provider=_FakeRightsProvider(_rights_inputs(item)),
     )
     license_record = next(record for record in report.records if record.name is AutoCheckName.LICENSE)
-    assert license_record.status is checks.CheckRunStatus.FAIL
+    assert license_record.status is checks.CheckRunStatus.PASS
+    assert GuruUseScopePolicy().permits_persisted_corpus() is False
 
 
 def test_i7_evaluation_requires_explicit_source_permission(tmp_path):
@@ -750,10 +753,9 @@ def test_rights_provider_requires_exact_manifest_artifact_and_approved_teacher(t
         target_source="teacher", teacher_lineage_id="teacher-1",
         source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
     approved = _FakeRightsProvider(_rights_inputs(teacher_item))
-    with patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True):
-        report, _ = _runner_report(tmp_path, raw_item=teacher_item.model_dump(mode="json"),
-                                   rights_provider=approved)
-        assert {record.name: record.status for record in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.PASS
+    report, _ = _runner_report(tmp_path, raw_item=teacher_item.model_dump(mode="json"),
+                               rights_provider=approved)
+    assert {record.name: record.status for record in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.PASS
 
     failures = [
         _rights_inputs(teacher_item, artifact_digest="0" * 64),
@@ -762,21 +764,34 @@ def test_rights_provider_requires_exact_manifest_artifact_and_approved_teacher(t
         _rights_inputs(teacher_item, trusted_teacher_registry_digest="0" * 64),
         _rights_inputs(teacher_item, teacher_status=ReviewStatus.PENDING),
     ]
-    with patch.object(GuruUseScopePolicy, "permits_persisted_corpus", return_value=True):
-        for inputs in failures:
-            failed_report, _ = _runner_report(
-                tmp_path, raw_item=teacher_item.model_dump(mode="json"),
-                rights_provider=_FakeRightsProvider(inputs))
-            assert {record.name: record.status for record in failed_report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
+    for inputs in failures:
+        failed_report, _ = _runner_report(
+            tmp_path, raw_item=teacher_item.model_dump(mode="json"),
+            rights_provider=_FakeRightsProvider(inputs))
+        assert {record.name: record.status for record in failed_report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.UNAVAILABLE
 
 
-@pytest.mark.parametrize("allow_training,allow_retention", [(False, True), (True, False)])
-def test_rights_provider_denied_training_or_retention_is_measured_fail(tmp_path, allow_training, allow_retention):
+@pytest.mark.parametrize("allow_training,allow_ephemeral", [(False, True), (True, False)])
+def test_rights_provider_denied_training_or_ephemeral_transformation_is_measured_fail(
+    tmp_path, allow_training, allow_ephemeral,
+):
     item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
     provider = _FakeRightsProvider(_rights_inputs(
-        item, allow_training=allow_training, allow_retention=allow_retention))
+        item, allow_training=allow_training, allow_ephemeral=allow_ephemeral))
     report, _ = _runner_report(tmp_path, raw_item=item.model_dump(mode="json"), rights_provider=provider)
     assert {record.name: record.status for record in report.records}[AutoCheckName.LICENSE] is checks.CheckRunStatus.FAIL
+
+
+def test_ephemeral_transformation_permission_does_not_grant_retention(tmp_path):
+    item = CorpusItem.model_validate(_item(source_digest=hashlib.sha256(b"synthetic pinned source artifact").hexdigest()))
+    rights = _rights_inputs(item, allow_ephemeral=True, allow_retention=False)
+    report, _ = _runner_report(tmp_path, raw_item=item.model_dump(mode="json"),
+                               rights_provider=_FakeRightsProvider(rights))
+    by_name = {record.name: record for record in report.records}
+    assert by_name[AutoCheckName.LICENSE].status is checks.CheckRunStatus.PASS
+    assert rights.decision.rights.allow_transformed_data_retention is False
+    assert GuruUseScopePolicy().permits_transformed_data_retention(rights.decision.rights) is False
+    assert GuruUseScopePolicy().permits_persisted_corpus() is False
 
 
 def test_runner_with_partial_provider_evidence_never_decides_or_audits(tmp_path, monkeypatch):

@@ -27,6 +27,7 @@ class RightsEvidenceReference(StrictModel):
 class SourceRights(StrictModel):
     allow_training: StrictBool
     allow_evaluation: StrictBool
+    allow_ephemeral_transformation: StrictBool
     allow_transformed_data_retention: StrictBool
     allow_provider_transmission: StrictBool
     allow_weight_distribution: StrictBool
@@ -35,7 +36,7 @@ class SourceRights(StrictModel):
 class RightsDecision(StrictModel):
     """Named review result for one immutable source artifact."""
 
-    schema_version: Literal["guru-source-rights-v1"]
+    schema_version: Literal["guru-source-rights-v2"]
     source_id: str = Field(min_length=1)
     uri: str = Field(min_length=1)
     revision: str = Field(min_length=1)

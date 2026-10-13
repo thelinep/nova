@@ -39,7 +39,7 @@
     "verified_context_tokens": null
   },
   "distribution": {
-    "scope_policy": "guru-use-scope-i7-v1",
+    "scope_policy": "guru-use-scope-i7-v2",
     "scope": "private_local_only",
     "distribution_allowed": false
   },

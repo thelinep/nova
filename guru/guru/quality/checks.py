@@ -621,13 +621,12 @@ def run_deterministic_checks(
         "typed owner/source rights evidence provider is unavailable", item_digest=item_digest)
     if rights_decision is not None:
         rights_digest = _digest(rights_decision.model_dump(mode="json"))
-        # A source license cannot widen the owner-selected project scope. The
-        # current release path persists corpus rows, so LICENSE_CLEAR must fail
-        # until persistent transformed-data use is permitted or an ephemeral
-        # training path is implemented.
+        # Rights clearance is limited to the owner's ephemeral-only scope and
+        # requires explicit source permission for ephemeral transformation.
+        # Corpus assembly remains separately blocked because it persists rows.
         rights_ok = (rights_decision.rights.allow_training and
-                     rights_decision.rights.allow_transformed_data_retention and teacher_ok and
-                     GURU_USE_SCOPE_POLICY.permits_persisted_corpus())
+                     GURU_USE_SCOPE_POLICY.permits_ephemeral_transformation(rights_decision.rights) and
+                     teacher_ok)
         license_status = _status_from_result(_result(AutoCheckName.LICENSE, rights_ok, {
             "item_digest": item_digest, "artifact_digest": rights_decision.artifact_sha256,
             "rights_decision_digest": rights_digest,
@@ -635,10 +634,12 @@ def run_deterministic_checks(
             "allow_training": rights_decision.rights.allow_training,
             "allow_evaluation": rights_decision.rights.allow_evaluation,
             "allow_provider_transmission": rights_decision.rights.allow_provider_transmission,
+            "allow_ephemeral_transformation": rights_decision.rights.allow_ephemeral_transformation,
             "allow_transformed_data_retention": rights_decision.rights.allow_transformed_data_retention,
             "allow_weight_distribution": rights_decision.rights.allow_weight_distribution,
-            "project_persisted_transformed_data_allowed":
-                GURU_USE_SCOPE_POLICY.permits_persisted_corpus(),
+            "project_ephemeral_transformation_allowed":
+                GURU_USE_SCOPE_POLICY.permits_ephemeral_transformation(rights_decision.rights),
+            "project_persisted_transformed_data_allowed": GURU_USE_SCOPE_POLICY.permits_persisted_corpus(),
             "teacher_rights_validated": teacher_ok,
         }))
     elif rights_error:

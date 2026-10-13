@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class GuruUseScopePolicy:
-    version: str = "guru-use-scope-i7-v1"
+    version: str = "guru-use-scope-i7-v2"
     evaluation: str = "local_qualified_only"
     provider_transmission: str = "deny_external"
     transformed_data_retention: str = "ephemeral_only"
@@ -22,6 +22,11 @@ class GuruUseScopePolicy:
         # The selected policy allows ephemeral processing only. Corpus admission
         # and assembly persist transformed examples, so they are not permitted.
         return False
+
+    def permits_ephemeral_transformation(self, source_rights: object) -> bool:
+        """Allow transient transformation only with explicit source permission."""
+        return (self.transformed_data_retention == "ephemeral_only" and
+                getattr(source_rights, "allow_ephemeral_transformation", False) is True)
 
     def permits_persisted_corpus(self) -> bool:
         return False

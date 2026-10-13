@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import datetime, timezone
 
 import pytest
@@ -12,6 +13,7 @@ def _rights(**overrides):
     values = {
         "allow_training": True,
         "allow_evaluation": True,
+        "allow_ephemeral_transformation": True,
         "allow_transformed_data_retention": True,
         "allow_provider_transmission": True,
         "allow_weight_distribution": True,
@@ -27,8 +29,18 @@ def test_i7_scopes_override_permissive_source_rights():
     assert GURU_USE_SCOPE_POLICY.permits_evaluation(rights, "remote") is False
     assert GURU_USE_SCOPE_POLICY.permits_external_transmission(rights) is False
     assert GURU_USE_SCOPE_POLICY.permits_transformed_data_retention(rights) is False
+    assert GURU_USE_SCOPE_POLICY.permits_ephemeral_transformation(rights) is True
     assert GURU_USE_SCOPE_POLICY.permits_persisted_corpus() is False
     assert GURU_USE_SCOPE_POLICY.permits_weight_distribution(rights) is False
+
+
+def test_ephemeral_transformation_requires_explicit_source_permission():
+    assert GURU_USE_SCOPE_POLICY.permits_ephemeral_transformation(
+        _rights(allow_ephemeral_transformation=False)) is False
+    assert GURU_USE_SCOPE_POLICY.permits_ephemeral_transformation(object()) is False
+    deny_ephemeral = replace(GURU_USE_SCOPE_POLICY, transformed_data_retention="deny")
+    assert deny_ephemeral.permits_ephemeral_transformation(
+        _rights(allow_ephemeral_transformation=True)) is False
 
 
 def test_i7_evaluator_qualification_schema_accepts_only_local_execution():

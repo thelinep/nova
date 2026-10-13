@@ -83,7 +83,7 @@ def item() -> CorpusItem:
 
 def rights(*, artifact_digest: str = SOURCE, allow_evaluation: bool = True) -> ApprovedRightsInputs:
     decision = RightsDecision(
-        schema_version="guru-source-rights-v1",
+        schema_version="guru-source-rights-v2",
         source_id="synthetic-source", uri="synthetic://source", revision="v1",
         artifact_sha256=artifact_digest,
         provenance_statement="synthetic fixture for evaluator contract tests",
@@ -91,6 +91,7 @@ def rights(*, artifact_digest: str = SOURCE, allow_evaluation: bool = True) -> A
         authority_description="test-only synthetic permission",
         rights=SourceRights(
             allow_training=False, allow_evaluation=allow_evaluation,
+            allow_ephemeral_transformation=False,
             allow_transformed_data_retention=False,
             allow_provider_transmission=False, allow_weight_distribution=False,
         ),
