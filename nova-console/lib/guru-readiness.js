@@ -106,6 +106,18 @@ function createGuruReadiness({ repoRoot, python = 'python3', run = spawnSync } =
       recipeBlockers.length ? 'The checked-in D3 recipe is a proposal with unqualified settings and missing evidence pins.' : 'Recipe and training dependencies are pinned and qualified.',
       [evidence(RECIPE_RELATIVE, `Status ${recipe.status || 'missing'}; hyperparameters ${recipe.hyperparameters_status || 'missing'}; stack ${recipe.training_stack?.python || 'unavailable'}/${recipe.training_stack?.torch || 'unavailable'}/${recipe.training_stack?.transformers || 'unavailable'}/${recipe.training_stack?.peft || 'unavailable'}.`)], recipeBlockers));
 
+    const enginePath = path.join(guruRoot, 'guru', 'qwen2_lora_engine.py');
+    const inspectorPath = path.join(guruRoot, 'guru', 'model_artifact_inspector.py');
+    const trainerPresent = fs.existsSync(enginePath) && fs.existsSync(inspectorPath);
+    entries.push(item('trainer_compatibility', 'Selected-model trainer compatibility', trainerPresent ? 'unverified' : 'unavailable',
+      trainerPresent
+        ? 'A gated Qwen2 LoRA mechanics scaffold and metadata-only artifact inspector exist; there is no inspector-to-loader binding or exact selected-artifact compatibility run.'
+        : 'Selected-model trainer or artifact inspection code is unavailable.',
+      [evidence('guru/qwen2_lora_engine.py', 'Qwen2-family adapter and trainer mechanics; no local model loader.'), evidence('guru/model_artifact_inspector.py', 'Local-only metadata inventory checks; no model loading.')],
+      trainerPresent
+        ? ['Local-only model/tokenizer loader is not integrated with the inventory inspector.', 'The selected weights and tokenizer have not been loaded or compatibility-tested.']
+        : ['Could not determine selected-model trainer compatibility.']));
+
     const evaluatorBlockers = [];
     if (recipe.gates?.evaluator_qualified !== true) evaluatorBlockers.push('Disposable evaluator is not qualified.');
     if (!recipe.sft?.evaluator_config_sha256) evaluatorBlockers.push('Qualified evaluator configuration digest is missing.');

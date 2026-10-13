@@ -25,6 +25,9 @@ def require_selected_student_launchable(
     tokenizer_artifact_dir: str | Path | None,
 ) -> None:
     """Fail closed before selected-model access or any training operation."""
+    blockers = launch_blockers(recipe)
+    if blockers:
+        raise TrainingGateError("selected-student training is blocked: " + "; ".join(blockers))
     for name, value in (
         ("model", model_artifact_dir),
         ("tokenizer", tokenizer_artifact_dir),
@@ -34,9 +37,6 @@ def require_selected_student_launchable(
         path = Path(value)
         if path.is_symlink() or not path.is_dir():
             raise TrainingGateError(f"selected-student {name} artifact directory is unavailable")
-    blockers = launch_blockers(recipe)
-    if blockers:
-        raise TrainingGateError("selected-student training is blocked: " + "; ".join(blockers))
 
 
 def _require_gate(

@@ -13,11 +13,12 @@ provider prices are planning snapshots and must be rechecked before any launch.
 ### Fresh local verification (2026-10-13)
 
 - Coding Studio now has a read-only Guru readiness API and evidence matrix for
-  corpus admission, exact student model/tokenizer, training recipe, evaluator,
+  corpus admission, exact student model/tokenizer, training recipe, trainer
+  compatibility, evaluator,
   compute, and checkpoint qualification. A fresh matrix run reports overall
   **blocked**: `c_rd` has `missing admission audit`; the selected
   Qwen2.5-Coder-1.5B base + LoRA/SFT still lacks exact artifact digests and
-  model intake; the recipe, evaluator, compute and checkpoint gates remain
+  model intake; trainer compatibility is unverified, and recipe, evaluator, compute and checkpoint gates remain
   closed. Guru selection/dispatch is disabled. Focused API tests passed **3/3**,
   full Maataa Node tests passed **785, skipped 1**, and full Playwright passed
   **76/76**. Browser/model responses are fixtures; no Guru checkpoint was
@@ -27,9 +28,22 @@ provider prices are planning snapshots and must be rechecked before any launch.
   its full ID, managed/owner labels, `HostConfig.LogConfig.Type`, and empty
   log path, then verify the policy again immediately before start. A
   daemon-wide `json-file` default no longer falsely blocks the explicitly
-  configured container. The policy digest is versioned accordingly; full Guru
-  tests passed **403, skipped 1**. This remains mocked implementation evidence,
-  not disposable-worker qualification.
+  configured container. The policy digest is versioned accordingly. The fresh
+  full Guru suite passed **403, skipped 1** with `OMP_NUM_THREADS=1` after the
+  trainer-gate patch. An unrestricted initial attempt hit an OpenMP shared-
+  memory failure in a subprocess timeout test; the focused test and full suite
+  pass with one OpenMP thread. This remains implementation evidence, not
+  disposable-worker qualification.
+
+- A local synthetic live-container probe ran four cases using the cached,
+  digest-pinned `python:3.12-slim` image
+  (`sha256:02108f5d322dd89f1c9e552442c25acb0543dfdbc455693a5599624f20d9155d`,
+  linux/arm64): pass (exit 0), deliberate failure (exit 7), timeout, and output
+  cap. Each probe reported its container removed; a post-run label-filtered
+  inventory found no managed containers. The environment was persistent Docker
+  Desktop's Linux VM on macOS, not a disposable independently reviewed worker.
+  These synthetic checks do not establish B1–B8 qualification, host/daemon
+  restart cleanup, trusted-provider composition, or candidate-code correctness.
 
 - A new metadata-only local artifact inventory preflight was added for D3. It
   accepts an explicit file list and exact recipe inventory pins, verifies the
@@ -54,9 +68,14 @@ provider prices are planning snapshots and must be rechecked before any launch.
   case/digest chaining and a fix that binds the Docker logging-driver probe to
   the exact resolved local endpoint. All backend calls remain mocked; this is
   not disposable-worker qualification or a production trusted-provider path.
-- The selected-student Qwen2 LoRA gate-order suite returned **21 passed**. The
-  generic mechanics module checks the current draft launch gate before model,
-  tensor, optimizer or checkpoint access and has no synthetic bypass. The
+- The selected-student Qwen2 LoRA gate-order suite returned **21 passed** at
+  baseline. A follow-up change moves the draft launch check ahead of model and
+  tokenizer path metadata access; the focused suite for that change returned
+  **2 passed**. The full Maataa Node suite passed **785, skipped 1**, and the
+  full Playwright suite passed **76/76** after the readiness-row update. The
+  generic mechanics module checks the current draft launch
+  gate before model, tensor, optimizer or checkpoint access and has no
+  production synthetic bypass. The
   separate smoke remains fixed random-Qwen2 plumbing; no selected weights or
   real data were loaded, and no training ran.
 - The bounded random-Qwen2 LoRA smoke saves/restores adapter weights,
@@ -73,6 +92,12 @@ provider prices are planning snapshots and must be rechecked before any launch.
   training data, validation suite and qualified evaluator, model/data/compute
   approval, and run authorization. No weights were downloaded and no training
   ran.
+- The owner has explicitly selected `Qwen/Qwen2.5-Coder-1.5B` base (not
+  Instruct), pinned revision `ccb64f03a691be46ba6b4e4c91f396c247aa66c7`, with
+  LoRA/SFT. This is a model-selection decision only. Exact weight/tokenizer
+  digests, rights/intake approval, trainer compatibility, data, evaluator,
+  compute approval and launch authorization remain open; no download or
+  training is authorized by the selection.
 - Fresh `preflight c_rd` remains blocked with
   `{"blockers":["missing admission audit"],"ready":false,"warnings":[]}`.
   The missing audit is real; no empty or synthetic admission was created.

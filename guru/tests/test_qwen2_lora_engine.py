@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import torch
@@ -40,28 +41,48 @@ class UntouchableSampler:
         raise AssertionError("sampler was inspected before the selected-student gate")
 
 
-def test_draft_recipe_and_missing_artifacts_fail_closed(tmp_path):
+def test_draft_recipe_gate_precedes_all_artifact_path_access(tmp_path):
     recipe = load_lora_recipe(RECIPE_PATH)
-    with pytest.raises(TrainingGateError, match="model artifact directory is missing"):
-        require_selected_student_launchable(
-            recipe, model_artifact_dir=None, tokenizer_artifact_dir=None
-        )
+    with patch.object(Path, "is_symlink", side_effect=AssertionError("path inspected before gate")), \
+         patch.object(Path, "is_dir", side_effect=AssertionError("path inspected before gate")):
+        with pytest.raises(TrainingGateError, match="recipe is a draft and is not launchable"):
+            require_selected_student_launchable(
+                recipe, model_artifact_dir=tmp_path / "missing-model",
+                tokenizer_artifact_dir=tmp_path / "missing-tokenizer",
+            )
 
-    missing = tmp_path / "does-not-exist"
-    with pytest.raises(TrainingGateError, match="model artifact directory is unavailable"):
-        require_selected_student_launchable(
-            recipe, model_artifact_dir=missing, tokenizer_artifact_dir=missing
-        )
+    # The gate is patched only to exercise path validation. Production has no
+    # caller-controlled launch-gate override.
+    with patch("guru.qwen2_lora_engine.launch_blockers", return_value=[]):
+        with pytest.raises(TrainingGateError, match="model artifact directory is missing"):
+            require_selected_student_launchable(
+                recipe, model_artifact_dir=None, tokenizer_artifact_dir=None
+            )
 
-    model_dir = tmp_path / "model"
-    tokenizer_dir = tmp_path / "tokenizer"
-    model_dir.mkdir()
-    tokenizer_dir.mkdir()
+        missing = tmp_path / "does-not-exist"
+        with pytest.raises(TrainingGateError, match="model artifact directory is unavailable"):
+            require_selected_student_launchable(
+                recipe, model_artifact_dir=missing, tokenizer_artifact_dir=missing
+            )
+
+        model_dir = tmp_path / "model"
+        tokenizer_dir = tmp_path / "tokenizer"
+        model_dir.mkdir()
+        tokenizer_dir.mkdir()
+        model_link = tmp_path / "model-link"
+        model_link.symlink_to(model_dir, target_is_directory=True)
+        with pytest.raises(TrainingGateError, match="model artifact directory is unavailable"):
+            require_selected_student_launchable(
+                recipe,
+                model_artifact_dir=model_link,
+                tokenizer_artifact_dir=tokenizer_dir,
+            )
+
     with pytest.raises(TrainingGateError, match="recipe is a draft and is not launchable"):
         require_selected_student_launchable(
             recipe,
-            model_artifact_dir=model_dir,
-            tokenizer_artifact_dir=tokenizer_dir,
+            model_artifact_dir=tmp_path / "missing-model",
+            tokenizer_artifact_dir=tmp_path / "missing-tokenizer",
         )
 
 

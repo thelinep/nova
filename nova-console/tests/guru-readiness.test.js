@@ -18,6 +18,8 @@ test('Guru readiness reports live c_rd blockers and checked-in D3 gates without 
   assert.equal(matrix.entries.find(entry => entry.id === 'student_model').status, 'unverified');
   assert.match(matrix.entries.find(entry => entry.id === 'student_model').blockers.join(' '), /tokenizer digest is missing/);
   assert.equal(matrix.entries.find(entry => entry.id === 'training_recipe').status, 'blocked');
+  assert.equal(matrix.entries.find(entry => entry.id === 'trainer_compatibility').status, 'unverified');
+  assert.match(matrix.entries.find(entry => entry.id === 'trainer_compatibility').blockers.join(' '), /loader is not integrated/);
   assert.equal(matrix.entries.find(entry => entry.id === 'evaluator').status, 'blocked');
   assert.equal(matrix.entries.find(entry => entry.id === 'compute').status, 'blocked');
   assert.equal(matrix.entries.find(entry => entry.id === 'checkpoint_qualification').status, 'blocked');
@@ -71,7 +73,8 @@ test('GET /api/guru/readiness serves a read-only matrix with evidence and disabl
     assert.equal(matrix.schema, 'maataa-guru-readiness-v1');
     assert.equal(matrix.action.enabled, false);
     assert.deepEqual(matrix.entries.map(entry => entry.id), [
-      'corpus_admission', 'student_model', 'training_recipe', 'evaluator', 'compute', 'checkpoint_qualification',
+      'corpus_admission', 'student_model', 'training_recipe', 'trainer_compatibility',
+      'evaluator', 'compute', 'checkpoint_qualification',
     ]);
     assert.ok(matrix.entries.every(entry => ['ready', 'blocked', 'unavailable', 'unverified'].includes(entry.status)));
     assert.ok(matrix.entries.every(entry => entry.evidence.length > 0));

@@ -287,10 +287,12 @@ test('Guru readiness matrix identifies pending exact model pins as unverified an
     schema: 'maataa-guru-readiness-v1', status: 'blocked', action: { enabled: false, reason: 'Model and evaluator are unqualified.' },
     entries: [
       { id: 'student_model', label: 'Exact student model and tokenizer', status: 'unverified', summary: 'Candidate selected; exact model/tokenizer digests and intake approval are pending.', blockers: ['Exact tokenizer digest is missing.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Draft pin.' }] },
+      { id: 'trainer_compatibility', label: 'Selected-model trainer compatibility', status: 'unverified', summary: 'Qwen2 LoRA scaffold exists; loader binding and exact-artifact compatibility are unverified.', blockers: ['Local-only model/tokenizer loader is not integrated.'], evidence: [{ path: 'guru/guru/qwen2_lora_engine.py', detail: 'Gated trainer mechanics.' }] },
       { id: 'evaluator', label: 'Isolated evaluator', status: 'blocked', summary: 'Evaluator qualification is missing.', blockers: ['Disposable evaluator is not qualified.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Evaluator gate.' }] },
     ],
   } });
-  await expect(page.locator('#guruReadinessMatrix [data-status="unverified"]')).toContainText('Exact student model and tokenizer');
+  await expect(page.locator('#guruReadinessMatrix [data-status="unverified"]').filter({ hasText: 'Exact student model and tokenizer' })).toBeVisible();
+  await expect(page.locator('#guruReadinessMatrix [data-status="unverified"]').filter({ hasText: 'Selected-model trainer compatibility' })).toBeVisible();
   await expect(page.locator('#guruReadinessMatrix [data-status="blocked"]')).toContainText('Isolated evaluator');
   await expect(page.locator('#guruCodeAction')).toBeDisabled();
 });
