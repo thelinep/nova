@@ -28,9 +28,11 @@ provider prices are planning snapshots and must be rechecked before any launch.
   its full ID, managed/owner labels, `HostConfig.LogConfig.Type`, and empty
   log path, then verify the policy again immediately before start. A
   daemon-wide `json-file` default no longer falsely blocks the explicitly
-  configured container. The policy digest is versioned accordingly. The fresh
-  full Guru suite passed **403, skipped 1** with `OMP_NUM_THREADS=1` after the
-  trainer-gate patch. An unrestricted initial attempt hit an OpenMP shared-
+  configured container. Before start, inspection also checks the effective
+  network mode and network attachments, declared bind/mount/volume sources,
+  empty pre-start runtime mounts, and exact `/tmp` tmpfs policy. The fresh full
+  Guru suite passed **409, skipped 1** with `OMP_NUM_THREADS=1` after these
+  checks. An unrestricted initial attempt hit an OpenMP shared-
   memory failure in a subprocess timeout test; the focused test and full suite
   pass with one OpenMP thread. This remains implementation evidence, not
   disposable-worker qualification.
@@ -44,6 +46,13 @@ provider prices are planning snapshots and must be rechecked before any launch.
   Desktop's Linux VM on macOS, not a disposable independently reviewed worker.
   These synthetic checks do not establish B1–B8 qualification, host/daemon
   restart cleanup, trusted-provider composition, or candidate-code correctness.
+- A separate live inspect-only probe created a container from that cached image
+  and passed its exact JSON through the new pre-start verifier on Docker Desktop
+  Engine 28.5.1. The daemon reported `NetworkMode: none`, a singleton `none`
+  network entry with empty endpoint/address fields, `Mounts: []`, no configured
+  binds/volumes, and the pinned tmpfs options. The container was removed without
+  starting its command. This confirms the schema on that engine/configuration;
+  it is not worker, host, network-reachability, or adversarial qualification.
 
 - A new metadata-only local artifact inventory preflight was added for D3. It
   accepts an explicit file list and exact recipe inventory pins, verifies the

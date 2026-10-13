@@ -39,6 +39,23 @@ _MANAGED_LABEL = "io.brahmini.guru.evaluator-managed"
 _MANAGED_LABEL_VALUE = "v1"
 _OWNER_LABEL = "io.brahmini.guru.evaluator-owner"
 _OWNER_TOKEN = re.compile(r"^[0-9a-f]{64}$")
+_DOCKER_NONE_NETWORK = {
+    "IPAMConfig": None,
+    "Links": None,
+    "Aliases": None,
+    "MacAddress": "",
+    "DriverOpts": None,
+    "GwPriority": 0,
+    "NetworkID": "",
+    "EndpointID": "",
+    "Gateway": "",
+    "IPAddress": "",
+    "IPPrefixLen": 0,
+    "IPv6Gateway": "",
+    "GlobalIPv6Address": "",
+    "GlobalIPv6PrefixLen": 0,
+    "DNSNames": None,
+}
 _LOCK_FILENAME = "docker-evaluator.lock"
 _OWNER_TOKEN_FILENAME = "docker-evaluator.owner"
 DOCKER_ENGINE_RECOVERY_VERSION = "guru-docker-engine-recovery-v1"
@@ -405,10 +422,11 @@ class DockerCliEngine:
         return result
 
     def _inspect_created_container(self, container_id: str, policy: EvaluationPolicy) -> None:
-        """Verify exact container ownership and its per-container log policy.
+        """Verify exact container ownership and effective isolation settings.
 
-        The full ID is used for each inspect. A logging-policy mismatch is a
-        hard failure; cleanup separately rechecks ownership before removal.
+        The full ID is used for each inspect. A network, mount or logging
+        policy mismatch is a hard failure; cleanup separately rechecks
+        ownership before removal.
         """
         if not _CONTAINER_ID.fullmatch(container_id):
             raise EvaluationError("invalid container identifier during inspection")
@@ -427,6 +445,60 @@ class DockerCliEngine:
             )
             if not owned:
                 raise EvaluationError("created evaluator container ownership could not be verified")
+            network_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .HostConfig.NetworkMode}}", container_id,
+            ], policy.control_timeout_seconds)
+            network_mode = json.loads(network_result.stdout.decode("utf-8", "strict"))
+            if network_mode != "none":
+                raise EvaluationError("created evaluator container network policy is not none")
+            networks_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .NetworkSettings.Networks}}", container_id,
+            ], policy.control_timeout_seconds)
+            networks = json.loads(networks_result.stdout.decode("utf-8", "strict"))
+            no_network_attachment = (
+                networks == {}
+                or (isinstance(networks, dict)
+                    and set(networks) == {"none"}
+                    and networks["none"] == _DOCKER_NONE_NETWORK)
+            )
+            if not no_network_attachment:
+                raise EvaluationError("created evaluator container has an external network attachment")
+            mounts_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .Mounts}}", container_id,
+            ], policy.control_timeout_seconds)
+            mounts = json.loads(mounts_result.stdout.decode("utf-8", "strict"))
+            # Before start, Docker does not materialize the requested tmpfs in
+            # Mounts. Verify all declarative mount sources and the eventual
+            # tmpfs policy separately instead of expecting a runtime mount.
+            if mounts != []:
+                raise EvaluationError("created evaluator container mount policy is not isolated")
+            for inspect_format, empty_values in (
+                ("{{json .HostConfig.Binds}}", (None, [])),
+                ("{{json .HostConfig.Mounts}}", (None, [])),
+                ("{{json .HostConfig.VolumesFrom}}", (None, [])),
+                ("{{json .Config.Volumes}}", (None, {})),
+            ):
+                field_result = self._control([
+                    "inspect", "--type", "container", "--format", inspect_format, container_id,
+                ], policy.control_timeout_seconds)
+                field_value = json.loads(field_result.stdout.decode("utf-8", "strict"))
+                if field_value not in empty_values:
+                    raise EvaluationError("created evaluator container mount policy is not isolated")
+            tmpfs_config_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .HostConfig.Tmpfs}}", container_id,
+            ], policy.control_timeout_seconds)
+            tmpfs_config = json.loads(tmpfs_config_result.stdout.decode("utf-8", "strict"))
+            expected_tmpfs_options = sorted((
+                "rw", "noexec", "nosuid", "nodev",
+                f"size={policy.tmpfs_bytes}", "mode=1777",
+            ))
+            actual_tmpfs = tmpfs_config.get("/tmp") if isinstance(tmpfs_config, dict) else None
+            if (not isinstance(tmpfs_config, dict)
+                    or set(tmpfs_config) != {"/tmp"}
+                    or not isinstance(actual_tmpfs, str)
+                    or sorted(actual_tmpfs.split(",")) != expected_tmpfs_options
+                    or len(actual_tmpfs.split(",")) != len(expected_tmpfs_options)):
+                raise EvaluationError("created evaluator container scratch policy is not isolated")
             log_result = self._control([
                 "inspect", "--type", "container", "--format", "{{json .HostConfig.LogConfig}}", container_id,
             ], policy.control_timeout_seconds)
@@ -446,8 +518,8 @@ class DockerCliEngine:
     def _remove_after_verified_owner(self, container_id: str, policy: EvaluationPolicy) -> None:
         """Best-effort cleanup only after a fresh exact-ID owner-label check."""
         try:
-            # Re-inspect and permit only the specific logging-policy failure;
-            # ownership failures still prevent removal.
+            # Re-inspect ownership before cleaning up any container whose
+            # effective isolation policy failed verification.
             result = self._control([
                 "inspect", "--type", "container", "--format", "{{json .Config.Labels}}",
                 container_id,

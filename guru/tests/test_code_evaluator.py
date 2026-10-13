@@ -55,6 +55,50 @@ def policy(**overrides):
     return EvaluationPolicy(**values)
 
 
+def _completed(stdout):
+    return subprocess.CompletedProcess([], 0, stdout, b"")
+
+
+def _container_inspection_responses(
+    *, network_mode="none", networks=None, mounts=None, binds=None,
+    host_mounts=None, volumes_from=None, config_volumes=None,
+    tmpfs=None, log_type="none", log_path=b"",
+):
+    current_policy = policy()
+    labels = json.dumps({
+        "io.brahmini.guru.evaluator-managed": "v1",
+        "io.brahmini.guru.evaluator-owner": "f" * 64,
+    }).encode()
+    if networks is None:
+        networks = {"none": {
+            "IPAMConfig": None, "Links": None, "Aliases": None, "MacAddress": "",
+            "DriverOpts": None, "GwPriority": 0, "NetworkID": "", "EndpointID": "",
+            "Gateway": "", "IPAddress": "", "IPPrefixLen": 0, "IPv6Gateway": "",
+            "GlobalIPv6Address": "", "GlobalIPv6PrefixLen": 0, "DNSNames": None,
+        }}
+    if mounts is None:
+        mounts = []
+    if tmpfs is None:
+        tmpfs = {
+            "/tmp": f"rw,noexec,nosuid,nodev,size={current_policy.tmpfs_bytes},mode=1777",
+        }
+    network_response = network_mode if isinstance(network_mode, bytes) else json.dumps(network_mode).encode()
+    networks_response = networks if isinstance(networks, bytes) else json.dumps(networks).encode()
+    mounts_response = mounts if isinstance(mounts, bytes) else json.dumps(mounts).encode()
+    binds_response = json.dumps(binds).encode()
+    host_mounts_response = json.dumps(host_mounts).encode()
+    volumes_from_response = json.dumps(volumes_from).encode()
+    config_volumes_response = json.dumps(config_volumes).encode()
+    tmpfs_response = tmpfs if isinstance(tmpfs, bytes) else json.dumps(tmpfs).encode()
+    log_config = json.dumps({"Type": log_type, "Config": {}}).encode()
+    return [
+        _completed(labels), _completed(network_response), _completed(networks_response),
+        _completed(mounts_response), _completed(binds_response), _completed(host_mounts_response),
+        _completed(volumes_from_response), _completed(config_volumes_response),
+        _completed(tmpfs_response), _completed(log_config), _completed(log_path),
+    ]
+
+
 class EvaluationPolicyTests(unittest.TestCase):
     def test_requires_digest_pinned_image(self):
         for image in ("latest", "repo/image:tag", "repo/image@sha256:short"):
@@ -99,38 +143,142 @@ class EvaluationLifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(EvaluationError, "explicit local Docker endpoint"):
             evaluate(b"payload", policy())
 
-    def test_create_accepts_container_log_none_independent_of_daemon_default(self):
+    def test_create_accepts_effective_network_tmpfs_and_log_policy(self):
         engine = DockerCliEngine(LOCAL_ENDPOINT)
-        labels = json.dumps({
-            "io.brahmini.guru.evaluator-managed": "v1",
-            "io.brahmini.guru.evaluator-owner": "f" * 64,
-        }).encode()
-        responses = [
-            subprocess.CompletedProcess([], 0, CONTAINER_ID.encode(), b""),
-            subprocess.CompletedProcess([], 0, labels, b""),
-            subprocess.CompletedProcess([], 0, b'{"Type":"none","Config":{}}', b""),
-            subprocess.CompletedProcess([], 0, b"", b""),
-        ]
+        responses = [_completed(CONTAINER_ID.encode()), *_container_inspection_responses()]
         with patch.object(engine, "_require_evaluation_scope"), \
              patch.object(engine, "_owner_token", return_value="f" * 64), \
              patch.object(engine, "_control", side_effect=responses) as control:
             self.assertEqual(engine.create(policy(), "guru-eval-" + "c" * 32), CONTAINER_ID)
-        self.assertEqual(control.call_args_list[1].args[0][-1], CONTAINER_ID)
+        self.assertEqual(control.call_args_list[1].args[0][0:3], ["inspect", "--type", "container"])
         self.assertTrue(all(call.args[0][-1] == CONTAINER_ID for call in control.call_args_list[1:]))
 
-    def test_container_log_mismatch_is_rejected_and_owned_container_removed(self):
+    def test_inspection_rejects_effective_network_mismatch_and_cleans_owned_container(self):
         engine = DockerCliEngine(LOCAL_ENDPOINT)
-        labels = json.dumps({
+        owner_labels = json.dumps({
             "io.brahmini.guru.evaluator-managed": "v1",
             "io.brahmini.guru.evaluator-owner": "f" * 64,
         }).encode()
         responses = [
-            subprocess.CompletedProcess([], 0, CONTAINER_ID.encode(), b""),
-            subprocess.CompletedProcess([], 0, labels, b""),
-            subprocess.CompletedProcess([], 0, b'{"Type":"json-file","Config":{}}', b""),
-            subprocess.CompletedProcess([], 0, b"", b""),
-            subprocess.CompletedProcess([], 0, labels, b""),
-            subprocess.CompletedProcess([], 0, b"", b""),
+            _completed(CONTAINER_ID.encode()),
+            _completed(owner_labels), _completed(b'"bridge"'),
+            _completed(owner_labels),
+            _completed(b""),
+        ]
+        with patch.object(engine, "_require_evaluation_scope"), \
+             patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=responses) as control:
+            with self.assertRaisesRegex(EvaluationError, "network policy"):
+                engine.create(policy(), "guru-eval-" + "c" * 32)
+        self.assertEqual(control.call_args_list[-1].args[0], ["rm", "--force", "--volumes", CONTAINER_ID])
+
+    def test_inspection_rejects_bind_and_volume_sources_and_cleans_owned_container(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        owner_labels = json.dumps({
+            "io.brahmini.guru.evaluator-managed": "v1",
+            "io.brahmini.guru.evaluator-owner": "f" * 64,
+        }).encode()
+        for source_config, checked_fields in (
+            ({"binds": ["/host:/data"]}, 5),
+            ({"config_volumes": {"/host/data": {}}}, 8),
+        ):
+            with self.subTest(source_config=source_config):
+                inspect_responses = _container_inspection_responses(**source_config)
+                responses = [
+                    _completed(CONTAINER_ID.encode()),
+                    *inspect_responses[:checked_fields],
+                    _completed(owner_labels), _completed(b""),
+                ]
+                with patch.object(engine, "_require_evaluation_scope"), \
+                     patch.object(engine, "_owner_token", return_value="f" * 64), \
+                     patch.object(engine, "_control", side_effect=responses) as control:
+                    with self.assertRaisesRegex(EvaluationError, "mount policy"):
+                        engine.create(policy(), "guru-eval-" + "c" * 32)
+                self.assertEqual(control.call_args_list[-1].args[0], ["rm", "--force", "--volumes", CONTAINER_ID])
+
+    def test_inspection_rejects_bridge_attachment_and_cleans_owned_container(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        owner_labels = json.dumps({
+            "io.brahmini.guru.evaluator-managed": "v1",
+            "io.brahmini.guru.evaluator-owner": "f" * 64,
+        }).encode()
+        inspect_responses = _container_inspection_responses(networks={
+            "none": {
+                "IPAMConfig": None, "Links": None, "Aliases": None, "MacAddress": "",
+                "DriverOpts": None, "GwPriority": 0, "NetworkID": "", "EndpointID": "",
+                "Gateway": "", "IPAddress": "", "IPPrefixLen": 0, "IPv6Gateway": "",
+                "GlobalIPv6Address": "", "GlobalIPv6PrefixLen": 0, "DNSNames": None,
+            },
+            "bridge": {"NetworkID": "network-id", "IPAddress": "172.17.0.2"},
+        })
+        responses = [
+            _completed(CONTAINER_ID.encode()), *inspect_responses[:3],
+            _completed(owner_labels), _completed(b""),
+        ]
+        with patch.object(engine, "_require_evaluation_scope"), \
+             patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=responses) as control:
+            with self.assertRaisesRegex(EvaluationError, "external network attachment"):
+                engine.create(policy(), "guru-eval-" + "c" * 32)
+        self.assertEqual(control.call_args_list[-1].args[0], ["rm", "--force", "--volumes", CONTAINER_ID])
+
+    def test_inspection_rejects_malformed_network_or_mount_data(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        malformed_cases = (
+            {"network_mode": b"not-json"},
+            {"networks": b"not-json"},
+            {"networks": b"null"},
+            {"networks": {"bridge": {}}},
+            {"networks": {"none": {"IPAddress": "172.17.0.2"}}},
+            {"mounts": b"not-json"},
+            {"mounts": [{"Type": "bind", "Source": "/host", "Destination": "/tmp"}]},
+            {"host_mounts": [{"Type": "bind", "Source": "/host", "Target": "/data"}]},
+            {"volumes_from": ["other-container"]},
+            {"config_volumes": {"/host/data": {}}},
+            {"tmpfs": b"not-json"},
+            {"tmpfs": {"/tmp": "rw,size=1"}},
+            {"tmpfs": {"/tmp": "rw,noexec,nosuid,nodev,size=67108864,mode=1777", "/host": "rw"}},
+        )
+        for values in malformed_cases:
+            with self.subTest(values=values), \
+                 patch.object(engine, "_owner_token", return_value="f" * 64), \
+                 patch.object(engine, "_control", side_effect=_container_inspection_responses(**values)):
+                with self.assertRaises(EvaluationError):
+                    engine._inspect_created_container(CONTAINER_ID, policy())
+
+    def test_start_does_not_launch_if_effective_network_policy_changes(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        with patch.object(engine, "_require_evaluation_scope"), \
+             patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=_container_inspection_responses(network_mode="bridge")), \
+             patch("guru.code_evaluator.subprocess.Popen") as popen:
+            with self.assertRaisesRegex(EvaluationError, "network policy"):
+                engine.start(CONTAINER_ID, b"synthetic probe", policy())
+        popen.assert_not_called()
+
+    def test_start_does_not_launch_if_container_is_attached_to_bridge(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        networks = _container_inspection_responses()[2].stdout.decode()
+        no_network = json.loads(networks)
+        no_network["bridge"] = {"NetworkID": "network-id", "IPAddress": "172.17.0.2"}
+        with patch.object(engine, "_require_evaluation_scope"), \
+             patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=_container_inspection_responses(networks=no_network)), \
+             patch("guru.code_evaluator.subprocess.Popen") as popen:
+            with self.assertRaisesRegex(EvaluationError, "external network attachment"):
+                engine.start(CONTAINER_ID, b"synthetic probe", policy())
+        popen.assert_not_called()
+
+    def test_container_log_mismatch_is_rejected_and_owned_container_removed(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        responses = [
+            _completed(CONTAINER_ID.encode()),
+            *_container_inspection_responses(log_type="json-file"),
+            _completed(json.dumps({
+                "io.brahmini.guru.evaluator-managed": "v1",
+                "io.brahmini.guru.evaluator-owner": "f" * 64,
+            }).encode()),
+            _completed(b""),
         ]
         with patch.object(engine, "_require_evaluation_scope"), \
              patch.object(engine, "_owner_token", return_value="f" * 64), \
@@ -172,9 +320,7 @@ class EvaluationLifecycleTests(unittest.TestCase):
         }).encode()
         with patch.object(engine, "_owner_token", return_value="f" * 64), \
              patch.object(engine, "_control", side_effect=[
-                 subprocess.CompletedProcess([], 0, labels, b""),
-                 subprocess.CompletedProcess([], 0, b'{"Type":"none"}', b""),
-                 subprocess.CompletedProcess([], 0, b"/var/lib/docker/containers/log.json", b""),
+                 *_container_inspection_responses(log_path=b"/var/lib/docker/containers/log.json"),
              ]):
             with self.assertRaisesRegex(EvaluationError, "logging policy"):
                 engine._inspect_created_container(CONTAINER_ID, policy())
@@ -205,23 +351,13 @@ class EvaluationLifecycleTests(unittest.TestCase):
             def kill(self):
                 self.returncode = -9
 
-        processes = [
-            FakeProcess((CONTAINER_ID + "\n").encode()),
-            FakeProcess((json.dumps({
-                "io.brahmini.guru.evaluator-managed": "v1",
-                "io.brahmini.guru.evaluator-owner": "f" * 64,
-            }) + "\n").encode()),
-            FakeProcess(b'{"Type":"none","Config":{}}\n'),
-            FakeProcess(b"\n"),
-            FakeProcess((json.dumps({
-                "io.brahmini.guru.evaluator-managed": "v1",
-                "io.brahmini.guru.evaluator-owner": "f" * 64,
-            }) + "\n").encode()),
-            FakeProcess(b'{"Type":"none","Config":{}}\n'),
-            FakeProcess(b"\n"),
-            FakeProcess(),
-            FakeProcess(),
-        ]
+        processes = [FakeProcess((CONTAINER_ID + "\n").encode())]
+        for _ in range(2):
+            processes.extend(
+                FakeProcess(result.stdout + b"\n")
+                for result in _container_inspection_responses()
+            )
+        processes.extend((FakeProcess(), FakeProcess()))
         with tempfile.TemporaryDirectory() as state_directory:
             engine = DockerCliEngine(endpoint=LOCAL_ENDPOINT, state_directory=state_directory)
             with patch.dict(os.environ, {
@@ -236,13 +372,13 @@ class EvaluationLifecycleTests(unittest.TestCase):
                     engine.remove(CONTAINER_ID, policy())
 
             argv = [call.args[0] for call in popen.call_args_list]
-            self.assertEqual(len(argv), 9)
+            self.assertEqual(len(argv), 25)
             for command in argv:
                 self.assertEqual(command[0:3], ["docker", "--host", LOCAL_ENDPOINT])
             self.assertEqual(argv[0][3], "create")
             self.assertEqual(argv[1][3:6], ["inspect", "--type", "container"])
-            self.assertEqual(argv[7][3:6], ["start", "--attach", "--interactive"])
-            self.assertEqual(argv[8][3:6], ["rm", "--force", "--volumes"])
+            self.assertEqual(argv[23][3:6], ["start", "--attach", "--interactive"])
+            self.assertEqual(argv[24][3:6], ["rm", "--force", "--volumes"])
             for call in popen.call_args_list:
                 self.assertNotIn("DOCKER_HOST", call.kwargs["env"])
                 self.assertNotIn("DOCKER_CONTEXT", call.kwargs["env"])
