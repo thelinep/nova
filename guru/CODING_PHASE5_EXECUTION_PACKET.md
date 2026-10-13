@@ -54,6 +54,19 @@ provider prices are planning snapshots and must be rechecked before any launch.
   starting its command. This confirms the schema on that engine/configuration;
   it is not worker, host, network-reachability, or adversarial qualification.
 
+- Effective evaluator isolation now also pins `--cgroupns private` and checks
+  the daemon's `CgroupnsMode`, restricted `Config.User`, read-only rootfs,
+  dropped capabilities, no-new-privileges, exact CPU/memory/swap/PID limits,
+  private IPC, non-host PID/UTS modes, no devices/device requests/device-cgroup
+  rules, and exact tmpfs declaration before both create acceptance and start.
+  Focused evaluator tests passed **36/36**; the clean local Guru suite passed
+  **412 passed, 1 skipped** with `OMP_NUM_THREADS=1`. Independent security
+  review found no remaining material gap under the trusted local Docker-daemon
+  boundary. A live create/inspect/remove-only probe on Docker Desktop Engine
+  28.5.1 observed `CgroupnsMode=private` and `DeviceCgroupRules=null`; the
+  container was never started. These checks remain implementation evidence,
+  not B1–B8 qualification; other Engine versions may fail closed.
+
 - A new metadata-only local artifact inventory preflight was added for D3. It
   accepts an explicit file list and exact recipe inventory pins, verifies the
   locked training-stack file, and rejects symlinks, special files, path escapes,

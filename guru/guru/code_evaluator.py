@@ -150,7 +150,7 @@ def _docker_options(policy: EvaluationPolicy, name: str, *, owner_token: str) ->
         "create", "--interactive", "--name", name,
         "--label", f"{_MANAGED_LABEL}={_MANAGED_LABEL_VALUE}",
         "--label", f"{_OWNER_LABEL}={owner_token}", "--log-driver", "none",
-        "--network", "none", "--read-only", "--user", "65534:65534",
+        "--network", "none", "--cgroupns", "private", "--read-only", "--user", "65534:65534",
         "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
         "--pids-limit", str(policy.pids_limit), "--memory", memory,
         "--memory-swap", memory, "--cpus", str(policy.cpu_count),
@@ -484,21 +484,51 @@ class DockerCliEngine:
                 field_value = json.loads(field_result.stdout.decode("utf-8", "strict"))
                 if field_value not in empty_values:
                     raise EvaluationError("created evaluator container mount policy is not isolated")
-            tmpfs_config_result = self._control([
-                "inspect", "--type", "container", "--format", "{{json .HostConfig.Tmpfs}}", container_id,
+            host_config_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .HostConfig}}", container_id,
             ], policy.control_timeout_seconds)
-            tmpfs_config = json.loads(tmpfs_config_result.stdout.decode("utf-8", "strict"))
-            expected_tmpfs_options = sorted((
-                "rw", "noexec", "nosuid", "nodev",
-                f"size={policy.tmpfs_bytes}", "mode=1777",
-            ))
-            actual_tmpfs = tmpfs_config.get("/tmp") if isinstance(tmpfs_config, dict) else None
-            if (not isinstance(tmpfs_config, dict)
-                    or set(tmpfs_config) != {"/tmp"}
-                    or not isinstance(actual_tmpfs, str)
-                    or sorted(actual_tmpfs.split(",")) != expected_tmpfs_options
-                    or len(actual_tmpfs.split(",")) != len(expected_tmpfs_options)):
-                raise EvaluationError("created evaluator container scratch policy is not isolated")
+            host_config = json.loads(host_config_result.stdout.decode("utf-8", "strict"))
+            expected_host_config = {
+                "CapAdd": None,
+                "CapDrop": ["ALL"],
+                "CpuPeriod": 0,
+                "CpuShares": 0,
+                "CpuQuota": 0,
+                "NanoCpus": int(round(policy.cpu_count * 1_000_000_000)),
+                "Memory": policy.memory_bytes,
+                "MemorySwap": policy.memory_bytes,
+                "PidsLimit": policy.pids_limit,
+                "CgroupnsMode": "private",
+                "Privileged": False,
+                "ReadonlyRootfs": True,
+                "SecurityOpt": ["no-new-privileges"],
+                "IpcMode": "private",
+                "PidMode": "",
+                "UTSMode": "",
+                "Devices": [],
+                "DeviceRequests": None,
+                "Tmpfs": {
+                    "/tmp": f"rw,noexec,nosuid,nodev,size={policy.tmpfs_bytes},mode=1777",
+                },
+            }
+            if not isinstance(host_config, dict):
+                raise EvaluationError("created evaluator container security/resource settings are unavailable")
+            device_cgroup_rules = host_config.get("DeviceCgroupRules")
+            if ("DeviceCgroupRules" not in host_config
+                    or device_cgroup_rules not in (None, [])):
+                raise EvaluationError("created evaluator container DeviceCgroupRules must be empty")
+            for field, expected in expected_host_config.items():
+                actual = host_config.get(field)
+                if field not in host_config or type(actual) is not type(expected) or actual != expected:
+                    raise EvaluationError(
+                        f"created evaluator container security/resource policy mismatch: {field}"
+                    )
+            user_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .Config.User}}", container_id,
+            ], policy.control_timeout_seconds)
+            config_user = json.loads(user_result.stdout.decode("utf-8", "strict"))
+            if not isinstance(config_user, str) or config_user != "65534:65534":
+                raise EvaluationError("created evaluator container user is not the restricted UID/GID")
             log_result = self._control([
                 "inspect", "--type", "container", "--format", "{{json .HostConfig.LogConfig}}", container_id,
             ], policy.control_timeout_seconds)

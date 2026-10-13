@@ -59,12 +59,31 @@ def _completed(stdout):
     return subprocess.CompletedProcess([], 0, stdout, b"")
 
 
+def _effective_host_config(current_policy=None):
+    current_policy = current_policy or policy()
+    return {
+        "CapAdd": None, "CapDrop": ["ALL"],
+        "CpuPeriod": 0, "CpuShares": 0, "CpuQuota": 0,
+        "NanoCpus": int(round(current_policy.cpu_count * 1_000_000_000)),
+        "Memory": current_policy.memory_bytes, "MemorySwap": current_policy.memory_bytes,
+        "PidsLimit": current_policy.pids_limit, "CgroupnsMode": "private",
+        "Privileged": False, "ReadonlyRootfs": True,
+        "SecurityOpt": ["no-new-privileges"],
+        "IpcMode": "private", "PidMode": "", "UTSMode": "",
+        "Devices": [], "DeviceRequests": None, "DeviceCgroupRules": None,
+        "Tmpfs": {
+            "/tmp": f"rw,noexec,nosuid,nodev,size={current_policy.tmpfs_bytes},mode=1777",
+        },
+    }
+
+
 def _container_inspection_responses(
     *, network_mode="none", networks=None, mounts=None, binds=None,
     host_mounts=None, volumes_from=None, config_volumes=None,
-    tmpfs=None, log_type="none", log_path=b"",
+    host_config=None, config_user="65534:65534", log_type="none", log_path=b"",
+    current_policy=None,
 ):
-    current_policy = policy()
+    current_policy = current_policy or policy()
     labels = json.dumps({
         "io.brahmini.guru.evaluator-managed": "v1",
         "io.brahmini.guru.evaluator-owner": "f" * 64,
@@ -78,10 +97,8 @@ def _container_inspection_responses(
         }}
     if mounts is None:
         mounts = []
-    if tmpfs is None:
-        tmpfs = {
-            "/tmp": f"rw,noexec,nosuid,nodev,size={current_policy.tmpfs_bytes},mode=1777",
-        }
+    if host_config is None:
+        host_config = _effective_host_config(current_policy)
     network_response = network_mode if isinstance(network_mode, bytes) else json.dumps(network_mode).encode()
     networks_response = networks if isinstance(networks, bytes) else json.dumps(networks).encode()
     mounts_response = mounts if isinstance(mounts, bytes) else json.dumps(mounts).encode()
@@ -89,13 +106,15 @@ def _container_inspection_responses(
     host_mounts_response = json.dumps(host_mounts).encode()
     volumes_from_response = json.dumps(volumes_from).encode()
     config_volumes_response = json.dumps(config_volumes).encode()
-    tmpfs_response = tmpfs if isinstance(tmpfs, bytes) else json.dumps(tmpfs).encode()
+    host_config_response = host_config if isinstance(host_config, bytes) else json.dumps(host_config).encode()
+    config_user_response = config_user if isinstance(config_user, bytes) else json.dumps(config_user).encode()
     log_config = json.dumps({"Type": log_type, "Config": {}}).encode()
     return [
         _completed(labels), _completed(network_response), _completed(networks_response),
         _completed(mounts_response), _completed(binds_response), _completed(host_mounts_response),
         _completed(volumes_from_response), _completed(config_volumes_response),
-        _completed(tmpfs_response), _completed(log_config), _completed(log_path),
+        _completed(host_config_response), _completed(config_user_response),
+        _completed(log_config), _completed(log_path),
     ]
 
 
@@ -117,6 +136,7 @@ class EvaluationPolicyTests(unittest.TestCase):
             policy(), "guru-eval-" + "c" * 32, owner_token="f" * 64,
         )
         self.assertIn("none", args)
+        self.assertEqual(args[args.index("--cgroupns") + 1], "private")
         self.assertIn("--read-only", args)
         self.assertIn("--cap-drop", args)
         self.assertIn("ALL", args)
@@ -224,6 +244,12 @@ class EvaluationLifecycleTests(unittest.TestCase):
 
     def test_inspection_rejects_malformed_network_or_mount_data(self):
         engine = DockerCliEngine(LOCAL_ENDPOINT)
+        incomplete_host_config = _effective_host_config()
+        del incomplete_host_config["PidsLimit"]
+        incorrect_tmpfs = _effective_host_config()
+        incorrect_tmpfs["Tmpfs"] = {"/tmp": "rw,size=1"}
+        extra_tmpfs = _effective_host_config()
+        extra_tmpfs["Tmpfs"]["/host"] = "rw"
         malformed_cases = (
             {"network_mode": b"not-json"},
             {"networks": b"not-json"},
@@ -235,9 +261,11 @@ class EvaluationLifecycleTests(unittest.TestCase):
             {"host_mounts": [{"Type": "bind", "Source": "/host", "Target": "/data"}]},
             {"volumes_from": ["other-container"]},
             {"config_volumes": {"/host/data": {}}},
-            {"tmpfs": b"not-json"},
-            {"tmpfs": {"/tmp": "rw,size=1"}},
-            {"tmpfs": {"/tmp": "rw,noexec,nosuid,nodev,size=67108864,mode=1777", "/host": "rw"}},
+            {"host_config": b"not-json"},
+            {"host_config": incomplete_host_config},
+            {"host_config": incorrect_tmpfs},
+            {"host_config": extra_tmpfs},
+            {"config_user": "root"},
         )
         for values in malformed_cases:
             with self.subTest(values=values), \
@@ -245,6 +273,65 @@ class EvaluationLifecycleTests(unittest.TestCase):
                  patch.object(engine, "_control", side_effect=_container_inspection_responses(**values)):
                 with self.assertRaises(EvaluationError):
                     engine._inspect_created_container(CONTAINER_ID, policy())
+
+    def test_inspection_rejects_unsafe_or_mismatched_hostconfig_limits(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        unsafe_values = (
+            ("CapAdd", ["SYS_ADMIN"]),
+            ("CapDrop", ["NET_RAW"]),
+            ("CpuPeriod", 100000),
+            ("CpuShares", 1024),
+            ("CpuQuota", 200000),
+            ("NanoCpus", 2000000000),
+            ("Memory", 536870911),
+            ("MemorySwap", 1073741824),
+            ("PidsLimit", 4096),
+            ("CgroupnsMode", "host"),
+            ("Privileged", True),
+            ("Privileged", 0),
+            ("ReadonlyRootfs", False),
+            ("SecurityOpt", ["no-new-privileges", "seccomp=unconfined"]),
+            ("IpcMode", "host"),
+            ("PidMode", "host"),
+            ("UTSMode", "host"),
+            ("Devices", [{"PathOnHost": "/dev/null"}]),
+            ("DeviceRequests", [{"Driver": "nvidia"}]),
+        )
+        for field, value in unsafe_values:
+            with self.subTest(field=field, value=value):
+                host_config = _effective_host_config()
+                host_config[field] = value
+                with patch.object(engine, "_owner_token", return_value="f" * 64), \
+                     patch.object(engine, "_control", side_effect=_container_inspection_responses(host_config=host_config)):
+                    with self.assertRaisesRegex(EvaluationError, field):
+                        engine._inspect_created_container(CONTAINER_ID, policy())
+
+    def test_effective_resource_limits_are_derived_from_policy(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        current_policy = policy(
+            cpu_count=1.5, memory_bytes=1024**3, pids_limit=64,
+            tmpfs_bytes=128 * 1024**2,
+        )
+        with patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=_container_inspection_responses(current_policy=current_policy)):
+            engine._inspect_created_container(CONTAINER_ID, current_policy)
+
+    def test_empty_device_cgroup_rules_are_allowed_but_nonempty_rules_are_rejected(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        for rules in (None, []):
+            with self.subTest(rules=rules):
+                host_config = _effective_host_config()
+                host_config["DeviceCgroupRules"] = rules
+                with patch.object(engine, "_owner_token", return_value="f" * 64), \
+                     patch.object(engine, "_control", side_effect=_container_inspection_responses(host_config=host_config)):
+                    engine._inspect_created_container(CONTAINER_ID, policy())
+
+        host_config = _effective_host_config()
+        host_config["DeviceCgroupRules"] = ["c 1:3 rwm"]
+        with patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=_container_inspection_responses(host_config=host_config)):
+            with self.assertRaisesRegex(EvaluationError, "DeviceCgroupRules"):
+                engine._inspect_created_container(CONTAINER_ID, policy())
 
     def test_start_does_not_launch_if_effective_network_policy_changes(self):
         engine = DockerCliEngine(LOCAL_ENDPOINT)
@@ -372,13 +459,13 @@ class EvaluationLifecycleTests(unittest.TestCase):
                     engine.remove(CONTAINER_ID, policy())
 
             argv = [call.args[0] for call in popen.call_args_list]
-            self.assertEqual(len(argv), 25)
+            self.assertEqual(len(argv), 27)
             for command in argv:
                 self.assertEqual(command[0:3], ["docker", "--host", LOCAL_ENDPOINT])
             self.assertEqual(argv[0][3], "create")
             self.assertEqual(argv[1][3:6], ["inspect", "--type", "container"])
-            self.assertEqual(argv[23][3:6], ["start", "--attach", "--interactive"])
-            self.assertEqual(argv[24][3:6], ["rm", "--force", "--volumes"])
+            self.assertEqual(argv[25][3:6], ["start", "--attach", "--interactive"])
+            self.assertEqual(argv[26][3:6], ["rm", "--force", "--volumes"])
             for call in popen.call_args_list:
                 self.assertNotIn("DOCKER_HOST", call.kwargs["env"])
                 self.assertNotIn("DOCKER_CONTEXT", call.kwargs["env"])
