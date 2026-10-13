@@ -26,8 +26,25 @@ provider prices are planning snapshots and must be rechecked before any launch.
   package mismatches; the hash-matched package environment remains on Python
   3.12.1. Guru selection/dispatch is disabled. After this row was added,
   focused readiness API tests passed **9/9**, full Maataa Node tests passed
-  **791, skipped 1**, and full Playwright passed **77/77**. Browser/model
+  **795, skipped 1**, and full Playwright passed **79/79**. Browser/model
   responses are fixtures; no Guru checkpoint was exercised.
+- The latest uncommitted evaluator-prequalification slice has strict probe and
+  report schemas, canonical write/replay checks, a fixed probe entrypoint, and
+  no candidate/corpus inputs. No independently reviewed probe image is pinned,
+  so it emits unavailable live probes without contacting Docker. Its promotion
+  verifier always reports `authenticated_trust_root_unavailable`; caller-supplied
+  digests cannot qualify a report. A review found and closed the earlier
+  caller-pin and image-entrypoint issues. No Docker, worker restart, task code,
+  or corpus was executed. The latest combined evaluator/code-evaluator/
+  trajectory tests passed **70/70**; the full Guru suite passed **473 passed,
+  1 skipped**.
+- The latest uncommitted trajectory binder validates a digest-bound review
+  envelope, source-bearing prompt/context/task/input references against
+  rights-bound task artifacts, and split/leakage constraints. It never marks a
+  gold candidate or training use eligible and retains the evaluator and I7
+  blockers. It performs no file access, corpus persistence, export, or
+  training. The review envelope remains caller-provided and is not an
+  authenticated reviewer signature.
 - The evaluator's old daemon-default logging check was replaced with an
   exact-container check: create the container with `--log-driver none`, verify
   its full ID, managed/owner labels, `HostConfig.LogConfig.Type`, and empty

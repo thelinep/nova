@@ -12,9 +12,27 @@
 | Candidate data | TinyPython is quarantined. Checked-in task files are small synthetic fixtures. | No real training corpus is admitted. |
 | Evaluator | Container prequalification exists; full disposable-worker qualification and generated-code test execution do not. | `tests_pass` and executable correctness are not measurable; corpus admission and the experiment remain blocked. |
 | Student base and recipe | **Candidate/method selected; model intake open.** The owner selected `Qwen/Qwen2.5-Coder-1.5B` (base, not Instruct) at revision `ccb64f03a691be46ba6b4e4c91f396c247aa66c7` with LoRA SFT. The D3 recipe remains a draft and non-launchable. | Selection authorizes no download or training. Exact weight/tokenizer digests, rights and model intake remain open. A new local-only metadata preflight checks installed Python/package versions against the exact recipe lock; it reports blocked on this host because Python 3.12.1 differs from the recipe's 3.12.4 pin, while all 37 locked package versions match. No model or tokenizer artifacts were inspected; selected-model compatibility remains unverified. |
+| D3 student intake binding | Commit `4217b32` adds a metadata-only, digest-bound intake check for the selected Qwen2.5-Coder-1.5B recipe and Maataa readiness view. Focused binding tests: **21 passed**; full Guru suite at that integration: **439 passed, 1 skipped**. | The intake file and exact artifact/tokenizer digests and owner rights review are still absent. No download, model load, or training occurred. |
 | Compute | Conditional training-resource decision: one Lambda H100 SXM pilot in `asia-south-1` if offered/available, maximum four hours and US$25 including tax; use an existing owner-controlled account only. Account availability has not been verified and no instance was launched. | This cap applies only to a later bounded resource preflight after rights, evaluator and trainer prerequisites pass. No training run or spend is authorized before those gates and account/region availability are confirmed. |
 | Maataa runtime | Selected `qwen2.5:7b`, Ollama digest `845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e`, has a fresh 18/18 Maataa coding-workflow qualification on 2026-10-12 (three trials each across six capabilities). | This qualifies the exact installed runtime for Maataa's six workflow checks; it does not test generated-code correctness or qualify a Guru-trained checkpoint. The separate `qwen2.5-coder:7b` digest remains 15/18 with three multi-file failures. |
 | Release | No Guru-Code checkpoint exists. | Guru-Code is not release-ready. |
+
+### Latest code-review status (2026-10-13)
+
+Two additional code slices are present in the current worktree but are not
+committed. The evaluator harness has a fixed probe set, canonical report
+replay, a hard-coded empty approved-image pin, and a promotion verifier that
+always blocks on the missing authenticated trust root. It will not contact
+Docker while no image digest is independently approved. The trajectory binder
+checks a review envelope against the exact trace digest and closes source refs
+over rights-bound task artifacts; it reports only a bound review record,
+keeps gold and training eligibility false, and performs no persistence,
+export, or training. Focused combined tests passed **70**; the full Guru suite
+passed **473, 1 skipped**. These slices do not qualify an evaluator or make
+trajectory data gold. Fresh `preflight c_rd` remains blocked by
+`missing admission audit`. No Maataa UI code changed in these slices; the last
+full Maataa/Playwright results remain **795 passed, 1 skipped** and **79/79**
+from the preceding D3 integration.
 
 ### Implementation evidence updated 2026-10-13
 
