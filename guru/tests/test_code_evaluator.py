@@ -85,6 +85,7 @@ class EvaluationPolicyTests(unittest.TestCase):
         self.assertIn("io.brahmini.guru.evaluator-managed=v1", args)
         self.assertIn("io.brahmini.guru.evaluator-owner=" + "f" * 64, args)
         self.assertIn("none", args)
+        self.assertEqual(args[args.index("--log-driver") + 1], "none")
         self.assertFalse(any(x in {"--mount", "-v", "--volume", "--env", "-e", "--env-file", "--privileged", "--device"} for x in args))
         self.assertFalse(any("secret" in x.lower() or "token" in x.lower() for x in args))
 
@@ -97,6 +98,89 @@ class EvaluationLifecycleTests(unittest.TestCase):
     def test_default_engine_requires_an_explicit_local_endpoint(self):
         with self.assertRaisesRegex(EvaluationError, "explicit local Docker endpoint"):
             evaluate(b"payload", policy())
+
+    def test_create_accepts_container_log_none_independent_of_daemon_default(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        labels = json.dumps({
+            "io.brahmini.guru.evaluator-managed": "v1",
+            "io.brahmini.guru.evaluator-owner": "f" * 64,
+        }).encode()
+        responses = [
+            subprocess.CompletedProcess([], 0, CONTAINER_ID.encode(), b""),
+            subprocess.CompletedProcess([], 0, labels, b""),
+            subprocess.CompletedProcess([], 0, b'{"Type":"none","Config":{}}', b""),
+            subprocess.CompletedProcess([], 0, b"", b""),
+        ]
+        with patch.object(engine, "_require_evaluation_scope"), \
+             patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=responses) as control:
+            self.assertEqual(engine.create(policy(), "guru-eval-" + "c" * 32), CONTAINER_ID)
+        self.assertEqual(control.call_args_list[1].args[0][-1], CONTAINER_ID)
+        self.assertTrue(all(call.args[0][-1] == CONTAINER_ID for call in control.call_args_list[1:]))
+
+    def test_container_log_mismatch_is_rejected_and_owned_container_removed(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        labels = json.dumps({
+            "io.brahmini.guru.evaluator-managed": "v1",
+            "io.brahmini.guru.evaluator-owner": "f" * 64,
+        }).encode()
+        responses = [
+            subprocess.CompletedProcess([], 0, CONTAINER_ID.encode(), b""),
+            subprocess.CompletedProcess([], 0, labels, b""),
+            subprocess.CompletedProcess([], 0, b'{"Type":"json-file","Config":{}}', b""),
+            subprocess.CompletedProcess([], 0, b"", b""),
+            subprocess.CompletedProcess([], 0, labels, b""),
+            subprocess.CompletedProcess([], 0, b"", b""),
+        ]
+        with patch.object(engine, "_require_evaluation_scope"), \
+             patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=responses) as control:
+            with self.assertRaisesRegex(EvaluationError, "logging policy"):
+                engine.create(policy(), "guru-eval-" + "c" * 32)
+        self.assertEqual(control.call_args_list[-1].args[0], ["rm", "--force", "--volumes", CONTAINER_ID])
+
+    def test_start_rechecks_policy_before_launching_container(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        with patch.object(engine, "_require_evaluation_scope"), \
+             patch.object(engine, "_inspect_created_container", side_effect=EvaluationError("logging policy")), \
+             patch("guru.code_evaluator.subprocess.Popen") as popen:
+            with self.assertRaisesRegex(EvaluationError, "logging policy"):
+                engine.start(CONTAINER_ID, b"probe", policy())
+        popen.assert_not_called()
+
+    def test_inspection_rejects_wrong_or_compose_owned_labels(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        for labels in (
+            {"io.brahmini.guru.evaluator-managed": "v1", "io.brahmini.guru.evaluator-owner": "0" * 64},
+            {"io.brahmini.guru.evaluator-managed": "v1", "io.brahmini.guru.evaluator-owner": "f" * 64,
+             "com.docker.compose.project": "other"},
+        ):
+            with self.subTest(labels=labels), \
+                 patch.object(engine, "_owner_token", return_value="f" * 64), \
+                 patch.object(engine, "_control", return_value=subprocess.CompletedProcess(
+                     [], 0, json.dumps(labels).encode(), b"",
+                 )) as control:
+                with self.assertRaisesRegex(EvaluationError, "ownership"):
+                    engine._inspect_created_container(CONTAINER_ID, policy())
+                self.assertEqual(control.call_count, 1)
+
+    def test_inspection_rejects_persistent_log_path_and_unreadable_config(self):
+        engine = DockerCliEngine(LOCAL_ENDPOINT)
+        labels = json.dumps({
+            "io.brahmini.guru.evaluator-managed": "v1",
+            "io.brahmini.guru.evaluator-owner": "f" * 64,
+        }).encode()
+        with patch.object(engine, "_owner_token", return_value="f" * 64), \
+             patch.object(engine, "_control", side_effect=[
+                 subprocess.CompletedProcess([], 0, labels, b""),
+                 subprocess.CompletedProcess([], 0, b'{"Type":"none"}', b""),
+                 subprocess.CompletedProcess([], 0, b"/var/lib/docker/containers/log.json", b""),
+             ]):
+            with self.assertRaisesRegex(EvaluationError, "logging policy"):
+                engine._inspect_created_container(CONTAINER_ID, policy())
+        with patch.object(engine, "_control", side_effect=EvaluationError("inspect failed")):
+            with self.assertRaisesRegex(EvaluationError, "inspect failed"):
+                engine._inspect_created_container(CONTAINER_ID, policy())
 
     def test_public_evaluator_does_not_accept_engine_injection(self):
         fake = FakeEngine()
@@ -123,6 +207,18 @@ class EvaluationLifecycleTests(unittest.TestCase):
 
         processes = [
             FakeProcess((CONTAINER_ID + "\n").encode()),
+            FakeProcess((json.dumps({
+                "io.brahmini.guru.evaluator-managed": "v1",
+                "io.brahmini.guru.evaluator-owner": "f" * 64,
+            }) + "\n").encode()),
+            FakeProcess(b'{"Type":"none","Config":{}}\n'),
+            FakeProcess(b"\n"),
+            FakeProcess((json.dumps({
+                "io.brahmini.guru.evaluator-managed": "v1",
+                "io.brahmini.guru.evaluator-owner": "f" * 64,
+            }) + "\n").encode()),
+            FakeProcess(b'{"Type":"none","Config":{}}\n'),
+            FakeProcess(b"\n"),
             FakeProcess(),
             FakeProcess(),
         ]
@@ -132,19 +228,21 @@ class EvaluationLifecycleTests(unittest.TestCase):
                 "DOCKER_HOST": "tcp://remote.example:2376",
                 "DOCKER_CONTEXT": "remote-context",
             }), patch("guru.code_evaluator.subprocess.Popen", side_effect=processes) as popen, \
-                    patch.object(engine, "_reap_abandoned_containers"):
+                    patch.object(engine, "_reap_abandoned_containers"), \
+                    patch.object(engine, "_owner_token", return_value="f" * 64):
                 with engine.evaluation_scope(policy()):
                     self.assertEqual(engine.create(policy(), "guru-eval-" + "c" * 32), CONTAINER_ID)
                     engine.start(CONTAINER_ID, b"payload", policy())
                     engine.remove(CONTAINER_ID, policy())
 
             argv = [call.args[0] for call in popen.call_args_list]
-            self.assertEqual(len(argv), 3)
+            self.assertEqual(len(argv), 9)
             for command in argv:
                 self.assertEqual(command[0:3], ["docker", "--host", LOCAL_ENDPOINT])
             self.assertEqual(argv[0][3], "create")
-            self.assertEqual(argv[1][3:6], ["start", "--attach", "--interactive"])
-            self.assertEqual(argv[2][3:6], ["rm", "--force", "--volumes"])
+            self.assertEqual(argv[1][3:6], ["inspect", "--type", "container"])
+            self.assertEqual(argv[7][3:6], ["start", "--attach", "--interactive"])
+            self.assertEqual(argv[8][3:6], ["rm", "--force", "--volumes"])
             for call in popen.call_args_list:
                 self.assertNotIn("DOCKER_HOST", call.kwargs["env"])
                 self.assertNotIn("DOCKER_CONTEXT", call.kwargs["env"])

@@ -2,11 +2,12 @@
 
 This is a case-runner scaffold over the Docker evaluator primitive. It does
 not qualify a Docker host, image, runner, or isolation boundary. Rights,
-qualification, test-suite, endpoint, and daemon logging pins must come from
+qualification, test-suite, endpoint, and container logging pins must come from
 trusted composition-root providers; no production provider composition is
 configured. Proposal and harness bytes are sent only to a verified local
-Docker endpoint whose default log driver is disabled, and are never written
-by this module.
+Docker endpoint whose container log configuration is inspected by full ID
+before start, and are never written by this module. A daemon-wide default does
+not prove this container's policy.
 """
 from __future__ import annotations
 
@@ -205,7 +206,9 @@ except BaseException:
 '''
 RUNNER_COMMAND = ("python", "-I", "-c", _RUNNER)
 RUNNER_VERSION = "guru-python-case-runner-v3"
-DAEMON_LOGGING_POLICY = "qualified-local-daemon-log-driver-none-v1"
+# Historical authorization-record field names remain stable. This versioned
+# policy is enforced against each exact container before it is started.
+DAEMON_LOGGING_POLICY = "per-container-log-driver-none-inspected-before-start-v1"
 MAX_QUALIFICATION_AGE = timedelta(days=90)
 
 
@@ -263,16 +266,10 @@ def _local_docker_endpoint() -> str:
         ).stdout.strip()
         if not endpoint.startswith("unix://"):
             raise CaseRunnerAuthorizationError("Docker endpoint is not a local Unix socket")
-        logging_driver = subprocess.run(
-            ["docker", "--host", endpoint, "info", "--format", "{{.LoggingDriver}}"],
-            check=True, capture_output=True, text=True, timeout=5, shell=False,
-        ).stdout.strip()
     except CaseRunnerAuthorizationError:
         raise
     except (OSError, subprocess.SubprocessError, ValueError) as exc:
         raise CaseRunnerAuthorizationError("cannot verify active Docker endpoint is local") from exc
-    if logging_driver != "none":
-        raise CaseRunnerAuthorizationError("Docker daemon logging driver must be none")
     return endpoint
 
 
@@ -291,7 +288,7 @@ def run_python_case(
 
     Source rights are loaded from a composition-root provider and must bind the
     exact ``item.source_digest``. A separate trusted provider must pin the local
-    qualification, image, configuration, test harness, and daemon log policy.
+    qualification, image, configuration, test harness, and per-container log policy.
     No production provider composition is currently configured in Guru.
     """
     if not isinstance(item, CorpusItem):
@@ -379,7 +376,7 @@ def run_python_case(
     log_policy_digest = _digest(DAEMON_LOGGING_POLICY.encode("utf-8"))
     if (pinned.daemon_logging_policy_digest != log_policy_digest or
             pinned.trusted_daemon_logging_policy_digest != log_policy_digest):
-        raise CaseRunnerAuthorizationError("daemon log-retention policy is not pinned")
+        raise CaseRunnerAuthorizationError("per-container log-retention policy is not pinned")
     if qualification.execution_scope != "local":
         raise CaseRunnerAuthorizationError("qualification scope is not local")
     if qualification.config_digest != config_digest or qualification.image_digest != image_digest:
@@ -609,7 +606,7 @@ def run_python_case_set(
     logging_digest = _digest(DAEMON_LOGGING_POLICY.encode("utf-8"))
     if (pinned.daemon_logging_policy_digest != logging_digest or
             pinned.trusted_daemon_logging_policy_digest != logging_digest):
-        raise CaseRunnerAuthorizationError("daemon log-retention policy is not pinned")
+        raise CaseRunnerAuthorizationError("per-container log-retention policy is not pinned")
     if (not _is_digest(pinned.test_suite_digest) or
             pinned.test_suite_digest != pinned.trusted_test_suite_digest):
         raise CaseRunnerAuthorizationError("test suite does not match trusted provider pin")

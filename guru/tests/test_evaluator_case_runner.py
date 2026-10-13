@@ -509,22 +509,11 @@ class EvaluatorCaseRunnerTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True), patch(
             "guru.evaluator_case_runner.subprocess.run",
             side_effect=[SimpleNamespace(stdout="default\n"),
-                         SimpleNamespace(stdout=ENDPOINT + "\n"),
-                         SimpleNamespace(stdout="json-file\n")],
-        ):
-            with self.assertRaisesRegex(CaseRunnerAuthorizationError, "logging driver"):
-                _local_docker_endpoint()
-        with patch.dict(os.environ, {}, clear=True), patch(
-            "guru.evaluator_case_runner.subprocess.run",
-            side_effect=[SimpleNamespace(stdout="default\n"),
-                         SimpleNamespace(stdout=ENDPOINT + "\n"),
-                         SimpleNamespace(stdout="none\n")],
+                         SimpleNamespace(stdout=ENDPOINT + "\n")],
         ) as docker_run:
             self.assertEqual(_local_docker_endpoint(), ENDPOINT)
-        self.assertEqual(
-            docker_run.call_args_list[-1].args[0],
-            ["docker", "--host", ENDPOINT, "info", "--format", "{{.LoggingDriver}}"],
-        )
+        self.assertEqual(len(docker_run.call_args_list), 2)
+        self.assertEqual(docker_run.call_args_list[0].args[0], ["docker", "context", "show"])
 
     def test_truncated_output_is_not_a_completed_case(self):
         evidence, _ = self.run_case(FakeEvaluator(stdout=b"partial", output_limited=True))

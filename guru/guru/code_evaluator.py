@@ -404,6 +404,65 @@ class DockerCliEngine:
             raise EvaluationError("Docker control operation returned failure")
         return result
 
+    def _inspect_created_container(self, container_id: str, policy: EvaluationPolicy) -> None:
+        """Verify exact container ownership and its per-container log policy.
+
+        The full ID is used for each inspect. A logging-policy mismatch is a
+        hard failure; cleanup separately rechecks ownership before removal.
+        """
+        if not _CONTAINER_ID.fullmatch(container_id):
+            raise EvaluationError("invalid container identifier during inspection")
+        try:
+            labels_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .Config.Labels}}", container_id,
+            ], policy.control_timeout_seconds)
+            labels = json.loads(labels_result.stdout.decode("utf-8", "strict"))
+            owner_token = self._owner_token()
+            if not isinstance(labels, dict):
+                raise EvaluationError("created evaluator container labels are unavailable")
+            owned = (
+                labels.get(_MANAGED_LABEL) == _MANAGED_LABEL_VALUE
+                and labels.get(_OWNER_LABEL) == owner_token
+                and labels.get("com.docker.compose.project") is None
+            )
+            if not owned:
+                raise EvaluationError("created evaluator container ownership could not be verified")
+            log_result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .HostConfig.LogConfig}}", container_id,
+            ], policy.control_timeout_seconds)
+            path_result = self._control([
+                "inspect", "--type", "container", "--format", "{{.LogPath}}", container_id,
+            ], policy.control_timeout_seconds)
+            log_config = json.loads(log_result.stdout.decode("utf-8", "strict"))
+            log_path = path_result.stdout.decode("utf-8", "strict").strip()
+            if not isinstance(log_config, dict) or log_config.get("Type") != "none" or log_path:
+                raise EvaluationError("created evaluator container logging policy is not none")
+            return
+        except EvaluationError:
+            raise
+        except (UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise EvaluationError("created evaluator container inspection could not be verified") from exc
+
+    def _remove_after_verified_owner(self, container_id: str, policy: EvaluationPolicy) -> None:
+        """Best-effort cleanup only after a fresh exact-ID owner-label check."""
+        try:
+            # Re-inspect and permit only the specific logging-policy failure;
+            # ownership failures still prevent removal.
+            result = self._control([
+                "inspect", "--type", "container", "--format", "{{json .Config.Labels}}",
+                container_id,
+            ], policy.control_timeout_seconds)
+            labels = json.loads(result.stdout.decode("utf-8", "strict"))
+            owner_token = self._owner_token()
+            if (isinstance(labels, dict)
+                    and labels.get(_MANAGED_LABEL) == _MANAGED_LABEL_VALUE
+                    and labels.get(_OWNER_LABEL) == owner_token
+                    and labels.get("com.docker.compose.project") is None):
+                self._control(["rm", "--force", "--volumes", container_id], policy.control_timeout_seconds)
+        except (EvaluationError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+            # Leave uncertain containers for the next locked recovery pass.
+            return
+
     def create(self, policy: EvaluationPolicy, name: str) -> str:
         self._require_evaluation_scope()
         result = self._control(
@@ -416,12 +475,20 @@ class DockerCliEngine:
             # before the control response failed, the next locked startup pass
             # will discover and clean the exact owner-labeled container.
             raise EvaluationError("Docker create returned an invalid container identifier")
+        try:
+            self._inspect_created_container(container_id, policy)
+        except EvaluationError:
+            self._remove_after_verified_owner(container_id, policy)
+            raise
         return container_id
 
     def start(self, container_id: str, payload: bytes, policy: EvaluationPolicy) -> EngineResult:
         self._require_evaluation_scope()
         if not _CONTAINER_ID.fullmatch(container_id):
             raise EvaluationError("invalid container identifier")
+        # Recheck immediately before start to close the create/inspect/start
+        # gap as far as the Docker CLI boundary permits.
+        self._inspect_created_container(container_id, policy)
         try:
             proc = subprocess.Popen(
                 self._argv(["start", "--attach", "--interactive", container_id]),
