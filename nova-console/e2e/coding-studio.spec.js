@@ -297,6 +297,25 @@ test('Guru readiness matrix identifies pending exact model pins as unverified an
   await expect(page.locator('#guruCodeAction')).toBeDisabled();
 });
 
+test('Guru readiness matrix separates trainer environment blockers from selected-model compatibility', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  await openStudio(page, { roots: [root], guruReadiness: {
+    schema: 'maataa-guru-readiness-v1', status: 'blocked', action: { enabled: false, reason: 'Training environment and exact-model compatibility are not qualified.' },
+    entries: [
+      { id: 'trainer_environment', label: 'Trainer environment', status: 'blocked', summary: 'Python version mismatch: expected 3.12.4, found 3.12.1. All 37 locked package versions match.', blockers: ['Python version mismatch: expected 3.12.4, found 3.12.1.'], evidence: [{ path: 'guru/guru/training_stack_inspector.py', detail: 'Local-only trainer-stack preflight.' }] },
+      { id: 'trainer_compatibility', label: 'Selected-model trainer compatibility', status: 'unverified', summary: 'Exact selected-model and tokenizer compatibility remains unverified.', blockers: ['Exact model and tokenizer artifacts have not been inspected.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Selected candidate recipe.' }] },
+    ],
+  } });
+  const matrix = page.locator('#guruReadinessMatrix');
+  await expect(matrix).toHaveAttribute('data-status', 'blocked');
+  const environmentRow = matrix.locator('[data-status="blocked"]').filter({ hasText: 'Trainer environment' });
+  await expect(environmentRow).toBeVisible();
+  await expect(environmentRow).toContainText('expected 3.12.4, found 3.12.1');
+  await expect(environmentRow).toContainText('All 37 locked package versions match');
+  await expect(matrix.locator('[data-status="unverified"]').filter({ hasText: 'Selected-model trainer compatibility' })).toBeVisible();
+  await expect(page.locator('#guruCodeAction')).toBeDisabled();
+});
+
 test('Coding Studio gives a clear empty state when no project is approved', async ({ page }) => {
   await openStudio(page);
   await expect(page.getByRole('heading', { name: 'Approve a project to begin' })).toBeVisible();

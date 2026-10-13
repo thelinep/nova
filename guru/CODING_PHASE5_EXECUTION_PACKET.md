@@ -14,15 +14,20 @@ provider prices are planning snapshots and must be rechecked before any launch.
 
 - Coding Studio now has a read-only Guru readiness API and evidence matrix for
   corpus admission, exact student model/tokenizer, training recipe, trainer
+  environment-stack metadata, trainer
   compatibility, evaluator,
   compute, and checkpoint qualification. A fresh matrix run reports overall
   **blocked**: `c_rd` has `missing admission audit`; the selected
   Qwen2.5-Coder-1.5B base + LoRA/SFT still lacks exact artifact digests and
   model intake; trainer compatibility is unverified, and recipe, evaluator, compute and checkpoint gates remain
-  closed. Guru selection/dispatch is disabled. Focused API tests passed **3/3**,
-  full Maataa Node tests passed **785, skipped 1**, and full Playwright passed
-  **76/76**. Browser/model responses are fixtures; no Guru checkpoint was
-  exercised.
+  closed. The configured `python3` currently lacks Pydantic, so the new trainer
+  environment row reports the stack preflight unavailable with the specific
+  dependency blocker. The available Python 3.12.4 environment has 28 locked
+  package mismatches; the hash-matched package environment remains on Python
+  3.12.1. Guru selection/dispatch is disabled. After this row was added,
+  focused readiness API tests passed **9/9**, full Maataa Node tests passed
+  **791, skipped 1**, and full Playwright passed **77/77**. Browser/model
+  responses are fixtures; no Guru checkpoint was exercised.
 - The evaluator's old daemon-default logging check was replaced with an
   exact-container check: create the container with `--log-driver none`, verify
   its full ID, managed/owner labels, `HostConfig.LogConfig.Type`, and empty

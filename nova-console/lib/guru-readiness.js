@@ -20,6 +20,75 @@ function item(id, label, status, summary, evidence, blockers = []) {
   return { id, label, status, summary, evidence, blockers };
 }
 
+function trainerStackEntry({ root, guruRoot, recipe, python, run }) {
+  const evidence = (relative, detail) => sourceEvidence(root, relative, detail);
+  const lockRelative = recipe?.training_stack?.lockfile || 'requirements-test-full.lock';
+  const evidencePaths = [
+    evidence('guru/training_stack_inspector.py', 'Metadata-only local Python/package stack inspector; it does not load model artifacts or train.'),
+    evidence(lockRelative, 'Pinned training package lock whose digest and package count are reported by the preflight.'),
+    evidence(RECIPE_RELATIVE, 'Expected Python version and lock digest/count source.'),
+  ];
+  const unavailable = (status, summary, blocker) => item(
+    'trainer_environment', 'Trainer environment', status, summary, evidencePaths, [blocker],
+  );
+
+  let result;
+  try {
+    result = run(python, ['-m', 'guru', 'trainer-stack-preflight'], {
+      cwd: guruRoot,
+      encoding: 'utf8',
+      timeout: 10_000,
+      maxBuffer: 1024 * 1024,
+      env: { ...process.env, PYTHONPATH: [guruRoot, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter) },
+    });
+  } catch (error) {
+    if (error?.code === 'ENOENT') return unavailable('unavailable', 'Guru trainer-stack preflight could not start because Python is unavailable.', `Python runtime '${python}' is not installed or not on PATH.`);
+    if (error?.code === 'ETIMEDOUT') return unavailable('unavailable', 'Guru trainer-stack preflight exceeded its time limit.', 'Trainer-stack preflight timed out.');
+    return unavailable('unavailable', 'Guru trainer-stack preflight could not run.', `Trainer-stack preflight could not run: ${error?.message || 'unknown error'}`);
+  }
+  if (result.error?.code === 'ENOENT') return unavailable('unavailable', 'Guru trainer-stack preflight could not start because Python is unavailable.', `Python runtime '${python}' is not installed or not on PATH.`);
+  if (result.error?.code === 'ETIMEDOUT') return unavailable('unavailable', 'Guru trainer-stack preflight exceeded its time limit.', 'Trainer-stack preflight timed out.');
+  if (result.error) return unavailable('unavailable', 'Guru trainer-stack preflight could not run.', `Trainer-stack preflight could not run: ${result.error.message}`);
+
+  let report;
+  try { report = JSON.parse(String(result.stdout || '')); }
+  catch (_) {
+    const stderr = String(result.stderr || '');
+    const missingModule = /ModuleNotFoundError: No module named ['"]([^'"]+)['"]/.exec(stderr);
+    if (missingModule) {
+      return unavailable('unavailable', `Guru trainer-stack runtime is unavailable: required module '${missingModule[1]}' is missing.`, `Guru Python runtime is missing required module '${missingModule[1]}'.`);
+    }
+    if (/ImportError:/.test(stderr)) {
+      return unavailable('unavailable', 'Guru trainer-stack runtime is unavailable because a required dependency could not be imported.', 'A required Guru trainer-stack dependency could not be imported.');
+    }
+    return unavailable('unavailable', 'Guru trainer-stack preflight did not return readable JSON evidence.', 'Trainer-stack preflight returned malformed JSON.');
+  }
+  const validReport = report && typeof report === 'object' && !Array.isArray(report)
+    && ['blocked', 'metadata_match'].includes(report.training_stack_status)
+    && Array.isArray(report.blockers) && report.blockers.every(value => typeof value === 'string')
+    && Array.isArray(report.mismatches) && report.mismatches.every(value => typeof value === 'string')
+    && (report.lock_sha256 === null || (typeof report.lock_sha256 === 'string' && /^[a-f0-9]{64}$/.test(report.lock_sha256)))
+    && Number.isInteger(report.locked_package_count) && report.locked_package_count >= 0
+    && report.selected_model_compatibility === 'unverified_without_exact_artifacts'
+    && (report.training_stack_status !== 'metadata_match'
+      || (report.blockers.length === 0 && report.mismatches.length === 0
+        && report.lock_sha256 !== null && report.locked_package_count > 0))
+    && (report.training_stack_status !== 'blocked' || report.blockers.length > 0);
+  if (!validReport) return unavailable('unavailable', 'Guru trainer-stack preflight returned JSON that does not match its evidence contract.', 'Trainer-stack preflight returned malformed or incomplete JSON evidence.');
+  if (result.status !== 0 && result.status !== 1) {
+    return unavailable('unavailable', 'Guru trainer-stack preflight exited with an unexpected status.', `Trainer-stack preflight exited unexpectedly with status ${result.status}.`);
+  }
+  if ((result.status === 0) !== (report.training_stack_status === 'metadata_match')) {
+    return unavailable('unavailable', 'Guru trainer-stack preflight exit status conflicts with its report.', `Trainer-stack preflight exit status ${result.status} conflicts with ${report.training_stack_status}.`);
+  }
+  if (report.model_weights_loaded !== false || report.tokenizer_loaded !== false || report.training_started !== false) {
+    return unavailable('unavailable', 'Guru trainer-stack preflight did not preserve its non-launching safety contract.', 'Trainer-stack evidence claims model loading or training occurred.');
+  }
+  const status = report.training_stack_status === 'metadata_match' ? 'ready' : 'blocked';
+  const detail = `Stack ${report.training_stack_status}; ${report.locked_package_count} locked packages; lock SHA-256 ${report.lock_sha256 || 'unavailable'}; selected-model compatibility remains unverified without exact artifacts.`;
+  return item('trainer_environment', 'Trainer environment', status, detail, evidencePaths, report.blockers);
+}
+
 function createGuruReadiness({ repoRoot, python = 'python3', run = spawnSync } = {}) {
   const root = path.resolve(repoRoot || path.join(__dirname, '..', '..'));
   const guruRoot = path.join(root, 'guru');
@@ -71,6 +140,8 @@ function createGuruReadiness({ repoRoot, python = 'python3', run = spawnSync } =
     entries.push(item('corpus_admission', 'Corpus and admission', 'unavailable', preflightError || 'Guru Python preflight evidence is unavailable.',
       [evidence('guru/corpus/cli.py', 'Preflight command source.'), evidence('data/coding/tasks.jsonl', 'Task manifest path.')], ['Could not determine current corpus admission state.']));
   }
+
+  entries.push(trainerStackEntry({ root, guruRoot, recipe, python, run }));
 
   if (!recipe) {
     entries.push(item('student_model', 'Exact student model and tokenizer', 'unavailable', 'The checked-in D3 recipe could not be read.', [evidence(RECIPE_RELATIVE, 'Selected student and digest pins.')], ['Recipe unavailable or invalid JSON.']));
