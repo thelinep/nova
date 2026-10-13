@@ -56,7 +56,7 @@ preflight warning and does not change its admitted semantics.
 | Work slice | Current implementation evidence | What remains open |
 | --- | --- | --- |
 | B0.1–B0.4 evaluator evidence contract | Commits `5f24668` (integrated from isolated agent branch); strict case schema, digest chain, durable atomic append/replay and fail-closed `TESTS` mapper. Focused evaluator suites: 22 passed. | No actual task runner/backend, disposable host, candidate-code execution, independent review or evaluator lock. This does not make executable correctness measurable. |
-| B0 ordered case-set runner | Added `run_python_case_set` with ordered case IDs, per-case harness digests, full preflight before execution, frozen provider snapshots and chained per-case evidence. Docker logging-driver inspection is pinned to the exact resolved local endpoint. Independent review found no false-pass path; focused evaluator/evidence/code-evaluator/quality suite: 144 passed. | All execution tests use fakes. There is no qualified disposable backend or production trusted-provider composition, so this remains orchestration scaffolding and does not qualify `tests_pass` or make executable correctness measurable. |
+| B0 ordered case-set runner | Added `run_python_case_set` with ordered case IDs, per-case harness digests, full preflight before execution, frozen provider snapshots and chained per-case evidence. The Docker CLI now verifies the exact full container ID, Guru owner labels, `HostConfig.LogConfig.Type == "none"`, and an empty log path at creation and again immediately before start. Daemon-wide default logging is not treated as container evidence. Fresh full Guru suite: 403 passed, 1 skipped. | All execution tests use fakes. There is no qualified disposable backend or production trusted-provider composition, so this remains orchestration scaffolding and does not qualify `tests_pass` or make executable correctness measurable. |
 | B3 abandoned-worker recovery implementation | Commit `b76905f` adds a durable per-checkout owner token under private user state, serialized lifecycle lock, exact managed/owner labels and name checks, startup reaping, and thread-owned engine scopes. Recovery version is included in the evaluator config digest. Mock/process tests cover lookalike and peer labels, lock release after process death, cross-process serialization and cross-thread operation rejection. Focused evaluator/case-runner suite: 43 passed; full Guru suite: 328 passed, 1 skipped. | Implementation evidence only. The process-death test stubs Docker reaping; no real orphan container discovery/removal or daemon/host restart was exercised. B1/B5/B7 disposable-worker qualification and independent signed report remain open. |
 | I2/I3 item-bound admission and audit integrity | Commits `d1bd36d`, `6981a0f` and `224c862`; canonical item digests are recomputed, group-aware splits are implemented, and admission rows require a unique complete v2 check summary with matching item bindings and payload digest. Legacy/incomplete rows block preflight and assembly. | A production rights provider still must load independently pinned, approved source and teacher records; unit fixtures do not establish rights authenticity. |
 | I4 teacher-lineage binding | Integrated as `244d6f3`; admitted `c_rd`/`c_trace` items require a unique, admissible registry teacher reference; declared refs are checked for all corpus kinds. Focused corpus suite: 18 passed. | Source-level rights still need review; registry teacher admission does not approve individual item data or rights. C_TRACE currently assumes teacher-derived examples. |
@@ -68,6 +68,29 @@ preflight warning and does not change its admitted semantics.
 | Maataa Coding Studio/App Builder | Commit `d94fec5` shortens the App Builder default-folder button label while preserving the full path in its title. Latest targeted Playwright run passed 13 tests in 52.1 seconds. Full `npm test` passed 768, skipped 1, failed 0 in 39.2 seconds after `aeb085d` raised one browser-backed OCR test timeout to match its bounded OCR subprocess. | Playwright uses simulated model responses; it does not qualify a Guru checkpoint. |
 | Full Guru suite | Latest fresh temporary-environment run returned **398 passed, 1 skipped in 21.23s** with CPython 3.12.1 on macOS arm64, using the hash-checked `requirements-test-full.lock`. | This host-specific run does not establish cross-platform reproduction. Evaluator tests use mocked backends and do not qualify Docker, daemon or host restart behavior. The local runtime has no production trust providers, approved tasks or qualified evaluator. |
 | I8 provider and audit attack tests | Commits `925f72a` and `3a678f1`; synthetic providers exercise complete evaluator PASS and measured FAIL, mismatched qualification/suite/case/task/candidate/image/config bindings, rights denials, artifact/manifest/teacher-registry pin mismatches, and no-audit behavior for unavailable evidence. End-to-end tests reload audit through preflight and assembly. A source-level AST test guards that `quality/runner.py` is the sole production caller of the low-level decision gate. | These contract tests use synthetic records only; they do not qualify an evaluator or approve any data. |
+
+#### Maataa Coding Studio readiness matrix (2026-10-13)
+
+Coding Studio now presents a read-only, source-linked view of Guru's current
+corpus, exact student model, recipe, evaluator, compute, and checkpoint gates.
+The API runs the existing local `c_rd` preflight and reads the checked-in
+recipe/model records; it neither changes gates nor enables Guru selection or
+dispatch. The observed matrix is **blocked**:
+
+| Gate | Current status | Current evidence |
+| --- | --- | --- |
+| Corpus and admission | **Blocked** | `c_rd` reports `missing admission audit`; no empty or synthetic audit was created. |
+| Exact student model and tokenizer | **Unverified** | Qwen2.5-Coder-1.5B + LoRA/SFT is selected at the pinned source revision, but exact weight/tokenizer digests and model-intake approval are absent. |
+| Training recipe | **Blocked** | D3 remains a draft; hyperparameters, approved data-manifest digest, and validation-suite digest are not qualified/pinned. |
+| Isolated evaluator | **Blocked** | No disposable-worker qualification or qualified evaluator configuration digest. |
+| Training compute | **Blocked** | No approved run host/account is recorded in the launchable recipe; the conditional resource proposal remains unlaunched. |
+| Checkpoint qualification | **Blocked** | No trained checkpoint, exact-model coding evidence, or verified 4096-token context. |
+
+The Guru selection/dispatch action is disabled. This is an interface for
+observing gates, not a substitute for them. Focused readiness tests passed
+**3/3**, its three new browser scenarios passed, the full Maataa Node suite
+passed **785, skipped 1**, and full Playwright passed **76/76**. Playwright
+uses fixtures for model responses and does not qualify Guru inference.
 
 The source roadmap remains [CODING_STUDIO_ROADMAP.md](../CODING_STUDIO_ROADMAP.md), and rights/evaluator context is in [CODING_PHASE5_EXECUTION_PACKET.md](CODING_PHASE5_EXECUTION_PACKET.md). This file decomposes those gates into reviewable work units.
 

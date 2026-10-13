@@ -12,6 +12,25 @@ provider prices are planning snapshots and must be rechecked before any launch.
 
 ### Fresh local verification (2026-10-13)
 
+- Coding Studio now has a read-only Guru readiness API and evidence matrix for
+  corpus admission, exact student model/tokenizer, training recipe, evaluator,
+  compute, and checkpoint qualification. A fresh matrix run reports overall
+  **blocked**: `c_rd` has `missing admission audit`; the selected
+  Qwen2.5-Coder-1.5B base + LoRA/SFT still lacks exact artifact digests and
+  model intake; the recipe, evaluator, compute and checkpoint gates remain
+  closed. Guru selection/dispatch is disabled. Focused API tests passed **3/3**,
+  full Maataa Node tests passed **785, skipped 1**, and full Playwright passed
+  **76/76**. Browser/model responses are fixtures; no Guru checkpoint was
+  exercised.
+- The evaluator's old daemon-default logging check was replaced with an
+  exact-container check: create the container with `--log-driver none`, verify
+  its full ID, managed/owner labels, `HostConfig.LogConfig.Type`, and empty
+  log path, then verify the policy again immediately before start. A
+  daemon-wide `json-file` default no longer falsely blocks the explicitly
+  configured container. The policy digest is versioned accordingly; full Guru
+  tests passed **403, skipped 1**. This remains mocked implementation evidence,
+  not disposable-worker qualification.
+
 - A new metadata-only local artifact inventory preflight was added for D3. It
   accepts an explicit file list and exact recipe inventory pins, verifies the
   locked training-stack file, and rejects symlinks, special files, path escapes,

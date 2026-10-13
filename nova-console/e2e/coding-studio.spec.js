@@ -23,12 +23,16 @@ function qualification(digest, capabilities) {
   };
 }
 
-async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false, agentFlow = null, loopFlow = null, modelLabel = 'Guru-Code local' } = {}) {
+async function openStudio(page, { roots = [], readiness = 'ready', planError = null, deferredPreview = false, deferredPlan = false, agentFlow = null, loopFlow = null, modelLabel = 'Guru-Code local', guruReadiness = null } = {}) {
   const base = 'http://127.0.0.1:8791';
   const headers = { Origin: base };
   let releasePreview, releasePlan, previewStarted, planStarted;
   const previewHasStarted = new Promise(resolve => { previewStarted = resolve; });
   const planHasStarted = new Promise(resolve => { planStarted = resolve; });
+  await page.route('**/api/guru/readiness', route => route.fulfill({ json: guruReadiness || {
+    schema: 'maataa-guru-readiness-v1', status: 'blocked', action: { enabled: false, reason: 'Unqualified candidate.' },
+    entries: [{ id: 'checkpoint_qualification', label: 'Checkpoint qualification', status: 'blocked', summary: 'No trained Guru-Code checkpoint.', blockers: ['Exact-model coding capability is not established.'], evidence: [{ path: 'guru/data/coding/model.json', detail: 'No checkpoint recorded.' }] }],
+  } }));
   await page.route('**/api/workspace/roots', async route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: roots });
     return route.continue();
@@ -256,6 +260,40 @@ async function fillCodingTask(page) {
   await page.getByLabel('Local coding model').selectOption('guru-code-local');
   await page.getByLabel('What should change?').fill('In feature.js, change enabled to true and in draft.json change the version to 0.1.1 so the feature and its version are updated together.');
 }
+
+test('Guru readiness matrix shows blocked evidence and keeps Guru action disabled', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  await openStudio(page, { roots: [root] });
+  await expect(page.locator('#guruReadinessMatrix')).toHaveAttribute('data-status', 'blocked');
+  await expect(page.locator('#guruReadinessMatrix')).toContainText('Checkpoint qualification');
+  await expect(page.locator('#guruReadinessMatrix')).toContainText('guru/data/coding/model.json');
+  await expect(page.locator('#guruCodeAction')).toBeDisabled();
+});
+
+test('Guru readiness matrix marks unavailable local evidence distinctly and keeps action disabled', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  await openStudio(page, { roots: [root], guruReadiness: {
+    schema: 'maataa-guru-readiness-v1', status: 'unavailable', action: { enabled: false, reason: 'Python runtime is unavailable.' },
+    entries: [{ id: 'corpus_admission', label: 'Corpus and admission', status: 'unavailable', summary: 'Python runtime is unavailable; corpus preflight could not run.', blockers: ['Current corpus state is unknown.'], evidence: [{ path: 'guru/guru/corpus/cli.py', detail: 'Preflight command.' }] }],
+  } });
+  await expect(page.locator('#guruReadinessMatrix')).toHaveAttribute('data-status', 'unavailable');
+  await expect(page.locator('#guruReadinessMatrix')).toContainText('Python runtime is unavailable');
+  await expect(page.locator('#guruCodeAction')).toBeDisabled();
+});
+
+test('Guru readiness matrix identifies pending exact model pins as unverified and keeps action disabled', async ({ page }) => {
+  const root = await approveFixtureRoot(page);
+  await openStudio(page, { roots: [root], guruReadiness: {
+    schema: 'maataa-guru-readiness-v1', status: 'blocked', action: { enabled: false, reason: 'Model and evaluator are unqualified.' },
+    entries: [
+      { id: 'student_model', label: 'Exact student model and tokenizer', status: 'unverified', summary: 'Candidate selected; exact model/tokenizer digests and intake approval are pending.', blockers: ['Exact tokenizer digest is missing.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Draft pin.' }] },
+      { id: 'evaluator', label: 'Isolated evaluator', status: 'blocked', summary: 'Evaluator qualification is missing.', blockers: ['Disposable evaluator is not qualified.'], evidence: [{ path: 'guru/experiments/recipes/qwen25_coder_15b_lora_sft.v1.json', detail: 'Evaluator gate.' }] },
+    ],
+  } });
+  await expect(page.locator('#guruReadinessMatrix [data-status="unverified"]')).toContainText('Exact student model and tokenizer');
+  await expect(page.locator('#guruReadinessMatrix [data-status="blocked"]')).toContainText('Isolated evaluator');
+  await expect(page.locator('#guruCodeAction')).toBeDisabled();
+});
 
 test('Coding Studio gives a clear empty state when no project is approved', async ({ page }) => {
   await openStudio(page);

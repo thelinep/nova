@@ -36,6 +36,7 @@ const { checkLocalAccess } = require('./lib/local-access');
 const collectorWorkflows = require('./lib/collector-workflows');
 const codePlanner = require('./lib/code-planner');
 const modelQualifications = require('./lib/model-qualifications');
+const { createGuruReadiness } = require('./lib/guru-readiness');
 const neuronFactory = require('./lib/neuron-factory');
 const panini = require('./lib/panini');
 const sutraNeurons = require('./lib/sutra-neurons');
@@ -513,6 +514,7 @@ function governedExecute(kind, id, files, run) {
   catch (e) { contracts.observe(store, c.id, { ok: false, error: e.message }); contracts.seal(store, DATA_DIR, c.id, 'failed'); throw e; }
 }
 const routes = [
+  { method: 'GET', pattern: /^\/api\/guru\/readiness$/, handler: async (_req, res) => sendJson(res, 200, createGuruReadiness({ repoRoot: WORKSPACE_ROOT })) },
   /* ---- media: uploads, generated images, transcripts ---- */
   { method: 'GET', pattern: /^\/api\/media$/, handler: async (_req, res) => sendJson(res, 200, store.all('media').reverse()) },
   { method: 'POST', pattern: /^\/api\/media$/, handler: async (req, res) => {
