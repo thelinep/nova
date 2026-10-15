@@ -5,7 +5,7 @@
 # What it does: checks which Python Guru uses; if it is Intel and an Apple-silicon Python exists,
 # it moves the old environment aside to guru/.venv-intel-old (nothing is deleted) and makes a new one;
 # then installs Guru's requirements and checks that PyTorch sees the Apple GPU. Needs about 3 GB.
-cd "$(dirname "$0")/guru" || exit 1
+cd "$(dirname "$0")/../guru" || exit 1
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 say(){ printf '\n\033[1m== %s\033[0m\n' "$*"; }
 pause(){ read -r -t 600 -p "Press Return to close." _; }

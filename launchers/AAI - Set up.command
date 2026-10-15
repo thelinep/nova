@@ -2,7 +2,7 @@
 # Double-click once: installs Maataa AAI's derivation engine (Vidyut's prakriya engine, MIT licence,
 # about 3 MB) into Maataa Workstation's own folder. Nothing else on this Mac changes. Safe to run again.
 # You can also press "Install derivation engine" in Maataa Workstation › Maataa AAI.
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/.." || exit 1
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 PY="$(command -v python3)"
 [ -z "$PY" ] && { echo "Python 3 is not installed. Run: xcode-select --install, then try again."; read -r -p "Press Return to close."; exit 1; }

@@ -30,7 +30,7 @@ Mac times are rough estimates for Apple silicon; measured speed is printed while
 
 > **Important** What to expect: a nano or mini Guru writes fluent-looking Hindi, Sanskrit and English, but it knows little and invents facts. That is normal for models of this size. The value is that every part is ours and the pipeline is proven, so it can grow. For a strong assistant today, use an existing open model. Guru is the long-term path to our own.
 
-## Use it (double-click, in the brahmini folder)
+## Use it (double-click, in brahmini/launchers — or choose Guru in Maataa.command)
 
 1. **Guru 1 - Set up.command**: makes `guru/.venv` with PyTorch (about 1 GB) and runs the tests.
 2. **Guru 2 - Get corpus.command**: downloads Wikipedia in Sanskrit, Hindi and English (about 600 MB of text kept; the downloads are deleted after extraction), adds your texts from `guru/data/my_texts`, filters them with Guru-Panini, then trains Guru-Dhatu and writes the token files. You can choose only your own texts instead.

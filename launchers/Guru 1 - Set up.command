@@ -1,7 +1,7 @@
 #!/bin/bash
 # Double-click once: makes a private Python environment for Guru (guru/.venv) with PyTorch and the tokenizer.
 # About 1 GB of disk. Safe to run again (it updates).
-cd "$(dirname "$0")/guru" || exit 1
+cd "$(dirname "$0")/../guru" || exit 1
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 PY="$(command -v python3)"
 [ -z "$PY" ] && { echo "Python 3 is not installed. Install it from python.org, then try again."; read -r -p "Press Return to close."; exit 1; }

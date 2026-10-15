@@ -9,7 +9,7 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 # Two places read speech models: the NOVA app (its own data folder) and NOVA started from this folder
 # (npm start / Start NOVA.command). The model is downloaded once and linked into both, using no extra space.
 APP_DIR="$HOME/Library/Application Support/com.brahmini.nova-runtime/models/whisper"
-DIR="$HERE/data/models/whisper"
+DIR="${NOVA_DATA_DIR:-$HERE/data}/models/whisper"   # Maataa's Install page passes its own data folder
 BASE="https://huggingface.co/ggerganov/whisper.cpp/resolve/main"
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 die() { printf '\n\033[31mStopped: %s\033[0m\n' "$*"; exit 1; }

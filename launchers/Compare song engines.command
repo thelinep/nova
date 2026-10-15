@@ -1,7 +1,7 @@
 #!/bin/bash
 # Double-click to make the same English and Hindi song with ACE-Step 1 and ACE-Step 1.5 and compare them.
 # (Re)starts NOVA and ComfyUI when they are not running or are older than the files on disk. Takes 10–30 minutes.
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/nova-console" || exit 1
 up() { curl -s -m 3 -o /dev/null -w '%{http_code}' "$1" | grep -q '^2'; }
 start_nova() { echo "Starting NOVA…"; nohup node --no-warnings server.js > "$HOME/NOVA-server.log" 2>&1 & for i in $(seq 1 30); do up http://127.0.0.1:8787/api/health && break; sleep 1; done; }

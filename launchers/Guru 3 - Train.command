@@ -1,7 +1,7 @@
 #!/bin/bash
 # Double-click: trains a Guru model on the Apple GPU. Keeps the Mac awake while it runs, saves as it goes,
 # and can continue later from where it stopped. Times are rough and depend on the Mac.
-cd "$(dirname "$0")/guru" || exit 1
+cd "$(dirname "$0")/../guru" || exit 1
 [ -x .venv/bin/python ] || { echo "Run 'Guru 1 - Set up.command' first."; read -r -p "Press Return to close."; exit 1; }
 [ -f data/train.bin ] || { echo "Run 'Guru 2 - Get corpus.command' first."; read -r -p "Press Return to close."; exit 1; }
 SIZE=$(osascript -e 'choose from list {"nano (19M parameters, about 1 to 2 hours)", "mini (36M, about 5 to 8 hours)", "small (94M, a day or more)"} with title "Train Guru" with prompt "Which size?" default items {"nano (19M parameters, about 1 to 2 hours)"}')

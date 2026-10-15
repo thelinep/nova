@@ -126,7 +126,7 @@ Allow Maataa in **System Settings > Privacy & Security > Microphone**. Speaking 
 
 ### "No whisper speech model is installed yet" although I installed one
 
-Double-click **Add multilingual speech model.command** in the brahmini folder again. Earlier versions put the model only where Maataa started from the folder looks; the app keeps its own data folder. It now links models you already have into the app without downloading them again or using more space. No restart is needed.
+Double-click **Add multilingual speech model.command** in brahmini/launchers again. Earlier versions put the model only where Maataa started from the folder looks; the app keeps its own data folder. It now links models you already have into the app without downloading them again or using more space. No restart is needed.
 
 ### A character's shouting, whispering or singing sounds the same as normal speech
 

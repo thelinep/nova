@@ -13,7 +13,7 @@ Everything in **Media** runs on your computer, and every item keeps the settings
 
 ## Set up ComfyUI
 
-1. Open **Settings > Image engine** and press **Install ComfyUI** (or double-click **Install ComfyUI for NOVA.command** in the brahmini folder). It installs ComfyUI in `~/ComfyUI` with the SDXL base checkpoint (about 15 GB) and shows its progress in **Activity**.
+1. Open **Settings > Image engine** and press **Install ComfyUI** (or double-click **Install ComfyUI for NOVA.command** in brahmini/launchers). It installs ComfyUI in `~/ComfyUI` with the SDXL base checkpoint (about 15 GB) and shows its progress in **Activity**.
 2. That is all: you do not need to start ComfyUI yourself.
 
 ## ComfyUI is started for you

@@ -28,7 +28,7 @@ async function transcribeClip(dataDir, buffer, mime = 'audio/webm', language = '
   const tools = transcriber.status(dataDir);
   if (!tools.binary) throw error('Speaking to Maataa needs whisper.cpp: brew install whisper-cpp, then add a speech model (Help > Audio).', 412);
   const model = transcriber.pickModel(dataDir, language) || transcriber.pickModel(dataDir, 'en');
-  if (!model) throw error('No whisper speech model is installed yet. Double-click "Add multilingual speech model.command" in the brahmini folder.', 412);
+  if (!model) throw error('No whisper speech model is installed yet. Double-click "Add multilingual speech model.command" in brahmini/launchers, or use Install in Maataa.', 412);
   const type = String(mime).split(';')[0];
   const ext = EXT[type] || 'webm';
   if (!tools.ffmpeg && !['wav', 'm4a', 'mp3', 'aac'].includes(ext)) throw error('This recording format needs ffmpeg (brew install ffmpeg).', 412);

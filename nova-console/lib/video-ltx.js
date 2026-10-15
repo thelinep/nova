@@ -71,7 +71,7 @@ function status() {
   const appleSilicon = (process.platform === 'darwin' && process.arch === 'arm64') || process.env.LTX_MLX_ANY_PLATFORM === '1'; // the override is for tests
   const missing = [];
   if (!appleSilicon) missing.push('an Apple Silicon Mac (LTX-2 runs on MLX)');
-  if (!bin) missing.push('ltx-2-mlx: double-click "Install LTX-2 video for NOVA.command" in the brahmini folder (about 28 GB with weights)');
+  if (!bin) missing.push('ltx-2-mlx: double-click "Install LTX-2 video for NOVA.command" in brahmini/launchers, or use Install in Maataa (about 28 GB with weights)');
   const weights = localWeights(m), gemma = gemmaCached();
   if (bin && (!weights || !gemma)) missing.push(`the LTX-2 weights Maataa uses (${!weights ? 'video model' : ''}${!weights && !gemma ? ' and ' : ''}${!gemma ? 'text encoder' : ''}): double-click "Install LTX-2 video for NOVA.command" again — it downloads only what Fast clips need (about 28 GB in all), not the whole 60 GB repository`);
   const notes = [];

@@ -2,7 +2,7 @@
 # Double-click: gathers Guru's training text and prepares it (tokenizer + token files).
 # Choice: open Wikipedia in Sanskrit, Hindi and English (about 600 MB of text kept) plus your texts,
 # or only your own texts in guru/data/my_texts (.txt, .md, .fountain).
-cd "$(dirname "$0")/guru" || exit 1
+cd "$(dirname "$0")/../guru" || exit 1
 [ -x .venv/bin/python ] || { echo "Run 'Guru 1 - Set up.command' first."; read -r -p "Press Return to close."; exit 1; }
 CHOICE=$(osascript -e 'choose from list {"Wikipedia (Sanskrit, Hindi, English) + my texts", "Only my texts (guru/data/my_texts)"} with title "Guru corpus" with prompt "What should Guru learn from?" default items {"Wikipedia (Sanskrit, Hindi, English) + my texts"}')
 [ "$CHOICE" = "false" ] && exit 0

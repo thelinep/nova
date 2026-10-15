@@ -3,7 +3,7 @@
 # First run: installs h3/numpy/scipy, downloads population hexagons (Kontur, ~150 MB once), measures how far people
 # live from each core event trade, re-orders the Google gap searches, writes GIS files and the map data (10-20 min).
 # Later runs just open the map, unless the directory was rebuilt since. Keep this window open while you use the map.
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/india-scraper-next" || exit 1
 VENV="$HOME/.brahmini-event-directory"
 if [ ! -x "$VENV/bin/python" ] || [ ! -f data/event-directory/directory.db ]; then

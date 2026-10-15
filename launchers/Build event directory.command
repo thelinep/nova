@@ -3,7 +3,7 @@
 # (Overture Maps + OpenStreetMap) plus what Brahmini's Google Maps collectors already found.
 # India by default; type another country code (AE, GB, US…) when asked. First run 30–90 minutes;
 # running it again within a week reuses the downloads and only rebuilds (a few minutes).
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/india-scraper-next" || exit 1
 read -r -t 20 -p "Country code [IN] (starts with IN in 20 s): " CC; echo; CC="$(echo "${CC:-IN}" | tr '[:lower:]' '[:upper:]')"
 free=$(df -g "$HOME" | awk 'NR==2{print $4}')

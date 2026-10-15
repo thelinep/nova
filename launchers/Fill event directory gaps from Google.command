@@ -3,7 +3,7 @@
 # (up to 300 searches per run, in the order of gaps-IN.json: by population need once "Build event map" has run,
 # emptiest first otherwise), then rebuild the directory with the new listings.
 # Stops on any Google access challenge and does not try to get around it. Run again to continue.
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/india-scraper-next" || exit 1
 if [ ! -f data/event-directory/gaps-IN.json ]; then echo "Run \"Build event directory.command\" first."; exit 1; fi
 if [ ! -d node_modules/puppeteer ] || [ ! -d node_modules/sqlite3 ]; then

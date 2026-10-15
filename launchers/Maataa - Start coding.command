@@ -1,13 +1,13 @@
 #!/bin/bash
 # Double-click to start Maataa for talking and building apps with a local model:
 #   1. starts Ollama and Maataa Workstation (NOVA) if they are not running;
-#   2. makes sure a coding model is installed — qwen2.5-coder:7b (about 4.7 GB, Apache-2.0)
-#      when there is room, otherwise it offers a model you already have;
+#   2. makes sure a coding model is installed — qwen2.5:7b or qwen2.5-coder:7b (about 4.7 GB each),
+#      downloading qwen2.5:7b when there is room, otherwise it offers a model you already have;
 #   3. approves ~/Maataa Projects as the folder new apps go into;
 #   4. offers to run the 18 coding checks once for that exact model (about 10–30 minutes);
 #   5. opens Coding Studio in your browser.
 # Nothing is deleted. Your projects are only written after you approve a change in Maataa.
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 NOVA="$ROOT/nova-console"
 cd "$NOVA" || exit 1
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -16,7 +16,7 @@ fail(){ echo; echo "✗ $1"; pause; exit 1; }
 say(){ echo; echo "== $1"; }
 up(){ curl -s -m 2 -o /dev/null -w '%{http_code}' "$1" | grep -q '^2'; }
 ask(){ osascript -e "button returned of (display dialog \"$1\" buttons {\"$2\", \"$3\"} default button \"$3\" with title \"Maataa\")" 2>/dev/null; }
-CODER="qwen2.5-coder:7b"
+CODER="qwen2.5:7b"
 NEED_GB=9   # 4.7 GB model plus room for the Mac to keep working
 
 say "1/5 Checking this Mac"
@@ -37,20 +37,23 @@ up http://127.0.0.1:11434/api/tags || fail "Ollama did not start. Open the Ollam
 echo "   Ollama is running."
 
 say "3/5 Coding model"
+# qwen2.5:7b is tried first: on this Mac it passed all 18 coding checks (2026-10-12), while
+# qwen2.5-coder:7b failed the three multi-file trials. Either still has to pass the checks here.
+CANDIDATES="qwen2.5:7b qwen2.5-coder:7b"
+INSTALLED=$(ollama list 2>/dev/null | awk 'NR>1{print $1}')
 MODEL=""
-if ollama list 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$CODER"; then
-  MODEL="$CODER"; echo "   $CODER is installed."
-elif [ "${FREE:-0}" -ge "$NEED_GB" ]; then
+for c in $CANDIDATES; do echo "$INSTALLED" | grep -qx "$c" && { MODEL="$c"; echo "   $c is installed."; break; }; done
+if [ -z "$MODEL" ] && [ "${FREE:-0}" -ge "$NEED_GB" ]; then
   R=$(ask "Download $CODER (about 4.7 GB, Apache-2.0 licence) as Maataa's coding model? You have ${FREE} GB free." "Not now" "Download")
   if [ "$R" = "Download" ]; then ollama pull "$CODER" || fail "The download did not finish. Double-click this again to resume it."; MODEL="$CODER"; fi
-else
+elif [ -z "$MODEL" ]; then
   echo "   Only ${FREE} GB free; $CODER needs about ${NEED_GB} GB to download safely."
   echo "   Large items you could clear yourself: old .dmg installers and zip files that are already unpacked in Downloads."
 fi
 if [ -z "$MODEL" ]; then
-  HAVE=$(ollama list 2>/dev/null | awk 'NR>1{print $1}' | grep -vE 'vision|embed|3\.2|1b|0\.5b' | head -1)
+  HAVE=$(echo "$INSTALLED" | grep -vE 'vision|embed|3\.2|1b|0\.5b' | head -1)
   [ -n "$HAVE" ] || fail "No suitable local model is installed. Free about ${NEED_GB} GB and double-click this again."
-  R=$(ask "Use $HAVE, which is already installed? It works, but it is weaker at writing code than $CODER." "Cancel" "Use $HAVE")
+  R=$(ask "Use $HAVE, which is already installed? It may be weaker at writing code than $CODER." "Cancel" "Use $HAVE")
   [ "$R" = "Use $HAVE" ] || exit 0
   MODEL="$HAVE"
 fi

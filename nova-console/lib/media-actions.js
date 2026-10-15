@@ -194,7 +194,7 @@ function translate(store, dataDir, deps, id, input = {}) {
   if (!reuse) {
     const t = transcriber.status(dataDir);
     if (!t.ready) throw error('Translate first transcribes the speech, which needs ' + t.missing.join(', ') + '.', 412);
-    if (s.from && s.from !== 'en' && !t.multilingual) throw error(`${transcriber.LANGUAGES[s.from]} speech needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB).`, 412);
+    if (s.from && s.from !== 'en' && !t.multilingual) throw error(`${transcriber.LANGUAGES[s.from]} speech needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in brahmini/launchers, or use Install in Maataa (about 575 MB).`, 412);
   }
   if (!deps.ollama) throw error('Translation needs Ollama running.', 503);
   const model = resolveLocalModel(store, [input.modelId]);

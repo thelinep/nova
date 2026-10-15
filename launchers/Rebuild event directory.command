@@ -3,7 +3,7 @@
 # re-reads Brahmini's Google results, re-classifies, merges duplicates, assigns districts and writes the reports.
 # If the map tools are installed ("Build event map.command" has run once), also refreshes the map data and
 # the population-based order of the Google gap searches. Takes a few minutes (longer with the map).
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/india-scraper-next" || exit 1
 VENV="$HOME/.brahmini-event-directory"
 if [ ! -x "$VENV/bin/python" ]; then echo "Run \"Build event directory.command\" once first."; exit 1; fi

@@ -2,8 +2,8 @@
 # Double-click to run every NOVA media feature once on this Mac and report what works.
 # Starts NOVA, ComfyUI and Ollama if they are not running (and leaves them running).
 # Takes 15–40 minutes (LTX-2 and music are slow). Add --quick to skip those two:
-#   open Terminal in the brahmini folder and run:  "./Check NOVA on this Mac.command" --quick
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+#   open Terminal in the brahmini folder and run:  "./launchers/Check NOVA on this Mac.command" --quick
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/nova-console" || exit 1
 up() { curl -s -m 2 -o /dev/null -w '%{http_code}' "$1" | grep -q '^2'; }
 if ! up http://127.0.0.1:8787/api/health; then

@@ -11,7 +11,7 @@ build the real underlying mechanism by hand rather than fake the result.
 
 ## Pack everything (one double-click)
 
-Double-click **Build NOVA app.command** in the brahmini folder. It runs the
+Double-click **Build NOVA app.command** in brahmini/launchers. It runs the
 unit tests (temporary data only) and stops if any fail, then writes to
 `packaging/dist/` (ignored by Git):
 

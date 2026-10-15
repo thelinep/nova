@@ -1,7 +1,7 @@
 #!/bin/bash
 # Double-click: exports a trained Guru (Hugging Face folder → GGUF) and adds it to Ollama as guru-maataa-<size>,
 # so Maataa Workstation lists it after Models > Sync from Ollama. Optionally makes it THE guru-maataa.
-cd "$(dirname "$0")/guru" || exit 1
+cd "$(dirname "$0")/../guru" || exit 1
 [ -x .venv/bin/python ] || { echo "Run 'Guru 1 - Set up.command' first."; read -r -p "Press Return to close."; exit 1; }
 OLLAMA="$(command -v ollama || ls /usr/local/bin/ollama /opt/homebrew/bin/ollama /Applications/Ollama.app/Contents/Resources/ollama 2>/dev/null | head -1)"
 [ -z "$OLLAMA" ] && { echo "Ollama is not installed."; read -r -p "Press Return to close."; exit 1; }

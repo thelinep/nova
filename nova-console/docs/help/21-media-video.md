@@ -19,7 +19,7 @@ Needs ffmpeg, no AI model. Pick a push in, pull out, pan or tilt and a length fo
 
 The default on Apple silicon. The first shot and your prompt (describe the motion and the sound, for example "waves crash, gulls call") go to LTX-2 running on this computer, and the clip comes back with sound.
 
-- Install it with **Install LTX-2 video for NOVA.command** in the brahmini folder. It downloads only what Maataa uses: about 28 GB for **Fast** clips. For **Better** clips run `bash scripts/install-ltx-mac.sh --better` in `nova-console` (another 19 GB).
+- Install it with **Install LTX-2 video for NOVA.command** in brahmini/launchers. It downloads only what Maataa uses: about 28 GB for **Fast** clips. For **Better** clips run `bash scripts/install-ltx-mac.sh --better` in `nova-console` (another 19 GB).
 - Clips are 1–8 seconds at up to 960×544. Maataa never lets LTX-2 start a download on its own.
 - Set `LTX_MLX_BIN` or `LTX_MLX_MODEL` if you installed it elsewhere.
 

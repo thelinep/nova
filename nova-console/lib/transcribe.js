@@ -88,7 +88,7 @@ function status(dataDir) {
   if (ffmpegPath && !ffmpeg) notes.push(afconvert ? 'The installed ffmpeg does not start, so macOS afconvert is used: WAV, AIFF, MP3, M4A and FLAC work; OGG and WebM need a working ffmpeg.' : 'The installed ffmpeg does not start.');
   else if (!ffmpeg && afconvert) notes.push('Using macOS afconvert: WAV, AIFF, MP3, M4A and FLAC work; OGG and WebM need ffmpeg.');
   const models = listModels(dataDir), multilingual = models.some(isMultilingual);
-  if (model && !multilingual) notes.push('Only an English speech model is installed, so speech in Hindi and other languages cannot be transcribed or translated. Double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB).');
+  if (model && !multilingual) notes.push('Only an English speech model is installed, so speech in Hindi and other languages cannot be transcribed or translated. Double-click "Add multilingual speech model.command" in brahmini/launchers, or use Install in Maataa (about 575 MB).');
   return { ready: missing.length === 0, binary, ffmpeg, afconvert, converter, model, modelName: model ? path.basename(model) : null, models: models.map(m => ({ name: path.basename(m), multilingual: isMultilingual(m) })), multilingual, languages: LANGUAGES, missing, notes };
 }
 
@@ -126,7 +126,7 @@ async function transcribeNow(store, dataDir, deps, record, options) {
     else await run(tools.afconvert, ['-f', 'WAVE', '-d', 'LEI16@16000', '-c', '1', input, wav], 20 * 60 * 1000);
     const language = options.language || 'auto';
     const model = pickModel(dataDir, language);
-    if (!model) throw error(`${language === 'auto' ? 'Detecting the spoken language' : LANGUAGES[language] + ' speech'} needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB).`, 412);
+    if (!model) throw error(`${language === 'auto' ? 'Detecting the spoken language' : LANGUAGES[language] + ' speech'} needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in brahmini/launchers, or use Install in Maataa (about 575 MB).`, 412);
     const args = ['-m', model, '-f', wav, '-oj', '-of', path.join(work, 'out'), '-np', '-l', isMultilingual(model) ? language : 'en'];
     await run(tools.binary, args, TIMEOUT_MS);
     const json = JSON.parse(fs.readFileSync(path.join(work, 'out.json'), 'utf8'));
@@ -150,7 +150,7 @@ function start(store, dataDir, deps, id, options = {}) {
   if (tools.converter === 'afconvert' && !AFCONVERT_MIMES.has(record.mime)) throw error(`${record.originalName} is ${record.mime.replace('audio/', '').toUpperCase()}, which needs a working ffmpeg. Convert it to WAV, MP3 or M4A, or reinstall ffmpeg.`, 415);
   if (options.collectionId && !store.get('knowledgeCollections', options.collectionId)) throw error('Unknown knowledge collection.', 404);
   const language = options.language && LANGUAGES[options.language] ? options.language : null;
-  if (language && language !== 'en' && language !== 'auto' && !listModels(dataDir).some(isMultilingual)) throw error(`${language === 'auto' ? 'Detecting the spoken language' : LANGUAGES[language] + ' speech'} needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB).`, 412);
+  if (language && language !== 'en' && language !== 'auto' && !listModels(dataDir).some(isMultilingual)) throw error(`${language === 'auto' ? 'Detecting the spoken language' : LANGUAGES[language] + ' speech'} needs a multilingual speech model; only English ones are installed. Double-click "Add multilingual speech model.command" in brahmini/launchers, or use Install in Maataa (about 575 MB).`, 412);
   record.transcription = { status: 'running', startedAt: new Date().toISOString(), collectionId: options.collectionId || null, language, error: null };
   store.put('media', record);
   const job = (async () => {

@@ -58,6 +58,7 @@ const workspaceProjects = require('./lib/workspace-projects');
 const devLoop = require('./lib/dev-loop');
 const appBuilder = require('./lib/app-builder');
 const { createRadheya } = require('./lib/radheya');
+const { createInstallers } = require('./lib/installers');
 const media = require('./lib/media');
 const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
@@ -211,6 +212,7 @@ const codingAgentRuntime = new CodingAgentRuntime({
   audit: event => desktopSecurity.appendAudit(DATA_DIR, event),
 });
 const radheya = createRadheya({ store, dataDir: DATA_DIR, ollama, browser, security: desktopSecurity });
+const installers = createInstallers({ store, dataDir: DATA_DIR, ollama, comfyManager, activity, aai, audioGen, ltx: videoLtx, transcribe: transcriber, browserService, killSwitch: workbenchKillSwitch });
 const telemetry = new TelemetryReader();
 
 // Cached reachability flag the frontend's diagnostics/status-bar can read
@@ -754,6 +756,10 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/workspace\/loops\/([^/]+)$/, handler: async (_req,res,[id])=>{const loop=store.get('workspaceLoops',decodeURIComponent(id));if(!loop){sendJson(res,404,{error:'Unknown development loop.'});return;}sendJson(res,200,loop);} },
   { method: 'POST', pattern: /^\/api\/workspace\/loops$/, handler: async (req,res)=>{const {loop}=devLoop.startLoop(store,{scanner:workspaceScanner,changes:workspaceChanges,runner:workspaceRunner,planner:codePlanner,ollama,dataDir:DATA_DIR},await readJsonBody(req));desktopSecurity.appendAudit(DATA_DIR,{action:'workspace.loop.started',loopId:loop.id,rootId:loop.rootId,maxAttempts:loop.maxAttempts});sendJson(res,201,loop);} },
   { method: 'POST', pattern: /^\/api\/workspace\/loops\/([^/]+)\/cancel$/, handler: async (_req,res,[id])=>sendJson(res,200,devLoop.cancelLoop(store,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/installers$/, handler: async (_req,res)=>sendJson(res,200,await installers.list()) },
+  { method: 'POST', pattern: /^\/api\/installers\/cancel$/, handler: async (_req,res)=>sendJson(res,200,installers.cancel()) },
+  { method: 'POST', pattern: /^\/api\/installers\/([\w-]+)\/install$/, handler: async (_req,res,[id])=>{const r=installers.install(id);desktopSecurity.appendAudit(DATA_DIR,{action:'installer.started',component:id});sendJson(res,202,r);} },
+  { method: 'GET', pattern: /^\/api\/installers\/([\w-]+)\/log$/, handler: async (_req,res,[id])=>sendJson(res,200,{log:installers.logTail(id,80)}) },
   { method: 'GET', pattern: /^\/api\/radheya$/, handler: async (_req,res)=>sendJson(res,200,radheya.view()) },
   { method: 'POST', pattern: /^\/api\/radheya\/settings$/, handler: async (req,res)=>sendJson(res,200,radheya.saveSettings(await readJsonBody(req))) },
   { method: 'POST', pattern: /^\/api\/radheya\/cards$/, handler: async (req,res)=>sendJson(res,201,radheya.createCard(await readJsonBody(req))) },

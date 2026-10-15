@@ -1,7 +1,7 @@
 #!/bin/bash
 # Double-click: look up Ashtadhyayi sutras by number (1.1.1, or a range 1.1.1-1.1.10), find them by
 # words, or look up a root in the Dhatupatha. Works without "Guru 1 - Set up" (it needs only Python 3).
-cd "$(dirname "$0")/guru" || exit 1
+cd "$(dirname "$0")/../guru" || exit 1
 PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
 SCRIPT=$(osascript -e 'choose from list {"Devanagari", "IAST", "Brahmi", "Kharoshthi", "Siddham"} with title "Look up a sutra" with prompt "Show sutras in which script?" default items {"Devanagari"}')
 [ "$SCRIPT" = "false" ] && exit 0

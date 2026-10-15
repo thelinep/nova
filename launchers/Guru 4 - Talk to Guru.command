@@ -2,7 +2,7 @@
 # Double-click: give Guru the start of a text and see how it continues (base models continue text;
 # they do not chat). You can write in Devanagari, Brahmi, Kharoshthi or Siddham and choose the script
 # Guru answers in (Guru-Lipi). Guru-Panini scores what it writes.
-cd "$(dirname "$0")/guru" || exit 1
+cd "$(dirname "$0")/../guru" || exit 1
 [ -x .venv/bin/python ] || { echo "Run 'Guru 1 - Set up.command' first."; read -r -p "Press Return to close."; exit 1; }
 SIZES=$(.venv/bin/python -c "
 import os; from guru.config import PRESETS, LOCAL_SIZES

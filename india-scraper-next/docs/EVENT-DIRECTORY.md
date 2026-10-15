@@ -32,7 +32,7 @@ A place or item belongs to an event when it is tagged ALL or any of the event's 
 
 ## Build
 
-Double-click **Build event directory.command** in the brahmini folder (asks for a country code, default IN), or:
+Double-click **Build event directory.command** in brahmini/launchers (asks for a country code, default IN), or:
 
 ```sh
 python3 scripts/event-directory/event_directory.py all --country IN   # needs: pip install duckdb

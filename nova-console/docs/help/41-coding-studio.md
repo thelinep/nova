@@ -11,7 +11,7 @@ Coding Studio helps you build new apps and change existing ones with a local mod
 
 ## Start with one click
 
-Double-click **Maataa - Start coding** in the brahmini folder. It does five things:
+Double-click **Maataa** in the brahmini folder and choose **Start coding** (the same script is `launchers/Maataa - Start coding.command`). It does five things:
 
 - starts Ollama and Maataa;
 - installs the coding model `qwen2.5-coder:7b` when there is enough disk space (about 4.7 GB), or offers a model you already have;

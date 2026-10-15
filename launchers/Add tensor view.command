@@ -2,7 +2,7 @@
 # Double-click to turn on NOVA's live Tensor view for songs and sounds.
 # Links NOVA's small ComfyUI add-on (nova-console/comfy/nova_tensor_view) into ~/ComfyUI/custom_nodes,
 # then restarts ComfyUI and NOVA if they are running an older version. Images need nothing extra.
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/nova-console" || exit 1
 up() { curl -s -m 3 -o /dev/null -w '%{http_code}' "$1" | grep -q '^2'; }
 COMFY="$HOME/ComfyUI"

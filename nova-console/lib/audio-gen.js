@@ -52,7 +52,7 @@ function kokoroStatus() {
   const python = kokoroPython(), dir = kokoroDir();
   const files = ['kokoro-v1.0.onnx', 'voices-v1.0.bin'].every(f => fs.existsSync(path.join(dir, f)));
   const ready = Boolean(python && files);
-  return { ready, dir, missing: ready ? [] : ['Kokoro voices: double-click "Install Kokoro voices for NOVA.command" in the brahmini folder (about 400 MB)'],
+  return { ready, dir, missing: ready ? [] : ['Kokoro voices: double-click "Install Kokoro voices for NOVA.command" in brahmini/launchers, or use Install in Maataa (about 400 MB)'],
     voices: KOKORO_VOICES.map(v => ({ name: 'kokoro:' + v, label: `${v.slice(3).replace(/^./, c => c.toUpperCase())} · ${KOKORO_LANGS[v[0]][1]} · ${v[1] === 'f' ? 'female' : 'male'}`, locale: KOKORO_LANGS[v[0]][0] })) };
 }
 function kokoroLang(voice) { return (KOKORO_LANGS[String(voice)[0]] || KOKORO_LANGS.a)[0]; }

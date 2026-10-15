@@ -274,7 +274,7 @@ function stats() {
 
 async function main() {
   try { meta = await getJSON("meta.json"); }
-  catch (e) { $("sub").innerHTML = 'No map data yet. Double-click <b>Build event map.command</b> in the brahmini folder.'; return; }
+  catch (e) { $("sub").innerHTML = 'No map data yet. Double-click <b>Build event map.command</b> in brahmini/launchers.'; return; }
   $("sub").textContent = `${meta.country} · built ${new Date(meta.builtAt).toLocaleString()}`;
   meta.families.forEach((f, i) => $("family").add(new Option(f.label, i)));
   Object.entries(meta.eventTypes).filter(([c]) => c !== "ALL").forEach(([c, d]) => $("etype").add(new Option(`${c} — ${d}`, c)));

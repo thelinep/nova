@@ -100,14 +100,39 @@ There are three ways to run Maataa. They all run the same server and the same co
 | Way | Best for | How to start |
 | --- | --- | --- |
 | Desktop app | Everyday use | Open **Maataa Workstation.app** |
-| Portable folder | Running without installing, or on another Mac | Double-click **Start Maataa.command** in the folder |
+| Portable folder | Running without installing, or on another Mac | Double-click **Start NOVA.command** in the folder |
+| From the brahmini folder | Your own checkout | Double-click **Maataa.command** and choose **Open Maataa** |
 | Browser mode | Developing Maataa itself | `npm start` in `nova-console`, then open `http://127.0.0.1:8787/` |
+
+### One launcher: Maataa.command
+
+The brahmini folder has one launcher, **Maataa.command**. Double-click it for a menu:
+
+- **Open Maataa**: starts Ollama and Maataa if needed, then opens the console.
+- **Start coding**: makes sure a coding model is there and offers the coding checks.
+- **Install components**: opens the Install page (below).
+- **Build and install the Maataa app**: builds a fresh app from this folder and puts it in Applications.
+- Submenus for media installers, Guru and the event directory, plus the Maataa AAI set-up, the self-check and Push to GitHub.
+
+Every item runs a script in `brahmini/launchers`; you can still double-click those directly.
+
+### The Install page
+
+Open **Install** in the sidebar (under System). It lists everything optional: Ollama and the local models, ComfyUI and its image, sound and video models, Kokoro voices, the multilingual speech model, LTX-2 video, the AAI engine, the agent browser and, when Maataa runs from the brahmini folder, Guru's Python.
+
+For each one it shows:
+
+- whether it is installed, partly installed or missing;
+- how much it downloads and how much free disk it needs;
+- why it can't be installed yet, for example it needs ComfyUI first, more memory than this Mac has, or more free space.
+
+**Install** runs the same installer the launchers use, one at a time, as an Activity job with a log; models are pulled through Ollama with progress. For a local model, **Run the coding checks** starts its 18 checks. Nothing is removed.
 
 ### What you need
 
 - **A Mac with Apple silicon** for the packed app and portable folder. Both carry their own Node runtime, so you do not need to install Node for them. Browser mode needs Node 22.5 or newer.
 - **Ollama** for chat, embeddings, evaluations and automations. Install it from ollama.com, then pull at least one model, for example `ollama pull llama3.2`. Maataa opens without Ollama, but anything that needs a model reports that Ollama is unavailable.
-- **Optional engines** for media: ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; Maataa starts and stops it for you); LTX-2 for AI video; whisper.cpp for transcripts; Kokoro for better voices. Each has a double-click installer in the brahmini folder. See [Images](#images), [Video](#video) and [Audio, songs and transcripts](#audio-songs-and-transcripts).
+- **Optional engines** for media: ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; Maataa starts and stops it for you); LTX-2 for AI video; whisper.cpp for transcripts; Kokoro for better voices. Each installs from the **Install** page in Maataa, or with a double-click installer in brahmini/launchers. See [Images](#images), [Video](#video) and [Audio, songs and transcripts](#audio-songs-and-transcripts).
 
 ### The desktop app
 
@@ -385,9 +410,9 @@ Then press **Sync from Ollama** in **Models**. Maataa adds or updates a card for
 
 When more than one model is loaded, a note at the top says how much memory they use. **Unload all but…** frees memory for images and video.
 
-**Renaming a model.** If you rename a model in Ollama (`ollama cp old new`, then `ollama rm old`), the next sync recognises it by its digest. Chats, agents, automations and saved profiles move to the new name, and its coding checks stay. The brahmini folder has **Rename local model to guru-maataa.command** for the local model that used to be called `maataa`.
+**Renaming a model.** If you rename a model in Ollama (`ollama cp old new`, then `ollama rm old`), the next sync recognises it by its digest. Chats, agents, automations and saved profiles move to the new name, and its coding checks stay. brahmini/launchers has **Rename local model to guru-maataa.command** for the local model that used to be called `maataa`.
 
-**Guru: our own models.** `guru-maataa-nano`, `-mini` and `-small` are MAATAA's own language models, trained from scratch on your Mac from Sanskrit, Hindi and English Wikipedia plus your own texts and the full Ashtadhyayi and Dhatupatha. Use the five **Guru … .command** files in the brahmini folder: set up, get the corpus, train, try, and add to Ollama. Once added, they appear here after **Sync from Ollama**. They are small: they write fluent text but know little, so use them to try things out, not for facts. When Guru cites an Ashtadhyayi sutra, it checks the number and wording against the real text and tells you if they are wrong. See `guru/README.md`.
+**Guru: our own models.** `guru-maataa-nano`, `-mini` and `-small` are MAATAA's own language models, trained from scratch on your Mac from Sanskrit, Hindi and English Wikipedia plus your own texts and the full Ashtadhyayi and Dhatupatha. Use the five **Guru … .command** files in brahmini/launchers: set up, get the corpus, train, try, and add to Ollama. Once added, they appear here after **Sync from Ollama**. They are small: they write fluent text but know little, so use them to try things out, not for facts. When Guru cites an Ashtadhyayi sutra, it checks the number and wording against the real text and tells you if they are wrong. See `guru/README.md`.
 
 **Example models.** Before Ollama is connected, Models shows a few example rows (Llama 3.1 8B, Mistral Nemo 12B, Qwen2.5 Coder 7B, Phi-3.5 Mini, Frontier Remote 70B). They are not on your Mac, and their numbers are not measured. Once real models are synced, the examples move into a closed **example models** section, are never shown as loaded, and **Remove examples** deletes them.
 
@@ -474,7 +499,7 @@ The group has six screens:
 
 ### Install the derivation engine (once)
 
-Derivation uses Vidyut's prakriya engine (MIT licence, about 3 MB). On **Maataa AAI**, press **Install derivation engine**. It goes into Maataa's own folder, and nothing else on your Mac changes. You can also double-click **AAI - Set up.command** in the brahmini folder. Python 3 must be installed; if it isn't, run `xcode-select --install`.
+Derivation uses Vidyut's prakriya engine (MIT licence, about 3 MB). On **Maataa AAI**, press **Install derivation engine**. It goes into Maataa's own folder, and nothing else on your Mac changes. You can also double-click **AAI - Set up.command** in brahmini/launchers. Python 3 must be installed; if it isn't, run `xcode-select --install`.
 
 ### Derivation
 
@@ -791,7 +816,7 @@ Everything in **Media** runs on your computer, and every item keeps the settings
 ![Media > Image: prompt, settings, and the helper panel with presets.](../public/help/media/media-image.jpg)
 ### Set up ComfyUI
 
-1. Open **Settings > Image engine** and press **Install ComfyUI** (or double-click **Install ComfyUI for NOVA.command** in the brahmini folder). It installs ComfyUI in `~/ComfyUI` with the SDXL base checkpoint (about 15 GB) and shows its progress in **Activity**.
+1. Open **Settings > Image engine** and press **Install ComfyUI** (or double-click **Install ComfyUI for NOVA.command** in brahmini/launchers). It installs ComfyUI in `~/ComfyUI` with the SDXL base checkpoint (about 15 GB) and shows its progress in **Activity**.
 2. That is all: you do not need to start ComfyUI yourself.
 
 ### ComfyUI is started for you
@@ -856,7 +881,7 @@ Needs ffmpeg, no AI model. Pick a push in, pull out, pan or tilt and a length fo
 
 The default on Apple silicon. The first shot and your prompt (describe the motion and the sound, for example "waves crash, gulls call") go to LTX-2 running on this computer, and the clip comes back with sound.
 
-- Install it with **Install LTX-2 video for NOVA.command** in the brahmini folder. It downloads only what Maataa uses: about 28 GB for **Fast** clips. For **Better** clips run `bash scripts/install-ltx-mac.sh --better` in `nova-console` (another 19 GB).
+- Install it with **Install LTX-2 video for NOVA.command** in brahmini/launchers. It downloads only what Maataa uses: about 28 GB for **Fast** clips. For **Better** clips run `bash scripts/install-ltx-mac.sh --better` in `nova-console` (another 19 GB).
 - Clips are 1–8 seconds at up to 960×544. Maataa never lets LTX-2 start a download on its own.
 - Set `LTX_MLX_BIN` or `LTX_MLX_MODEL` if you installed it elsewhere.
 
@@ -1621,7 +1646,7 @@ Coding Studio helps you build new apps and change existing ones with a local mod
 
 ### Start with one click
 
-Double-click **Maataa - Start coding** in the brahmini folder. It does five things:
+Double-click **Maataa** in the brahmini folder and choose **Start coding** (the same script is `launchers/Maataa - Start coding.command`). It does five things:
 
 - starts Ollama and Maataa;
 - installs the coding model `qwen2.5-coder:7b` when there is enough disk space (about 4.7 GB), or offers a model you already have;
@@ -1850,7 +1875,7 @@ Quit Maataa fully (menu bar item → **Quit Maataa**), then copy the data folder
 
 ### Build the app
 
-Double-click **Build NOVA app.command** in the brahmini folder. It:
+Double-click **Maataa.command** in the brahmini folder and choose **Build and install the Maataa app** (or **Build the Maataa app only**). The same script is `launchers/Build NOVA app.command`. It:
 
 1. Runs the unit tests (on temporary data) and stops if any fail.
 2. Downloads the official Node runtime from nodejs.org, checks its checksum and bundles it, so the app runs on Macs without Homebrew or Node.
@@ -1858,13 +1883,23 @@ Double-click **Build NOVA app.command** in the brahmini folder. It:
 4. Makes a `.dmg` disk image when macOS allows it.
 5. Makes a portable folder and checks that it starts.
 
-Everything lands in `nova-console/packaging/dist/`, named like `NOVA-Runtime-<version>-<commit>-mac-arm64`, with a build log and a test log. Packing needs about 3 GB free; the script stops early if there is less.
+Everything lands in `nova-console/packaging/dist/`, named like `Maataa-Workstation-<version>-<commit>-mac-arm64`, with a build log and a test log. Packing needs about 3 GB free; the script stops early if there is less.
 
 | File | Use |
 | --- | --- |
 | `….dmg` | Open it and drag Maataa Workstation to Applications |
 | `….app.zip` | The same app, zipped |
 | `…-portable.tar.gz` | A folder that runs Maataa in your browser, no install |
+
+### Install the app into Applications
+
+**Build and install the Maataa app** continues with `launchers/Install Maataa app.command`, which you can also run on its own (**Install the last built app into Applications** in the menu):
+
+1. It takes the newest `.app.zip` from `packaging/dist`.
+2. It asks before replacing an older copy, which goes to the Trash rather than being deleted.
+3. It unpacks the new copy into `/Applications` and offers to open it.
+
+The app keeps its data in `~/Library/Application Support/com.brahmini.nova-runtime`, separate from Maataa started from the brahmini folder (`nova-console/data`). Ollama models are shared, but coding-check results, approved folders and boards are per data folder, so run the coding checks once in the app as well. All installers are bundled in the app, so its **Install** page works there too; Guru's Python is only offered from the brahmini folder.
 
 ### Open an unsigned build
 
@@ -2072,7 +2107,7 @@ Allow Maataa in **System Settings > Privacy & Security > Microphone**. Speaking 
 
 #### "No whisper speech model is installed yet" although I installed one
 
-Double-click **Add multilingual speech model.command** in the brahmini folder again. Earlier versions put the model only where Maataa started from the folder looks; the app keeps its own data folder. It now links models you already have into the app without downloading them again or using more space. No restart is needed.
+Double-click **Add multilingual speech model.command** in brahmini/launchers again. Earlier versions put the model only where Maataa started from the folder looks; the app keeps its own data folder. It now links models you already have into the app without downloading them again or using more space. No restart is needed.
 
 #### A character's shouting, whispering or singing sounds the same as normal speech
 
@@ -2244,7 +2279,7 @@ Only what you ask it to. Say "remember that …", or press the brain on a reply.
 
 #### What do I need for images, video and audio?
 
-ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; Maataa starts it when needed, so you never start it yourself), LTX-2 or Wan for AI video, Kokoro for better voices and whisper.cpp for transcripts. Each has a double-click installer in the brahmini folder. See [Images](media-images.html).
+ComfyUI for images, songs and sound effects (install it from **Settings > Image engine**; Maataa starts it when needed, so you never start it yourself), LTX-2 or Wan for AI video, Kokoro for better voices and whisper.cpp for transcripts. Each installs from the **Install** page in Maataa, or with a double-click installer in brahmini/launchers. See [Images](media-images.html).
 
 #### Where are the files Maataa makes?
 

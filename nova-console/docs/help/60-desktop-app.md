@@ -8,7 +8,7 @@ keywords: desktop app build nova app command tauri dmg zip portable folder start
 ---
 ## Build the app
 
-Double-click **Build NOVA app.command** in the brahmini folder. It:
+Double-click **Maataa.command** in the brahmini folder and choose **Build and install the Maataa app** (or **Build the Maataa app only**). The same script is `launchers/Build NOVA app.command`. It:
 
 1. Runs the unit tests (on temporary data) and stops if any fail.
 2. Downloads the official Node runtime from nodejs.org, checks its checksum and bundles it, so the app runs on Macs without Homebrew or Node.
@@ -16,13 +16,23 @@ Double-click **Build NOVA app.command** in the brahmini folder. It:
 4. Makes a `.dmg` disk image when macOS allows it.
 5. Makes a portable folder and checks that it starts.
 
-Everything lands in `nova-console/packaging/dist/`, named like `NOVA-Runtime-<version>-<commit>-mac-arm64`, with a build log and a test log. Packing needs about 3 GB free; the script stops early if there is less.
+Everything lands in `nova-console/packaging/dist/`, named like `Maataa-Workstation-<version>-<commit>-mac-arm64`, with a build log and a test log. Packing needs about 3 GB free; the script stops early if there is less.
 
 | File | Use |
 | --- | --- |
 | `….dmg` | Open it and drag Maataa Workstation to Applications |
 | `….app.zip` | The same app, zipped |
 | `…-portable.tar.gz` | A folder that runs Maataa in your browser, no install |
+
+## Install the app into Applications
+
+**Build and install the Maataa app** continues with `launchers/Install Maataa app.command`, which you can also run on its own (**Install the last built app into Applications** in the menu):
+
+1. It takes the newest `.app.zip` from `packaging/dist`.
+2. It asks before replacing an older copy, which goes to the Trash rather than being deleted.
+3. It unpacks the new copy into `/Applications` and offers to open it.
+
+The app keeps its data in `~/Library/Application Support/com.brahmini.nova-runtime`, separate from Maataa started from the brahmini folder (`nova-console/data`). Ollama models are shared, but coding-check results, approved folders and boards are per data folder, so run the coding checks once in the app as well. All installers are bundled in the app, so its **Install** page works there too; Guru's Python is only offered from the brahmini folder.
 
 ## Open an unsigned build
 

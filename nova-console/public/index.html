@@ -474,6 +474,10 @@
 .hk-cell:disabled{cursor:default;color:var(--muted-dim);border-color:transparent}
 .hk-cell.sel{outline:2px solid var(--amber);outline-offset:1px}
 .hk-rec{padding:12px;margin-top:8px}
+.ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:10px}
+.ins-card{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.ins-card[data-state="installed"]{border-color:var(--line-soft)}.ins-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ins-block{font-size:12px;color:var(--amber);margin-top:4px}.ins-logbox{max-height:220px;overflow:auto;font-size:11.5px;margin-top:8px}
 .rd-new{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.rd-new input{flex:1;min-width:180px}
 .rd-board{display:grid;grid-template-columns:repeat(6,minmax(170px,1fr));gap:10px;overflow-x:auto;padding-bottom:6px}
 .rd-col{background:var(--panel,transparent);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:120px}
@@ -939,6 +943,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item" data-view="git"><span data-lucide="git-compare-arrows"></span><span class="rail-text">Git Updates</span></button>
       <button class="nav-item" data-view="history"><span data-lucide="list-tree"></span><span class="rail-text">Execution History</span></button>
       <button class="nav-item" data-view="diagnostics"><span data-lucide="stethoscope"></span><span class="rail-text">Diagnostics</span></button>
+      <button class="nav-item" data-view="install"><span data-lucide="package-plus"></span><span class="rail-text">Install</span></button>
       <button class="nav-item" data-view="settings"><span data-lucide="settings-2"></span><span class="rail-text">Settings</span></button>
       <button class="nav-item" data-view="help"><span data-lucide="life-buoy"></span><span class="rail-text">Help &amp; Support</span></button>
     </div>
@@ -1099,6 +1104,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <section id="diagnosticsView" class="view"><div class="view-pad"><!-- VIEW:diagnostics --></div></section>
       <!-- ===================== SETTINGS ===================== -->
       <section id="settingsView" class="view"><div class="view-pad"><!-- VIEW:settings --></div></section>
+      <section id="installView" class="view"><div class="view-pad"><!-- VIEW:install --></div></section>
       <section id="helpView" class="view"><div class="view-pad"></div></section>
     </main>
 
@@ -1264,8 +1270,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',radheya:'Radheya',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',radheya:'राधेय',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',radheya:'Radheya',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',install:'Install',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',radheya:'राधेय',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',install:'इंस्टॉल',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1678,7 +1684,7 @@ const PIPELINE = {
 const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', codingstudio:'Coding Studio', radheya:'Radheya', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
-  runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', settings:'Settings', help:'Help & Support'};
+  runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', install:'Install', settings:'Settings', help:'Help & Support'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
 // Models people can pick: the example rows shown before Ollama was connected are left out.
@@ -1741,7 +1747,7 @@ function showView(name){
     sessions:renderSessionsView, workspace:renderWorkspaceView, codingstudio:renderCodingStudioView, radheya:renderRadheyaView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
-    runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, settings:renderSettingsView, help:renderHelpView,
+    runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, install:renderInstallView, settings:renderSettingsView, help:renderHelpView,
   };
   if (renderers[name]) renderers[name]();
   if (name === 'console') renderConsole();
@@ -3918,7 +3924,7 @@ async function openUpscale(m){
   let img = {}; try { img = await apiGet('/api/images/status'); } catch (_) {}
   const models = img.upscalers || [];
   openActionModal('Upscale', `
-    <p class="empty-hint" style="padding:0 0 8px">${models.length&&img.reachable?'Uses an upscale model in ComfyUI: sharper detail than a plain resize.':'No upscale model found (or ComfyUI is not running), so Maataa does a high-quality resize with ffmpeg. For sharper results, double-click "Add upscale model.command" in the brahmini folder and start ComfyUI.'}</p>
+    <p class="empty-hint" style="padding:0 0 8px">${models.length&&img.reachable?'Uses an upscale model in ComfyUI: sharper detail than a plain resize.':'No upscale model found (or ComfyUI is not running), so Maataa does a high-quality resize with ffmpeg. For sharper results, double-click "Add upscale model.command" in brahmini/launchers, or use Install in Maataa and start ComfyUI.'}</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="upFactor" aria-label="Upscale factor" style="${FIELD_STYLE}"><option value="2">2x</option><option value="4">4x</option></select>
       ${models.length&&img.reachable?`<select id="upModel" aria-label="Upscale model" style="${FIELD_STYLE}">${models.map(x=>`<option>${escapeHtml(x)}</option>`).join('')}</select>`:''}
@@ -3945,7 +3951,7 @@ async function openTranslate(m){
   };
   openActionModal('Translate', `
     <p class="empty-hint" style="padding:0 0 8px">Maataa transcribes the speech${m.transcript?' (already done)':''}, translates each line with your local model, then dubs it or burns in subtitles. The subtitle file is kept in the recipe. No lip sync.</p>
-    ${stt.multilingual?'':`<p class="empty-hint" style="padding:0 0 8px;color:var(--amber)">Only the English speech model is installed, so Maataa can translate from English only. For Hindi or other spoken languages, double-click "Add multilingual speech model.command" in the brahmini folder (about 575 MB), then restart Maataa.</p>`}
+    ${stt.multilingual?'':`<p class="empty-hint" style="padding:0 0 8px;color:var(--amber)">Only the English speech model is installed, so Maataa can translate from English only. For Hindi or other spoken languages, double-click "Add multilingual speech model.command" in brahmini/launchers, or use Install in Maataa (about 575 MB), then restart Maataa.</p>`}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label class="empty-hint" style="padding:0">Spoken <select id="trFrom" aria-label="Spoken language" style="${FIELD_STYLE}">${Object.entries(stt.languages||{}).map(([v,l])=>`<option value="${v}" ${v===spoken?'selected':''} ${!stt.multilingual&&v!=='en'&&v!=='auto'?'disabled':''}>${escapeHtml(v==='auto'?'Detect':l)}</option>`).join('')}</select></label> →
       <select id="trLang" aria-label="Translate into" style="${FIELD_STYLE}">${TRANSLATE_LANGS.map(([v,l])=>`<option value="${v}" ${v===(spoken==='hi'?'en':'hi')?'selected':''}>${l}</option>`).join('')}</select>
@@ -5567,7 +5573,7 @@ async function aaiStatus(force){ if(!AAI.status||force) AAI.status=await paniniF
 function aaiEngineBanner(st){
   if (st.engine.installed) return '';
   const inst=st.install||{};
-  return `<div class="panel aai-banner"><strong>The derivation engine is not installed yet.</strong><p class="panini-sub" style="margin:6px 0">Derivations use Vidyut's prakriya engine (MIT licence, about 3 MB). Installing puts it in Maataa's own folder; nothing else on this Mac changes. You can also double-click <b>AAI - Set up.command</b> in the brahmini folder.</p>${inst.state==='running'?`<div class="panini-sub">Installing… ${escapeHtml(inst.log?.slice(-1)[0]||'')}</div>`:`<button class="btn btn-amber aai-install">Install derivation engine</button>`}${inst.state==='failed'?`<div class="panini-sub" style="color:var(--red);margin-top:6px">Install failed: ${escapeHtml(inst.error||'')}</div>`:''}</div>`;
+  return `<div class="panel aai-banner"><strong>The derivation engine is not installed yet.</strong><p class="panini-sub" style="margin:6px 0">Derivations use Vidyut's prakriya engine (MIT licence, about 3 MB). Installing puts it in Maataa's own folder; nothing else on this Mac changes. You can also double-click <b>AAI - Set up.command</b> in brahmini/launchers, or use Install in Maataa.</p>${inst.state==='running'?`<div class="panini-sub">Installing… ${escapeHtml(inst.log?.slice(-1)[0]||'')}</div>`:`<button class="btn btn-amber aai-install">Install derivation engine</button>`}${inst.state==='failed'?`<div class="panini-sub" style="color:var(--red);margin-top:6px">Install failed: ${escapeHtml(inst.error||'')}</div>`:''}</div>`;
 }
 function aaiWireInstall(rerender){
   $$('.aai-install').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await aaiPost('/api/aai/engine/install');toast('Installing the derivation engine…');const poll=async()=>{const st=await aaiStatus(true);if(st.install.state==='running'){setTimeout(poll,1500);}else{toast(st.engine.installed?'The derivation engine is ready.':'Install failed: '+(st.install.error||''));}rerender();};setTimeout(poll,1200);}catch(e){toast(e.message);b.disabled=false;}});
@@ -5843,6 +5849,49 @@ async function renderRadheyaView(){
   if($('rdOnOff')) $('rdOnOff').onclick=()=>act(()=>rdPost('/api/radheya/settings',{online:null}),'Online agent removed.');
   clearTimeout(RD.poll);
   if(running.length||M.evolving) RD.poll=setTimeout(re,2000);
+}
+// ---------------- Install: every optional component, its status and a one-click install ----------------
+const INS = { data:null, logs:{}, poll:null };
+const INS_STATE = { installed:['Installed','good'], partial:['Partly installed','warn'], missing:['Not installed',''], unavailable:['Not available here',''], unknown:['Unknown',''] };
+function insGb(x){ return x>=1?Math.round(x*10)/10+' GB':Math.round(x*1000)+' MB'; }
+async function renderInstallView(){
+  const pad=$('installView').querySelector('.view-pad');
+  try{ INS.data=await paniniFetch('/api/installers'); }
+  catch(e){ pad.innerHTML=`<div class="view-head"><h1 class="view-title">Install</h1></div><div class="coding-studio-state" data-tone="bad" role="alert">${escapeHtml(e.message)}</div>`; return; }
+  const d=INS.data, groups=[...new Set(d.components.map(c=>c.group))];
+  const runningLabel=d.running?d.components.find(c=>c.id===d.running.id)?.label:'';
+  const card=c=>{
+    const [label,tone]=INS_STATE[c.state]||INS_STATE.unknown, busy=d.running&&d.running.id===c.id;
+    const actions=[];
+    if(c.installKind==='link'&&c.state!=='installed') actions.push(`<a class="btn btn-amber" href="${escapeHtml(c.url)}" target="_blank" rel="noopener">Open the download page</a>`);
+    if(c.canInstall) actions.push(`<button type="button" class="btn btn-amber ins-go" data-id="${escapeHtml(c.id)}" data-label="${escapeHtml(c.label)}" data-size="${c.sizeGb}" ${d.running?'disabled':''}>${c.state==='partial'?'Finish installing':'Install'}${c.sizeGb?` · ${insGb(c.sizeGb)}`:''}</button>`);
+    if(c.qualify) actions.push(`<button type="button" class="btn btn-line ins-qualify" data-model="${escapeHtml(c.label)}">Run the coding checks</button>`);
+    if(busy) actions.push('<button type="button" class="btn btn-line" id="insCancel">Cancel</button>');
+    actions.push(`<button type="button" class="btn btn-ghost ins-log" data-id="${escapeHtml(c.id)}">${INS.logs[c.id]!=null?'Hide log':'Log'}</button>`);
+    return `<article class="ins-card" data-id="${escapeHtml(c.id)}" data-state="${escapeHtml(c.state)}"><div class="ins-head"><strong>${escapeHtml(c.label)}</strong><span class="badge${tone==='good'?' badge-green':tone==='warn'?' badge-amber':''}">${busy?'Installing…':label}</span></div>
+      <div class="empty-hint">${escapeHtml(c.what)}</div>
+      <div class="coding-studio-meta" style="margin-top:6px">${c.sizeGb?`<span>Download ${insGb(c.sizeGb)}</span>`:''}${c.needGb?`<span>Needs ${c.needGb} GB free</span>`:''}${c.detail?`<span>${escapeHtml(c.detail)}</span>`:''}${c.note?`<span>${escapeHtml(c.note)}</span>`:''}${c.hint?`<span>${escapeHtml(c.hint)}</span>`:''}</div>
+      ${c.blockers&&c.blockers.length&&c.state!=='installed'?`<div class="ins-block">Can't install yet: ${c.blockers.map(escapeHtml).join('; ')}.</div>`:''}
+      ${c.result&&!busy?`<div class="empty-hint" style="margin-top:4px">${c.result.ok?'Last run: ':'Last run failed: '}${escapeHtml(c.result.message).slice(0,300)}</div>`:''}
+      <div class="coding-studio-actions" style="margin-top:8px">${actions.join('')}</div>
+      ${INS.logs[c.id]!=null?`<pre class="coding-studio-code ins-logbox">${escapeHtml(INS.logs[c.id]||'No log yet.')}</pre>`:''}</article>`;
+  };
+  pad.innerHTML=`<div class="view-head"><div><h1 class="view-title">Install</h1><p class="view-desc">Everything optional Maataa can use, whether it is installed on this Mac, how big it is, and a one-click install. Installs run one at a time in Activity; nothing is removed.</p></div></div>
+    <div class="coding-studio-meta" id="insSummary" style="margin-bottom:12px"><span>${d.freeGb!=null?d.freeGb+' GB free on this disk':'Free space unknown'}</span><span>${d.memoryGb} GB memory</span><span>${d.components.filter(c=>c.state==='installed').length} of ${d.components.length} installed</span>${d.running?`<span class="badge badge-amber">Installing ${escapeHtml(runningLabel)}</span>`:''}</div>
+    ${groups.map(g=>`<section class="panel" style="padding:16px 18px;margin-bottom:12px" aria-label="${escapeHtml(g)}"><h2 style="font-size:15px;margin:0 0 10px">${escapeHtml(g)}</h2><div class="ins-grid">${d.components.filter(c=>c.group===g).map(card).join('')}</div></section>`).join('')}`;
+  if(window.lucide) lucide.createIcons();
+  const re=()=>{ if(currentView==='install') renderInstallView(); };
+  $$('#installView .ins-go').forEach(b=>b.onclick=async()=>{
+    const size=Number(b.dataset.size);
+    if(size>=1 && !confirm(`Install ${b.dataset.label}? It downloads about ${insGb(size)}.`)) return;
+    try{ await rdPost('/api/installers/'+encodeURIComponent(b.dataset.id)+'/install'); toast('Installing '+b.dataset.label+'. Follow it in Activity.'); INS.logs[b.dataset.id]=''; }catch(e){ toast(e.message); }
+    re();
+  });
+  $$('#installView .ins-qualify').forEach(b=>b.onclick=async()=>{ try{ await rdPost('/api/models/qualify',{model:b.dataset.model}); toast('Coding checks started (about 10–30 minutes). Follow them in Activity.'); }catch(e){ toast(e.message); } });
+  $$('#installView .ins-log').forEach(b=>b.onclick=async()=>{ const id=b.dataset.id; if(INS.logs[id]!=null){ delete INS.logs[id]; re(); return; } try{ INS.logs[id]=(await paniniFetch('/api/installers/'+encodeURIComponent(id)+'/log')).log; }catch(e){ INS.logs[id]=e.message; } re(); });
+  if($('insCancel')) $('insCancel').onclick=async()=>{ try{ await rdPost('/api/installers/cancel'); toast('Cancelling…'); }catch(e){ toast(e.message); } re(); };
+  clearTimeout(INS.poll);
+  if(d.running){ INS.poll=setTimeout(async()=>{ for(const id of Object.keys(INS.logs)){ try{ INS.logs[id]=(await paniniFetch('/api/installers/'+encodeURIComponent(id)+'/log')).log; }catch(_){} } re(); },2500); }
 }
 async function renderHkdmView(){
   const pad=$('hkdmView').querySelector('.view-pad');
@@ -7500,6 +7549,7 @@ init().then(routeHelpHash);
 // search/filter/sort bar, the view and key panels get a "?" help button, and prompt boxes get
 // preset chips. List choices are remembered per view in this browser.
 const VIEW_HELP = {
+  install:'Everything optional Maataa can use: Ollama and the local models, ComfyUI and its image, sound and video models, Kokoro voices, the multilingual speech model, LTX-2 video, the AAI engine, the agent browser and (from the brahmini folder) Guru\'s Python. Each shows whether it is installed, its download size and the free space it needs; Install runs the same installer the brahmini launchers use, one at a time, in Activity. Nothing is removed.',
   radheya:'Radheya is a Kanban that learns from its own work. Each card is worked by you, the local model, the observable agent browser (only sites the card allows, every page logged with a screenshot) or an online agent (only if the card allows it). Runs leave a note and an evidence record; only you move a card to Done, from Review, with evidence. Training rounds compare a counting baseline with small transformer shapes on held-out cards; a shape is used only after you approve it, and can be rolled back.',
   voicestudio:'Characters for your agents and for Maataa itself: a name, a personality and way of speaking, a face (made with ComfyUI) and a voice. Blend up to three Kokoro voices with speed and pitch, use a macOS voice, or a voice from the VoiceStudio app (including your own cloned voice). Give a character to an agent, or let Maataa speak as one.',
   agentbrowser:'The separate, locked-down browser Maataa\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting Maataa closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
@@ -7743,7 +7793,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
         <div class="tv-main"><div>
           <div class="tv-frame">${frame}</div>
           <p class="tv-cap">${esc(caption(r, addon))}</p>
-          ${audioNeedsAddon ? '<div class="tv-hint">To see songs and sounds as they form, double-click <b>Add tensor view.command</b> in the brahmini folder. It adds a small Maataa add-on to ComfyUI and restarts it.</div>' : ''}
+          ${audioNeedsAddon ? '<div class="tv-hint">To see songs and sounds as they form, double-click <b>Add tensor view.command</b> in brahmini/launchers, or use Install in Maataa. It adds a small Maataa add-on to ComfyUI and restarts it.</div>' : ''}
           <div class="tv-shape">${r.shapes && r.shapes.latent ? `Latent <b>${shape(r.shapes.latent)}</b> — ${esc(r.shapes.latentNote)}<br>` : r.shapes && r.shapes.latentNote ? `Latent: ${esc(r.shapes.latentNote)}<br>` : ''}${r.shapes && r.shapes.output ? `Output <b>${shape(r.shapes.output)}</b> — ${esc(r.shapes.outputNote)}<br>` : ''}<span style="color:var(--muted)">${esc(stateTxt)}${running?' · '+secs(r.elapsed):''}</span></div>
         </div><div>${side}</div></div>
         <div class="tv-foot"><a href="/tensors.html" target="_blank" rel="noopener">How this works →</a>${snap.live===false||snap.error?`<span>${esc(snap.error||'Live steps are off.')}</span>`:''}</div>

@@ -22,7 +22,7 @@ The group has six screens:
 
 ## Install the derivation engine (once)
 
-Derivation uses Vidyut's prakriya engine (MIT licence, about 3 MB). On **Maataa AAI**, press **Install derivation engine**. It goes into Maataa's own folder, and nothing else on your Mac changes. You can also double-click **AAI - Set up.command** in the brahmini folder. Python 3 must be installed; if it isn't, run `xcode-select --install`.
+Derivation uses Vidyut's prakriya engine (MIT licence, about 3 MB). On **Maataa AAI**, press **Install derivation engine**. It goes into Maataa's own folder, and nothing else on your Mac changes. You can also double-click **AAI - Set up.command** in brahmini/launchers. Python 3 must be installed; if it isn't, run `xcode-select --install`.
 
 ## Derivation
 
