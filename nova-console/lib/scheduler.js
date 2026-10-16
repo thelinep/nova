@@ -109,6 +109,20 @@ function normalizeTrigger(trigger, store) {
 
 /* -------------------------------- run logic -------------------------------- */
 
+/** Writes a finished run's own fields onto the automation as it is NOW, not
+ *  the copy read when the run started: a run can take minutes, and the user
+ *  may disable, rename or re-trigger the automation meanwhile. Writing the
+ *  start-time copy back would silently undo those edits (and re-enable a
+ *  schedule the user just turned off). A deleted automation stays deleted. */
+function recordRunResult(store, started, fields, nextLogs) {
+  const current = store.get('automations', started.id);
+  if (!current) return null;
+  Object.assign(current, fields);
+  current.logs = nextLogs(current.logs || []);
+  store.put('automations', current);
+  return current;
+}
+
 /** The real pipeline run itself — moved here unchanged in substance from
  *  server.js's POST /api/automations/:id/run so manual, scheduled, and
  *  event-triggered runs are all the exact same code path, differing only
@@ -152,23 +166,18 @@ async function runAutomation(store, ollama, automationId, opts) {
     const outputText = (raw.message && raw.message.content) || '';
 
     runLogs.push('Generated real reply via ' + modelName + ' · ' + tokens + ' tokens (real eval_count)');
-    a.lastRun = startedAt;
-    a.lastDuration = durationSec.toFixed(1) + 's';
-    a.lastTokens = tokens;
-    a.logs = [...(a.logs || []).slice(-(6 - runLogs.length)), ...runLogs];
-    store.put('automations', a);
-    store.put('automationRuns', { id: uid('run'), automationId: a.id, status: 'Success', startedAt, duration: a.lastDuration, tokens, origin });
+    const lastDuration = durationSec.toFixed(1) + 's';
+    recordRunResult(store, a, { lastRun: startedAt, lastDuration, lastTokens: tokens }, l => [...l.slice(-(6 - runLogs.length)), ...runLogs]);
+    store.put('automationRuns', { id: uid('run'), automationId: a.id, status: 'Success', startedAt, duration: lastDuration, tokens, origin });
     const exRow = store.get('executions', exec.id);
-    if (exRow) { exRow.status = 'success'; exRow.finishedAt = finishedAt; exRow.detail = tokens + ' tokens · ' + a.lastDuration + ' (' + originLabel + ')'; store.put('executions', exRow); }
+    if (exRow) { exRow.status = 'success'; exRow.finishedAt = finishedAt; exRow.detail = tokens + ' tokens · ' + lastDuration + ' (' + originLabel + ')'; store.put('executions', exRow); }
     if (origin !== 'manual') {
       store.put('runtimeEvents', { id: uid('ev'), at: finishedAt, category: 'AUTOMATION', message: a.name + ' · ' + originLabel + ' run succeeded · ' + tokens + ' tokens', extra: null });
     }
-    return { automation: a, output: outputText, tokens, duration: a.lastDuration };
+    return { automation: store.get('automations', a.id) || a, output: outputText, tokens, duration: lastDuration };
   } catch (e) {
     const finishedAt = new Date().toISOString();
-    a.lastRun = startedAt; a.lastDuration = null; a.lastTokens = 0;
-    a.logs = [...(a.logs || []).slice(-5), 'Run failed (' + originLabel + ') — ' + (e.message || String(e))];
-    store.put('automations', a);
+    recordRunResult(store, a, { lastRun: startedAt, lastDuration: null, lastTokens: 0 }, l => [...l.slice(-5), 'Run failed (' + originLabel + ') — ' + (e.message || String(e))]);
     store.put('automationRuns', { id: uid('run'), automationId: a.id, status: 'Failed', startedAt, duration: null, tokens: 0, origin });
     const exRow = store.get('executions', exec.id);
     if (exRow) { exRow.status = 'error'; exRow.finishedAt = finishedAt; exRow.detail = (e.message || String(e)) + ' (' + originLabel + ')'; store.put('executions', exRow); }
