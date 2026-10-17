@@ -175,8 +175,9 @@ async function direct({ store, ollama }, id, { prompt, model } = {}) {
   const models = chatModels(store); const m = model && models.includes(model) ? model : models[0];
   if (!m || !ollama) throw error('No local chat model is installed. Install one in Models (for example qwen3:8b).', 412);
   let res;
-  try { res = await ollama.chatFull(m, [{ role: 'system', content: directorPrompt(scene, chars) }, { role: 'user', content: text }], { format: 'json', options: { temperature: 0.4, num_predict: 2500 } }); }
-  catch (e) { throw error(`${m} could not answer: ${String(e.message || e).slice(0, 160)}`, 502); }
+  const limitMs = Number(process.env.NOVA_DIRECTOR_TIMEOUT_MS) || 5 * 60 * 1000; // a busy or memory-starved Mac must not leave the page waiting forever
+  try { res = await ollama.chatFull(m, [{ role: 'system', content: directorPrompt(scene, chars) }, { role: 'user', content: text }], { format: 'json', options: { temperature: 0.4, num_predict: 2500 }, signal: AbortSignal.timeout(limitMs) }); }
+  catch (e) { if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) throw error(`${m} did not finish within ${Math.round(limitMs / 60000)} minutes. Your scene was not changed. Close other apps to free memory, or try a smaller model.`, 504); throw error(`${m} could not answer: ${String(e.message || e).slice(0, 160)}`, 502); }
   const j = parseJson(res && res.message && res.message.content);
   if (!j || !Array.isArray(j.beats)) throw error(`${m} did not return a usable scene. Your scene was not changed. Try again, a shorter prompt or another model.`, 422);
   const notes = [];

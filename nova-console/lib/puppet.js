@@ -290,7 +290,9 @@ async function saveClip(store, dataDir, buffer, { character, action = '' } = {})
 
 /* ------------------------------- 3D export ------------------------------- */
 function blenderPath() {
-  for (const f of [process.env.NOVA_BLENDER, '/Applications/Blender.app/Contents/MacOS/Blender', '/opt/homebrew/bin/blender', '/usr/local/bin/blender', '/usr/bin/blender']) if (f && fs.existsSync(f)) return f;
+  // NOVA_BLENDER, when set, is the only place looked at (so it can also say "no Blender").
+  if (process.env.NOVA_BLENDER) return fs.existsSync(process.env.NOVA_BLENDER) ? process.env.NOVA_BLENDER : null;
+  for (const f of ['/Applications/Blender.app/Contents/MacOS/Blender', '/opt/homebrew/bin/blender', '/usr/local/bin/blender', '/usr/bin/blender']) if (fs.existsSync(f)) return f;
   return null;
 }
 const FBX_SCRIPT = [

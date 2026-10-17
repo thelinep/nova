@@ -69,7 +69,8 @@ test('an installer script runs as an Activity job and is checked afterwards', as
   spawned.c.stdout.emit('data', '\n== Downloading ggml-large-v3-turbo-q5_0.bin\nprogress\n');
   s.deps.transcribe.status = () => ({ multilingual: true, models: [{ multilingual: true }], binary: 'x' });
   spawned.c.emit('exit', 0);
-  await new Promise(r => setTimeout(r, 20));
+  const logFile = path.join(s.dir, 'installs', 'whisper.log');
+  for (let i = 0; i < 100 && !(s.deps.activity.jobs[0]?.status === 'done' && fs.existsSync(logFile) && /progress/.test(fs.readFileSync(logFile, 'utf8'))); i++) await new Promise(r => setTimeout(r, 20)); // a busy Mac flushes the log later
   const job = s.deps.activity.jobs[0];
   assert.equal(job.status, 'done');
   assert.ok(job.steps.some(st => /Downloading ggml/.test(st.t)));

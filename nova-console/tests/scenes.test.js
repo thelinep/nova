@@ -56,6 +56,10 @@ test('director: a local model writes the scene; bad answers leave the scene alon
   await assert.rejects(scenes.direct({ store: db, ollama: bad }, s.id, { prompt: 'x' }), e => e.statusCode === 422 && /not changed/.test(e.message));
   assert.equal(scenes.get(db, s.id).name, 'Bonk', 'a bad answer changes nothing');
   await assert.rejects(scenes.direct({ store: db, ollama }, s.id, { prompt: '' }), /Write what should happen/);
+  process.env.NOVA_DIRECTOR_TIMEOUT_MS = '50';
+  const slow = { chatFull: (m, msgs, o) => new Promise((_, rej) => { const keep = setTimeout(() => {}, 5000); o.signal.addEventListener('abort', () => { clearTimeout(keep); rej(o.signal.reason); }); }) };
+  await assert.rejects(scenes.direct({ store: db, ollama: slow }, s.id, { prompt: 'x' }), e => e.statusCode === 504 && /did not finish/.test(e.message));
+  delete process.env.NOVA_DIRECTOR_TIMEOUT_MS;
   const db2 = store(); const s2 = scenes.create(db2, { actors: [{ label: 'X' }] });
   await assert.rejects(scenes.direct({ store: db2, ollama }, s2.id, { prompt: 'go' }), e => e.statusCode === 412);
 });
