@@ -128,6 +128,56 @@
   .view{display:none;position:absolute;inset:0;overflow-y:auto;}
   .view.active{display:block;}
   .view-pad{padding:24px clamp(16px,3vw,40px) 40px;}
+  .cs-grid{display:grid;grid-template-columns:180px minmax(300px,1fr) minmax(300px,380px);gap:14px;align-items:start}
+  .cs-modes{display:inline-flex;gap:4px;margin-right:6px}
+  .sc-grid{grid-template-columns:200px minmax(360px,1fr) minmax(300px,390px)}
+  .sc-tl{position:relative;margin-top:8px;display:flex;flex-direction:column;gap:4px;cursor:pointer;width:100%;align-self:stretch}
+  .sc-headbox{position:absolute;left:58px;right:0;top:0;bottom:0;pointer-events:none}
+  .sc-row{display:flex;align-items:center;gap:6px}.sc-rl{width:52px;font-size:10.5px;color:var(--muted);flex:none}
+  .sc-lane{position:relative;flex:1;height:22px;background:var(--panel2);border-radius:5px}
+  .sc-blk{position:absolute;top:2px;bottom:2px;border:1px solid var(--line);border-radius:4px;background:rgba(255,176,0,0.16);color:var(--ink);font-size:9.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 3px;cursor:pointer}
+  .sc-blk.on{background:rgba(255,176,0,0.45);border-color:var(--amber)}.sc-line{background:rgba(90,170,255,0.22)}.sc-shot{background:rgba(160,120,255,0.22)}
+  .sc-head{position:absolute;top:0;bottom:0;width:2px;background:var(--amber);pointer-events:none}
+  .sc-stage canvas{display:block}
+  .sc-cam{display:grid;grid-template-columns:1fr;gap:4px}
+  .sc-cuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}.sc-cut{border:1px solid var(--line);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+  .sc-cut-img{display:flex;gap:2px;height:70px}.sc-cut-img img{height:70px;max-width:80px;object-fit:contain}
+  @media (max-width:1100px){.cs-grid{grid-template-columns:1fr}}
+  .cs-list{padding:8px;display:flex;flex-direction:column;gap:4px;max-height:640px;overflow:auto}
+  .cs-item{display:flex;gap:8px;align-items:center;text-align:left;background:none;border:1px solid transparent;border-radius:9px;padding:5px;color:var(--ink);cursor:pointer}
+  .cs-item:hover{background:var(--panel2)} .cs-item.active{border-color:var(--amber);background:var(--panel2)}
+  .cs-item canvas{border-radius:7px;flex:none} .cs-item small{display:block;color:var(--muted);font-size:10.5px}
+  .cs-stage{padding:10px;display:flex;flex-direction:column;gap:8px;align-items:center}
+  .cs-stage canvas{width:100%;max-width:520px;height:auto;border-radius:12px;background:#1e2430}
+  .cs-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .cs-side{padding:12px;max-height:720px;overflow:auto}
+  .cs-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  .cs-tab{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .cs-tab.active{background:var(--amber);border-color:var(--amber);color:#111}
+  .cs-sub{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px}
+  .cs-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cs-field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted)}
+  .cs-colors{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .cs-color input{width:100%;height:30px;border:1px solid var(--line);border-radius:7px;background:none;padding:1px}
+  .cs-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .cs-check{font-size:12px;display:flex;gap:4px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .cs-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+  .cs-step{border:1px solid var(--line);border-radius:9px;padding:8px;margin-bottom:8px}
+  .cs-inline{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+  .cs-mode{display:flex;gap:6px;justify-content:center}
+  .cs-slider span{display:flex;justify-content:space-between} .cs-slider b{font-weight:600;color:var(--ink)}
+  .cs-stage canvas.cs3d{cursor:grab;touch-action:none}
+  .cs-tl{position:relative;border:1px solid var(--line);border-radius:9px;padding:6px 6px 6px 0;margin-top:8px;background:var(--panel2)}
+  .cs-tl-row{display:flex;align-items:center;height:24px} .cs-tl-name{width:62px;flex:none;font-size:10.5px;color:var(--muted);text-align:right;padding-right:8px}
+  .cs-tl-lane{position:relative;flex:1;height:18px;border-bottom:1px dashed var(--line);cursor:pointer}
+  .cs-key{position:absolute;top:2px;width:12px;height:12px;margin-left:-6px;transform:rotate(45deg);border:1px solid rgba(0,0,0,.35);border-radius:2px;padding:0;cursor:pointer;background:var(--amber)}
+  .cs-key.sel{outline:2px solid #fff} .cs-key-clip{background:#7dd3fc} .cs-key-face{background:#f472b6} .cs-key-add{background:#c4b5fd} .cs-key-voice{background:#6ee7b7} .cs-key-sound{background:#fca5a5}
+  .cs-tl-head{position:absolute;top:2px;bottom:2px;width:2px;background:#fff;margin-left:62px;pointer-events:none;opacity:.8}
+  .cs-cam{position:relative;width:100%;max-width:320px;aspect-ratio:4/3;background:#000;border-radius:9px;overflow:hidden;margin-top:8px}
+  .cs-cam video,.cs-cam canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .cs-gallery{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .cs-gallery figure{margin:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .cs-gallery img{width:100%;display:block;background:var(--panel2)} .cs-gallery figcaption{font-size:11px;color:var(--muted);padding:4px 6px;display:flex;gap:4px;align-items:center;flex-wrap:wrap}
   .view-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
   .eyebrow{font:10.5px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted-dim);}
   .view-title{font-size:22px;font-weight:700;margin:4px 0 0;letter-spacing:-.01em;text-wrap:balance;}
@@ -343,8 +393,10 @@
   .rerank-arrow{color:var(--muted-dim);}
   .exp-row.selected{background:var(--amber-soft);}
   #cmdkList{padding:6px;max-height:360px;overflow-y:auto;}
-  .cmdk-item{border:none;background:transparent;color:var(--ink-dim);text-align:left;}
+  .cmdk-item{border:none;background:transparent;color:var(--ink-dim);text-align:left;font-size:13.5px;}
   .cmdk-item:hover,.cmdk-item.active{background:#ffffff0c;color:var(--ink);}
+  .cmdk-group{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-dim);padding:8px 10px 4px;}
+  .cmdk-hint{margin-left:auto;font-size:11px;color:var(--muted-dim);}
 
   /* ============ View extras: Capabilities (Skills / MCP / Agents / Workflows / Graph / History) ============ */
   .cap-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
@@ -890,6 +942,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item" data-view="media" data-media-tab="image"><span data-lucide="image"></span><span class="rail-text">Image</span></button>
       <button class="nav-item" data-view="media" data-media-tab="video"><span data-lucide="clapperboard"></span><span class="rail-text">Video</span></button>
       <button class="nav-item" data-view="media" data-media-tab="audio"><span data-lucide="audio-lines"></span><span class="rail-text">Audio</span></button>
+      <button class="nav-item" data-view="charstudio"><span data-lucide="person-standing"></span><span class="rail-text">Character Studio</span></button>
       <button class="nav-item" data-view="voicestudio"><span data-lucide="drama"></span><span class="rail-text">Voice Studio</span></button>
       <button class="nav-item" data-view="boards"><span data-lucide="layout-dashboard"></span><span class="rail-text">Boards</span></button>
       <button class="nav-item" data-view="timeline"><span data-lucide="film"></span><span class="rail-text">Timeline</span></button>
@@ -1087,6 +1140,7 @@ a.nav-item { color: inherit; text-decoration: none; }
       <section id="workflowsView" class="view"><div class="view-pad"><!-- VIEW:workflows --></div></section>
       <section id="neuronsView" class="view"><div class="view-pad"><!-- VIEW:neurons --></div></section>
       <section id="agentbrowserView" class="view"><div class="view-pad"><!-- VIEW:agentbrowser --></div></section>
+      <section id="charstudioView" class="view"><div class="view-pad"><!-- VIEW:charstudio --></div></section>
       <section id="voicestudioView" class="view"><div class="view-pad"><!-- VIEW:voicestudio --></div></section>
       <section id="collectorView" class="view"><div class="view-pad"><!-- VIEW:collector --></div></section>
       <section id="gitView" class="view"><div class="view-pad"><!-- VIEW:git --></div></section>
@@ -1270,8 +1324,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',radheya:'Radheya',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',install:'Install',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',radheya:'राधेय',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',install:'इंस्टॉल',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',radheya:'Radheya',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',charstudio:'Character Studio',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',install:'Install',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',radheya:'राधेय',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',charstudio:'कैरेक्टर स्टूडियो',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',install:'इंस्टॉल',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1683,7 +1737,7 @@ const PIPELINE = {
 
 const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', codingstudio:'Coding Studio', radheya:'Radheya', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
-  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
+  skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', charstudio:'Character Studio', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', install:'Install', settings:'Settings', help:'Help & Support'};
 
 function modelById(id){ return DB.models.find(m => m.id === id); }
@@ -1746,7 +1800,7 @@ function showView(name){
   const renderers = {
     sessions:renderSessionsView, workspace:renderWorkspaceView, codingstudio:renderCodingStudioView, radheya:renderRadheyaView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
-    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
+    skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, charstudio:renderCharacterStudioView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, install:renderInstallView, settings:renderSettingsView, help:renderHelpView,
   };
   if (renderers[name]) renderers[name]();
@@ -3517,6 +3571,7 @@ function mediaRecipe(p){
   if (p.engine==='sdxl-inpaint') return [`${p.mode==='remove'?'Object removed':'Area edited'} in ${p.sourceName||p.sourceMediaId}`, p.mode==='remove'?'':`Prompt: ${p.prompt}`, `Checkpoint: ${p.checkpoint}${p.lora?' · LoRA '+p.lora+' '+p.loraStrength:''}`, `Seed ${p.seed} · ${p.steps} steps · CFG ${p.cfg}${p.mode==='edit'?' · change '+p.strength:''}`].filter(Boolean).join('\n');
   if (p.engine==='sdxl-outpaint') return [`Expanded ${p.sourceName||p.sourceMediaId} to ${p.target} · ${p.width}×${p.height}`, `Prompt: ${p.prompt}`, `Seed ${p.seed} · ${p.steps} steps`].join('\n');
   if (p.engine==='upscale-model'||p.engine==='ffmpeg-lanczos') return `Upscaled ${p.factor}x from ${p.sourceName||p.sourceMediaId} · ${p.width}×${p.height} · ${p.engine==='upscale-model'?p.model:'Lanczos resize'}`;
+  if (p.engine==='demucs') return `Voice isolated (${p.stem||'stems'}) from ${p.sourceName||p.sourceMediaId}`;
   if (p.engine==='ffmpeg-speech') return `Speech enhanced (${p.strength}) from ${p.sourceName||p.sourceMediaId}`;
   if (p.engine==='translate') return [`${p.languageName} ${p.mode==='dub'?'dub':'subtitles'} of ${p.sourceName||p.sourceMediaId} · ${p.lines} lines · ${p.model}${p.voice?' · voice '+String(p.voice).replace(/^kokoro:/,''):''}`, p.srt?'Subtitles:\n'+p.srt.slice(0,1500):''].filter(Boolean).join('\n');
   if (p.engine==='timeline') return [`Timeline "${p.name}" · ${p.size} · ${p.fps} fps · ${p.seconds}s`, ...(p.shots||[]).map((sh,i)=>`${i+1}. ${sh.name} @ ${sh.at}s · ${sh.seconds}s`), ...(p.sound||[]).map(x=>`${x.track}: ${x.name} @ ${x.start}s`)].join('\n');
@@ -3544,10 +3599,10 @@ const MEDIA_FORM_IDS = ['audioLang','audioBpm','audioKey','genLora','genLoraStre
 const VIDEO_MOVES = [['push-in','Push in'],['pull-out','Pull out'],['pan-left','Pan left'],['pan-right','Pan right'],['tilt-up','Tilt up'],['tilt-down','Tilt down'],['hold','Hold']];
 const MEDIA_TABS = {
   image:{label:'Image', libraryLabel:'Images', kinds:['image'], jobs:['image-generation','image-edit','image-upscale']},
-  video:{label:'Video', libraryLabel:'Videos', kinds:['video'], jobs:['video-camera-moves','video-ltx','video-ai','video-join','media-translate','media-enhance','timeline-export']},
-  audio:{label:'Audio', libraryLabel:'Audio', kinds:['audio'], jobs:['audio-voice','audio-sfx','audio-music','media-translate','media-enhance']},
+  video:{label:'Video', libraryLabel:'Videos', kinds:['video'], jobs:['video-camera-moves','video-ltx','video-ai','video-join','media-translate','media-enhance','media-isolate','timeline-export']},
+  audio:{label:'Audio', libraryLabel:'Audio', kinds:['audio'], jobs:['audio-voice','audio-sfx','audio-music','media-translate','media-enhance','media-isolate']},
   transcribe:{label:'Transcribe', libraryLabel:'Audio and video', kinds:['audio','video'], jobs:['media-translate']},
-  edit:{label:'Edit', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:['media-filter','image-edit','image-upscale','media-enhance','media-translate']},
+  edit:{label:'Edit', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:['media-filter','image-edit','image-upscale','media-enhance','media-isolate','media-translate']},
   library:{label:'Library', libraryLabel:'Everything', kinds:['image','video','audio'], jobs:null},
 };
 function songEngine(aud){ const ok15 = aud.comfy.music15 && aud.comfy.music15.ready, ok1 = aud.comfy.music && aud.comfy.music.ready; if (musicEngine==='ace-step-1' && ok1) return 'ace-step-1'; if (musicEngine==='ace-step-1.5' && ok15) return 'ace-step-1.5'; return ok15 ? 'ace-step-1.5' : ok1 ? 'ace-step-1' : 'ace-step-1.5'; }
@@ -3824,8 +3879,8 @@ function mediaActionsMenu(m){
   const a = (act, label) => b('media-act', label, `data-act="${act}"`);
   const items = [];
   if (m.kind==='image') items.push(a('edit','Edit area…'), a('remove','Remove object…'), a('expand','Expand background…'), a('upscale','Upscale…'), a('img2img','Image to image'), b('media-attach','Attach to chat'), b('media-ocr','Copy text in image'), b('media-build','Build a web page from it'));
-  if (m.kind==='video') items.push(b('media-lastframe','Continue from last frame','title="Save the final frame as a still and add it as the next shot"'), b('media-join', videoJoin.includes(m.id)?'Remove from join':'Add to join'), a('translate','Translate…'), a('enhance','Enhance speech…'), a('transcribe','Transcribe'));
-  if (m.kind==='audio') items.push(a('enhance','Enhance speech…'), a('translate','Translate…'), a('transcribe','Transcribe'));
+  if (m.kind==='video') items.push(b('media-lastframe','Continue from last frame','title="Save the final frame as a still and add it as the next shot"'), b('media-join', videoJoin.includes(m.id)?'Remove from join':'Add to join'), a('translate','Translate…'), a('enhance','Enhance speech…'), a('isolate','Isolate voice…'), a('transcribe','Transcribe'));
+  if (m.kind==='audio') items.push(a('enhance','Enhance speech…'), a('isolate','Isolate voice…'), a('translate','Translate…'), a('transcribe','Transcribe'));
   items.push('<hr>', a('board','Add to board…'), a('timeline','Add to timeline…'), b('media-filter','Filters'), `<a role="menuitem" class="menu-item" href="${mediaUrl(m.id)}" download="${escapeHtml(m.originalName)}">Download</a>`);
   return `<details class="media-menu"><summary class="btn btn-line btn-sm" aria-haspopup="menu">Actions ▾</summary><div class="media-menu-list" role="menu">${items.join('')}</div></details>`;
 }
@@ -3841,6 +3896,7 @@ function bindMediaActions(items){
     if (act==='upscale') return openUpscale(m);
     if (act==='translate') return openTranslate(m);
     if (act==='enhance') return openEnhance(m);
+    if (act==='isolate') return openIsolate(m);
     if (act==='board') return pickBoardFor([m.id]);
     if (act==='timeline') return pickTimelineFor(m);
     if (act==='transcribe') { setMediaTab('transcribe'); renderMediaView(); return; }
@@ -3938,6 +3994,16 @@ function openEnhance(m){
     <p class="empty-hint" style="padding:0 0 8px">Cleans dialogue on this Mac: removes rumble and hiss, reduces background noise, evens out the level and sets loudness to -16 LUFS. ${m.kind==='video'?'The picture is not touched.':''} The original is kept.</p>
     <div style="display:flex;gap:8px;align-items:center"><select id="enhStrength" aria-label="Clean-up strength" style="${FIELD_STYLE}"><option value="light">Light · keeps the room sound</option><option value="strong">Strong · noisy location sound</option></select><button class="btn btn-amber" id="enhRun">Enhance</button></div>`, () => {
     $('enhRun').onclick = async () => { $('enhRun').disabled = true; try { await apiPost('/api/media/'+encodeURIComponent(m.id)+'/enhance', { strength: $('enhStrength').value }); jobStarted('Enhancing speech…'); } catch (e) { toast(e.message); $('enhRun').disabled = false; } };
+  });
+}
+
+async function openIsolate(m){
+  let st = { ready:false, missing:[] }; try { st = await apiGet('/api/media/isolate/status'); } catch (_) {}
+  if (!st.ready) return openActionModal('Isolate voice', `<p class="empty-hint" style="padding:0 0 8px">Voice isolation needs Demucs (about 2.5 GB). Open <b>Setup → Install</b> and install <b>Voice isolation (Demucs)</b>, then try again.</p>`, () => {});
+  openActionModal('Isolate voice', `
+    <p class="empty-hint" style="padding:0 0 8px">Splits the sound on this Mac into the voice and everything else (music, effects, room) with Demucs. ${m.kind==='video'?'You also get a copy of the video with only the voice; the picture is not touched.':''} The original is kept.</p>
+    <div style="display:flex;gap:8px;align-items:center"><select id="isoKeep" aria-label="What to keep" style="${FIELD_STYLE}"><option value="both">Voice and background, as two tracks</option><option value="voice">Voice only</option><option value="background">Background only (no voice)</option></select><button class="btn btn-amber" id="isoRun">Isolate</button></div>`, () => {
+    $('isoRun').onclick = async () => { $('isoRun').disabled = true; try { await apiPost('/api/media/'+encodeURIComponent(m.id)+'/isolate', { keep: $('isoKeep').value }); jobStarted('Isolating the voice…'); } catch (e) { toast(e.message); $('isoRun').disabled = false; } };
   });
 }
 
@@ -6001,6 +6067,950 @@ async function renderNeuronFactoryView(){
 }
 
 /* ===================== marker: RENDER:VOICE STUDIO ===================== */
+// ===========================================================================
+// Character Studio: design a character as a rigged 2D puppet, give it a voice,
+// sounds and actions, perform it with lip-sync, record performances to the
+// Library, and make AI pictures of the same character (SDXL, fixed seed).
+// Characters are the same records Voice Studio and agents use.
+// ===========================================================================
+let csSel = null, csChars = [], csCat = null, csMoods = [], csDraft = null, csDirty = false, csTab = 'look', csActSel = null;
+let csMode = 'characters', csScenesMod = null;
+const csDeps = () => ({ apiGet, apiPost, apiUrl, mediaUrl, toast, escapeHtml, FIELD: FIELD_STYLE, csDraw, csPose, showView });
+let csRaf = null, csPlay = { move: 'idle', start: 0 }, csCtx = null, csAC = null, csAnalyser = null, csMaster = null, csRecDest = null, csLevel = 0, csStopFlag = false, csBusy = false;
+const csBufCache = new Map();
+let cs3dMod = null, cs3dStage = null, cs3dTimer = null, csJoint = 'upperArmR', csPoseEdit = null;
+let csVis = null, csLip = null, csCapPose = null, csAnimSel = null, csAnimT = 0, csAnimPlay = null, csKeySel = null;
+const csTrackCache = new Map();
+async function csVisLoad(){ if (!csVis) csVis = await import(apiUrl('/cs-visemes.js')); return csVis; }
+/** A lip-sync track for a spoken line: Kokoro's phonemes when available, else spelling rules, aligned to the audio. */
+async function csVoiceTrack(text, buf){
+  const key = csSel + '|' + text + '|' + buf.length;
+  if (csTrackCache.has(key)) return csTrackCache.get(key);
+  const V = await csVisLoad();
+  let ph = null, source = 'spelling rules';
+  try { const r = await apiPost('/api/characters/phonemes', { id: csSel, text }); if (r.phonemes) { ph = r.phonemes; source = 'Kokoro phonemes'; } } catch (_) {}
+  const track = V.align(ph ? V.fromIPA(ph) : V.fromText(text), buf.getChannelData(0), buf.sampleRate); track.source = source;
+  csTrackCache.set(key, track); return track;
+}
+let csSys = { mode: 'none', variant: 'female', labels: true, flow: true, xray: 0.14, speed: 1, spin: false };
+function cs3dApplySys(){ if (!cs3dStage) return; cs3dStage.setSystem(csSys.mode, { variant: csSys.variant, labels: csSys.labels, flow: csSys.flow, xray: csSys.xray, speed: csSys.speed }); cs3dStage.autoRotate = csSys.spin ? 0.35 : 0; }
+async function cs3dLoad(){ if (!cs3dMod) cs3dMod = await import(apiUrl('/cs3d.js')); return cs3dMod; }
+const CS3_NAMES = { slim:'Slim', average:'Average', sturdy:'Sturdy', round:'Round', mitten:'Mittens', fingers:'Fingers', round_e:'Round', almond:'Almond', big:'Big', sleepy:'Sleepy', dot:'Dots', glow:'Glowing', straight:'Straight', arched:'Arched', thick:'Thick', thin:'Thin', none:'None', smile:'Smile', neutral:'Calm', grin:'Grin', small:'Small', pointed:'Pointed', button:'Button', long:'Long', broad:'Broad', short:'Short', bun:'Bun', ponytail:'Ponytail', braid:'Braid', curly:'Curly', spiky:'Spiky', bald:'Bald', tshirt:'T-shirt', kurta:'Kurta', jacket:'Jacket', dress:'Dress', robe:'Long robe', armor:'Armour', pants:'Trousers', shorts:'Shorts', skirt:'Skirt', dhoti:'Dhoti', sneakers:'Sneakers', boots:'Boots', sandals:'Sandals', barefoot:'Barefoot', glasses:'Glasses', cap:'Cap', scarf:'Scarf', backpack:'Backpack', watch:'Watch', 'leaf-badge':'Leaf badge', antenna:'Antenna', bindi:'Bindi', beard:'Beard', mustache:'Mustache' };
+function cs3dRigFromPuppet(pp){
+  const L = cs3dMod.LOOKS3D, robot = pp && (pp.body === 'robot' || pp.head === 'screen');
+  const r = JSON.parse(JSON.stringify((robot ? L.robot : L.explorer).rig));
+  if (pp) { r.body.skin = pp.skin; r.face.eyeColor = pp.eyeColor; r.costume.accent = pp.accent; if (!robot) { r.hair.color = pp.hair; r.face.browColor = pp.hair; r.costume.topColor = pp.outfit; r.hair.style = { none:'bald', short:'short', long:'long', bun:'bun', curly:'curly', cap:'short' }[pp.hairStyle] || 'short'; r.costume.extras = (pp.extras || []).filter(x => ['glasses','scarf','bindi','beard','mustache','leaf-badge','antenna'].includes(x)); } }
+  r.background = (pp && pp.background) || '#1e2430'; r.poses = []; return r;
+}
+function cs3dRebuildSoon(){ clearTimeout(cs3dTimer); cs3dTimer = setTimeout(() => { if (cs3dStage && csDraft && csDraft.rig3d) cs3dStage.build(csDraft.rig3d); }, 60); }
+const CS_W = 520, CS_H = 560;
+const CS_PARTS_LABEL = { body:'Body', head:'Head', hairStyle:'Hair', eyes:'Eyes', mouth:'Mouth', limbs:'Arms and legs' };
+const CS_PART_NAMES = { round:'Round', tall:'Tall', pear:'Soft', block:'Sturdy', robot:'Robot', oval:'Oval', square:'Square', screen:'Screen face', none:'None', short:'Short', long:'Long', bun:'Bun', curly:'Curly', cap:'Cap', dots:'Dots', happy:'Happy', sleepy:'Sleepy', glow:'Glowing', smile:'Smile', flat:'Calm', grin:'Big grin', soft:'Soft', 'leaf-badge':'Leaf badge', glasses:'Glasses', antenna:'Antenna', scarf:'Scarf', bindi:'Bindi', mustache:'Mustache', beard:'Beard', notebook:'Notebook' };
+
+/* ------------------------------ drawing ------------------------------ */
+function csShade(hex, f){ const n = parseInt(hex.slice(1), 16); const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f)))); return '#' + c.map(v => v.toString(16).padStart(2, '0')).join(''); }
+function csRR(ctx, x, y, w, h, r){ ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
+function csLimb(ctx, p, x1, y1, x2, y2, x3, y3, width, color, end){
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = color; ctx.lineWidth = width;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.stroke();
+  if (p.limbs === 'robot') { ctx.fillStyle = p.accent; for (const [x, y] of [[x1, y1], [x2, y2]]) { ctx.beginPath(); ctx.arc(x, y, width * 0.62, 0, 7); ctx.fill(); } }
+  if (end) end(x3, y3);
+}
+/** Draws the puppet p in pose q on a canvas context of size W×H. */
+function csDraw(ctx, p, q, W, H, opts = {}){
+  const k = W / CS_W;
+  ctx.save(); ctx.clearRect(0, 0, W, H);
+  if (!opts.transparent) {
+    ctx.fillStyle = p.background || '#1e2430'; ctx.fillRect(0, 0, W, H);
+    const g = ctx.createLinearGradient(0, H * 0.82, 0, H); g.addColorStop(0, 'rgba(255,255,255,0.05)'); g.addColorStop(1, 'rgba(0,0,0,0.25)'); ctx.fillStyle = g; ctx.fillRect(0, H * 0.82, W, H * 0.18);
+  }
+  ctx.scale(k, k);
+  const s = p.height, wd = p.width, ground = CS_H - 70;
+  const robot = p.body === 'robot', soft = p.limbs !== 'robot';
+  const B = { round:[118, 120], tall:[92, 160], pear:[128, 138], block:[124, 138], robot:[112, 118] }[p.body] || [118, 120];
+  const bw = B[0] * wd, bh = B[1], legLen = 92, armU = 54, armL = 50;
+  const headW = { round:118, oval:108, square:118, screen:132 }[p.head] || 118, headH = { round:118, oval:134, square:112, screen:112 }[p.head] || 118;
+  const limbW = robot ? 15 : 17, outfitDark = csShade(p.outfit, -0.28), limbColor = soft ? outfitDark : p.skin;
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(CS_W / 2 + q.dx, ground + 4, 70 * wd * s * (1 - Math.min(0.5, -q.dy / 260)), 12 * s, 0, 0, 7); ctx.fill();
+  ctx.translate(CS_W / 2 + q.dx, ground + q.dy); ctx.scale(s, s); ctx.translate(0, -legLen);
+  ctx.scale(1 + q.squash, 1 - q.squash);
+  ctx.rotate(q.lean);
+  // legs
+  for (const side of [-1, 1]) {
+    const a = side < 0 ? q.legL : q.legR, hx = side * bw * 0.22, kx = hx + Math.sin(a) * legLen * 0.5 * side, ky = Math.cos(a) * legLen * 0.5, fx = hx + Math.sin(a) * legLen * side, fy = Math.cos(a) * legLen;
+    csLimb(ctx, p, hx, 0, kx, ky, fx, fy, limbW + 2, limbColor, (x, y) => { ctx.fillStyle = robot ? p.accent : '#2a2a2a'; ctx.beginPath(); ctx.ellipse(x + side * 6, y + 4, 17, 9, 0, 0, 7); ctx.fill(); });
+  }
+  // body
+  const top = -bh;
+  ctx.fillStyle = p.outfit; ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 2;
+  if (p.body === 'round') { ctx.beginPath(); ctx.ellipse(0, top / 2, bw / 2, bh / 2 + 4, 0, 0, 7); }
+  else if (p.body === 'pear') { ctx.beginPath(); ctx.moveTo(-bw * 0.32, top); ctx.bezierCurveTo(-bw * 0.42, top * 0.6, -bw * 0.6, top * 0.1, -bw * 0.48, 4); ctx.lineTo(bw * 0.48, 4); ctx.bezierCurveTo(bw * 0.6, top * 0.1, bw * 0.42, top * 0.6, bw * 0.32, top); ctx.closePath(); }
+  else csRR(ctx, -bw / 2, top, bw, bh + 6, robot ? 26 : p.body === 'tall' ? 30 : 22);
+  ctx.fill(); ctx.stroke();
+  if (robot) { ctx.strokeStyle = csShade(p.outfit, -0.18); ctx.lineWidth = 2; csRR(ctx, -bw * 0.3, top + bh * 0.28, bw * 0.6, bh * 0.5, 12); ctx.stroke(); }
+  else { ctx.fillStyle = p.accent; ctx.fillRect(-bw / 2 + 4, top + bh * 0.72, bw - 8, 9); }
+  if (p.extras.includes('leaf-badge')) { ctx.save(); ctx.translate(0, top + bh * 0.48); ctx.shadowColor = '#7CFC9A'; ctx.shadowBlur = 14; ctx.fillStyle = '#3fbf6a'; ctx.beginPath(); ctx.moveTo(0, -16); ctx.quadraticCurveTo(16, -4, 0, 16); ctx.quadraticCurveTo(-16, -4, 0, -16); ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = '#c9ffd6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 13); ctx.stroke(); ctx.restore(); }
+  // arms
+  const hands = {};
+  for (const side of [-1, 1]) {
+    const A = side < 0 ? q.armL : q.armR, sx = side * (bw / 2 - 6), sy = top + 22;
+    const ex = sx + Math.sin(A.s) * armU * side, ey = sy + Math.cos(A.s) * armU, a2 = A.s + A.e, hx = ex + Math.sin(a2) * armL * side, hy = ey + Math.cos(a2) * armL;
+    csLimb(ctx, p, sx, sy, ex, ey, hx, hy, limbW, soft ? p.outfit : p.skin, (x, y) => { ctx.fillStyle = robot ? p.accent : p.skin; ctx.beginPath(); ctx.arc(x, y, robot ? 10 : 11, 0, 7); ctx.fill(); });
+    hands[side] = [hx, hy];
+  }
+  if (p.extras.includes('notebook')) { const [x, y] = hands[-1]; ctx.save(); ctx.translate(x, y); ctx.rotate(-0.2); ctx.fillStyle = '#f1e3c6'; ctx.fillRect(-14, -6, 24, 30); ctx.fillStyle = p.accent; ctx.fillRect(-14, -6, 4, 30); ctx.restore(); }
+  if (p.extras.includes('scarf')) { ctx.fillStyle = p.accent; csRR(ctx, -bw * 0.3, top - 6, bw * 0.6, 18, 9); ctx.fill(); ctx.fillRect(bw * 0.08, top + 6, 14, 34); }
+  // neck + head
+  ctx.save(); ctx.translate(0, top + q.headDy); ctx.rotate(q.headTilt);
+  if (!robot) { ctx.fillStyle = csShade(p.skin, -0.12); ctx.fillRect(-11, -14, 22, 18); }
+  const hc = -14 - headH / 2;
+  ctx.translate(0, hc);
+  if (p.hairStyle === 'long') { ctx.fillStyle = p.hair; csRR(ctx, -headW / 2 - 8, -headH / 2 + 4, headW + 16, headH * 0.98, 40); ctx.fill(); }
+  if (p.hairStyle === 'bun') { ctx.fillStyle = p.hair; ctx.beginPath(); ctx.arc(0, -headH / 2 - 10, 22, 0, 7); ctx.fill(); }
+  ctx.fillStyle = p.skin; ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 2;
+  if (p.head === 'round') { ctx.beginPath(); ctx.arc(0, 0, headW / 2, 0, 7); }
+  else if (p.head === 'oval') { ctx.beginPath(); ctx.ellipse(0, 0, headW / 2, headH / 2, 0, 0, 7); }
+  else csRR(ctx, -headW / 2, -headH / 2, headW, headH, p.head === 'screen' ? 26 : 24);
+  ctx.fill(); ctx.stroke();
+  if (p.extras.includes('antenna')) { ctx.strokeStyle = csShade(p.skin, -0.35); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, -headH / 2); ctx.lineTo(0, -headH / 2 - 26); ctx.stroke(); ctx.fillStyle = p.accent; ctx.beginPath(); ctx.arc(0, -headH / 2 - 30, 7, 0, 7); ctx.fill(); }
+  const screen = p.head === 'screen';
+  if (screen) { ctx.fillStyle = '#16181d'; csRR(ctx, -headW * 0.38, -headH * 0.32, headW * 0.76, headH * 0.62, 16); ctx.fill(); }
+  // hair on top
+  if (['short', 'long', 'curly'].includes(p.hairStyle) && !screen) {
+    ctx.fillStyle = p.hair;
+    if (p.hairStyle === 'curly') for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.arc(i * headW * 0.13, -headH / 2 + 6 + Math.abs(i) * 4, 16, 0, 7); ctx.fill(); }
+    else { ctx.beginPath(); ctx.ellipse(0, -headH * 0.3, headW * 0.53, headH * 0.26, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(-headW * 0.53, -headH * 0.32, headW * 1.06, 10); }
+  }
+  if (p.hairStyle === 'cap') { ctx.fillStyle = p.accent; ctx.beginPath(); ctx.ellipse(0, -headH * 0.3, headW * 0.54, headH * 0.26, 0, Math.PI, 0); ctx.fill(); csRR(ctx, -headW * 0.1, -headH * 0.34, headW * 0.72, 10, 5); ctx.fill(); }
+  // eyes
+  const eo = Math.max(0.06, q.eyeOpen), ey0 = screen ? -headH * 0.05 : -headH * 0.04, exo = headW * (screen ? 0.17 : 0.2);
+  for (const side of [-1, 1]) {
+    const x = side * exo + q.lookX * 4, y = ey0 + q.lookY * 4;
+    if (p.eyes === 'glow' || screen) { ctx.save(); ctx.shadowColor = p.eyeColor; ctx.shadowBlur = 16; ctx.fillStyle = p.eyeColor; ctx.beginPath(); ctx.ellipse(x, y, 11, 13 * eo, 0, 0, 7); ctx.fill(); ctx.restore(); }
+    else if (p.eyes === 'dots') { ctx.fillStyle = p.eyeColor; ctx.beginPath(); ctx.ellipse(x, y, 6, 7 * eo, 0, 0, 7); ctx.fill(); }
+    else if (p.eyes === 'happy' && q.mood !== 'sad' && q.mood !== 'surprise') { ctx.strokeStyle = p.eyeColor; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(x, y + 4, 9, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+    else {
+      const big = q.mood === 'surprise' ? 1.25 : 1;
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(x, y, 13 * big, 14 * big * eo, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = p.eyeColor; ctx.beginPath(); ctx.ellipse(x + q.lookX * 3, y + q.lookY * 3, 6.5, 7 * eo, 0, 0, 7); ctx.fill();
+      if (p.eyes === 'sleepy' || q.mood === 'sad') { ctx.fillStyle = p.skin; ctx.fillRect(x - 15, y - 16, 30, q.mood === 'sad' ? 12 : 14); }
+    }
+  }
+  if (p.extras.includes('glasses') && !screen) { ctx.strokeStyle = '#222'; ctx.lineWidth = 3; for (const side of [-1, 1]) { ctx.beginPath(); ctx.arc(side * exo, ey0, 18, 0, 7); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(-exo + 18, ey0); ctx.lineTo(exo - 18, ey0); ctx.stroke(); }
+  if (p.extras.includes('bindi') && !screen) { ctx.fillStyle = '#c1121f'; ctx.beginPath(); ctx.arc(0, ey0 - 26, 4, 0, 7); ctx.fill(); }
+  // mouth
+  const my = screen ? headH * 0.17 : headH * 0.24, m = Math.max(0, Math.min(1, q.mouth));
+  if (p.extras.includes('beard') && !screen) { ctx.fillStyle = p.hair; ctx.beginPath(); ctx.ellipse(0, my + 14, headW * 0.32, 22, 0, 0, Math.PI); ctx.fill(); }
+  if (m > 0.06 || q.mood === 'surprise' || (q.round || 0) > 0.4) {
+    const wf = Math.max(0.45, 1 + (q.wide || 0) * 0.35 - (q.round || 0) * 0.5);
+    const mh = q.mood === 'surprise' && m < 0.3 ? 12 : 4 + m * 20 + (q.round || 0) * 6;
+    const mw = (q.mood === 'surprise' && m < 0.3 ? 9 : 14 + m * 6) * wf;
+    ctx.fillStyle = screen ? p.eyeColor : '#5a1f1f'; ctx.beginPath(); ctx.ellipse(0, my, mw, mh / 2 + 1, 0, 0, 7); ctx.fill();
+    if (!screen && ((q.bite || 0) > 0.4 || m > 0.35)) { ctx.fillStyle = '#fff'; ctx.fillRect(-mw * 0.7, my - mh / 2 + 0.5, mw * 1.4, Math.max(2, mh * 0.22)); }
+  } else if ((q.bite || 0) > 0.4 && !screen) {
+    ctx.fillStyle = '#fff'; ctx.fillRect(-10, my - 3, 20, 4); ctx.strokeStyle = '#5a1f1f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-11, my + 2); ctx.lineTo(11, my + 2); ctx.stroke();
+  } else {
+    ctx.strokeStyle = screen ? p.eyeColor : '#5a1f1f'; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.beginPath();
+    if (q.mood === 'sad') ctx.arc(0, my + 12, 12, Math.PI * 1.2, Math.PI * 1.8);
+    else if (p.mouth === 'flat') { ctx.moveTo(-11, my); ctx.lineTo(11, my); }
+    else if (p.mouth === 'grin') { ctx.arc(0, my - 6, 16, Math.PI * 0.15, Math.PI * 0.85); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill(); }
+    else ctx.arc(0, my - 8, 13, Math.PI * 0.2, Math.PI * 0.8);
+    ctx.stroke();
+  }
+  if (p.extras.includes('mustache') && !screen) { ctx.fillStyle = p.hair; ctx.beginPath(); ctx.ellipse(-9, my - 9, 11, 5, 0.2, 0, 7); ctx.ellipse(9, my - 9, 11, 5, -0.2, 0, 7); ctx.fill(); }
+  ctx.restore();
+  ctx.restore();
+}
+
+/* ------------------------------ moves ------------------------------ */
+function csPose(move, t, level){
+  const q = { dx:0, dy:Math.sin(t * 2.1) * 2, lean:0, squash:0, headTilt:Math.sin(t * 0.9) * 0.02, headDy:0, armL:{ s:0.14, e:0.12 }, armR:{ s:0.14, e:0.12 }, legL:0.06, legR:0.06, mouth:level, eyeOpen:(t % 3.7) < 0.13 ? 0.1 : 1, lookX:0, lookY:0, mood:null };
+  const w = (f, a = 1) => Math.sin(t * f) * a;
+  switch (move) {
+    case 'talk': q.headDy = w(7, 2); q.headTilt += w(2.3, 0.04); q.armR = { s:0.35 + w(2.6, 0.12), e:0.9 }; if (!level) q.mouth = Math.max(0, w(14, 0.5) + 0.2); break;
+    case 'wave': q.armR = { s:2.55, e:0.25 + w(9, 0.45) }; q.headTilt = 0.08; break;
+    case 'nod': q.headDy = Math.abs(w(5, 7)); q.headTilt = 0; q.lookY = 0.3; break;
+    case 'shake': q.headTilt = w(10, 0.14); break;
+    case 'jump': { const ph = (t % 1.1) / 1.1, air = Math.max(0, Math.sin(ph * Math.PI * 1.25)); q.dy = -air * 85; q.squash = ph > 0.85 ? 0.08 : air > 0.1 ? -0.04 : 0.03; q.armL = q.armR = { s:0.5 + air * 1.9, e:0.2 }; q.legL = q.legR = air * 0.25; break; }
+    case 'walk': { const c = w(6, 0.42); q.legL = c; q.legR = -c; q.armL = { s:0.18 - c * 0.6, e:0.3 }; q.armR = { s:0.18 + c * 0.6, e:0.3 }; q.dy = -Math.abs(w(6, 5)); q.dx = Math.sin(t * 0.7) * 120; break; }
+    case 'dance': q.lean = w(4, 0.12); q.dy = -Math.abs(w(8, 10)); q.armL = { s:1.4 + w(4, 1), e:0.6 }; q.armR = { s:1.4 - w(4, 1), e:0.6 }; q.legL = 0.2 + w(8, 0.15); q.legR = 0.2 - w(8, 0.15); q.headTilt = w(4, 0.12); break;
+    case 'think': q.armR = { s:0.9, e:2.15 }; q.headTilt = 0.14; q.lookX = 0.6; q.lookY = -0.7; q.mouth = level; break;
+    case 'celebrate': { const air = Math.max(0, Math.sin(t * 7)); q.dy = -air * 28; q.armL = { s:2.75 + w(12, 0.1), e:0.1 }; q.armR = { s:2.75 - w(12, 0.1), e:0.1 }; q.mood = 'surprise'; q.mouth = Math.max(level, 0.5); break; }
+    case 'point': q.armR = { s:1.55, e:0.05 }; q.headTilt = 0.06; q.lookX = 0.8; break;
+    case 'bow': { const b = Math.min(1, t / 0.6) * (t < 1.6 ? 1 : Math.max(0, 1 - (t - 1.6) / 0.6)); q.headDy = b * 34; q.squash = b * 0.06; q.lookY = b * 0.8; q.armL = q.armR = { s:0.1, e:0.2 }; break; }
+    case 'sad': q.mood = 'sad'; q.headDy = 10; q.headTilt = -0.08; q.armL = q.armR = { s:0.06, e:0.05 }; q.lookY = 0.6; q.dy = 2; break;
+    case 'surprise': q.mood = 'surprise'; q.armL = q.armR = { s:1.1, e:0.5 }; q.dy = t < 0.3 ? -t * 60 : Math.min(0, -18 + (t - 0.3) * 60); q.eyeOpen = 1; break;
+  }
+  return q;
+}
+
+/* ------------------------------ audio ------------------------------ */
+function csAudioReady(){
+  if (csAC) { if (csAC.state === 'suspended') csAC.resume(); return csAC; }
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) throw new Error('This window cannot play audio.');
+  csAC = new AC(); csAnalyser = csAC.createAnalyser(); csAnalyser.fftSize = 1024;
+  csMaster = csAC.createGain(); csMaster.connect(csAC.destination);
+  csRecDest = csAC.createMediaStreamDestination(); csMaster.connect(csRecDest);
+  return csAC;
+}
+async function csDecode(key, getBytes){
+  if (csBufCache.has(key)) return csBufCache.get(key);
+  const ac = csAudioReady(); const bytes = await getBytes();
+  const buf = await new Promise((ok, bad) => { const p = ac.decodeAudioData(bytes, ok, bad); if (p && p.catch) p.catch(bad); });
+  csBufCache.set(key, buf); return buf;
+}
+function csVoiceBuf(text){
+  return csDecode('v|' + csSel + '|' + csDraft.updatedAt + '|' + text, async () => { const r = await fetch(apiUrl('/api/characters/preview'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: csSel, text }) }); if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'The voice could not speak (HTTP ' + r.status + ').'); } return r.arrayBuffer(); });
+}
+function csSoundBuf(mediaId){ return csDecode('s|' + mediaId, async () => { const r = await fetch(mediaUrl(mediaId)); if (!r.ok) throw new Error('A sound could not be loaded.'); return r.arrayBuffer(); }); }
+function csPlayBuf(buf, { lips = false, track = null } = {}){
+  const ac = csAudioReady(), src = ac.createBufferSource(); src.buffer = buf;
+  if (lips) { src.connect(csAnalyser); csAnalyser.connect(csMaster); } else src.connect(csMaster);
+  src.start(); if (track) csLip = { start: ac.currentTime, track, src };
+  return new Promise(r => { src.onended = () => { if (lips) try { csAnalyser.disconnect(csMaster); } catch (_) {} if (csLip && csLip.src === src) csLip = null; r(); }; });
+}
+const csSleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ------------------------------ loop ------------------------------ */
+function csLoop(){
+  const cv = $('csCanvas'); if (!cv || currentView !== 'charstudio') { csRaf = null; return; }
+  const is3d = csDraft && csDraft.stage === '3d';
+  if (!is3d && (!csCtx || csCtx.canvas !== cv)) csCtx = cv.getContext('2d');
+  let lvl = 0;
+  if (csAnalyser) { const d = new Uint8Array(csAnalyser.fftSize); csAnalyser.getByteTimeDomainData(d); let sum = 0; for (const v of d) sum += ((v - 128) / 128) ** 2; lvl = Math.min(1, Math.sqrt(sum / d.length) * 5.5); }
+  csLevel = csLevel * 0.45 + lvl * 0.55;
+  const tt = (performance.now() - csPlay.start) / 1000, lv = csLevel > 0.04 ? csLevel : 0;
+  const vis = csLip && csVis && csAC ? csVis.sample(csLip.track, csAC.currentTime - csLip.start) : null;
+  if (is3d) { if (cs3dStage && cs3dMod) {
+    const r3 = csDraft.rig3d || {};
+    let pose;
+    if (csAnimPlay || (csTab === 'anim' && csAnimSel)) {
+      const anim = (r3.anims || []).find(a => a.id === (csAnimPlay ? csAnimPlay.anim.id : csAnimSel));
+      if (anim) {
+        const t = csAnimPlay ? Math.min(anim.duration, (performance.now() - csAnimPlay.start) / 1000) : csAnimT;
+        if (csAnimPlay) { csAnimT = t; csAnimTick(anim, t); }
+        pose = cs3dMod.evalAnim(anim, t, { poses: r3.poses || [], clips: r3.clips || [] });
+        pose.face = { ...cs3dMod.NEUTRAL_FACE, ...pose.face, eyeL: Math.min(pose.face.eyeL ?? 1, (t % 3.9) < 0.12 ? 0.05 : 1), eyeR: Math.min(pose.face.eyeR ?? 1, (t % 3.9) < 0.12 ? 0.05 : 1) };
+      }
+    }
+    if (!pose) {
+      let hold = null;
+      if (csPlay.move === 'pose') hold = csPlay.poseId ? (r3.poses || []).find(x => x.id === csPlay.poseId) : csPoseEdit;
+      else if (csPlay.move === 'clip') { const c = (r3.clips || []).find(x => x.id === csPlay.poseId); hold = c ? cs3dMod.clipFrame(c, tt % Math.max(0.1, cs3dMod.clipDuration(c))) : null; }
+      else if (csPlay.move === 'capture') hold = csCapPose;
+      pose = cs3dMod.animate(['clip', 'capture'].includes(csPlay.move) ? 'pose' : csPlay.move, tt, vis ? 0 : lv, hold || null);
+    }
+    if (vis) Object.assign(pose.face, { open: vis.open, wide: vis.wide, round: vis.round, bite: vis.bite });
+    cs3dStage.setTarget(pose, !!(csAnimPlay || csTab === 'anim')); cs3dStage.frame();
+  } }
+  else if (csDraft && csDraft.puppet && csCtx) { const q = csPose(csPlay.move, tt, vis ? 0 : lv); if (vis) Object.assign(q, { mouth: vis.open, wide: vis.wide, round: vis.round, bite: vis.bite }); csDraw(csCtx, csDraft.puppet, q, cv.width, cv.height); }
+  csRaf = requestAnimationFrame(csLoop);
+}
+function csSetMove(move, poseId = null){ csPlay = { move, poseId, start: performance.now() }; if (!csRaf) csRaf = requestAnimationFrame(csLoop); }
+
+/* ------------------------------ performing ------------------------------ */
+async function csPerform(steps, { record = false, name = '' } = {}){
+  if (csBusy) return; csBusy = true; csStopFlag = false;
+  const st = $('csStatus'), say = t => { if (st) st.textContent = t; };
+  let rec = null, chunks = [];
+  try {
+    if (csDirty) await csSave(true);
+    csAudioReady();
+    say('Preparing voices and sounds…');
+    const prep = [];
+    for (const s of steps) { const voice = s.line ? await csVoiceBuf(s.line) : null; prep.push({ step: s, voice, track: voice ? await csVoiceTrack(s.line, voice) : null, sound: s.soundId ? await csSoundBuf((csDraft.sounds.find(x => x.id === s.soundId) || {}).mediaId) : null }); }
+    if (record) {
+      const cv = $('csCanvas'); if (!cv.captureStream || !window.MediaRecorder) throw new Error('This window cannot record video.');
+      const stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...csRecDest.stream.getAudioTracks()]);
+      const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1,mp4a', 'video/mp4'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+      rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 5e6 } : undefined); rec.ondataavailable = e => e.data.size && chunks.push(e.data); rec.start(250);
+      csSetMove('idle'); await csSleep(600);
+    }
+    for (const [i, x] of prep.entries()) {
+      if (csStopFlag) break;
+      say(`Step ${i + 1} of ${prep.length}: ${x.step.move === 'pose' ? 'Pose: ' + (((csDraft.rig3d || {}).poses || []).find(p => p.id === x.step.poseId) || {}).name : (csCat.moves.find(m => m.id === x.step.move) || {}).label || x.step.move}${x.step.line ? ' · “' + x.step.line.slice(0, 40) + (x.step.line.length > 40 ? '…' : '') + '”' : ''}`);
+      if (x.step.view && csDraft.stage === '3d') { csSys.mode = x.step.view; cs3dApplySys(); }
+      csSetMove(x.step.move === 'idle' && x.voice ? 'talk' : x.step.move, x.step.move === 'clip' ? x.step.clipId : (x.step.poseId || null));
+      if (x.sound) csPlayBuf(x.sound);
+      const clip3 = x.step.move === 'clip' ? ((csDraft.rig3d || {}).clips || []).find(c => c.id === x.step.clipId) : null;
+      const dur = Math.max(x.step.seconds, x.voice ? x.voice.duration + 0.25 : 0, clip3 && cs3dMod ? cs3dMod.clipDuration(clip3) : 0);
+      if (x.voice) { csPlayBuf(x.voice, { lips: true, track: x.track }); if (x.track && st) st.textContent += ' · lip-sync: ' + x.track.source; }
+      const t0 = performance.now(); while (!csStopFlag && performance.now() - t0 < dur * 1000) await csSleep(50);
+    }
+    csSetMove('idle');
+    if (rec) {
+      await csSleep(600); await new Promise(r => { rec.onstop = r; rec.stop(); });
+      if (csStopFlag) { say('Stopped; nothing was saved.'); return; }
+      say('Saving the clip to the Library…');
+      const blob = new Blob(chunks, { type: rec.mimeType || 'video/webm' });
+      const r = await fetch(apiUrl('/api/characters/' + encodeURIComponent(csSel) + '/clip?action=' + encodeURIComponent(name)), { method:'POST', headers:{ 'Content-Type': blob.type || 'application/octet-stream' }, body: blob });
+      const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+      say('Saved to the Library: ' + d.originalName); toast('Clip saved to the Library.');
+    } else say(csStopFlag ? 'Stopped.' : 'Done.');
+  } catch (e) { say(e.message); if (rec && rec.state !== 'inactive') try { rec.stop(); } catch (_) {} csSetMove('idle'); }
+  finally { csBusy = false; }
+}
+
+/* ------------------------------ data ------------------------------ */
+async function csSave(quiet){
+  if (!csDraft) return;
+  const saved = await apiPost('/api/characters/' + encodeURIComponent(csSel), csDraft, 'PUT');
+  csDraft = saved; csDirty = false; const i = csChars.findIndex(c => c.id === saved.id); if (i >= 0) csChars[i] = { ...csChars[i], ...saved };
+  { const it = document.querySelector(`.cs-item[data-id="${CSS.escape(saved.id)}"] span`); if (it && it.firstChild) it.firstChild.textContent = saved.name; }
+  const b = $('csSave'); if (b) { b.textContent = 'Saved'; b.disabled = true; }
+  if (!quiet) toast('Saved ' + saved.name + '.');
+}
+function csTouch(){ csDirty = true; const b = $('csSave'); if (b) { b.textContent = 'Save'; b.disabled = false; } }
+async function csWaitJob(id, onProgress){
+  for (let i = 0; i < 720; i++) {
+    await csSleep(2500);
+    const j = await apiGet('/api/images/jobs/' + encodeURIComponent(id));
+    if ((j.mediaIds || []).length && (j.status === 'done' || j.status === 'completed')) return j.mediaIds;
+    if (j.status === 'failed' || j.status === 'cancelled') throw new Error(j.error || 'The job did not finish.');
+    if (onProgress) onProgress(j);
+  }
+  throw new Error('Still working; look in the Library later.');
+}
+
+async function renderCharacterStudioView(){
+  const pad = $('charstudioView').querySelector('.view-pad');
+  if (cs3dStage) { try { cs3dStage.dispose(); } catch (_) {} cs3dStage = null; }
+  const modes = `<div class="cs-modes" role="group" aria-label="Character Studio mode">${[['characters', 'Characters'], ['scenes', 'Scenes']].map(([m, l]) => `<button class="btn btn-sm ${csMode === m ? 'btn-amber' : 'btn-line'}" data-csmode="${m}">${l}</button>`).join('')}</div>`;
+  const bindModes = () => { for (const b of pad.querySelectorAll('[data-csmode]')) b.onclick = () => { if (b.dataset.csmode === csMode) return; csCamStop(); csAnimStop(); if (csScenesMod) csScenesMod.stopScenes(); csMode = b.dataset.csmode; renderCharacterStudioView(); }; };
+  if (csMode === 'scenes') {
+    pad.innerHTML = `<div class="view-head"><div><span class="eyebrow">Create</span><h1 class="view-title">Character Studio</h1><p class="view-desc">Scenes: put your characters on a backdrop, move them in beats, give them lines with captions and voices, add camera moves, and record to the Library. A local model can direct a scene from a prompt, and scripts become scenes.</p></div><div style="display:flex;gap:8px;align-items:center">${modes}</div></div><div id="csScenesRoot"></div>`;
+    bindModes();
+    try { if (!csScenesMod) csScenesMod = await import(apiUrl('/cs-scenes.js')); await csScenesMod.renderScenes($('csScenesRoot'), csDeps()); } catch (e) { $('csScenesRoot').innerHTML = `<p class="empty-hint" style="color:var(--red)">Scenes could not load: ${escapeHtml(e.message)}</p>`; }
+    return;
+  }
+  try {
+    const [list, cat, des] = await Promise.all([apiGet('/api/characters'), csCat ? Promise.resolve(csCat) : apiGet('/api/characters/studio'), csMoods.length ? Promise.resolve(null) : apiGet('/api/characters/designer').catch(() => null)]);
+    csChars = list; csCat = cat; if (des) csMoods = des.moods || [];
+  } catch (e) { pad.innerHTML = `<p class="empty-hint" style="color:var(--red)">${escapeHtml(e.message)}</p>`; return; }
+  if (csSel && !csChars.find(c => c.id === csSel)) csSel = null;
+  if (!csSel && csChars.length) csSel = (csChars.find(c => c.puppet) || csChars.find(c => !c.builtin) || csChars[0]).id;
+  const c = csChars.find(x => x.id === csSel);
+  if (!csDraft || csDraft.id !== csSel || !csDirty) { csDraft = c ? JSON.parse(JSON.stringify(c)) : null; csDirty = false; }
+  if (csDraft && !csDraft.puppet) { csDraft.puppet = { ...csCat.looks[0].puppet, background: '#1e2430' }; csDirty = true; }
+  if (csDraft && !csActSel && csDraft.actions?.length) csActSel = csDraft.actions[0].id;
+  pad.innerHTML = `
+    <div class="view-head"><div><span class="eyebrow">Create</span><h1 class="view-title">Character Studio</h1><p class="view-desc">Design a character, give it a voice, sounds and actions, then perform it with lip-sync and record clips to the Library. The same character can speak for an agent (Voice Studio) and appear in AI pictures.</p></div>
+      <div style="display:flex;gap:8px;align-items:center">${modes}${csDraft ? `<input id="csName" aria-label="Character name" value="${escapeHtml(csDraft.name)}" style="${FIELD_STYLE};width:180px"><button class="btn btn-amber btn-sm" id="csSave" ${csDirty ? '' : 'disabled'}>${csDirty ? 'Save' : 'Saved'}</button>` : ''}<button class="btn btn-line btn-sm" id="csNew">New character</button></div></div>
+    ${!csDraft ? '<div class="panel" style="padding:18px"><p class="empty-hint">No characters yet. Press New character to design one.</p></div>' : `
+    <div class="cs-grid">
+      <aside class="panel cs-list" aria-label="Characters">${csChars.map(x => `<button class="cs-item ${x.id === csSel ? 'active' : ''}" data-id="${escapeHtml(x.id)}"><canvas width="64" height="69" data-thumb="${escapeHtml(x.id)}" aria-hidden="true"></canvas><span>${escapeHtml(x.name)}${x.builtin ? ' <span class="mono" style="font-size:9.5px;color:var(--muted)">helper</span>' : ''}<small>${(x.cutouts || []).length ? (x.cutouts || []).length + ' drawn pose(s)' : x.puppet ? (x.actions || []).length + ' action(s) · ' + (x.sounds || []).length + ' sound(s)' : 'no puppet yet'}</small></span></button>`).join('')}</aside>
+      <section class="panel cs-stage">
+        <div class="cs-mode" role="group" aria-label="Stage">${[['2d', '2D puppet'], ['3d', '3D model']].map(([m, l]) => `<button class="btn btn-sm ${(csDraft.stage || '2d') === m ? 'btn-amber' : 'btn-line'}" data-mode="${m}">${l}</button>`).join('')}</div>
+        <canvas id="csCanvas" class="${csDraft.stage === '3d' ? 'cs3d' : ''}" width="${CS_W}" height="${CS_H}" aria-label="Character stage"></canvas>
+        <div class="cs-controls"><select id="csMove" aria-label="Move" style="${FIELD_STYLE}">${csCat.moves.map(m => `<option value="${m.id}" ${m.id === csPlay.move ? 'selected' : ''}>${escapeHtml(m.label)}</option>`).join('')}</select><button class="btn btn-line btn-sm" id="csStop">Stop</button>${csDraft.stage === '3d' ? `${[['front', 'Front'], ['side', 'Side'], ['back', 'Back'], ['face', 'Face']].map(([v, l]) => `<button class="btn btn-ghost btn-sm" data-cam="${v}">${l}</button>`).join('')}<button class="btn btn-line btn-sm" id="csSnap">Snapshot</button>` : ''}</div>
+        ${csDraft.stage === '3d' ? '<div class="empty-hint" style="font-size:11px">Drag to turn the camera · scroll to zoom · Shift-drag to move up or down · double-click to reset · click a body part to pose it</div>' : ''}
+        <div class="empty-hint" id="csStatus" role="status" style="font-size:11.5px;min-height:16px"></div>
+      </section>
+      <section class="panel cs-side">
+        <div class="cs-tabs" role="tablist">${csTabsFor().map(([id, l]) => `<button role="tab" aria-selected="${csTab === id}" class="cs-tab ${csTab === id ? 'active' : ''}" data-tab="${id}">${l}</button>`).join('')}</div>
+        <div id="csTabBody"></div>
+      </section>
+    </div>`}`;
+  bindModes();
+  $('csNew').onclick = async () => {
+    try { const n = await apiPost('/api/characters', { name: 'New character', tagline: '', voice: { engine: 'default' }, puppet: csCat.looks[0].puppet }); csSel = n.id; csDraft = null; csDirty = false; csActSel = null; csTab = 'look'; renderCharacterStudioView(); } catch (e) { toast(e.message); }
+  };
+  if (!csDraft) return;
+  for (const b of pad.querySelectorAll('.cs-item')) b.onclick = async () => { if (csDirty && !confirm('Leave without saving the changes to ' + csDraft.name + '?')) return; csSel = b.dataset.id; csDraft = null; csDirty = false; csActSel = null; renderCharacterStudioView(); };
+  for (const cv of pad.querySelectorAll('canvas[data-thumb]')) { const x = csChars.find(y => y.id === cv.dataset.thumb); const cut = x && (x.cutouts || [])[0]; if (cut) { const im = new Image(); im.onload = () => { const g = cv.getContext('2d'), k = Math.min(cv.width / im.naturalWidth, cv.height / im.naturalHeight); g.clearRect(0, 0, cv.width, cv.height); g.drawImage(im, (cv.width - im.naturalWidth * k) / 2, cv.height - im.naturalHeight * k, im.naturalWidth * k, im.naturalHeight * k); }; im.src = mediaUrl(cut.frames[0]); continue; } const pp = x && (x.id === csSel ? csDraft.puppet : x.puppet); if (pp) csDraw(cv.getContext('2d'), pp, csPose('idle', 1, 0), cv.width, cv.height); }
+  $('csName').oninput = () => { csDraft.name = $('csName').value; csTouch(); };
+  $('csSave').onclick = () => csSave().catch(e => toast(e.message));
+  $('csMove').onchange = () => csSetMove($('csMove').value);
+  $('csStop').onclick = () => { csStopFlag = true; csSetMove('idle'); $('csMove').value = 'idle'; };
+  for (const b of pad.querySelectorAll('[data-mode]')) b.onclick = async () => {
+    const m = b.dataset.mode; if ((csDraft.stage || '2d') === m) return;
+    if (m === '3d') { try { await cs3dLoad(); } catch (e) { return toast('The 3D engine could not load: ' + e.message); } if (!csDraft.rig3d) csDraft.rig3d = cs3dRigFromPuppet(csDraft.puppet); }
+    csDraft.stage = m; csTouch(); if (!csTabsFor().some(([id]) => id === csTab)) csTab = csTabsFor()[0][0]; renderCharacterStudioView();
+  };
+  for (const b of pad.querySelectorAll('[data-cam]')) b.onclick = () => cs3dStage && cs3dStage.view(b.dataset.cam);
+  if ($('csSnap')) $('csSnap').onclick = () => $('csCanvas').toBlob(async blob => { try { const r = await fetch(apiUrl('/api/media'), { method:'POST', headers:{ 'Content-Type':'image/png', 'x-file-name': encodeURIComponent(csDraft.name + ' — snapshot.png') }, body: blob }); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status)); toast('Snapshot saved to the Library.'); } catch (e) { toast(e.message); } }, 'image/png');
+  if (csDraft.stage === '3d') {
+    try {
+      const mod = await cs3dLoad();
+      if (!csDraft.rig3d) csDraft.rig3d = cs3dRigFromPuppet(csDraft.puppet);
+      cs3dStage = mod.createStage($('csCanvas'), { onSelect: j => { if (!j) return; csJoint = j; if (csTab !== 'pose') { csTab = 'pose'; for (const u of pad.querySelectorAll('.cs-tab')) { const on = u.dataset.tab === 'pose'; u.classList.toggle('active', on); u.setAttribute('aria-selected', String(on)); } } csRenderTab(); } });
+      cs3dStage.build(csDraft.rig3d); cs3dStage.select(csTab === 'pose' ? csJoint : null); cs3dApplySys();
+    } catch (e) { $('csStatus').textContent = 'The 3D engine could not start: ' + e.message; }
+  }
+  for (const t of pad.querySelectorAll('.cs-tab')) t.onclick = () => { if (csTab === 'capture' && t.dataset.tab !== 'capture') csCamStop(); if (csTab === 'anim' && t.dataset.tab !== 'anim') csAnimStop(); csTab = t.dataset.tab; if (cs3dStage) cs3dStage.select(csTab === 'pose' ? csJoint : null); if (csTab !== 'pose' && csPlay.move === 'pose' && !csPlay.poseId) csSetMove('idle'); for (const u of pad.querySelectorAll('.cs-tab')) { u.classList.toggle('active', u === t); u.setAttribute('aria-selected', String(u === t)); } csRenderTab(); };
+  csRenderTab();
+  csSetMove(csPlay.move || 'idle');
+}
+
+function csTabsFor(){
+  return (csDraft && csDraft.stage === '3d') ? [['body', 'Body'], ['face', 'Face'], ['hair', 'Hair'], ['costume', 'Costume'], ['scan', 'Scan picture'], ['pose', 'Pose'], ['anim', 'Animate'], ['capture', 'Capture'], ['systems', 'Body systems'], ['voice', 'Voice'], ['sounds', 'Sounds'], ['actions', 'Actions'], ['pictures', 'AI pictures']]
+    : [['look', 'Look'], ['cutouts', 'Drawn poses'], ['voice', 'Voice'], ['sounds', 'Sounds'], ['actions', 'Actions'], ['pictures', 'AI pictures']];
+}
+function csRenderTab(){
+  const body = $('csTabBody'); if (!body) return;
+  const d = csDraft, p = d.puppet, F = FIELD_STYLE + ';width:100%';
+  const sel = (key, list) => `<label class="cs-field"><span>${CS_PARTS_LABEL[key]}</span><select data-part="${key}" style="${F}">${list.map(v => `<option value="${v}" ${p[key] === v ? 'selected' : ''}>${CS_PART_NAMES[v] || v}</option>`).join('')}</select></label>`;
+  const col = (key, label) => `<label class="cs-field cs-color"><span>${label}</span><input type="color" data-color="${key}" value="${p[key]}"></label>`;
+  if (csDraft.stage === '3d' && ['body', 'face', 'hair', 'costume', 'pose', 'systems'].includes(csTab)) return cs3dRenderTab(body);
+  if (csDraft.stage === '3d' && csTab === 'anim') return csAnimTab(body);
+  if (csDraft.stage === '3d' && csTab === 'capture') return csCaptureTab(body);
+  if (csDraft.stage === '3d' && csTab === 'scan') return csScanTab(body);
+  if (csTab === 'cutouts') { (async () => { try { if (!csScenesMod) csScenesMod = await import(apiUrl('/cs-scenes.js')); await csScenesMod.cutoutsTab(body, csDeps(), csDraft, changed => { if (changed) csTouch(); csRenderTab(); }); } catch (e) { body.innerHTML = `<p class="empty-hint" style="color:var(--red)">${escapeHtml(e.message)}</p>`; } })(); return; }
+  if (csTab === 'look') {
+    body.innerHTML = `
+      <div class="cs-sub">Start from</div><div class="cs-chips">${csCat.looks.map(l => `<button class="btn btn-line btn-sm" data-look="${l.id}">${escapeHtml(l.label)}</button>`).join('')}</div>
+      <div class="cs-sub">Shape</div><div class="cs-two">${['body', 'head', 'hairStyle', 'eyes', 'mouth', 'limbs'].map(k => sel(k, csCat.parts[k])).join('')}</div>
+      <div class="cs-sub">Colours</div><div class="cs-colors">${col('skin', p.body === 'robot' ? 'Shell' : 'Skin')}${col('outfit', 'Outfit')}${col('accent', 'Accent')}${col('hair', 'Hair')}${col('eyeColor', 'Eyes')}${col('background', 'Backdrop')}</div>
+      <div class="cs-sub">Size</div><div class="cs-two"><label class="cs-field"><span>Height</span><input type="range" min="0.6" max="1.3" step="0.02" data-num="height" value="${p.height}"></label><label class="cs-field"><span>Width</span><input type="range" min="0.75" max="1.3" step="0.02" data-num="width" value="${p.width}"></label></div>
+      <div class="cs-sub">Extras</div><div class="cs-chips">${csCat.parts.extras.map(x => `<label class="cs-check"><input type="checkbox" data-extra="${x}" ${p.extras.includes(x) ? 'checked' : ''}> ${CS_PART_NAMES[x] || x}</label>`).join('')}</div>
+      <label class="cs-field" style="margin-top:10px"><span>Who is this? (one line)</span><input id="csTagline" value="${escapeHtml(d.tagline || '')}" placeholder="a small learning robot from Grandfather's room" style="${F}"></label>`;
+    const redrawThumb = () => { const cv = document.querySelector(`canvas[data-thumb="${CSS.escape(csSel)}"]`); if (cv) csDraw(cv.getContext('2d'), p, csPose('idle', 1, 0), cv.width, cv.height); };
+    for (const b of body.querySelectorAll('[data-look]')) b.onclick = () => { const l = csCat.looks.find(x => x.id === b.dataset.look); d.puppet = { ...l.puppet, seed: p.seed, background: p.background, look: p.look }; csTouch(); csRenderTab(); redrawThumb(); };
+    for (const s of body.querySelectorAll('[data-part]')) s.onchange = () => { p[s.dataset.part] = s.value; csTouch(); redrawThumb(); };
+    for (const s of body.querySelectorAll('[data-color]')) s.oninput = () => { p[s.dataset.color] = s.value; csTouch(); redrawThumb(); };
+    for (const s of body.querySelectorAll('[data-num]')) s.oninput = () => { p[s.dataset.num] = Number(s.value); csTouch(); redrawThumb(); };
+    for (const s of body.querySelectorAll('[data-extra]')) s.onchange = () => { p.extras = s.checked ? [...new Set([...p.extras, s.dataset.extra])] : p.extras.filter(x => x !== s.dataset.extra); csTouch(); redrawThumb(); };
+    $('csTagline').oninput = () => { d.tagline = $('csTagline').value; csTouch(); };
+  } else if (csTab === 'voice') {
+    const c = csChars.find(x => x.id === csSel) || {};
+    body.innerHTML = `
+      <p class="empty-hint" style="padding:0 0 8px">Voice: <strong>${escapeHtml(c.voiceLabel || 'Usual voice')}</strong>. The mouth follows the voice as it plays.</p>
+      <label class="cs-field"><span>Say a line</span><textarea id="csLine" rows="3" style="${F}" placeholder="Hello! I can begin with the answer I must change.">${escapeHtml(sessionStorage.getItem('csLine') || '')}</textarea></label>
+      <div class="cs-two"><label class="cs-field"><span>While speaking</span><select id="csLineMove" style="${F}">${csCat.moves.map(m => `<option value="${m.id}" ${m.id === 'talk' ? 'selected' : ''}>${escapeHtml(m.label)}</option>`).join('')}</select></label><div style="display:flex;align-items:flex-end"><button class="btn btn-amber btn-sm" id="csSay">Say it</button></div></div>
+      <div class="cs-sub">Voice and personality</div>
+      <p class="empty-hint" style="padding:0 0 8px">Choose the voice (a Kokoro blend, a macOS voice or a VoiceStudio profile), speed, pitch, mood and personality in Voice Studio. They are the same character.</p>
+      <button class="btn btn-line btn-sm" id="csVoiceEdit">Edit voice in Voice Studio</button>`;
+    $('csLine').oninput = () => { try { sessionStorage.setItem('csLine', $('csLine').value); } catch (_) {} };
+    $('csSay').onclick = () => { const t = $('csLine').value.trim(); if (!t) return toast('Write a line first.'); csPerform([{ move: $('csLineMove').value, seconds: 1, line: t, soundId: null }]); };
+    $('csVoiceEdit').onclick = async () => { if (csDirty) await csSave(true).catch(() => {}); try { vsSel = csSel; vsDraft = null; } catch (_) {} showView('voicestudio'); };
+  } else if (csTab === 'sounds') {
+    body.innerHTML = `
+      <div id="csSoundList">${d.sounds.length ? d.sounds.map(s => `<div class="cs-row"><button class="btn btn-ghost btn-sm" data-play="${s.id}" aria-label="Play ${escapeHtml(s.label)}">▶</button><input data-label="${s.id}" value="${escapeHtml(s.label)}" aria-label="Sound name" style="${FIELD_STYLE};flex:1"><button class="btn btn-ghost btn-sm" data-del="${s.id}" aria-label="Remove">✕</button></div>`).join('') : '<p class="empty-hint">No sounds yet. Make one, or add one from the Library.</p>'}</div>
+      <div class="cs-sub">Make a sound (Stable Audio, on this Mac)</div>
+      <label class="cs-field"><span>Describe it</span><input id="csSfxPrompt" style="${F}" placeholder="small robot happy beeps, soft and cute"></label>
+      <div class="cs-two"><label class="cs-field"><span>Seconds</span><input id="csSfxSec" type="number" min="1" max="20" value="3" style="${F}"></label><div style="display:flex;align-items:flex-end"><button class="btn btn-amber btn-sm" id="csSfxGo">Make sound</button></div></div>
+      <div class="empty-hint" id="csSfxState" style="font-size:11.5px"></div>
+      <div class="cs-sub">Add from the Library</div>
+      <div class="cs-two"><select id="csLibSound" style="${F}"><option value="">Loading…</option></select><div style="display:flex;align-items:flex-end"><button class="btn btn-line btn-sm" id="csLibAdd">Add</button></div></div>`;
+    for (const b of body.querySelectorAll('[data-play]')) b.onclick = async () => { try { const s = d.sounds.find(x => x.id === b.dataset.play); csPlayBuf(await csSoundBuf(s.mediaId)); } catch (e) { toast(e.message); } };
+    for (const i of body.querySelectorAll('[data-label]')) i.oninput = () => { d.sounds.find(x => x.id === i.dataset.label).label = i.value; csTouch(); };
+    for (const b of body.querySelectorAll('[data-del]')) b.onclick = () => { d.sounds = d.sounds.filter(x => x.id !== b.dataset.del); for (const a of d.actions) for (const s of a.steps) if (s.soundId === b.dataset.del) s.soundId = null; csTouch(); csRenderTab(); };
+    apiGet('/api/media').then(list => { const s = $('csLibSound'); if (!s) return; const aud = list.filter(m => m.kind === 'audio').slice(0, 150); s.innerHTML = aud.length ? aud.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.originalName)}</option>`).join('') : '<option value="">No audio in the Library</option>'; }).catch(() => {});
+    $('csLibAdd').onclick = () => { const s = $('csLibSound'); if (!s.value) return; d.sounds.push({ label: s.options[s.selectedIndex].text.replace(/\.[a-z0-9]+$/i, '').slice(0, 60), mediaId: s.value }); csTouch(); csSave(true).then(csRenderTab).catch(e => toast(e.message)); };
+    $('csSfxGo').onclick = async () => {
+      const prompt = $('csSfxPrompt').value.trim(); if (!prompt) return toast('Describe the sound first.');
+      const st = $('csSfxState'); $('csSfxGo').disabled = true; st.textContent = 'Starting ComfyUI…';
+      try {
+        const job = await apiPost('/api/audio/sfx', { prompt, seconds: Number($('csSfxSec').value) || 3 });
+        const ids = await csWaitJob(job.id, j => { st.textContent = 'Making the sound… ' + (j.progress && typeof j.progress === 'number' ? Math.round(j.progress * 100) + '%' : (j.progress || '')); });
+        d.sounds.push({ label: prompt.slice(0, 40), mediaId: ids[0] }); await csSave(true); csRenderTab();
+      } catch (e) { st.textContent = e.message; $('csSfxGo').disabled = false; }
+    };
+  } else if (csTab === 'actions') {
+    const a = d.actions.find(x => x.id === csActSel) || null;
+    const soundOpts = v => `<option value="">No sound</option>${d.sounds.map(s => `<option value="${s.id}" ${s.id === v ? 'selected' : ''}>${escapeHtml(s.label)}</option>`).join('')}`;
+    body.innerHTML = `
+      <div class="cs-chips">${d.actions.map(x => `<button class="btn btn-sm ${x.id === csActSel ? 'btn-amber' : 'btn-line'}" data-act="${x.id}">${escapeHtml(x.name)}</button>`).join('')}<button class="btn btn-ghost btn-sm" id="csActNew">+ New action</button></div>
+      ${a ? `
+      <label class="cs-field" style="margin-top:8px"><span>Action name</span><input id="csActName" value="${escapeHtml(a.name)}" style="${F}"></label>
+      <div class="cs-sub">Steps</div>
+      ${a.steps.map((s, i) => `<div class="cs-step" data-i="${i}">
+        <div class="cs-two"><select data-k="move" aria-label="Move" style="${F}">${csCat.moves.map(m => `<option value="${m.id}" ${m.id === s.move ? 'selected' : ''}>${escapeHtml(m.label)}</option>`).join('')}${d.stage === '3d' && d.rig3d ? (d.rig3d.poses || []).map(pp => `<option value="pose:${pp.id}" ${s.move === 'pose' && s.poseId === pp.id ? 'selected' : ''}>Pose: ${escapeHtml(pp.name)}</option>`).join('') + (d.rig3d.clips || []).map(cc => `<option value="clip:${cc.id}" ${s.move === 'clip' && s.clipId === cc.id ? 'selected' : ''}>Capture: ${escapeHtml(cc.name)}</option>`).join('') : ''}</select><label class="cs-inline"><input data-k="seconds" type="number" min="0.5" max="20" step="0.5" value="${s.seconds}" aria-label="Seconds" style="${FIELD_STYLE};width:70px"> s <button class="btn btn-ghost btn-sm" data-k="del" aria-label="Remove step">✕</button></label></div>
+        <input data-k="line" value="${escapeHtml(s.line)}" placeholder="Line to say (optional)" aria-label="Line" style="${F};margin-top:6px">
+        <select data-k="soundId" aria-label="Sound" style="${F};margin-top:6px">${soundOpts(s.soundId)}</select>${d.stage === '3d' && cs3dMod ? `<select data-k="view" aria-label="Body system" style="${F};margin-top:6px"><option value="">Body system: keep as it is</option>${Object.entries(cs3dMod.SYSTEMS).map(([id, x]) => `<option value="${id}" ${s.view === id ? 'selected' : ''}>Body system: ${escapeHtml(x.label)}</option>`).join('')}</select>` : ''}</div>`).join('')}
+      <div class="cs-chips" style="margin-top:8px"><button class="btn btn-line btn-sm" id="csStepAdd">+ Add step</button><button class="btn btn-amber btn-sm" id="csActPlay">Play</button><button class="btn btn-line btn-sm" id="csActRec">Record to Library</button><button class="btn btn-ghost btn-sm" id="csActDel">Delete action</button></div>
+      <p class="empty-hint" style="font-size:11px">A step lasts its seconds, or as long as its line takes to say. Record plays the action and saves it as an MP4 with sound in the Library.</p>` : '<p class="empty-hint" style="margin-top:8px">An action is a little performance: moves, lines and sounds in order. Press New action.</p>'}`;
+    for (const b of body.querySelectorAll('[data-act]')) b.onclick = () => { csActSel = b.dataset.act; csRenderTab(); };
+    $('csActNew').onclick = () => { const n = { id: 'act_' + Array.from(crypto.getRandomValues(new Uint8Array(5)), x => x.toString(16).padStart(2, '0')).join(''), name: 'Greeting', steps: [{ move: 'wave', seconds: 2, line: 'Hello! I am ' + d.name + '.', soundId: null }, { move: 'bow', seconds: 2, line: '', soundId: null }] }; d.actions.push(n); csActSel = n.id; csTouch(); csRenderTab(); };
+    if (!a) return;
+    $('csActName').oninput = () => { a.name = $('csActName').value; csTouch(); };
+    for (const row of body.querySelectorAll('.cs-step')) {
+      const s = a.steps[Number(row.dataset.i)];
+      for (const el of row.querySelectorAll('[data-k]')) {
+        const k = el.dataset.k;
+        if (k === 'del') el.onclick = () => { a.steps.splice(Number(row.dataset.i), 1); if (!a.steps.length) a.steps.push({ move: 'idle', seconds: 2, line: '', soundId: null }); csTouch(); csRenderTab(); };
+        else el[el.tagName === 'SELECT' ? 'onchange' : 'oninput'] = () => { if (k === 'move' && el.value.startsWith('pose:')) { s.move = 'pose'; s.poseId = el.value.slice(5); s.clipId = null; } else if (k === 'move' && el.value.startsWith('clip:')) { s.move = 'clip'; s.clipId = el.value.slice(5); s.poseId = null; } else { s[k] = k === 'seconds' ? Math.max(0.5, Math.min(20, Number(el.value) || 2)) : (k === 'soundId' || k === 'view') ? (el.value || null) : el.value; if (k === 'move') s.poseId = null; if (k === 'view' && s.view) { csSys.mode = s.view; cs3dApplySys(); } } csTouch(); if (k === 'move') csSetMove(s.move, s.move === 'clip' ? s.clipId : s.poseId); };
+      }
+    }
+    $('csStepAdd').onclick = () => { if (a.steps.length >= 20) return toast('An action can have up to 20 steps.'); a.steps.push({ move: 'idle', seconds: 2, line: '', soundId: null }); csTouch(); csRenderTab(); };
+    $('csActPlay').onclick = () => csPerform(a.steps);
+    $('csActRec').onclick = () => csPerform(a.steps, { record: true, name: a.name });
+    $('csActDel').onclick = () => { d.actions = d.actions.filter(x => x.id !== a.id); csActSel = d.actions[0]?.id || null; csTouch(); csRenderTab(); };
+  } else if (csTab === 'pictures') {
+    body.innerHTML = `
+      <p class="empty-hint" style="padding:0 0 8px">Pictures of this character made with SDXL from its look, on this Mac. The same seed keeps them alike; "New variation" tries a different one.</p>
+      <label class="cs-field"><span>Extra words for the pictures</span><input id="csLookWords" value="${escapeHtml(p.look || '')}" placeholder="cream shell, teal elbows, curious" style="${F}"></label>
+      <div class="cs-two"><select id="csView" aria-label="Picture type" style="${F}">${csCat.views.map(v => `<option value="${v.id}">${escapeHtml(v.label)}</option>`).join('')}</select><div style="display:flex;gap:6px;align-items:flex-end"><button class="btn btn-amber btn-sm" id="csPic">Make picture</button><button class="btn btn-line btn-sm" id="csPicNew">New variation</button></div></div>
+      <div class="empty-hint" id="csPicState" style="font-size:11.5px"></div>
+      <div class="cs-gallery">${d.portraits.length ? d.portraits.map((x, i) => `<figure><img src="${mediaUrl(x.mediaId)}" alt="${escapeHtml(d.name)} — ${escapeHtml(x.view)}" loading="lazy"><figcaption>${escapeHtml((csCat.views.find(v => v.id === x.view) || {}).label || x.view)} <button class="btn btn-ghost btn-sm" data-face="${i}" title="Use as this character's face for agents and chat">${d.avatarMediaId === x.mediaId ? 'Face ✓' : 'Use as face'}</button><button class="btn btn-ghost btn-sm" data-rm="${i}" aria-label="Remove from gallery">✕</button></figcaption></figure>`).join('') : '<p class="empty-hint">No pictures yet.</p>'}</div>`;
+    $('csLookWords').oninput = () => { p.look = $('csLookWords').value; csTouch(); };
+    const go = async newSeed => {
+      const st = $('csPicState'); $('csPic').disabled = $('csPicNew').disabled = true; st.textContent = 'Starting ComfyUI and drawing…';
+      try {
+        if (csDirty) await csSave(true);
+        const job = await apiPost('/api/characters/' + encodeURIComponent(csSel) + '/portrait', { view: $('csView').value, newSeed });
+        const ids = await csWaitJob(job.id, j => { st.textContent = 'Drawing… ' + (typeof j.progress === 'number' ? Math.round(j.progress * 100) + '%' : (j.progress || '')); });
+        d.portraits.unshift({ mediaId: ids[0], view: job.view }); await csSave(true); csRenderTab();
+      } catch (e) { st.textContent = e.message; $('csPic').disabled = $('csPicNew').disabled = false; }
+    };
+    $('csPic').onclick = () => go(false);
+    $('csPicNew').onclick = () => go(true);
+    for (const b of body.querySelectorAll('[data-face]')) b.onclick = () => { d.avatarMediaId = d.portraits[Number(b.dataset.face)].mediaId; csTouch(); csSave(true).then(csRenderTab).catch(e => toast(e.message)); };
+    for (const b of body.querySelectorAll('[data-rm]')) b.onclick = () => { d.portraits.splice(Number(b.dataset.rm), 1); csTouch(); csRenderTab(); };
+  }
+}
+
+/* ---------------------- Character Studio: 3D tabs ---------------------- */
+function cs3dRenderTab(body){
+  const d = csDraft, r = d.rig3d, E = csCat.rig3d, M = cs3dMod, F = FIELD_STYLE + ';width:100%';
+  const nm = v => CS3_NAMES[v] || v;
+  const sel = (path, list, label) => { const [a, b] = path.split('.'); return `<label class="cs-field"><span>${label}</span><select data-r="${path}" style="${F}">${list.map(v => `<option value="${v}" ${r[a][b] === v ? 'selected' : ''}>${escapeHtml(nm(v))}</option>`).join('')}</select></label>`; };
+  const col = (path, label) => { const [a, b] = path.split('.'); return `<label class="cs-field cs-color"><span>${label}</span><input type="color" data-rc="${path}" value="${r[a][b]}"></label>`; };
+  const rng = (path, label, lo, hi) => { const [a, b] = path.split('.'); return `<label class="cs-field"><span>${label}</span><input type="range" min="${lo}" max="${hi}" step="0.01" data-rn="${path}" value="${r[a][b]}"></label>`; };
+  const changed = () => { csTouch(); cs3dRebuildSoon(); };
+  const bindDesign = () => {
+    for (const el of body.querySelectorAll('[data-r]')) el.onchange = () => { const [a, b] = el.dataset.r.split('.'); r[a][b] = el.value; changed(); };
+    for (const el of body.querySelectorAll('[data-rc]')) el.oninput = () => { const [a, b] = el.dataset.rc.split('.'); r[a][b] = el.value; changed(); };
+    for (const el of body.querySelectorAll('[data-rn]')) el.oninput = () => { const [a, b] = el.dataset.rn.split('.'); r[a][b] = Number(el.value); changed(); };
+    for (const el of body.querySelectorAll('[data-rb]')) el.onchange = () => { const [a, b] = el.dataset.rb.split('.'); r[a][b] = el.checked; changed(); };
+  };
+  if (csTab === 'body') {
+    body.innerHTML = `
+      <div class="cs-sub">Start from</div><div class="cs-chips">${Object.entries(M.LOOKS3D).map(([id, l]) => `<button class="btn btn-line btn-sm" data-look3="${id}">${escapeHtml(l.label)}</button>`).join('')}</div>
+      <div class="cs-sub">Body</div>
+      <div class="cs-two">${sel('body.build', E.build, 'Build')}${sel('body.hands', E.hands, 'Hands')}</div>
+      <div class="cs-two">${rng('body.height', 'Height', 0.6, 1.3)}${rng('body.headSize', 'Head size', 0.7, 1.5)}</div>
+      <div class="cs-two">${rng('body.armLength', 'Arm length', 0.75, 1.3)}${rng('body.legLength', 'Leg length', 0.7, 1.3)}</div>
+      <div class="cs-colors">${col('body.skin', r.body.robot ? 'Shell' : 'Skin')}<label class="cs-field cs-color"><span>Backdrop</span><input type="color" id="cs3Bg" value="${r.background}"></label></div>
+      <label class="cs-check" style="margin-top:10px;width:max-content"><input type="checkbox" data-rb="body.robot" ${r.body.robot ? 'checked' : ''}> Robot (shiny shell, coloured joints, glowing eyes)</label>
+      <label class="cs-field" style="margin-top:10px"><span>Who is this? (one line)</span><input id="csTagline" value="${escapeHtml(d.tagline || '')}" style="${F}"></label>`;
+    for (const b of body.querySelectorAll('[data-look3]')) b.onclick = () => { const keep = r.poses; d.rig3d = { ...JSON.parse(JSON.stringify(M.LOOKS3D[b.dataset.look3].rig)), background: r.background, poses: keep }; csTouch(); cs3dRebuildSoon(); csRenderTab(); };
+    $('cs3Bg').oninput = () => { r.background = $('cs3Bg').value; changed(); };
+    $('csTagline').oninput = () => { d.tagline = $('csTagline').value; csTouch(); };
+  } else if (csTab === 'face') {
+    body.innerHTML = `
+      <div class="cs-sub">Try an expression</div><div class="cs-chips">${Object.entries(M.EXPRESSIONS).map(([id, x]) => `<button class="btn btn-line btn-sm" data-expr="${id}">${escapeHtml(x.label)}</button>`).join('')}</div>
+      <div class="cs-sub">Eyes</div><div class="cs-two">${sel('face.eyeShape', E.eyeShape, 'Shape')}${col('face.eyeColor', 'Colour')}</div><div class="cs-two">${rng('face.eyeSize', 'Size', 0.6, 1.5)}${rng('face.eyeSpacing', 'Spacing', 0.75, 1.3)}</div>
+      <div class="cs-sub">Eyebrows</div><div class="cs-two">${sel('face.browShape', E.browShape, 'Shape')}${col('face.browColor', 'Colour')}</div>
+      <div class="cs-sub">Mouth</div><div class="cs-two">${sel('face.mouthShape', E.mouthShape, 'Resting shape')}${col('face.lipColor', 'Lip colour')}</div>${rng('face.mouthWidth', 'Width', 0.6, 1.5)}
+      <div class="cs-sub">Ears and nose</div><div class="cs-two">${sel('face.earShape', E.earShape, 'Ears')}${rng('face.earSize', 'Ear size', 0.6, 1.5)}</div><div class="cs-two">${sel('face.noseShape', E.noseShape, 'Nose')}<label class="cs-check" style="align-self:end"><input type="checkbox" data-rb="face.blush" ${r.face.blush ? 'checked' : ''}> Rosy cheeks</label></div>`;
+    for (const b of body.querySelectorAll('[data-expr]')) b.onclick = () => { csPoseEdit = csPoseEdit || { joints: JSON.parse(JSON.stringify(M.POSES.stand.joints)), root: {}, face: {} }; csPoseEdit.face = { ...M.NEUTRAL_FACE, ...M.EXPRESSIONS[b.dataset.expr].face }; csSetMove('pose'); if (cs3dStage) cs3dStage.view('face'); };
+  } else if (csTab === 'hair') {
+    body.innerHTML = `
+      <div class="cs-sub">Style</div><div class="cs-chips">${E.hairStyle.map(v => `<button class="btn btn-sm ${r.hair.style === v ? 'btn-amber' : 'btn-line'}" data-hair="${v}">${escapeHtml(nm(v))}</button>`).join('')}</div>
+      <div class="cs-colors" style="margin-top:10px">${col('hair.color', 'Hair colour')}${col('face.browColor', 'Eyebrows')}</div>
+      <p class="empty-hint" style="font-size:11px;margin-top:8px">A cap is in Costume → Extras.</p>`;
+    for (const b of body.querySelectorAll('[data-hair]')) b.onclick = () => { r.hair.style = b.dataset.hair; changed(); csRenderTab(); };
+  } else if (csTab === 'costume') {
+    body.innerHTML = `
+      <div class="cs-sub">Top</div><div class="cs-two">${sel('costume.top', E.top, 'Top')}${col('costume.topColor', 'Colour')}</div>
+      <div class="cs-sub">Bottom</div><div class="cs-two">${sel('costume.bottom', E.bottom, 'Bottom')}${col('costume.bottomColor', 'Colour')}</div>
+      <div class="cs-sub">Shoes</div><div class="cs-two">${sel('costume.shoes', E.shoes, 'Shoes')}${col('costume.shoeColor', 'Colour')}</div>
+      <div class="cs-colors" style="margin-top:8px">${col('costume.accent', 'Accent (trim, cap, scarf)')}</div>
+      <div class="cs-sub">Extras</div><div class="cs-chips">${E.extras.map(x => `<label class="cs-check"><input type="checkbox" data-ex3="${x}" ${r.costume.extras.includes(x) ? 'checked' : ''}> ${escapeHtml(nm(x))}</label>`).join('')}</div>`;
+    for (const el of body.querySelectorAll('[data-ex3]')) el.onchange = () => { const x = el.dataset.ex3; r.costume.extras = el.checked ? [...new Set([...r.costume.extras, x])] : r.costume.extras.filter(y => y !== x); changed(); };
+  } else if (csTab === 'systems') {
+    const S = M.SYSTEMS, cur = S[csSys.mode] || S.none;
+    body.innerHTML = `
+      <p class="empty-hint" style="padding:0 0 8px">See inside the character: the skin turns see-through and a simplified, labelled model of a body system appears, with food, blood, air, urine, nerve signals or hormones moving along it. Models are not to scale.</p>
+      <div class="cs-chips">${Object.entries(S).map(([id, x]) => `<button class="btn btn-sm ${csSys.mode === id ? 'btn-amber' : 'btn-line'}" data-sys="${id}">${escapeHtml(x.label)}</button>`).join('')}</div>
+      ${cur.note ? `<div class="panel" style="padding:10px;margin-top:10px;font-size:12.5px;line-height:1.5">${escapeHtml(cur.note)}</div>` : ''}
+      ${['reproductive', 'endocrine'].includes(csSys.mode) ? `<label class="cs-field" style="margin-top:8px"><span>Model</span><select id="cs3Var" style="${F}"><option value="female" ${csSys.variant === 'female' ? 'selected' : ''}>Female</option><option value="male" ${csSys.variant === 'male' ? 'selected' : ''}>Male</option></select></label>` : ''}
+      <div class="cs-sub">View</div>
+      <div class="cs-chips"><label class="cs-check"><input type="checkbox" id="cs3Lab" ${csSys.labels ? 'checked' : ''}> Labels (English · हिंदी)</label><label class="cs-check"><input type="checkbox" id="cs3Flow" ${csSys.flow ? 'checked' : ''}> Moving flows</label><label class="cs-check"><input type="checkbox" id="cs3Spin" ${csSys.spin ? 'checked' : ''}> Turn slowly</label></div>
+      <div class="cs-two" style="margin-top:8px"><label class="cs-field"><span>See-through skin</span><input type="range" min="0.04" max="0.6" step="0.01" id="cs3Xray" value="${csSys.xray}"></label><label class="cs-field"><span>Flow speed</span><input type="range" min="0.25" max="2.5" step="0.05" id="cs3Speed" value="${csSys.speed}"></label></div>
+      ${csSys.mode !== 'none' ? `<div class="cs-chips" style="margin-top:10px"><button class="btn btn-amber btn-sm" id="cs3Tour">Record a 12-second tour</button></div><p class="empty-hint" style="font-size:11px">The character turns once while the flows run, and the clip is saved to the Library with its labels. To add narration, make an action whose steps choose this body system and say a line.</p>` : ''}`;
+    for (const b of body.querySelectorAll('[data-sys]')) b.onclick = () => { csSys.mode = b.dataset.sys; cs3dApplySys(); if (cs3dStage) cs3dStage.view('front'); csRenderTab(); };
+    if ($('cs3Var')) $('cs3Var').onchange = () => { csSys.variant = $('cs3Var').value; cs3dApplySys(); };
+    $('cs3Lab').onchange = () => { csSys.labels = $('cs3Lab').checked; cs3dApplySys(); };
+    $('cs3Flow').onchange = () => { csSys.flow = $('cs3Flow').checked; cs3dApplySys(); };
+    $('cs3Spin').onchange = () => { csSys.spin = $('cs3Spin').checked; cs3dApplySys(); };
+    $('cs3Xray').onchange = () => { csSys.xray = Number($('cs3Xray').value); cs3dApplySys(); };
+    $('cs3Speed').oninput = () => { csSys.speed = Number($('cs3Speed').value); if (cs3dStage) cs3dStage.setSystem(csSys.mode, { speed: csSys.speed }); };
+    if ($('cs3Tour')) $('cs3Tour').onclick = async () => { const spin = csSys.spin; csSys.spin = false; if (cs3dStage) { cs3dStage.view('front'); cs3dStage.autoRotate = Math.PI * 2 / 12; } await csPerform([{ move: 'idle', seconds: 12, line: '', soundId: null }], { record: true, name: cur.label }); csSys.spin = spin; if (cs3dStage) cs3dStage.autoRotate = spin ? 0.35 : 0; };
+    return;
+  } else if (csTab === 'pose') {
+    if (!csPoseEdit) csPoseEdit = { joints: JSON.parse(JSON.stringify(M.POSES.stand.joints)), root: {}, face: {} };
+    const P = csPoseEdit, spec = M.JOINTS[csJoint] || M.JOINTS.upperArmR, v = P.joints[csJoint] || [0, 0, 0];
+    const groups = [...new Set(Object.values(M.JOINTS).map(j => j.group))];
+    const fv = k => (P.face[k] ?? M.NEUTRAL_FACE[k]);
+    body.innerHTML = `
+      ${csSys.mode !== 'none' ? `<p class="empty-hint" style="font-size:11.5px;color:var(--amber)">Body systems view holds a standing pose. Choose <b>Normal</b> in Body systems to see your pose.</p>` : ''}
+      <div class="cs-sub">Ready poses</div><div class="cs-chips">${Object.entries(M.POSES).map(([id, x]) => `<button class="btn btn-line btn-sm" data-pose="${id}">${escapeHtml(x.label)}</button>`).join('')}</div>
+      <div class="cs-sub">Joint</div>
+      <select id="cs3Joint" aria-label="Joint" style="${F}">${groups.map(g => `<optgroup label="${g}">${Object.entries(M.JOINTS).filter(([, j]) => j.group === g).map(([id, j]) => `<option value="${id}" ${id === csJoint ? 'selected' : ''}>${escapeHtml(j.label)}</option>`).join('')}</optgroup>`).join('')}</select>
+      <p class="empty-hint" style="font-size:11px;margin:4px 0 0">Or click a body part on the stage.</p>
+      ${spec.axes.map(([label, , lo, hi], i) => `<label class="cs-field cs-slider"><span>${escapeHtml(label)} <b data-jv="${i}">${Math.round(v[i] || 0)}°</b></span><input type="range" min="${lo}" max="${hi}" step="1" data-ja="${i}" value="${v[i] || 0}"></label>`).join('')}
+      ${csJoint === 'root' ? `<label class="cs-field cs-slider"><span>Crouch ↔ lift <b id="cs3LiftV">${Math.round((P.root.lift || 0) * 100)}</b></span><input type="range" min="-0.6" max="0.6" step="0.01" id="cs3Lift" value="${P.root.lift || 0}"></label>` : ''}
+      <div class="cs-chips" style="margin-top:6px">${/[LR]$/.test(csJoint) ? '<button class="btn btn-ghost btn-sm" id="cs3Mirror">Copy to the other side</button>' : ''}<button class="btn btn-ghost btn-sm" id="cs3JReset">Reset this joint</button><button class="btn btn-ghost btn-sm" id="cs3AllReset">Reset whole pose</button></div>
+      <div class="cs-sub">Hand reach (IK)</div>
+      <p class="empty-hint" style="font-size:11px;margin:0 0 4px">Put a hand at a point; the shoulder and elbow follow.</p>
+      <div class="cs-two"><select id="cs3IkSide" style="${F}"><option value="R">Right hand</option><option value="L">Left hand</option></select><div></div></div>
+      ${[['ikOut', 'Out to the side', -0.25, 0.6, 0.15], ['ikUp', 'Down ↔ up', -0.5, 0.55, 0.1], ['ikFwd', 'Back ↔ forward', -0.3, 0.6, 0.3]].map(([id, l, lo, hi, v]) => `<label class="cs-field cs-slider"><span>${l}</span><input type="range" min="${lo}" max="${hi}" step="0.01" id="${id}" value="${v}"></label>`).join('')}
+      <div class="cs-sub">Face</div><div class="cs-chips">${Object.entries(M.EXPRESSIONS).map(([id, x]) => `<button class="btn btn-line btn-sm" data-expr="${id}">${escapeHtml(x.label)}</button>`).join('')}</div>
+      ${M.FACE_CONTROLS.map(([k, label, lo, hi]) => `<label class="cs-field cs-slider"><span>${escapeHtml(label)}</span><input type="range" min="${lo}" max="${hi}" step="0.01" data-fk="${k}" value="${fv(k)}"></label>`).join('')}
+      <div class="cs-sub">Save this pose</div>
+      <div class="cs-two"><input id="cs3PoseName" placeholder="Name, e.g. Greeting" style="${F}"><div style="display:flex;align-items:flex-end"><button class="btn btn-amber btn-sm" id="cs3PoseSave">Save pose</button></div></div>
+      <div id="cs3Saved" style="margin-top:8px">${(r.poses || []).length ? r.poses.map(p => `<div class="cs-row"><button class="btn btn-ghost btn-sm" data-papply="${p.id}">${escapeHtml(p.name)}</button><span style="flex:1"></span><button class="btn btn-ghost btn-sm" data-pdel="${p.id}" aria-label="Delete pose">✕</button></div>`).join('') : '<p class="empty-hint" style="font-size:11px">Saved poses can be used as steps in Actions.</p>'}</div>`;
+    const live = () => csSetMove('pose');
+    if (csPlay.move !== 'pose' || csPlay.poseId) live();
+    if (cs3dStage) cs3dStage.select(csJoint);
+    $('cs3Joint').onchange = () => { csJoint = $('cs3Joint').value; csRenderTab(); };
+    const reach = () => { if (!cs3dStage) return; const side = $('cs3IkSide').value, sol = cs3dStage.solveReach(side, [Number($('ikOut').value), Number($('ikUp').value), Number($('ikFwd').value)]); if (!sol) return; Object.assign(P.joints, Object.fromEntries(Object.entries(sol).map(([k, v]) => [k, v.map(x => Math.round(x))]))); live(); };
+    for (const id of ['ikOut', 'ikUp', 'ikFwd']) $(id).oninput = reach;
+    $('cs3IkSide').onchange = reach;
+    for (const el of body.querySelectorAll('[data-ja]')) el.oninput = () => { const i = Number(el.dataset.ja); const cur = (P.joints[csJoint] || [0, 0, 0]).slice(); cur[i] = Number(el.value); P.joints[csJoint] = cur; body.querySelector(`[data-jv="${i}"]`).textContent = el.value + '°'; live(); };
+    if ($('cs3Lift')) $('cs3Lift').oninput = () => { P.root.lift = Number($('cs3Lift').value); $('cs3LiftV').textContent = Math.round(P.root.lift * 100); live(); };
+    for (const el of body.querySelectorAll('[data-fk]')) el.oninput = () => { P.face[el.dataset.fk] = Number(el.value); live(); };
+    for (const b of body.querySelectorAll('[data-pose]')) b.onclick = () => { const x = M.POSES[b.dataset.pose]; csPoseEdit = { joints: JSON.parse(JSON.stringify(x.joints)), root: { ...x.root }, face: { ...M.NEUTRAL_FACE, ...x.face } }; live(); csRenderTab(); };
+    for (const b of body.querySelectorAll('[data-expr]')) b.onclick = () => { P.face = { ...M.NEUTRAL_FACE, ...M.EXPRESSIONS[b.dataset.expr].face }; live(); csRenderTab(); };
+    if ($('cs3Mirror')) $('cs3Mirror').onclick = () => { const other = csJoint.replace(/[LR]$/, m => m === 'L' ? 'R' : 'L'); P.joints[other] = (P.joints[csJoint] || [0, 0, 0]).slice(); live(); toast('Copied to ' + M.JOINTS[other].label.toLowerCase() + '.'); };
+    $('cs3JReset').onclick = () => { delete P.joints[csJoint]; if (csJoint === 'root') P.root = {}; live(); csRenderTab(); };
+    $('cs3AllReset').onclick = () => { csPoseEdit = { joints: JSON.parse(JSON.stringify(M.POSES.stand.joints)), root: {}, face: {} }; live(); csRenderTab(); };
+    $('cs3PoseSave').onclick = () => {
+      const name = $('cs3PoseName').value.trim() || 'Pose ' + ((r.poses || []).length + 1);
+      if ((r.poses || []).length >= 40) return toast('A character can keep up to 40 poses.');
+      const id = 'pose_' + Array.from(crypto.getRandomValues(new Uint8Array(5)), x => x.toString(16).padStart(2, '0')).join('');
+      r.poses = [...(r.poses || []), { id, name, joints: JSON.parse(JSON.stringify(P.joints)), root: { ...P.root }, face: { ...P.face } }];
+      csTouch(); csSave(true).then(() => { toast('Saved pose ' + name + '.'); csRenderTab(); }).catch(e => toast(e.message));
+    };
+    for (const b of body.querySelectorAll('[data-papply]')) b.onclick = () => { const p = r.poses.find(x => x.id === b.dataset.papply); csPoseEdit = { joints: JSON.parse(JSON.stringify(p.joints)), root: { ...p.root }, face: { ...p.face } }; live(); csRenderTab(); };
+    for (const b of body.querySelectorAll('[data-pdel]')) b.onclick = () => { r.poses = r.poses.filter(x => x.id !== b.dataset.pdel); for (const a of d.actions) for (const s of a.steps) if (s.poseId === b.dataset.pdel) { s.move = 'idle'; s.poseId = null; } csTouch(); csRenderTab(); };
+    return;
+  }
+  bindDesign();
+}
+
+
+/* ---------------- Character Studio: recording helpers ---------------- */
+function csRecBegin(){
+  const cv = $('csCanvas'); if (!cv.captureStream || !window.MediaRecorder) throw new Error('This window cannot record video.');
+  csAudioReady();
+  const stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...csRecDest.stream.getAudioTracks()]);
+  const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1,mp4a', 'video/mp4'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+  const chunks = [], rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 5e6 } : undefined);
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data); rec.start(250);
+  return { rec, chunks };
+}
+async function csRecSave(r, name){
+  await new Promise(ok => { r.rec.onstop = ok; r.rec.stop(); });
+  const blob = new Blob(r.chunks, { type: r.rec.mimeType || 'video/webm' });
+  const res = await fetch(apiUrl('/api/characters/' + encodeURIComponent(csSel) + '/clip?action=' + encodeURIComponent(name)), { method:'POST', headers:{ 'Content-Type': blob.type || 'application/octet-stream' }, body: blob });
+  const d = await res.json().catch(() => ({})); if (!res.ok) throw new Error(d.error || ('HTTP ' + res.status));
+  return d;
+}
+const csNewId = p => p + Array.from(crypto.getRandomValues(new Uint8Array(5)), x => x.toString(16).padStart(2, '0')).join('');
+
+/* ---------------- Character Studio: Animate (timeline) ---------------- */
+const CS_ROWS = [['body', 'Body'], ['clip', 'Capture'], ['face', 'Face'], ['add', 'Layer'], ['voice', 'Voice'], ['sound', 'Sound']];
+function csAnimCur(){ const r = csDraft.rig3d; r.anims = r.anims || []; return r.anims.find(a => a.id === csAnimSel) || null; }
+function csAnimStop(){ if (csAnimPlay) { csAnimPlay.stop = true; } }
+function csAnimTick(anim, t){
+  const P = csAnimPlay; if (!P) return;
+  for (const k of P.cues) if (!k.fired && t >= k.t) { k.fired = true; if (k.buf) csPlayBuf(k.buf, { lips: !!k.track, track: k.track }); }
+  const pos = $('csAnimPos'); if (pos) pos.style.left = (t / anim.duration * 100) + '%';
+  const tv = $('csAnimTime'); if (tv) tv.textContent = t.toFixed(1) + ' / ' + anim.duration.toFixed(1) + ' s';
+  if (t >= anim.duration || P.stop) P.done();
+}
+async function csAnimStart(anim, { record = false } = {}){
+  if (csAnimPlay || csBusy) return; const st = $('csStatus'), say = x => { if (st) st.textContent = x; };
+  csBusy = true;
+  try {
+    if (csDirty) await csSave(true); csAudioReady(); say('Preparing voices and sounds…');
+    const cues = [];
+    for (const k of anim.tracks.voice || []) { const buf = await csVoiceBuf(k.line); cues.push({ t: k.t, buf, track: await csVoiceTrack(k.line, buf) }); }
+    for (const k of anim.tracks.sound || []) { const s = csDraft.sounds.find(x => x.id === k.soundId); if (s) cues.push({ t: k.t, buf: await csSoundBuf(s.mediaId) }); }
+    const rec = record ? csRecBegin() : null; if (rec) await csSleep(400);
+    say(record ? 'Recording ' + anim.name + '…' : 'Playing ' + anim.name + '…');
+    await new Promise(done => { csAnimPlay = { anim, start: performance.now(), cues, done }; if (!csRaf) csRaf = requestAnimationFrame(csLoop); });
+    const stopped = csAnimPlay.stop; csAnimPlay = null;
+    if (rec) { await csSleep(400); if (stopped) { rec.rec.stop(); say('Stopped; nothing was saved.'); } else { say('Saving the clip to the Library…'); const d = await csRecSave(rec, anim.name); say('Saved to the Library: ' + d.originalName); toast('Clip saved to the Library.'); } }
+    else say(stopped ? 'Stopped.' : 'Done.');
+  } catch (e) { say(e.message); csAnimPlay = null; }
+  finally { csBusy = false; if ($('csAnimPlayBtn')) csRenderTab(); }
+}
+async function csExport(format){
+  const st = $('csStatus'); const anim = csAnimCur();
+  try {
+    if (!cs3dStage) throw new Error('Open the 3D model first.');
+    st.textContent = 'Building the ' + format.toUpperCase() + ' file…';
+    const r3 = csDraft.rig3d, ctx = { poses: r3.poses || [], clips: r3.clips || [] };
+    const out = await cs3dStage.exportGLB(anim ? { sampler: t => cs3dMod.evalAnim(anim, t, ctx), duration: anim.duration, name: anim.name } : { name: csDraft.name });
+    if (format === 'fbx') st.textContent = 'Converting to FBX with Blender…';
+    const r = await fetch(apiUrl('/api/characters/' + encodeURIComponent(csSel) + '/export?format=' + format + '&name=' + encodeURIComponent(csDraft.name + (anim ? ' - ' + anim.name : ''))), { method:'POST', headers:{ 'Content-Type':'model/gltf-binary' }, body: out.glb });
+    const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    st.textContent = `Saved ${d.file} (${Math.round(d.bytes / 1024)} KB, ${out.tracks} animation tracks) in Maataa Library/Exports.`; toast('Exported ' + d.file);
+  } catch (e) { st.textContent = e.message; }
+}
+function csAnimTab(body){
+  const d = csDraft, r3 = d.rig3d, M = cs3dMod, F = FIELD_STYLE + ';width:100%';
+  r3.anims = r3.anims || []; if (!csAnimSel && r3.anims.length) csAnimSel = r3.anims[0].id;
+  const a = csAnimCur();
+  if (a) csAnimT = Math.min(csAnimT, a.duration);
+  const keyLabel = (row, k) => row === 'body' ? (k.poseId ? 'Pose: ' + ((r3.poses || []).find(p => p.id === k.poseId) || {}).name : 'Pose') : row === 'clip' ? 'Capture: ' + (((r3.clips || []).find(c => c.id === k.clipId)) || {}).name : row === 'voice' ? '“' + k.line + '”' : row === 'sound' ? 'Sound: ' + ((d.sounds.find(s => s.id === k.soundId)) || {}).label : row === 'face' ? 'Face' : 'Layer: ' + Object.keys(k.joints || {}).join(', ');
+  const sel = csKeySel && a && a.tracks[csKeySel.row] ? a.tracks[csKeySel.row][csKeySel.i] : null;
+  body.innerHTML = `
+    <p class="empty-hint" style="padding:0 0 8px">A timeline with layers: body poses and capture clips, face, an additive layer, voice lines (lip-synced) and sounds. Keys blend smoothly. Click a track to move the playhead; add keys at the playhead.</p>
+    <div class="cs-chips">${r3.anims.map(x => `<button class="btn btn-sm ${x.id === csAnimSel ? 'btn-amber' : 'btn-line'}" data-anim="${x.id}">${escapeHtml(x.name)}</button>`).join('')}<button class="btn btn-ghost btn-sm" id="csAnimNew">+ New animation</button></div>
+    ${!a ? '<p class="empty-hint" style="margin-top:8px">Make an animation, then add poses, capture clips, lines and sounds along the timeline.</p>' : `
+    <div class="cs-two" style="margin-top:8px"><label class="cs-field"><span>Name</span><input id="csAnimName" value="${escapeHtml(a.name)}" style="${F}"></label><label class="cs-field"><span>Length (seconds)</span><input id="csAnimDur" type="number" min="1" max="120" step="0.5" value="${a.duration}" style="${F}"></label></div>
+    <div class="cs-chips" style="margin-top:8px;align-items:center"><button class="btn btn-amber btn-sm" id="csAnimPlayBtn">${csAnimPlay ? '■ Stop' : '▶ Play'}</button><span class="mono" id="csAnimTime" style="font-size:11.5px">${csAnimT.toFixed(1)} / ${a.duration.toFixed(1)} s</span></div>
+    <div class="cs-tl" id="csTl">
+      ${CS_ROWS.map(([row, label]) => `<div class="cs-tl-row"><span class="cs-tl-name">${label}</span><div class="cs-tl-lane" data-row="${row}">${(a.tracks[row] || []).map((k, i) => `<button class="cs-key cs-key-${row} ${csKeySel && csKeySel.row === row && csKeySel.i === i ? 'sel' : ''}" style="left:${(k.t / a.duration * 100).toFixed(2)}%" data-krow="${row}" data-ki="${i}" title="${escapeHtml(keyLabel(row, k))} · ${k.t.toFixed(1)} s"></button>`).join('')}</div></div>`).join('')}
+      <div class="cs-tl-head" id="csAnimPos" style="left:${(csAnimT / a.duration * 100).toFixed(2)}%"></div>
+    </div>
+    ${sel ? `<div class="panel" style="padding:8px;margin-top:8px"><div style="font-size:12px;margin-bottom:6px"><b>${escapeHtml(keyLabel(csKeySel.row, sel))}</b></div><div class="cs-chips" style="align-items:center"><label class="cs-inline">at <input id="csKeyT" type="number" min="0" max="${a.duration}" step="0.1" value="${sel.t}" style="${FIELD_STYLE};width:76px"> s</label>${csKeySel.row === 'body' && !sel.poseId ? '<button class="btn btn-ghost btn-sm" id="csKeyEdit">Edit in Pose tab</button><button class="btn btn-ghost btn-sm" id="csKeyReplace">Replace with current pose</button>' : ''}<button class="btn btn-ghost btn-sm" id="csKeyDel">Delete key</button></div></div>` : ''}
+    <div class="cs-sub">Add at the playhead</div>
+    <div class="cs-chips"><button class="btn btn-line btn-sm" id="csAddPose">Body: current pose</button>
+      <select id="csAddSaved" style="${FIELD_STYLE}"><option value="">Body: saved pose…</option>${(r3.poses || []).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select>
+      <select id="csAddClip" style="${FIELD_STYLE}"><option value="">Capture clip…</option>${(r3.clips || []).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}</select>
+      <select id="csAddFace" style="${FIELD_STYLE}"><option value="">Face: expression…</option>${Object.entries(M.EXPRESSIONS).map(([id, x]) => `<option value="${id}">${escapeHtml(x.label)}</option>`).join('')}</select>
+      <button class="btn btn-line btn-sm" id="csAddLayer" title="Adds the joint selected in the Pose tab as an offset on top of everything">Layer: ${escapeHtml((M.JOINTS[csJoint] || {}).label || csJoint)} offset</button>
+      <select id="csAddSound" style="${FIELD_STYLE}"><option value="">Sound…</option>${d.sounds.map(s => `<option value="${s.id}">${escapeHtml(s.label)}</option>`).join('')}</select></div>
+    <div class="cs-two" style="margin-top:6px"><input id="csAddLine" placeholder="Voice line to say here (lip-synced)" style="${F}"><div style="display:flex;align-items:flex-end"><button class="btn btn-line btn-sm" id="csAddVoice">Add line</button></div></div>
+    <label class="cs-check" style="margin-top:10px;width:max-content"><input type="checkbox" id="csIkFeet" ${a.ik && a.ik.feet ? 'checked' : ''}> Keep feet on the ground when crouching (IK)</label>
+    <div class="cs-sub">Output</div>
+    <div class="cs-chips"><button class="btn btn-amber btn-sm" id="csAnimRec">Record to Library (MP4)</button><button class="btn btn-line btn-sm" id="csExpGlb">Export glTF (.glb)</button><button class="btn btn-line btn-sm" id="csExpFbx">Export FBX (via Blender)</button><button class="btn btn-ghost btn-sm" id="csAnimDel">Delete animation</button></div>
+    <p class="empty-hint" style="font-size:11px">Exports go to Maataa Library/Exports. The model is a hierarchy of shapes moved by its joints (not a skinned mesh), with the animation baked at 30 frames a second; Blender, Unreal and Unity open it. FBX needs Blender installed.</p>`}`;
+  for (const b of body.querySelectorAll('[data-anim]')) b.onclick = () => { csAnimSel = b.dataset.anim; csKeySel = null; csAnimT = 0; csRenderTab(); };
+  $('csAnimNew').onclick = () => { const n = { id: csNewId('anim_'), name: 'Animation ' + (r3.anims.length + 1), duration: 6, ik: { feet: true }, tracks: { body: [{ t: 0, pose: JSON.parse(JSON.stringify({ joints: M.POSES.stand.joints, root: {}, face: {} })) }], clip: [], face: [], add: [], voice: [], sound: [] } }; r3.anims.push(n); csAnimSel = n.id; csAnimT = 0; csKeySel = null; csTouch(); csRenderTab(); };
+  if (!a) return;
+  const T = () => Math.round(csAnimT * 10) / 10, push = (row, k) => { a.tracks[row] = [...(a.tracks[row] || []), k].sort((x, y) => x.t - y.t); csKeySel = { row, i: a.tracks[row].indexOf(k) }; csTouch(); csRenderTab(); };
+  $('csAnimName').oninput = () => { a.name = $('csAnimName').value; csTouch(); };
+  $('csAnimDur').onchange = () => { a.duration = Math.max(1, Math.min(120, Number($('csAnimDur').value) || 6)); for (const row of Object.keys(a.tracks)) for (const k of a.tracks[row]) k.t = Math.min(k.t, a.duration); csTouch(); csRenderTab(); };
+  $('csAnimPlayBtn').onclick = () => { if (csAnimPlay) csAnimStop(); else { csAnimStart(a); setTimeout(() => { const b = $('csAnimPlayBtn'); if (b) b.textContent = '■ Stop'; }, 50); } };
+  for (const lane of body.querySelectorAll('.cs-tl-lane')) lane.onclick = e => { if (e.target.closest('.cs-key')) return; const r = lane.getBoundingClientRect(); csAnimT = Math.max(0, Math.min(a.duration, (e.clientX - r.left) / r.width * a.duration)); csKeySel = null; csRenderTab(); };
+  for (const k of body.querySelectorAll('[data-krow]')) k.onclick = () => { csKeySel = { row: k.dataset.krow, i: Number(k.dataset.ki) }; csAnimT = a.tracks[csKeySel.row][csKeySel.i].t; csRenderTab(); };
+  if (sel) {
+    $('csKeyT').onchange = () => { sel.t = Math.max(0, Math.min(a.duration, Number($('csKeyT').value) || 0)); a.tracks[csKeySel.row].sort((x, y) => x.t - y.t); csKeySel.i = a.tracks[csKeySel.row].indexOf(sel); csAnimT = sel.t; csTouch(); csRenderTab(); };
+    $('csKeyDel').onclick = () => { a.tracks[csKeySel.row].splice(csKeySel.i, 1); csKeySel = null; csTouch(); csRenderTab(); };
+    if ($('csKeyEdit')) $('csKeyEdit').onclick = () => { csPoseEdit = JSON.parse(JSON.stringify({ joints: sel.pose.joints || {}, root: sel.pose.root || {}, face: sel.pose.face || {} })); csTab = 'pose'; renderCharacterStudioView(); };
+    if ($('csKeyReplace')) $('csKeyReplace').onclick = () => { if (!csPoseEdit) return toast('Make a pose in the Pose tab first.'); sel.pose = JSON.parse(JSON.stringify(csPoseEdit)); csTouch(); toast('Key replaced with the current pose.'); };
+  }
+  $('csAddPose').onclick = () => push('body', { t: T(), pose: JSON.parse(JSON.stringify(csPoseEdit || { joints: M.POSES.stand.joints, root: {}, face: {} })) });
+  $('csAddSaved').onchange = () => { const v = $('csAddSaved').value; if (v) push('body', { t: T(), poseId: v }); };
+  $('csAddClip').onchange = () => { const v = $('csAddClip').value; if (v) { push('clip', { t: T(), clipId: v, speed: 1 }); const c = r3.clips.find(x => x.id === v); const end = T() + M.clipDuration(c); if (end > a.duration) { a.duration = Math.min(120, Math.ceil(end)); csRenderTab(); } } };
+  $('csAddFace').onchange = () => { const v = $('csAddFace').value; if (v) push('face', { t: T(), face: { ...M.NEUTRAL_FACE, ...M.EXPRESSIONS[v].face } }); };
+  $('csAddLayer').onclick = () => { const v = (csPoseEdit && csPoseEdit.joints[csJoint]) || null; if (!v) return toast('Set a value for ' + ((M.JOINTS[csJoint] || {}).label || csJoint) + ' in the Pose tab first.'); push('add', { t: T(), joints: { [csJoint]: v.slice() } }); };
+  $('csAddSound').onchange = () => { const v = $('csAddSound').value; if (v) push('sound', { t: T(), soundId: v }); };
+  $('csAddVoice').onclick = () => { const line = $('csAddLine').value.trim(); if (!line) return toast('Write the line first.'); push('voice', { t: T(), line }); };
+  $('csIkFeet').onchange = () => { a.ik = { feet: $('csIkFeet').checked }; csTouch(); };
+  $('csAnimRec').onclick = () => csAnimStart(a, { record: true });
+  $('csExpGlb').onclick = () => csExport('glb');
+  $('csExpFbx').onclick = () => csExport('fbx');
+  $('csAnimDel').onclick = () => { r3.anims = r3.anims.filter(x => x.id !== a.id); csAnimSel = r3.anims[0]?.id || null; csKeySel = null; csTouch(); csRenderTab(); };
+}
+
+/* ---------------- Character Studio: Capture (webcam, MediaPipe, local) ---------------- */
+let csCam = null, csCapMod = null, csCapOpt = { face: true, body: true, mirror: true, legs: false }, csCapRec = null;
+function csCamStop(){
+  if (!csCam) return; csCam.stop = true;
+  try { csCam.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+  try { csCam.faceLm && csCam.faceLm.close(); csCam.poseLm && csCam.poseLm.close(); } catch (_) {}
+  csCam = null; csCapRec = null; if (csPlay.move === 'capture') csSetMove('idle');
+}
+async function csCamStart(){
+  const st = $('csCapState'), say = x => { if (st) st.textContent = x; };
+  try {
+    say('Starting the camera…');
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+    const video = $('csCamVid'); video.srcObject = stream; await video.play();
+    say('Loading the trackers…');
+    if (!csCapMod) csCapMod = await import(apiUrl('/cs3d-capture.js'));
+    const mp = await import(apiUrl('/vendor/mediapipe/vision_bundle.mjs'));
+    const files = await mp.FilesetResolver.forVisionTasks(apiUrl('/vendor/mediapipe'));
+    const make = async (Kind, model, extra) => { for (const delegate of ['GPU', 'CPU']) { try { return await Kind.createFromOptions(files, { baseOptions: { modelAssetPath: apiUrl('/api/capture/models/' + model), delegate }, runningMode: 'VIDEO', ...extra }); } catch (e) { if (delegate === 'CPU') throw e; } } };
+    const faceLm = csCapOpt.face ? await make(mp.FaceLandmarker, 'face_landmarker.task', { numFaces: 1, outputFaceBlendshapes: true, outputFacialTransformationMatrixes: true }) : null;
+    const poseLm = csCapOpt.body ? await make(mp.PoseLandmarker, 'pose_landmarker_lite.task', { numPoses: 1 }) : null;
+    csCam = { stream, video, faceLm, poseLm, last: -1, smooth: null, fps: 0, n: 0, t0: performance.now() };
+    say('Tracking. Move, and the character follows.'); csSetMove('capture'); csCamLoop();
+  } catch (e) { say('Could not start: ' + (e.message || e)); csCamStop(); }
+}
+function csCamLoop(){
+  const c = csCam; if (!c || c.stop) return;
+  const v = c.video, now = performance.now();
+  if (v.readyState >= 2 && v.currentTime !== c.last) {
+    c.last = v.currentTime; const C = csCapMod; let pose = { joints: {}, face: {} };
+    if (c.poseLm) { const r = c.poseLm.detectForVideo(v, now); const w = r.worldLandmarks && r.worldLandmarks[0]; if (w) { const b = C.bodyFromLandmarks(w, { mirror: csCapOpt.mirror, legs: csCapOpt.legs }); if (b) Object.assign(pose.joints, b.joints); } csCamDraw(r.landmarks && r.landmarks[0]); }
+    if (c.faceLm) { const r = c.faceLm.detectForVideo(v, now); const cats = r.faceBlendshapes && r.faceBlendshapes[0]; if (cats) { const bs = Object.fromEntries(cats.categories.map(x => [x.categoryName, x.score])); const m = r.facialTransformationMatrixes && r.facialTransformationMatrixes[0]; const f = C.faceFromBlendshapes(bs, m ? m.data : null, { mirror: csCapOpt.mirror }); pose.face = f.face; if (f.head) { pose.joints.head = f.head.map(x => x * 0.65); pose.joints.neck = f.head.map(x => x * 0.35); } } }
+    c.smooth = C.smoothPose(c.smooth, pose, 0.5); csCapPose = { joints: c.smooth.joints, face: c.smooth.face, root: {} };
+    c.n++; if (now - c.t0 > 1000) { c.fps = c.n; c.n = 0; c.t0 = now; const f = $('csCapFps'); if (f) f.textContent = c.fps + ' fps'; }
+    if (csCapRec && now - csCapRec.lastT >= 1000 / 15) {
+      csCapRec.lastT = now; const r = n => Math.round(n); const ff = x => Math.round(x * 100) / 100;
+      csCapRec.frames.push({ j: Object.fromEntries(Object.entries(csCapPose.joints).map(([k, a]) => [k, a.map(r)])), f: Object.fromEntries(Object.entries(csCapPose.face).map(([k, a]) => [k, ff(a)])) });
+      const rt = $('csCapRecT'); if (rt) rt.textContent = (csCapRec.frames.length / 15).toFixed(1) + ' s';
+      if (csCapRec.frames.length >= 15 * 30) csCapFinish();
+    }
+  }
+  requestAnimationFrame(csCamLoop);
+}
+function csCamDraw(lm){
+  const cv = $('csCamDots'); if (!cv) return; const x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height); if (!lm) return;
+  x.fillStyle = '#ffb000'; for (const p of lm) { if ((p.visibility ?? 1) < 0.5) continue; x.beginPath(); x.arc((csCapOpt.mirror ? 1 - p.x : p.x) * cv.width, p.y * cv.height, 3, 0, 7); x.fill(); }
+}
+function csCapFinish(){
+  const R = csCapRec; csCapRec = null; if (!R || R.frames.length < 4) { toast('The capture was too short.'); csRenderTab(); return; }
+  const r3 = csDraft.rig3d; r3.clips = r3.clips || [];
+  r3.clips.push({ id: csNewId('clip_'), name: R.name || 'Capture ' + (r3.clips.length + 1), fps: 15, frames: R.frames, createdAt: new Date().toISOString() });
+  csTouch(); csSave(true).then(() => { toast('Capture saved.'); csRenderTab(); }).catch(e => toast(e.message));
+}
+async function csCaptureTab(body){
+  let st = { ready: false, missing: [] }; try { st = await apiGet('/api/capture/status'); } catch (_) {}
+  const r3 = csDraft.rig3d, F = FIELD_STYLE + ';width:100%';
+  body.innerHTML = `
+    <p class="empty-hint" style="padding:0 0 8px">Move the 3D character with your own face and body using the webcam. Tracking (MediaPipe) runs in this window on this Mac; no video is saved or sent. Record a capture, then use it in Actions or on the Animate timeline.</p>
+    ${!st.ready ? `<div class="panel" style="padding:10px;font-size:12.5px">Webcam capture needs its tracking models (about 9 MB, once). Open <b>Setup → Install</b> and install <b>Webcam capture (MediaPipe)</b>.<div style="margin-top:8px"><button class="btn btn-amber btn-sm" id="csCapInstall">Open Install</button></div></div>` : `
+    <div class="cs-chips"><label class="cs-check"><input type="checkbox" id="csCapFace" ${csCapOpt.face ? 'checked' : ''}> Face</label><label class="cs-check"><input type="checkbox" id="csCapBody" ${csCapOpt.body ? 'checked' : ''}> Body</label><label class="cs-check"><input type="checkbox" id="csCapLegs" ${csCapOpt.legs ? 'checked' : ''}> Legs (stand back)</label><label class="cs-check"><input type="checkbox" id="csCapMirror" ${csCapOpt.mirror ? 'checked' : ''}> Mirror</label></div>
+    <div class="cs-cam"><video id="csCamVid" playsinline muted style="${csCapOpt.mirror ? 'transform:scaleX(-1)' : ''}"></video><canvas id="csCamDots" width="320" height="240"></canvas></div>
+    <div class="cs-chips" style="margin-top:8px;align-items:center">${csCam ? '<button class="btn btn-line btn-sm" id="csCamOff">Stop camera</button>' : '<button class="btn btn-amber btn-sm" id="csCamOn">Start camera</button>'}<span class="mono" id="csCapFps" style="font-size:11px"></span></div>
+    <div class="empty-hint" id="csCapState" style="font-size:11.5px;margin-top:4px">${csCam ? 'Tracking.' : ''}</div>
+    ${csCam ? `<div class="cs-sub">Record</div><div class="cs-two"><input id="csCapName" placeholder="Name, e.g. Hello wave" style="${F}"><div style="display:flex;gap:6px;align-items:flex-end">${csCapRec ? '<button class="btn btn-amber btn-sm" id="csCapStop">■ Stop and save</button><span class="mono" id="csCapRecT" style="font-size:11px">0.0 s</span>' : '<button class="btn btn-amber btn-sm" id="csCapGo">● Record (up to 30 s)</button>'}</div></div>` : ''}`}
+    <div class="cs-sub">Captures</div>
+    ${(r3.clips || []).length ? r3.clips.map(c => `<div class="cs-row"><button class="btn btn-ghost btn-sm" data-cplay="${c.id}">▶</button><span style="flex:1;font-size:12.5px">${escapeHtml(c.name)} <span class="mono" style="color:var(--muted);font-size:10.5px">${(c.frames.length / c.fps).toFixed(1)} s</span></span><button class="btn btn-ghost btn-sm" data-cdel="${c.id}" aria-label="Delete capture">✕</button></div>`).join('') : '<p class="empty-hint" style="font-size:11px">No captures yet.</p>'}`;
+  if (!st.ready) { $('csCapInstall').onclick = () => showView('install'); }
+  else {
+    for (const [id, k] of [['csCapFace', 'face'], ['csCapBody', 'body'], ['csCapLegs', 'legs'], ['csCapMirror', 'mirror']]) $(id).onchange = () => { csCapOpt[k] = $(id).checked; if (k === 'mirror') { const v = $('csCamVid'); if (v) v.style.transform = csCapOpt.mirror ? 'scaleX(-1)' : ''; } if ((k === 'face' || k === 'body') && csCam) { csCamStop(); csRenderTab(); } };
+    if ($('csCamOn')) $('csCamOn').onclick = async () => { $('csCamOn').disabled = true; await csCamStart(); csRenderTab(); };
+    if ($('csCamOff')) $('csCamOff').onclick = () => { csCamStop(); csRenderTab(); };
+    if (csCam) { const v = $('csCamVid'); v.srcObject = csCam.stream; v.play().catch(() => {}); csCam.video = v; }
+    if ($('csCapGo')) $('csCapGo').onclick = () => { csCapRec = { frames: [], lastT: 0, name: $('csCapName').value.trim() }; csRenderTab(); };
+    if ($('csCapStop')) $('csCapStop').onclick = () => { if (csCapRec) csCapRec.name = $('csCapName').value.trim() || csCapRec.name; csCapFinish(); };
+  }
+  for (const b of body.querySelectorAll('[data-cplay]')) b.onclick = () => csSetMove('clip', b.dataset.cplay);
+  for (const b of body.querySelectorAll('[data-cdel]')) b.onclick = () => { r3.clips = r3.clips.filter(c => c.id !== b.dataset.cdel); for (const a of r3.anims || []) a.tracks.clip = (a.tracks.clip || []).filter(k => k.clipId !== b.dataset.cdel); csTouch(); csRenderTab(); };
+}
+
+
+/* ---------------- Character Studio: Scan a picture into a 3D character ---------------- */
+// 1) Match the rig: measure the picture here (colours, and proportions from MediaPipe pose when installed),
+//    the server adds what a local vision model sees, and the posable character is set to match.
+// 2) Make a mesh: TripoSR turns the picture into a coloured 3D statue (.glb) on this Mac.
+let csScan = { mediaId: null, result: null, measured: null, busy: false, useVision: true, removeBg: true, res: 256, meshJob: null, meshShown: null, backup: null }, csScanPoseLm = null, csScanMod = null;
+async function csScanMeasure(mediaId, capReady){
+  if (!csScanMod) csScanMod = await import(apiUrl('/cs-scan.js'));
+  const img = new Image(); img.crossOrigin = 'anonymous'; img.src = mediaUrl(mediaId); await img.decode();
+  const k = Math.min(1, 512 / Math.max(img.naturalWidth, img.naturalHeight)), w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const x = cv.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h);
+  let lm = null, poseNote = capReady ? '' : 'Body proportions need the webcam capture models (Setup → Install → Webcam capture); without them only colours are measured.';
+  if (capReady) {
+    try {
+      if (!csScanPoseLm) {
+        const mp = await import(apiUrl('/vendor/mediapipe/vision_bundle.mjs'));
+        const files = await mp.FilesetResolver.forVisionTasks(apiUrl('/vendor/mediapipe'));
+        for (const delegate of ['GPU', 'CPU']) { try { csScanPoseLm = await mp.PoseLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: apiUrl('/api/capture/models/pose_landmarker_lite.task'), delegate }, runningMode: 'IMAGE', numPoses: 1 }); break; } catch (e) { if (delegate === 'CPU') throw e; } }
+      }
+      const r = csScanPoseLm.detect(cv); lm = r.landmarks && r.landmarks[0] || null;
+      if (!lm) poseNote = 'No person was found by the pose tracker, so proportions were not measured.';
+    } catch (e) { poseNote = 'The pose tracker could not run (' + (e.message || e) + ').'; }
+  }
+  const m = csScanMod.measure(x.getImageData(0, 0, w, h).data, w, h, lm);
+  return { ...m, w, h, canvas: cv, poseNote };
+}
+function csScanDrawPreview(){
+  const out = $('csScanPrev'), M = csScan.measured; if (!out || !M) return;
+  const k = Math.min(out.width / M.w, out.height / M.h), ox = (out.width - M.w * k) / 2, oy = (out.height - M.h * k) / 2, x = out.getContext('2d');
+  x.clearRect(0, 0, out.width, out.height); x.drawImage(M.canvas, ox, oy, M.w * k, M.h * k);
+  x.font = '10px system-ui'; x.lineWidth = 2;
+  for (const [name, [px, py, r]] of Object.entries(M.points)) { const X = ox + px * k, Y = oy + py * k; x.strokeStyle = '#ffb000'; x.fillStyle = M.samples[name] || 'transparent'; x.beginPath(); x.arc(X, Y, Math.max(4, r * k), 0, 7); x.fill(); x.stroke(); x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.strokeText(name, X + 7, Y + 3); x.fillText(name, X + 7, Y + 3); }
+}
+function csScanRestore(){ if (csScan.backup && cs3dStage) cs3dStage.build(csDraft.rig3d); csScan.backup = null; }
+async function csScanTab(body){
+  const F = FIELD_STYLE + ';width:100%';
+  let cap = { ready: false }, mesh = { ready: false, missing: [], visionModels: [] }, images = [];
+  try { [cap, mesh, images] = await Promise.all([apiGet('/api/capture/status').catch(() => ({ ready: false })), apiGet('/api/characters/mesh/status'), apiGet('/api/media').then(l => l.filter(m => m.kind === 'image').slice(0, 200))]); } catch (e) { body.innerHTML = `<p class="empty-hint" style="color:var(--red)">${escapeHtml(e.message)}</p>`; return; }
+  if (csScan.mediaId && !images.some(m => m.id === csScan.mediaId)) { csScan.mediaId = null; csScan.measured = null; csScan.result = null; }
+  const R = csScan.result, vm = mesh.visionModels || [], meshes = csDraft.meshes || [];
+  body.innerHTML = `
+    <p class="empty-hint" style="padding:0 0 8px">Make a 3D character from a photo or a drawing of one person or character, standing and facing you. Everything runs on this Mac.</p>
+    <div class="cs-two"><label class="cs-field"><span>Picture from the Library</span><select id="csScanPick" style="${F}"><option value="">Choose a picture…</option>${images.map(m => `<option value="${escapeHtml(m.id)}" ${m.id === csScan.mediaId ? 'selected' : ''}>${escapeHtml(m.originalName)}</option>`).join('')}</select></label>
+      <label class="cs-field"><span>…or add one</span><input type="file" id="csScanFile" accept="image/png,image/jpeg,image/webp" style="font-size:11.5px"></label></div>
+    ${csScan.mediaId ? `<canvas id="csScanPrev" width="300" height="220" style="width:100%;max-width:300px;background:#0d1016;border-radius:8px;margin-top:8px" aria-label="The picture, with the places where colours were measured"></canvas>` : ''}
+    <div class="cs-sub">1 · Match the posable character</div>
+    <p class="empty-hint" style="font-size:11.5px">Sets body proportions, skin, hair, clothes and their colours from the picture. Poses, captures and animations are kept.</p>
+    <div class="cs-chips">${vm.length ? `<label class="cs-check"><input type="checkbox" id="csScanVision" ${csScan.useVision ? 'checked' : ''}> Ask the vision model (${escapeHtml(vm[0])}) about hair and clothes</label>` : '<span class="empty-hint" style="font-size:11px">No vision model is installed, so hair style and clothes are guessed from colours. Install one in Models (for example qwen2.5vl or llama3.2-vision) for a better match.</span>'}</div>
+    <div class="cs-chips" style="margin-top:6px"><button class="btn btn-amber btn-sm" id="csScanGo" ${csScan.measured && !csScan.busy ? '' : 'disabled'}>${csScan.busy === 'scan' ? 'Scanning…' : 'Scan picture'}</button>${R ? '<button class="btn btn-amber btn-sm" id="csScanApply">Keep this look</button><button class="btn btn-line btn-sm" id="csScanUndo">Back to my character</button>' : ''}</div>
+    <div class="empty-hint" id="csScanState" role="status" style="font-size:11.5px;margin-top:4px">${R ? escapeHtml(['The stage shows the scanned look; keep it or go back.', R.vision && R.vision.description ? 'The vision model saw: ' + R.vision.description : '', R.note || '', csScan.measured && csScan.measured.poseNote || '', R.pose ? 'Proportions were measured from the pose.' : ''].filter(Boolean).join(' ')) : ''}</div>
+    ${csScan.measured ? `<div class="cs-chips" style="margin-top:4px">${Object.entries(csScan.measured.samples).filter(([k]) => k !== 'background').map(([k, c]) => `<span class="mono" style="font-size:10.5px;display:inline-flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:${c};border:1px solid var(--line)"></span>${k}</span>`).join('')}</div>` : ''}
+    <div class="cs-sub">2 · Make a 3D mesh (a statue)</div>
+    <p class="empty-hint" style="font-size:11.5px">TripoSR builds a coloured 3D shape of the picture, including the side and back it has to guess. It has no joints, so it cannot be posed or animated; view it, compare it with the posable character, or export it to Blender.</p>
+    ${!mesh.ready ? `<div class="panel" style="padding:10px;font-size:12.5px">Needs <b>Picture to 3D mesh (TripoSR)</b>, about 4 GB, from <b>Setup → Install</b>.<div style="margin-top:8px"><button class="btn btn-line btn-sm" id="csMeshInstall">Open Install</button></div></div>` : `
+    <div class="cs-two"><label class="cs-check"><input type="checkbox" id="csMeshBg" ${csScan.removeBg ? 'checked' : ''}> Remove the background first</label>
+      <label class="cs-field"><span>Detail</span><select id="csMeshRes" style="${F}">${[[128, 'Draft (fast)'], [256, 'Standard'], [320, 'Fine (slow)']].map(([v, l]) => `<option value="${v}" ${csScan.res === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
+    <div class="cs-chips" style="margin-top:6px"><button class="btn btn-amber btn-sm" id="csMeshGo" ${csScan.mediaId && !csScan.busy ? '' : 'disabled'}>${csScan.busy === 'mesh' ? 'Making the mesh…' : 'Make 3D mesh'}</button>${csScan.busy === 'mesh' && csScan.meshJob ? '<button class="btn btn-line btn-sm" id="csMeshCancel">Cancel</button>' : ''}</div>
+    <div class="empty-hint" id="csMeshState" role="status" style="font-size:11.5px;margin-top:4px"></div>`}
+    <div class="cs-sub">Meshes</div>
+    ${meshes.length ? meshes.map(m => `<div class="cs-row"><span style="flex:1;font-size:12.5px">${escapeHtml(m.name)} <span class="mono" style="color:var(--muted);font-size:10.5px">${(m.bytes / 1048576).toFixed(1)} MB</span></span>
+      <button class="btn btn-ghost btn-sm" data-mshow="${escapeHtml(m.file)}">${csScan.meshShown === m.file + ':alone' ? 'Hide' : 'Show'}</button><button class="btn btn-ghost btn-sm" data-mside="${escapeHtml(m.file)}">${csScan.meshShown === m.file + ':beside' ? 'Hide' : 'Beside'}</button><button class="btn btn-ghost btn-sm" data-mexp="${escapeHtml(m.file)}">.glb</button><button class="btn btn-ghost btn-sm" data-mfbx="${escapeHtml(m.file)}">.fbx</button><button class="btn btn-ghost btn-sm" data-mdel="${escapeHtml(m.file)}" aria-label="Remove mesh">✕</button></div>`).join('') : '<p class="empty-hint" style="font-size:11px">No meshes yet.</p>'}`;
+  const pick = async id => {
+    csScanRestore(); csScan.mediaId = id || null; csScan.result = null; csScan.measured = null;
+    const tok = csScan.tok = (csScan.tok || 0) + 1;
+    if (id) { csScan.busy = 'measure'; const st = $('csScanState'); if (st) st.textContent = 'Measuring the picture…'; let m = null; try { m = await csScanMeasure(id, !!cap.body); } catch (e) { toast('Could not read the picture: ' + (e.message || e)); } if (tok !== csScan.tok) return; csScan.measured = m && { ...m, mediaId: id }; csScan.busy = false; }
+    csRenderTab();
+  };
+  $('csScanPick').onchange = () => pick($('csScanPick').value);
+  $('csScanFile').onchange = async () => {
+    const f = $('csScanFile').files[0]; if (!f) return;
+    try { const r = await fetch(apiUrl('/api/media'), { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream', 'x-file-name': encodeURIComponent(f.name) }, body: f }); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status)); await pick(d.id); } catch (e) { toast(e.message); }
+  };
+  if (csScan.mediaId && !csScan.measured && !csScan.busy) { pick(csScan.mediaId); return; }
+  csScanDrawPreview();
+  if ($('csScanVision')) $('csScanVision').onchange = () => { csScan.useVision = $('csScanVision').checked; };
+  $('csScanGo').onclick = async () => {
+    if (!csScan.measured) return; csScan.busy = 'scan'; csRenderTab();
+    try {
+      const r = await apiPost('/api/characters/scan', { id: csDraft.id, mediaId: csScan.mediaId, samples: csScan.measured.samples, metrics: csScan.measured.metrics, useVision: csScan.useVision && vm.length > 0 });
+      csScan.result = r; if (!csScan.backup) csScan.backup = true;
+      if (cs3dStage) { cs3dStage.hideMesh(); csScan.meshShown = null; cs3dStage.build({ ...r.rig, poses: csDraft.rig3d.poses, clips: csDraft.rig3d.clips, anims: csDraft.rig3d.anims }); cs3dStage.view('front'); }
+    } catch (e) { toast(e.message); }
+    csScan.busy = false; csRenderTab();
+  };
+  if ($('csScanApply')) $('csScanApply').onclick = () => {
+    const old = csDraft.rig3d; csDraft.rig3d = { ...csScan.result.rig, poses: old.poses || [], clips: old.clips || [], anims: old.anims || [] };
+    csDraft.scanMediaId = csScan.mediaId; csScan.result = null; csScan.backup = null; csTouch(); toast('Scanned look applied. Press Save to keep it.'); csRenderTab();
+  };
+  if ($('csScanUndo')) $('csScanUndo').onclick = () => { csScanRestore(); csScan.result = null; csRenderTab(); };
+  if (!mesh.ready) { $('csMeshInstall').onclick = () => showView('install'); }
+  else {
+    $('csMeshBg').onchange = () => { csScan.removeBg = $('csMeshBg').checked; };
+    $('csMeshRes').onchange = () => { csScan.res = Number($('csMeshRes').value); };
+    $('csMeshGo').onclick = async () => {
+      csScan.busy = 'mesh'; csRenderTab();
+      const say = t => { const e = $('csMeshState'); if (e) e.textContent = t; };
+      try {
+        const job = await apiPost('/api/characters/' + encodeURIComponent(csDraft.id) + '/mesh', { mediaId: csScan.mediaId, removeBackground: csScan.removeBg, resolution: csScan.res });
+        csScan.meshJob = job.id; csRenderTab(); say('Starting TripoSR… the first run loads about 1.7 GB of weights.');
+        let j = job; const t0 = Date.now();
+        while (j.status === 'running' || j.status === 'queued') { await csSleep(2000); j = await apiGet('/api/images/jobs/' + encodeURIComponent(job.id)); say((j.progress || 'Working…') + ' (' + Math.round((Date.now() - t0) / 1000) + ' s)'); }
+        if (j.status !== 'done') throw new Error(j.error || 'The mesh was not made.');
+        const fresh = await apiGet('/api/characters'); const me = fresh.find(c => c.id === csDraft.id); if (me) csDraft.meshes = me.meshes || [];
+        csScan.busy = false; csScan.meshJob = null; csRenderTab();
+        if (cs3dStage) { await cs3dStage.showMesh(apiUrl('/api/characters/meshes/' + j.mesh.file), { beside: true }); csScan.meshShown = j.mesh.file + ':beside'; csRenderTab(); }
+        toast('3D mesh made.');
+      } catch (e) { csScan.busy = false; csScan.meshJob = null; csRenderTab(); toast(e.message); }
+    };
+    if ($('csMeshCancel')) $('csMeshCancel').onclick = () => apiPost('/api/images/jobs/' + encodeURIComponent(csScan.meshJob) + '/cancel', {}).catch(e => toast(e.message));
+  }
+  const show = async (file, mode) => {
+    if (!cs3dStage) return; const key = file + ':' + mode;
+    if (csScan.meshShown === key) { cs3dStage.hideMesh(); csScan.meshShown = null; return csRenderTab(); }
+    try { const r = await cs3dStage.showMesh(apiUrl('/api/characters/meshes/' + file), { beside: mode === 'beside' }); csScan.meshShown = key; $('csStatus').textContent = 'Mesh: ' + r.triangles.toLocaleString() + ' triangles.'; } catch (e) { toast('Could not show the mesh: ' + (e.message || e)); }
+    csRenderTab();
+  };
+  for (const b of body.querySelectorAll('[data-mshow]')) b.onclick = () => show(b.dataset.mshow, 'alone');
+  for (const b of body.querySelectorAll('[data-mside]')) b.onclick = () => show(b.dataset.mside, 'beside');
+  const exp = async (file, format) => {
+    try {
+      const m = meshes.find(x => x.file === file); const buf = await (await fetch(apiUrl('/api/characters/meshes/' + file))).arrayBuffer();
+      const r = await fetch(apiUrl('/api/characters/' + encodeURIComponent(csDraft.id) + '/export?format=' + format + '&name=' + encodeURIComponent(csDraft.name + ' mesh ' + (m ? m.name : ''))), { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: buf });
+      const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status)); toast('Saved ' + d.file + ' in Maataa Library/Exports.');
+    } catch (e) { toast(e.message); }
+  };
+  for (const b of body.querySelectorAll('[data-mexp]')) b.onclick = () => exp(b.dataset.mexp, 'glb');
+  for (const b of body.querySelectorAll('[data-mfbx]')) b.onclick = () => exp(b.dataset.mfbx, 'fbx');
+  for (const b of body.querySelectorAll('[data-mdel]')) b.onclick = () => { if (csScan.meshShown && csScan.meshShown.startsWith(b.dataset.mdel)) { cs3dStage && cs3dStage.hideMesh(); csScan.meshShown = null; } csDraft.meshes = meshes.filter(m => m.file !== b.dataset.mdel); csTouch(); csRenderTab(); };
+}
+
 // Characters: personality, face and voice for agents and for Maataa's spoken
 // replies. Voices: a Kokoro blend, a macOS voice, or a VoiceStudio profile.
 let vsSel = null, vsDraft = null, vsCatalog = null, vsChars = [], vsAudio = null;
@@ -7410,24 +8420,6 @@ function bindConversationUI(){
 /* ===================== marker: WIRING ===================== */
 const COMMANDS = [
   {label:'New session', icon:'plus', run:()=>createSession()},
-  {label:'Go to Console', icon:'messages-square', run:()=>showView('console')},
-  {label:'Go to Sessions', icon:'history', run:()=>showView('sessions')},
-  {label:'Go to Local Workspace', icon:'folder-search-2', run:()=>showView('workspace')},
-  {label:'Go to Models', icon:'cpu', run:()=>showView('models')},
-  {label:'Go to Knowledge', icon:'database', run:()=>showView('knowledge')},
-  {label:'Go to Retrieval Lab', icon:'flask-conical', run:()=>showView('retrieval')},
-  {label:'Go to Automations', icon:'workflow', run:()=>showView('automations')},
-  {label:'Go to Evaluations', icon:'gauge', run:()=>showView('evaluations')},
-  {label:'Go to Skills', icon:'puzzle', run:()=>showView('skills')},
-  {label:'Go to MCP Registry', icon:'plug-zap', run:()=>showView('mcp')},
-  {label:'Go to Agents', icon:'bot', run:()=>showView('agents')},
-  {label:'Go to Workflows', icon:'git-branch', run:()=>showView('workflows')},
-  {label:'Go to Capability Graph', icon:'share-2', run:()=>showView('graph')},
-  {label:'Go to Runtime', icon:'activity', run:()=>showView('runtime')},
-  {label:'Go to Trace', icon:'terminal', run:()=>showView('trace')},
-  {label:'Go to Execution History', icon:'list-tree', run:()=>showView('history')},
-  {label:'Go to Diagnostics', icon:'stethoscope', run:()=>showView('diagnostics')},
-  {label:'Go to Settings', icon:'settings-2', run:()=>showView('settings')},
   {label:'Help & Support', icon:'life-buoy', run:()=>openHelp()},
   {label:'Help: FAQ', icon:'circle-help', run:()=>openHelp('faq')},
   {label:'Help: Troubleshooting', icon:'wrench', run:()=>openHelp('troubleshooting')},
@@ -7438,26 +8430,85 @@ const COMMANDS = [
   {label:'Snapshot active session', icon:'camera', run:()=>snapshotActiveSession()},
   {label:'Run diagnostics', icon:'stethoscope', run:()=>{ runDiagnostics(false); toast('Diagnostics complete.'); }},
 ];
-let cmdkFiltered = COMMANDS;
-function openCmdk(){ $('cmdkModal').classList.add('open'); $('cmdkInput').value=''; cmdkFiltered = COMMANDS; cmdkIndex = 0; renderCmdkList(); $('cmdkInput').focus(); }
+/* Command palette (Cmd+K on Mac, Ctrl+K elsewhere). Views are read from the
+ * rail when the palette opens, so every rail destination is reachable and the
+ * list can never drift from the navigation; sessions and actions join them. */
+const CMDK_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
+let cmdkAll = [], cmdkFiltered = [];
+function cmdkViewItems(){
+  const out = [];
+  $$('#rail .nav-group').forEach(group => {
+    const area = (group.querySelector('.nav-label')?.textContent || '').trim();
+    group.querySelectorAll('.nav-item').forEach(btn => {
+      const label = (btn.querySelector('.rail-text')?.textContent || '').trim();
+      if (!label) return;
+      out.push({kind:'Views', label, hint:area, icon:btn.querySelector('[data-lucide]')?.dataset.lucide || 'arrow-right',
+        keywords:`${btn.dataset.view || ''} ${btn.dataset.mediaTab || ''} ${area}`,
+        run:() => { if (btn.dataset.mediaTab && typeof setMediaTab === 'function') setMediaTab(btn.dataset.mediaTab); showView(btn.dataset.view); }});
+    });
+  });
+  return out;
+}
+function cmdkSessionItems(){
+  let list = [];
+  try { list = visibleSessions().filter(x => !x.archived).slice(0, 30); } catch (_) { list = []; }
+  return list.map(x => ({kind:'Sessions', label:x.title || 'Untitled session', hint:'Open session', icon:'message-square', keywords:'session chat',
+    run:() => { activeSessionId = x.id; showView('console'); }}));
+}
+// Every typed character must appear in order; contiguous runs and word starts score higher.
+function cmdkScore(text, q){
+  text = String(text || '').toLowerCase();
+  let from = 0, score = 0, prev = -2;
+  for (const ch of q) {
+    const i = text.indexOf(ch, from);
+    if (i < 0) return -1;
+    score += (i === prev + 1 ? 3 : 1) + (i === 0 || /[\s:&(·-]/.test(text[i - 1]) ? 2 : 0);
+    prev = i; from = i + 1;
+  }
+  return score - text.length * 0.01;
+}
+function cmdkFilter(){
+  const q = $('cmdkInput').value.trim().toLowerCase();
+  cmdkFiltered = !q ? cmdkAll.slice() : cmdkAll
+    .map(c => ({c, s:Math.max(cmdkScore(c.label, q), cmdkScore(c.keywords, q) - 2)}))
+    .filter(x => x.s >= 0).sort((a, b) => b.s - a.s).map(x => x.c);
+  cmdkIndex = 0; renderCmdkList();
+}
+function isCmdkOpen(){ return $('cmdkModal').classList.contains('open'); }
+function openCmdk(){
+  cmdkAll = [...COMMANDS.map(c => ({kind:'Actions', keywords:'', ...c})), ...cmdkViewItems(), ...cmdkSessionItems()];
+  $('cmdkModal').classList.add('open'); $('cmdkInput').value = '';
+  cmdkFilter(); $('cmdkInput').focus();
+}
 function closeCmdk(){ $('cmdkModal').classList.remove('open'); }
+function runCmdk(i){ const cmd = cmdkFiltered[i]; if (!cmd) return; closeCmdk(); cmd.run(); }
 function renderCmdkList(){
-  $('cmdkList').innerHTML = cmdkFiltered.map((c,i)=>`<button class="cmdk-item ${i===cmdkIndex?'active':''}" data-i="${i}" style="width:100%;padding:9px 10px;display:flex;gap:10px;align-items:center;border-radius:7px"><span data-lucide="${c.icon}" style="width:14px;height:14px;opacity:.8"></span>${escapeHtml(c.label)}</button>`).join('') || '<div class="empty-hint">No matching command.</div>';
+  const grouped = !$('cmdkInput').value.trim();
+  let html = '', last = null;
+  cmdkFiltered.forEach((c, i) => {
+    if (grouped && c.kind !== last) { html += `<div class="cmdk-group" role="presentation">${escapeHtml(c.kind)}</div>`; last = c.kind; }
+    html += `<button class="cmdk-item ${i===cmdkIndex?'active':''}" id="cmdk-opt-${i}" role="option" aria-selected="${i===cmdkIndex}" tabindex="-1" data-i="${i}" style="width:100%;padding:9px 10px;display:flex;gap:10px;align-items:center;border-radius:7px"><span data-lucide="${escapeHtml(c.icon || 'arrow-right')}" style="width:14px;height:14px;opacity:.8"></span><span>${escapeHtml(c.label)}</span><span class="cmdk-hint">${escapeHtml(grouped ? (c.hint || '') : c.kind.replace(/s$/, ''))}</span></button>`;
+  });
+  $('cmdkList').innerHTML = html || '<div class="empty-hint">No match. Try a view name like “models” or a session title.</div>';
   if (window.lucide) lucide.createIcons();
-  $$('.cmdk-item').forEach(b=>b.onclick=()=>{ const cmd = cmdkFiltered[+b.dataset.i]; if (cmd){ cmd.run(); closeCmdk(); } });
+  if (cmdkFiltered.length) { $('cmdkInput').setAttribute('aria-activedescendant', `cmdk-opt-${cmdkIndex}`); $(`cmdk-opt-${cmdkIndex}`)?.scrollIntoView({block:'nearest'}); }
+  else $('cmdkInput').removeAttribute('aria-activedescendant');
 }
 function bindCmdk(){
   $('cmdkBtn').onclick = openCmdk;
+  const kbd = $('cmdkBtn').querySelector('kbd'); if (kbd) kbd.textContent = CMDK_MAC ? '⌘K' : 'Ctrl+K';
+  $('cmdkInput').setAttribute('role', 'combobox'); $('cmdkInput').setAttribute('aria-controls', 'cmdkList'); $('cmdkInput').setAttribute('aria-expanded', 'true'); $('cmdkInput').setAttribute('aria-autocomplete', 'list');
+  $('cmdkInput').placeholder = 'Go to a view, open a session, or run an action';
+  $('cmdkList').setAttribute('role', 'listbox');
   $('cmdkModal').addEventListener('click', e => { if (e.target.id==='cmdkModal') closeCmdk(); });
-  $('cmdkInput').addEventListener('input', () => {
-    const q = $('cmdkInput').value.toLowerCase();
-    cmdkFiltered = COMMANDS.filter(c=>c.label.toLowerCase().includes(q));
-    cmdkIndex = 0; renderCmdkList();
-  });
+  $('cmdkList').addEventListener('click', e => { const b = e.target.closest('.cmdk-item'); if (b) runCmdk(+b.dataset.i); });
+  $('cmdkList').addEventListener('mousemove', e => { const b = e.target.closest('.cmdk-item'); if (b && +b.dataset.i !== cmdkIndex) { cmdkIndex = +b.dataset.i; renderCmdkList(); } });
+  $('cmdkInput').addEventListener('input', cmdkFilter);
   $('cmdkInput').addEventListener('keydown', e => {
-    if (e.key==='ArrowDown'){ e.preventDefault(); cmdkIndex = Math.min(cmdkIndex+1, cmdkFiltered.length-1); renderCmdkList(); }
-    else if (e.key==='ArrowUp'){ e.preventDefault(); cmdkIndex = Math.max(cmdkIndex-1, 0); renderCmdkList(); }
-    else if (e.key==='Enter'){ e.preventDefault(); const cmd = cmdkFiltered[cmdkIndex]; if (cmd){ cmd.run(); closeCmdk(); } }
+    const n = cmdkFiltered.length;
+    if (e.key==='ArrowDown'){ e.preventDefault(); if (n) { cmdkIndex = (cmdkIndex + 1) % n; renderCmdkList(); } }
+    else if (e.key==='ArrowUp'){ e.preventDefault(); if (n) { cmdkIndex = (cmdkIndex - 1 + n) % n; renderCmdkList(); } }
+    else if (e.key==='Enter'){ e.preventDefault(); runCmdk(cmdkIndex); }
     else if (e.key==='Escape'){ closeCmdk(); }
   });
 }
@@ -7535,7 +8586,7 @@ function bindGlobalUI(){
     sendMessage();
   });
   document.addEventListener('keydown', e => {
-    if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmdk(); }
+    if ((CMDK_MAC ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase()==='k'){ e.preventDefault(); isCmdkOpen() ? closeCmdk() : openCmdk(); }
     else if (e.key==='Escape'){ closeCmdk(); closeModelPicker(); $('inspectorPane').classList.remove('open'); $('rail').classList.remove('open'); $('sessPane').classList.remove('open'); }
   });
   bindCmdk();
@@ -7551,6 +8602,7 @@ init().then(routeHelpHash);
 const VIEW_HELP = {
   install:'Everything optional Maataa can use: Ollama and the local models, ComfyUI and its image, sound and video models, Kokoro voices, the multilingual speech model, LTX-2 video, the AAI engine, the agent browser and (from the brahmini folder) Guru\'s Python. Each shows whether it is installed, its download size and the free space it needs; Install runs the same installer the brahmini launchers use, one at a time, in Activity. Nothing is removed.',
   radheya:'Radheya is a Kanban that learns from its own work. Each card is worked by you, the local model, the observable agent browser (only sites the card allows, every page logged with a screenshot) or an online agent (only if the card allows it). Runs leave a note and an evidence record; only you move a card to Done, from Review, with evidence. Training rounds compare a counting baseline with small transformer shapes on held-out cards; a shape is used only after you approve it, and can be rolled back.',
+  charstudio:'Design a character as a 2D puppet (body, face, hair, colours, extras), give it a voice, sounds and actions, perform it with lip-sync and record the performance to the Library as an MP4. AI pictures of the same character (portrait, full body, turnaround, expressions) are made with SDXL from its look.',
   voicestudio:'Characters for your agents and for Maataa itself: a name, a personality and way of speaking, a face (made with ComfyUI) and a voice. Blend up to three Kokoro voices with speed and pitch, use a macOS voice, or a voice from the VoiceStudio app (including your own cloned voice). Give a character to an agent, or let Maataa speak as one.',
   agentbrowser:'The separate, locked-down browser Maataa\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting Maataa closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
   aai:'Maataa AAI (Advanced Ancient Intelligence): rules derive and check, models propose, and nothing is called correct unless Panini\'s rules confirm it. Install the derivation engine here, ask questions whose sutra citations are checked, and open the Ashtadhyayi, Derivation and Lipi tools.',

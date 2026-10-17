@@ -5,6 +5,10 @@
  *  • Enhance speech: cleans dialogue with ffmpeg — rumble and hiss filters,
  *    spectral noise reduction, gentle compression and loudness levelling to
  *    -16 LUFS. Video keeps its picture untouched; only the sound is redone.
+ *  • Isolate voice: splits the sound into the voice and everything else with
+ *    Demucs (htdemucs, two stems), run in its own Python environment under
+ *    the data folder. Video also gets a copy with only the voice under the
+ *    untouched picture.
  *  • Translate: transcribes the speech (whisper.cpp), translates each line
  *    with a local Ollama model, and then either dubs it — each line spoken
  *    by a voice in the new language (Kokoro or macOS), placed at the time the
@@ -50,9 +54,9 @@ function runJob(store, job, work) {
 }
 function progress(store, job, text) { job.progress = text; store.put('generationJobs', job); if (store.get('generationJobs', job.id)?.cancelRequested) throw error('Cancelled.', 499); }
 
-function run(file, args, { timeoutMs = 20 * 60 * 1000, stdout = false, cwd } = {}) {
+function run(file, args, { timeoutMs = 20 * 60 * 1000, stdout = false, cwd, env } = {}) {
   return new Promise((resolve, reject) => {
-    const c = spawn(file, args, { cwd, stdio: ['ignore', stdout ? 'pipe' : 'ignore', 'pipe'] });
+    const c = spawn(file, args, { cwd, env: env ? { ...process.env, ...env } : undefined, stdio: ['ignore', stdout ? 'pipe' : 'ignore', 'pipe'] });
     let err = '', out = [];
     c.stderr.on('data', d => { err = (err + d).slice(-6000); });
     if (stdout) c.stdout.on('data', d => out.push(d));
@@ -105,6 +109,57 @@ async function enhanceSpeech(store, dataDir, id, input = {}) {
       const out = path.join(work, 'out' + outExt(record));
       await run(ffmpeg, enhanceArgs(record, src, out, strength));
       return [media.saveMedia(store, dataDir, { buffer: fs.readFileSync(out), originalName: `${baseName(record)} (speech enhanced)${outExt(record)}`, source: 'nova-enhance', expectKind: record.kind, provenance: { generator: 'ffmpeg-speech', ...settings, filter: ENHANCE[strength], jobId: job.id } }).id];
+    } finally { fs.rmSync(work, { recursive: true, force: true }); }
+  });
+  return { job, done };
+}
+
+/* ------------------------------- isolate voice ------------------------------- */
+
+function demucsDir(dataDir) { return process.env.NOVA_DEMUCS_DIR || path.join(dataDir, 'tools', 'demucs'); }
+function isolateStatus(dataDir) {
+  const dir = demucsDir(dataDir);
+  const python = process.env.NOVA_DEMUCS_PYTHON || path.join(dir, '.venv', 'bin', 'python');
+  const ready = fs.existsSync(python) && (Boolean(process.env.NOVA_DEMUCS_PYTHON) || fs.existsSync(path.join(dir, '.ready')));
+  return { ready, python: ready ? python : null, dir, missing: ready ? [] : ['Voice isolation (Demucs): use Install in Maataa, or double-click "Add voice isolation.command" in brahmini/launchers (about 2.5 GB)'] };
+}
+const ISOLATE_KEEP = ['both', 'voice', 'background'];
+
+async function isolateVoice(store, dataDir, id, input = {}) {
+  const ffmpeg = requireFfmpeg(dataDir);
+  const record = media.getMedia(store, id);
+  if (record.kind === 'image') throw error('Isolate voice works on audio and video.');
+  const st = isolateStatus(dataDir);
+  if (!st.ready) throw error('Voice isolation is not installed. ' + st.missing[0] + '.', 412);
+  const keep = ISOLATE_KEEP.includes(input.keep) ? input.keep : 'both';
+  const src = media.filePath(dataDir, record);
+  const info = await probe(ffmpeg, src);
+  if (!info.hasAudio) throw error('This video has no sound to separate.');
+  const settings = { engine: 'demucs', model: 'htdemucs', keep, sourceMediaId: record.id, sourceName: record.originalName, prompt: `${record.originalName} · isolate voice` };
+  const job = newJob(store, 'media-isolate', settings);
+  const done = runJob(store, job, async () => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-isolate-'));
+    try {
+      const wav = path.join(work, 'in.wav');
+      progress(store, job, 'Reading the sound…');
+      await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', src, '-vn', '-map', '0:a:0', '-ac', '2', '-ar', '44100', '-c:a', 'pcm_s16le', wav]);
+      progress(store, job, 'Separating the voice (this takes about as long as the clip on a recent Mac)…');
+      const env = { TORCH_HOME: path.join(st.dir, 'torch') };
+      await run(st.python, ['-m', 'demucs', '--two-stems', 'vocals', '-n', 'htdemucs', ...(process.env.NOVA_DEMUCS_DEVICE ? ['-d', process.env.NOVA_DEMUCS_DEVICE] : []), '-o', path.join(work, 'sep'), wav], { timeoutMs: 60 * 60 * 1000, env });
+      const stem = name => { const f = path.join(work, 'sep', 'htdemucs', 'in', name + '.wav'); if (!fs.existsSync(f)) throw error('Demucs finished without writing ' + name + '.wav.', 500); return f; };
+      const save = (file, label, kind) => media.saveMedia(store, dataDir, { buffer: fs.readFileSync(file), originalName: `${baseName(record)} (${label})${kind === 'video' ? outExt(record) : '.m4a'}`, source: 'nova-isolate', expectKind: kind, provenance: { generator: 'demucs', ...settings, stem: label, jobId: job.id } }).id;
+      const ids = [];
+      progress(store, job, 'Saving…');
+      const voice = stem('vocals'), rest = stem('no_vocals');
+      const aac = async (inp, name) => { const o = path.join(work, name + '.m4a'); await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', inp, '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', o]); return o; };
+      if (keep !== 'background') ids.push(save(await aac(voice, 'voice'), 'voice only', 'audio'));
+      if (keep !== 'voice') ids.push(save(await aac(rest, 'rest'), 'without voice', 'audio'));
+      if (record.kind === 'video' && keep !== 'background') {
+        const o = path.join(work, 'clean' + outExt(record));
+        await run(ffmpeg, ['-nostdin', '-y', '-loglevel', 'error', '-i', src, '-i', voice, '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-shortest', '-movflags', '+faststart', o]);
+        ids.push(save(o, 'voice only', 'video'));
+      }
+      return ids;
     } finally { fs.rmSync(work, { recursive: true, force: true }); }
   });
   return { job, done };
@@ -267,4 +322,4 @@ function translate(store, dataDir, deps, id, input = {}) {
   return { job, done };
 }
 
-module.exports = { enhanceSpeech, enhanceArgs, translate, translateLines, normaliseTranslate, toSrt, layTrack, srtTime, probe, LANGUAGES, ENHANCE };
+module.exports = { enhanceSpeech, enhanceArgs, isolateVoice, isolateStatus, translate, translateLines, normaliseTranslate, toSrt, layTrack, srtTime, probe, LANGUAGES, ENHANCE };

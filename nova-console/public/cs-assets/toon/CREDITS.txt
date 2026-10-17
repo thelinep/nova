@@ -1,0 +1,3 @@
+Mira and Inchi pose drawings and the courtyard background come from Toon Studio (Toon-Studio-Local),
+where they were generated for the Mira–Inchi project. Toon Studio's bundled Piper voice takes
+(hi_IN-pratham-medium, CC BY-NC-SA 4.0, non-commercial) are not included here; Maataa uses Kokoro voices.

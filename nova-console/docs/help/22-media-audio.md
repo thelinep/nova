@@ -4,7 +4,7 @@ title: Audio, songs and transcripts
 section: Create
 order: 22
 summary: Voices, sound effects, music and songs in Hindi and other languages, transcripts with whisper.cpp, translation and dubbing, and speech clean-up.
-keywords: audio voice kokoro sound effects music song ace-step lyrics hindi transcribe whisper translate dub subtitles enhance speech languages
+keywords: audio voice kokoro sound effects music song ace-step lyrics hindi transcribe whisper translate dub subtitles enhance speech isolate voice vocals stems demucs remove music languages
 views:
 ---
 @screen media/media-audio.jpg "Media > Audio: voice, sound effect and song modes."
@@ -48,3 +48,9 @@ Transcripts carry timestamps like `[00:01:02]`. Maataa uses the English model fo
 ## Clean up speech
 
 **Enhance speech…** removes rumble and hiss, reduces noise, compresses gently and levels loudness to −16 LUFS. **Light** keeps the room sound; **Strong** is for noisy location sound. On video only the sound is redone.
+
+## Isolate the voice
+
+**Isolate voice…** on an audio or video item splits the sound into the **voice** and **everything else** (music, effects, room) with Demucs, on this Mac. Choose to keep both as two audio tracks, the voice only, or the background only. For video you also get a copy with only the voice under the untouched picture. Use **Enhance speech…** afterwards if the voice still needs levelling.
+
+It needs **Voice isolation (Demucs)** from **Setup → Install** (about 2.5 GB, once). A clip takes roughly as long as it plays; long clips take longer.

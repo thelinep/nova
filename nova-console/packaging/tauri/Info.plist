@@ -4,6 +4,8 @@
 <dict>
   <key>NSMicrophoneUsageDescription</key>
   <string>NOVA listens only while you hold or click the microphone button, and turns your words into text on this Mac.</string>
+  <key>NSCameraUsageDescription</key>
+  <string>Character Studio uses the camera only while you press Start camera, to move a 3D character with your face and body. Tracking runs on this Mac; no video is sent anywhere.</string>
   <key>NSAppleEventsUsageDescription</key>
   <string>NOVA uses System Events and Finder to type, press keys and move files to the Trash when you approve it in a chat.</string>
 </dict>

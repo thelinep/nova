@@ -64,6 +64,9 @@ const transcriber = require('./lib/transcribe');
 const imageGen = require('./lib/image-gen');
 const comfyManager = require('./lib/comfy-manager');
 const characters = require('./lib/characters');
+const puppet = require('./lib/puppet');
+const imageTo3d = require('./lib/image-to-3d');
+const scenes = require('./lib/scenes');
 const helper = require('./lib/helper');
 const deviceIdentity = require('./lib/device-identity');
 const contracts = require('./lib/contracts');
@@ -350,7 +353,7 @@ function readJsonBody(req) {
   });
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm' };
 function serveStatic(req, res, pathname) {
   let rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const filePath = path.resolve(PUBLIC_DIR, rel);
@@ -571,6 +574,75 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/characters$/, handler: async (_req, res) => sendJson(res, 200, characters.list(store).map(c => ({ ...c, voiceLabel: characters.voiceLabel(c.voice), agents: store.all('agents').filter(a => a.characterId === c.id).map(a => ({ id: a.id, name: a.name })) }))) },
   { method: 'GET', pattern: /^\/api\/characters\/voices$/, handler: async (_req, res) => sendJson(res, 200, { ...(await characters.catalog()), moods: Object.entries(characters.MOODS).map(([id, m]) => ({ id, label: m.label })) }) },
   { method: 'GET', pattern: /^\/api\/characters\/designer$/, handler: async (_req, res) => sendJson(res, 200, { traits: characters.TRAITS, presets: characters.PRESETS, face: characters.FACE, moods: Object.entries(characters.MOODS).map(([id, m]) => ({ id, label: m.label })) }) },
+  { method: 'POST', pattern: /^\/api\/characters\/phonemes$/, handler: async (req, res) => {
+      // Kokoro's own phonemes for lip-sync (the sounds the voice really makes); without Kokoro the app uses spelling rules.
+      const b = await readJsonBody(req); const text = String(b.text || '').slice(0, 4000);
+      let lang = 'en-us'; try { const c = b.id ? characters.get(store, b.id) : null; const L = { hindi: 'hi', spanish: 'es', french: 'fr-fr', italian: 'it', japanese: 'ja', portuguese: 'pt-br', chinese: 'cmn' }; lang = L[String(c?.language || b.language || '').toLowerCase()] || (/[ऀ-ॿ]/.test(text) ? 'hi' : 'en-us'); } catch (_) {}
+      const py = audioGen.kokoroStatus().ready ? audioGen.kokoroPython() : null;
+      if (!py || !text) return sendJson(res, 200, { phonemes: null, source: 'rules', lang });
+      try {
+        const out = await new Promise((resolve, reject) => { const c = require('node:child_process').execFile(py, [path.join(__dirname, 'scripts', 'kokoro-phonemes.py')], { timeout: 20000, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => err ? reject(err) : resolve(stdout)); c.stdin.end(JSON.stringify({ text, lang })); });
+        sendJson(res, 200, { phonemes: JSON.parse(out).phonemes, source: 'kokoro', lang });
+      } catch (_) { sendJson(res, 200, { phonemes: null, source: 'rules', lang }); }
+    } },
+  { method: 'POST', pattern: /^\/api\/characters\/([^/]+)\/export$/, handler: async (req, res, [id]) => {
+      const c = characters.get(store, decodeURIComponent(id)); const q = new URL(req.url, 'http://localhost').searchParams;
+      const buffer = await readRawBody(req, 200 * 1024 * 1024); const lib = library.info();
+      sendJson(res, 201, await puppet.saveExport(buffer, { dir: lib.enabled ? lib.dir : null, name: q.get('name') || c.name, format: q.get('format') === 'fbx' ? 'fbx' : 'glb' }));
+    } },
+  { method: 'GET', pattern: /^\/api\/capture\/status$/, handler: async (_req, res) => sendJson(res, 200, puppet.captureStatus(DATA_DIR)) },
+  { method: 'GET', pattern: /^\/api\/capture\/models\/([^/]+)$/, handler: async (_req, res, [name]) => { const f = puppet.captureModelPath(DATA_DIR, decodeURIComponent(name)); const data = fs.readFileSync(f); res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': data.length, 'Cache-Control': 'max-age=86400' }); res.end(data); } },
+  // Character Studio scenes: several characters on a background, beats, dialogue, camera; directed by a local model or imported from a script.
+  { method: 'GET', pattern: /^\/api\/scenes$/, handler: async (_req, res) => sendJson(res, 200, scenes.list(store)) },
+  { method: 'GET', pattern: /^\/api\/scenes\/catalog$/, handler: async (_req, res) => sendJson(res, 200, { ...scenes.catalog(), models: scenes.chatModels(store) }) },
+  { method: 'POST', pattern: /^\/api\/scenes$/, handler: async (req, res) => sendJson(res, 201, scenes.create(store, await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/scenes\/starter$/, handler: async (_req, res) => sendJson(res, 201, scenes.addStarter(store, DATA_DIR)) },
+  { method: 'POST', pattern: /^\/api\/scenes\/import-script$/, handler: async (req, res) => {
+      const q = new URL(req.url, 'http://localhost').searchParams; let aliases = {}; try { aliases = JSON.parse(q.get('aliases') || '{}'); } catch (_) {}
+      sendJson(res, 201, await scenes.importScript(store, await readRawBody(req, 16 * 1024 * 1024), { name: q.get('name') || 'script.txt', aliases, title: q.get('title') || undefined }));
+    } },
+  { method: 'GET', pattern: /^\/api\/scenes\/([^/]+)\/srt$/, handler: async (req, res, [id]) => {
+      const sc = scenes.get(store, decodeURIComponent(id)); const body = Buffer.from(scenes.toSrt(sc, { speakers: new URL(req.url, 'http://localhost').searchParams.get('speakers') === '1' }), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'application/x-subrip; charset=utf-8', 'Content-Length': body.length, 'Content-Disposition': `attachment; filename="${encodeURIComponent(sc.name.replace(/[^\wऀ-ॿ .-]+/g, '').trim() || 'scene')}.srt"` }); res.end(body);
+    } },
+  { method: 'POST', pattern: /^\/api\/scenes\/([^/]+)\/direct$/, handler: async (req, res, [id]) => sendJson(res, 200, await scenes.direct({ store, ollama }, decodeURIComponent(id), await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/scenes\/([^/]+)\/recording$/, handler: async (req, res, [id]) => { const sc = scenes.get(store, decodeURIComponent(id)); sendJson(res, 201, await scenes.saveRecording(store, DATA_DIR, await readRawBody(req, 400 * 1024 * 1024), sc)); } },
+  { method: 'GET', pattern: /^\/api\/scenes\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, scenes.get(store, decodeURIComponent(id))) },
+  { method: 'PUT', pattern: /^\/api\/scenes\/([^/]+)$/, handler: async (req, res, [id]) => sendJson(res, 200, scenes.update(store, decodeURIComponent(id), await readJsonBody(req))) },
+  { method: 'DELETE', pattern: /^\/api\/scenes\/([^/]+)$/, handler: async (_req, res, [id]) => sendJson(res, 200, scenes.remove(store, decodeURIComponent(id))) },
+  { method: 'POST', pattern: /^\/api\/characters\/scan$/, handler: async (req, res) => {
+      // Scan a picture into the posable 3D rig: the page sends measured colours and proportions; a local vision model (if any) names the clothes.
+      const b = await readJsonBody(req); let prior = null;
+      if (b.id) { const c = characters.get(store, String(b.id)); prior = c.rig3d || null; }
+      sendJson(res, 200, await imageTo3d.analyse({ store, dataDir: DATA_DIR, ollama }, { mediaId: b.mediaId, samples: b.samples, metrics: b.metrics, model: b.model, useVision: b.useVision !== false, prior }));
+    } },
+  { method: 'GET', pattern: /^\/api\/characters\/mesh\/status$/, handler: async (_req, res) => { const st = imageTo3d.meshStatus(DATA_DIR); sendJson(res, 200, { ready: st.ready, missing: st.missing, visionModels: imageTo3d.visionModels(store) }); } },
+  { method: 'GET', pattern: /^\/api\/characters\/meshes\/([^/]+)$/, handler: async (_req, res, [name]) => { const f = imageTo3d.meshFile(DATA_DIR, decodeURIComponent(name)); const data = fs.readFileSync(f); res.writeHead(200, { 'Content-Type': 'model/gltf-binary', 'Content-Length': data.length, 'Cache-Control': 'private, max-age=86400' }); res.end(data); } },
+  { method: 'POST', pattern: /^\/api\/characters\/([^/]+)\/mesh$/, handler: async (req, res, [id]) => {
+      const c = characters.get(store, decodeURIComponent(id)); const b = await readJsonBody(req);
+      heavyJobs.check(store, 'mesh'); await heavyJobs.freeMemory({ ollama });
+      const { job, done } = imageTo3d.startMesh(store, DATA_DIR, { mediaId: b.mediaId, removeBackground: b.removeBackground !== false, resolution: b.resolution });
+      done.then(j => {
+        if (j.status !== 'done') return;
+        try { const cur = characters.get(store, c.id); const meshes = [{ file: j.mesh.file, bytes: j.mesh.bytes, sourceMediaId: j.settings.sourceMediaId, name: String(j.settings.sourceName || 'Scan').replace(/\.[a-z0-9]+$/i, '').slice(0, 60), createdAt: j.finishedAt }, ...(cur.meshes || [])].slice(0, 12); characters.update(store, c.id, { meshes }); } catch (_) {}
+      });
+      sendJson(res, 202, job);
+    } },
+  { method: 'GET', pattern: /^\/api\/characters\/studio$/, handler: async (_req, res) => sendJson(res, 200, puppet.catalog()) },
+  { method: 'POST', pattern: /^\/api\/characters\/([^/]+)\/portrait$/, handler: async (req, res, [id]) => {
+      const c = characters.get(store, decodeURIComponent(id)); const b = await readJsonBody(req);
+      if (!c.puppet) throw Object.assign(new Error('Design the look in Character Studio first.'), { statusCode: 400 });
+      heavyJobs.check(store, 'image'); await heavyJobs.freeMemory({ ollama });
+      const r = puppet.portraitRequest(c, b.view);
+      const { job } = await imageGen.generate(store, DATA_DIR, { ...r, seed: b.newSeed ? undefined : r.seed });
+      sendJson(res, 202, { ...job, view: puppet.VIEWS[b.view] ? b.view : 'portrait' });
+    } },
+  { method: 'POST', pattern: /^\/api\/characters\/([^/]+)\/clip$/, handler: async (req, res, [id]) => {
+      const c = characters.get(store, decodeURIComponent(id));
+      const buffer = await readRawBody(req, 300 * 1024 * 1024);
+      const action = new URL(req.url, 'http://localhost').searchParams.get('action') || '';
+      sendJson(res, 201, await puppet.saveClip(store, DATA_DIR, buffer, { character: c, action }));
+    } },
   { method: 'POST', pattern: /^\/api\/characters\/nova\/reset$/, handler: async (_req, res) => sendJson(res, 200, characters.resetNova(store)) },
   { method: 'POST', pattern: /^\/api\/characters$/, handler: async (req, res) => sendJson(res, 201, characters.create(store, await readJsonBody(req))) },
   { method: 'PUT', pattern: /^\/api\/characters\/([^/]+)$/, handler: async (req, res, [id]) => sendJson(res, 200, characters.update(store, decodeURIComponent(id), await readJsonBody(req))) },
@@ -649,6 +721,8 @@ const routes = [
       const info = await timeline.mediaInfo(store, DATA_DIR, ffmpeg, record);
       sendJson(res, 200, { id: record.id, kind: record.kind, duration: info.duration, hasAudio: info.hasAudio });
     } },
+  { method: 'GET', pattern: /^\/api\/media\/isolate\/status$/, handler: async (req, res) => sendJson(res, 200, mediaActions.isolateStatus(DATA_DIR)) },
+  { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/isolate$/, handler: async (req, res, [id]) => { const { job } = await mediaActions.isolateVoice(store, DATA_DIR, decodeURIComponent(id), await readJsonBody(req)); sendJson(res, 202, job); } },
   { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/enhance$/, handler: async (req, res, [id]) => { const { job } = await mediaActions.enhanceSpeech(store, DATA_DIR, decodeURIComponent(id), await readJsonBody(req)); sendJson(res, 202, job); } },
   { method: 'POST', pattern: /^\/api\/media\/([^/]+)\/translate$/, handler: async (req, res, [id]) => {
       const { job } = mediaActions.translate(store, DATA_DIR, { ollama, ingestDocument }, decodeURIComponent(id), await readJsonBody(req));

@@ -288,3 +288,38 @@ test('ACE-Step 1.5: found in ComfyUI (new COMBO lists), becomes the default song
     assert.match(a.originalName, /Monsoon \(ACE-Step 1\.5\)/);
   } finally { process.env = saved; server.close(); }
 });
+
+test('isolate voice splits audio into voice and background stems; video also gets a voice-only copy', async t => {
+  const ffmpeg = ffmpegPath(); if (!ffmpeg) return t.skip('ffmpeg is not installed');
+  const dir = tmp('nova-iso-'), db = store();
+  const fake = path.join(dir, 'fake-python');
+  fs.writeFileSync(fake, `#!/bin/bash
+# stands in for "python -m demucs --two-stems vocals -n htdemucs -o OUT in.wav"
+[ "$1 $2" = "-m demucs" ] || exit 3
+[ -n "$TORCH_HOME" ] || exit 4
+out=""; prev=""; for a in "$@"; do [ "$prev" = "-o" ] && out="$a"; prev="$a"; done
+in="\${@: -1}"; d="$out/htdemucs/$(basename "$in" .wav)"; mkdir -p "$d"
+cp "$in" "$d/vocals.wav"; cp "$in" "$d/no_vocals.wav"
+`, { mode: 0o755 });
+  const aud = media.saveMedia(db, dir, { buffer: make(ffmpeg, dir, 'a.wav', ['-f', 'lavfi', '-i', 'sine=frequency=300:duration=2']), originalName: 'song.wav' });
+  const vid = media.saveMedia(db, dir, { buffer: make(ffmpeg, dir, 'v.mp4', ['-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=24:duration=2', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2', '-shortest', '-pix_fmt', 'yuv420p', '-c:a', 'aac']), originalName: 'interview.mp4' });
+  const img = media.saveMedia(db, dir, { buffer: make(ffmpeg, dir, 'i.png', ['-f', 'lavfi', '-i', 'testsrc=size=64x64', '-frames:v', '1']), originalName: 'still.png' });
+
+  delete process.env.NOVA_DEMUCS_PYTHON;
+  assert.equal(actions.isolateStatus(dir).ready, false);
+  await assert.rejects(actions.isolateVoice(db, dir, aud.id), e => e.statusCode === 412 && /not installed/.test(e.message));
+
+  process.env.NOVA_DEMUCS_PYTHON = fake;
+  t.after(() => { delete process.env.NOVA_DEMUCS_PYTHON; });
+  assert.equal(actions.isolateStatus(dir).ready, true);
+  await assert.rejects(actions.isolateVoice(db, dir, img.id), /audio and video/);
+
+  const runIt = async (rec, input) => { const { job, done } = await actions.isolateVoice(db, dir, rec.id, input); await done; const fin = db.get('generationJobs', job.id); assert.equal(fin.status, 'done', fin.error); assert.equal(fin.type, 'media-isolate'); return fin.mediaIds.map(id => db.get('media', id)); };
+  const both = await runIt(aud, {});
+  assert.deepEqual(both.map(m => m.originalName), ['song (voice only).m4a', 'song (without voice).m4a']);
+  assert.ok(both.every(m => m.kind === 'audio' && m.provenance.engine === 'demucs' && m.provenance.sourceMediaId === aud.id));
+  assert.deepEqual((await runIt(aud, { keep: 'background' })).map(m => m.provenance.stem), ['without voice']);
+  const v = await runIt(vid, { keep: 'voice' });
+  assert.deepEqual(v.map(m => [m.kind, m.originalName]), [['audio', 'interview (voice only).m4a'], ['video', 'interview (voice only).mp4']]);
+  assert.equal(db.get('media', aud.id).originalName, 'song.wav', 'the source is untouched');
+});

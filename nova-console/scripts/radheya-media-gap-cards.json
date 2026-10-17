@@ -1,0 +1,18 @@
+[
+  { "title": "Voice isolation (Demucs)", "column": "review", "labels": ["media", "audio", "gap"],
+    "body": "Isolate voice… on audio and video: voice / without voice stems, plus a voice-only video copy. Code, installer (Setup → Install → Voice isolation) and tests are in. To finish: install on this Mac, run it on a real song and a real interview, compare against Enhance speech, and confirm the htdemucs weights licence before release." },
+  { "title": "AI video upscale", "labels": ["media", "video", "gap"],
+    "body": "Today only images upscale (Real-ESRGAN in ComfyUI). Add frame-by-frame video upscale (Real-ESRGAN video or a temporal model), keeping the original sound. Watch disk use: extract → upscale → re-encode in chunks." },
+  { "title": "Speech to speech (voice conversion)", "labels": ["media", "audio", "gap"],
+    "body": "Change a recording into another voice while keeping timing and emotion. Candidates: RVC or OpenVoice/Seed-VC style models, running locally. Needs a consent rule for whose voice can be used." },
+  { "title": "Character performance (face/body driven by a video)", "labels": ["media", "video", "gap"],
+    "body": "Drive a still character with a performance video (expressions, head and body motion). Candidates: LivePortrait for faces; check licences. Same consent rule as speech to speech." },
+  { "title": "SDR → HDR video", "labels": ["media", "video", "gap"],
+    "body": "Convert SDR footage to HDR (PQ/HLG, Rec.2020). Start with an ffmpeg tone-expansion path (zscale) and an honest label; a learned inverse tone-mapping model later." },
+  { "title": "Video-to-video AI restyle", "labels": ["media", "video", "gap", "partial"],
+    "body": "Partial today (filters and LTX). Add restyling a whole clip from a prompt while keeping motion, e.g. LTX or Wan video-to-video in ComfyUI with a strength control." },
+  { "title": "Character video (consistent character across shots)", "labels": ["media", "video", "gap", "partial"],
+    "body": "Partial today (image-to-video from a still). Add a reusable character reference (images + LoRA) that video generation keeps consistent across shots." },
+  { "title": "Media recipes (one-click chains)", "labels": ["media", "gap", "partial"],
+    "body": "Partial today (each result keeps its recipe). Add saved chains such as Isolate voice → Enhance speech → Translate, runnable on any clip in one click." }
+]

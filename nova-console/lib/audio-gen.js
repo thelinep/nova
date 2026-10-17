@@ -331,4 +331,4 @@ async function status() {
   return { voice: { ready: Boolean(sayBin()) || kokoro.ready, voices: v, kokoro, error: sayBin() || kokoro.ready ? null : 'Voice uses the speech built into macOS, or Kokoro voices.' }, comfy: await comfyStatus() };
 }
 
-module.exports = { kokoroBatch, KOKORO_VOICES, KOKORO_LANGS, compareMusic, music15Graph, musicSettings, ACE15_LANGUAGES, KEYSCALES, LYRIC_LANG, status, speak, synthesize, voiceFor, voices, kokoroStatus, kokoroLang, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };
+module.exports = { kokoroPython, kokoroBatch, KOKORO_VOICES, KOKORO_LANGS, compareMusic, music15Graph, musicSettings, ACE15_LANGUAGES, KEYSCALES, LYRIC_LANG, status, speak, synthesize, voiceFor, voices, kokoroStatus, kokoroLang, generate, parseVoices, sfxGraph, musicGraph, comfyStatus, _resetVoices: () => { voiceCache = null; } };

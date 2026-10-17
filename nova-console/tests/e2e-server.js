@@ -20,6 +20,8 @@ execFileSync('git', ['commit', '-qm', 'Initial fixture'], { cwd: workspaceDir })
 process.env.DATA_DIR = dataDir;
 process.env.NOVA_LIBRARY_DIR = path.join(dataDir, 'library'); // never write test output into the real ~/Documents/NOVA Library
 process.env.NOVA_PROJECTS_DIR = path.join(dataDir, 'Maataa Projects'); // App Builder never creates ~/Maataa Projects during tests
+// Character Studio "Make 3D mesh": a stand-in for TripoSR that copies a small fixture mesh (tests/fixtures/fake-triposr.js).
+if (!process.env.NOVA_TRIPOSR_PYTHON) { process.env.NOVA_TRIPOSR_PYTHON = process.execPath; process.env.NOVA_TRIPOSR_SCRIPT = path.join(__dirname, 'fixtures', 'fake-triposr.js'); process.env.NOVA_TRIPOSR_DIR = path.join(dataDir, 'tools', 'triposr'); }
 const { server } = require('../server');
 
 function validateWorkspaceDirectory(candidate) {

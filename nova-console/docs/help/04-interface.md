@@ -13,7 +13,7 @@ The sidebar on the left lists every screen, grouped by purpose. The button at th
 
 ## The top bar
 
-- **Command** (⌘K) opens the command palette: type part of a screen or action ("agents", "diagnostics", "new session") and press Enter.
+- **Command** (⌘K on a Mac, Ctrl+K on Windows and Linux) opens the command palette. It lists every screen in the sidebar, your recent sessions and common actions. Type a few letters in order ("radh", "codst", "new session"), move with the arrow keys and press Enter. Press the shortcut again or Esc to close it.
 - The **model pill** shows the model new messages use. Click it to change model.
 - The **privacy pill** reads **LOCAL ONLY** while network access is off and the model runs locally, and changes when that is no longer true.
 - The **setup** pill (for example **setup: 3 / 5**) shows how many of the [five setup steps](help:getting-started-checklist) are done. Click it to see what is left.

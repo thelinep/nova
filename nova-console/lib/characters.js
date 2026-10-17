@@ -8,7 +8,8 @@
  *   macos        a voice built into macOS
  *   voicestudio  a voice profile from the VoiceStudio app (incl. cloned ones)
  *
- * Characters live in the 'characters' store. personaPrompt() turns one into
+ * Character Studio adds a rigged 2D puppet, sounds, actions and AI portraits
+ * (see lib/puppet.js). Characters live in the 'characters' store. personaPrompt() turns one into
  * the opening instructions for a model; speak() reads text in its voice.
  * ========================================================================= */
 const fs = require('node:fs');
@@ -19,6 +20,7 @@ const { execFile } = require('node:child_process');
 const audioGen = require('./audio-gen');
 const voicestudio = require('./voicestudio');
 const delivery = require('./delivery');
+const puppet = require('./puppet');
 
 const STORE = 'characters';
 const ENGINES = ['default', 'kokoro', 'macos', 'voicestudio']; // 'default': the app's usual voice (Kokoro when installed, else macOS)
@@ -111,6 +113,19 @@ function normalise(input = {}, prior = null) {
     voice: normaliseVoice(input.voice || prior?.voice || {}),
     // How lines are delivered: a usual mood, and whether the personality picks a delivery per sentence.
     delivery: (() => { const d = input.delivery || prior?.delivery || {}; return { mood: delivery.moodName(d.mood) || 'neutral', auto: d.auto !== false }; })(),
+    // Character Studio: a rigged 2D puppet, its sounds, its actions and AI portraits (lib/puppet.js).
+    ...(() => {
+      const pup = input.puppet !== undefined ? (input.puppet ? puppet.normalisePuppet(input.puppet, prior?.puppet) : null) : (prior?.puppet || null);
+      const sounds = input.sounds !== undefined ? puppet.normaliseSounds(input.sounds) : (prior?.sounds || []);
+      const actions = input.actions !== undefined ? puppet.normaliseActions(input.actions, sounds) : puppet.normaliseActions(prior?.actions || [], sounds);
+      const portraits = input.portraits !== undefined ? puppet.normalisePortraits(input.portraits) : (prior?.portraits || []);
+      const rig3d = input.rig3d !== undefined ? (input.rig3d ? puppet.normaliseRig3d(input.rig3d, prior?.rig3d) : null) : (prior?.rig3d || null);
+      const stage = input.stage !== undefined ? (input.stage === '3d' && rig3d ? '3d' : '2d') : (prior?.stage === '3d' && rig3d ? '3d' : '2d');
+      const meshes = input.meshes !== undefined ? puppet.normaliseMeshes(input.meshes) : (prior?.meshes || []);
+      const cutouts = input.cutouts !== undefined ? puppet.normaliseCutouts(input.cutouts) : (prior?.cutouts || []);
+      const scanMediaId = input.scanMediaId !== undefined ? (input.scanMediaId ? clip(input.scanMediaId, 80) : null) : (prior?.scanMediaId || null);
+      return { puppet: pup, sounds, actions, portraits, rig3d, stage, meshes, scanMediaId, cutouts };
+    })(),
     createdAt: prior?.createdAt || now, updatedAt: now,
   };
 }
