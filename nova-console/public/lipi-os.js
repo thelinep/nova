@@ -46,6 +46,15 @@ const CSS = `
 .lo-res{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
 .lo-res .s{font-size:22px;overflow-wrap:anywhere}
 .lo-res .m{font-size:11px;color:var(--amber)}
+.bg-ocr{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+.bg-pill{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted)}
+.bg-pill.ok{border-color:var(--amber-line);color:var(--ink);background:var(--amber-soft)}
+.bg-lines{margin:6px 0 4px 18px;padding:0;display:grid;gap:4px}
+.bg-lines li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.bg-lines li.dim{opacity:.45}
+.bg-lines .b{font-size:22px;line-height:1.5;overflow-wrap:anywhere}
+.bg-lines .d{grid-column:1;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.bg-lines .c{grid-column:2;grid-row:1;font-size:11.5px;color:var(--muted)}
 .bg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px}
 .bg-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:0;cursor:pointer;color:var(--ink);text-align:left;overflow:hidden;display:flex;flex-direction:column}
 .bg-tile[aria-pressed="true"]{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-line)}
@@ -140,7 +149,7 @@ const S = {
   chrono: { continent: '', category: '', from: -10000, to: 2026, data: null, sel: null },
   atlasSel: 0,
   let: { data: null, board: '', type: '', region: '', q: '', script: 'Deva', sel: 'क', autoplay: true },
-  gal: { data: null, variant: '', q: '', open: '', sort: 'date' },
+  gal: { data: null, variant: '', q: '', open: '', sort: 'date', ocr: null, fresh: {}, own: null, busy: '', ocrMsg: '' },
   cj: { data: null, code: 'Brah', up: 'क', low: 'त', ov: null, dirty: false, status: '', busy: false, preview: '' },
 };
 try { const p = JSON.parse(localStorage.getItem('maataa.lipi') || '{}'); if (p.focus) S.focus = p.focus; if (p.study) S.study = p.study; } catch (_) { /* per-browser convenience only */ }
@@ -306,11 +315,21 @@ function cjOv(code) { const L = S.cj; if (!L.ov[code]) L.ov[code] = { pairs: {},
 async function gallery(el, deps, rerender) {
   const h = deps.escapeHtml, G = S.gal;
   if (!G.data) G.data = await deps.apiGet('/api/lipi/brahmi-gallery');
+  if (!G.ocr) G.ocr = await deps.apiGet('/api/lipi/ocr').catch(() => ({ readings: {}, python: false, model: {} }));
   const d = G.data, needle = G.q.trim().toLowerCase();
   let items = d.items.filter(i => (!G.variant || i.variant === G.variant)
     && (!needle || [i.title, i.site, i.region, i.country, i.language, i.note, i.credit.author].join(' ').toLowerCase().includes(needle)));
   if (G.sort === 'place') items = items.slice().sort((a, b) => (a.country + a.region + a.site).localeCompare(b.country + b.region + b.site));
   const cur = d.items.find(i => i.id === G.open);
+  const reading = (r, label) => {
+    if (!r) return '<p class="lo-note">No machine reading yet.</p>';
+    const pct = Math.round((r.confidence || 0) * 100);
+    const ok = r.legible !== undefined ? r.legible : r.lines.some(l => l.conf >= (G.ocr.threshold || 0.8) && l.text.length >= 4);
+    return `<div class="bg-ocr"><div class="lo-row" style="justify-content:space-between"><span class="cap-section-label">${h(label)}</span><span class="bg-pill ${ok ? 'ok' : ''}">${ok ? 'Draft reading' : 'Not legible to the model'} · ${pct}%</span></div>
+      ${r.lines.length ? `<ol class="bg-lines">${r.lines.map(l => `<li class="${l.legible === false || (l.legible === undefined && l.conf < (G.ocr.threshold || 0.8)) ? 'dim' : ''}"><span class="b" style="${fontStyle('Brah')}">${h(l.text)}</span><span class="d">${h(l.deva || '')}</span><span class="c">${Math.round(l.conf * 100)}%</span></li>`).join('')}</ol>` : '<p class="lo-note">The model found no lines it could read.</p>'}
+      ${r.note ? `<p class="lo-note" style="color:var(--amber)">${h(r.note)}</p>` : ''}
+      <p class="lo-note">Faded lines are below ${Math.round((G.ocr.threshold || 0.8) * 100)}% confidence. Machine reading by the Lipi OCR model, trained only on synthetic lines. Treat it as a guess to check against a published reading, not as a transcription.</p></div>`;
+  };
   const credit = i => { const c = i.credit; const lic = c.licenceUrl ? `<a href="${h(c.licenceUrl)}" target="_blank" rel="noopener">${h(c.licence)}</a>` : h(c.licence); return `${h(c.author)} · ${lic} · via <a href="${h(c.source)}" target="_blank" rel="noopener">${h(c.via)}</a>`; };
   el.innerHTML = `
     <div class="panel" style="padding:12px">
@@ -336,8 +355,14 @@ async function gallery(el, deps, rerender) {
               <dt>Source</dt><dd><a href="${h(cur.credit.source)}" target="_blank" rel="noopener">${h(cur.credit.file)}</a></dd>
               ${cur.credit.commonsCredit ? `<dt>Credit line</dt><dd class="lo-note">${h(cur.credit.commonsCredit)}</dd>` : ''}
             </dl>
+            ${reading(G.fresh[cur.id] || G.ocr.readings[cur.id], G.fresh[cur.id] ? 'Machine reading (just now)' : 'Machine reading')}
+            <div class="lo-row"><button class="btn btn-line" id="bgReadAgain" ${G.busy ? 'disabled' : ''}>${G.busy === cur.id ? 'Reading…' : 'Read again'}</button>${G.ocrMsg ? `<span class="lo-note">${h(G.ocrMsg)}</span>` : ''}</div>
           </div>
         </div></div>` : ''}
+      <div class="lo-row" style="margin-top:10px"><label class="btn btn-line" style="cursor:pointer">Read Brahmi in your own image<input type="file" id="bgOwn" accept="image/png,image/jpeg,image/webp" hidden></label>
+        <span class="lo-note">${G.ocr.python ? 'Runs on this computer with the Lipi OCR model.' : 'Needs the OCR tools once: double-click “Lipi - Install OCR.command” in brahmini/launchers.'}${G.ocr.evaluation && G.ocr.evaluation.lumbini ? ' Tested on the Lumbini inscription: ' + Math.round((1 - G.ocr.evaluation.lumbini.CER) * 100) + '% of characters right.' : ''}</span>
+        ${G.busy === 'own' ? '<span class="lo-note">Reading…</span>' : ''}</div>
+      ${G.own ? `<div class="panel" style="padding:12px;margin-top:10px"><div class="bg-detail"><div><img src="${G.own.url}" alt="Your image"></div><div>${reading(G.own.result, 'Your image')}<button class="btn btn-line" id="bgOwnClose">Close</button></div></div></div>` : ''}
       <div class="bg-grid">${items.map(i => `<button class="bg-tile" data-gi="${i.id}" aria-pressed="${i.id === G.open}"><img loading="lazy" src="${h(i.image)}" alt=""><span class="t">${h(i.title)}<br><span class="d">${h(i.dateLabel)} · ${h(i.country === '—' ? i.site : i.country)}</span></span></button>`).join('') || '<p class="empty-hint">Nothing matches.</p>'}</div>
     </div>
     <div class="lo-grid2" style="margin-top:10px">
@@ -347,7 +372,25 @@ async function gallery(el, deps, rerender) {
     </div>`;
   el.querySelectorAll('[data-gv]').forEach(b => b.onclick = () => { G.variant = b.dataset.gv; rerender(); });
   el.querySelectorAll('[data-gi]').forEach(b => b.onclick = () => { G.open = G.open === b.dataset.gi ? '' : b.dataset.gi; rerender(); setTimeout(() => { const x = el.querySelector('#bgDetail'); if (x) x.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0); });
-  const close = el.querySelector('#bgClose'); if (close) close.onclick = () => { G.open = ''; rerender(); };
+  const close = el.querySelector('#bgClose'); if (close) close.onclick = () => { G.open = ''; G.ocrMsg = ''; rerender(); };
+  const again = el.querySelector('#bgReadAgain');
+  if (again) again.onclick = async () => {
+    G.busy = cur.id; G.ocrMsg = ''; rerender();
+    try { G.fresh[cur.id] = await deps.apiPost('/api/lipi/ocr/read', { gallery: cur.id }); } catch (e) { G.ocrMsg = e.message; }
+    G.busy = ''; rerender();
+  };
+  const own = el.querySelector('#bgOwn');
+  own.onchange = () => {
+    const f = own.files[0]; if (!f) return;
+    const fr = new FileReader();
+    fr.onload = async () => {
+      G.own = { url: fr.result, result: null }; G.busy = 'own'; rerender();
+      try { G.own.result = await deps.apiPost('/api/lipi/ocr/read', { image: fr.result }); } catch (e) { G.own.result = { lines: [], confidence: 0 }; deps.toast(e.message); }
+      G.busy = ''; rerender();
+    };
+    fr.readAsDataURL(f);
+  };
+  const ownClose = el.querySelector('#bgOwnClose'); if (ownClose) ownClose.onclick = () => { G.own = null; rerender(); };
   const q = el.querySelector('#bgQ'); q.onchange = () => { G.q = q.value; rerender(); };
   el.querySelector('#bgSort').onchange = e => { G.sort = e.target.value; rerender(); };
 }

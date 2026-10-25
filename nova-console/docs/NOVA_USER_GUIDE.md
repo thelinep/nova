@@ -745,6 +745,16 @@ Photographs, rubbings and drawings of original Brahmi writing, from the earliest
 - The pictures are stored in Maataa and work offline. Every one comes from Wikimedia Commons under a public domain, CC0, Creative Commons or Government Open Data licence. Keep the credit line when you reuse one. The full list is in `public/lipi-brahmi/CREDITS.md`.
 - Dates are approximate, and a few (such as Sohgaura and Piprahwa) are debated.
 
+#### Reading Brahmi (OCR)
+
+Each gallery picture has a **machine reading**: the lines the Lipi OCR model found, in Brahmi and in Devanagari, with how sure it is of each line. Lines below 80% confidence are faded, and a picture with no confident line is marked **Not legible to the model**. For Kushan, Gupta and Central Asian Brahmi the reading is always marked unreliable, because their letter shapes differ from the ones the model learned.
+
+- The model was trained only on synthetic lines: Brahmi text drawn with fonts and aged to look like printed plates, rubbings and carved stone. No real photograph was used for training, so treat every reading as a guess to check against a published one.
+- It does best on plates, rubbings and clear photographs. Weathered stone photographed in flat light is usually beyond it.
+- **Read again** reads a gallery picture with the model on this computer. **Read Brahmi in your own image** reads a PNG, JPEG or WebP you choose. Both need the OCR tools once: double-click **Lipi - Install OCR.command** in the `launchers` folder (about 80 MB).
+- **Lipi - Train OCR.command** retrains the model on this Mac from new synthetic lines (several hours, and it installs PyTorch the first time). Maataa then uses your model instead of the one it ships with.
+- Nothing is uploaded: reading and training both run locally.
+
 ### Scripts
 
 The 69-record registry from the prototype, with its tiers (Flagship, Pilot, Research, Exhibition only). Search or filter by tier, and click a record to see its alphabet written out. Seventeen of the records can be written by the converter; the rest are historical styles without their own Unicode block. The Indus / Harappan signs stay **exhibition only**: no decipherment is claimed.

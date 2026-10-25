@@ -44,6 +44,8 @@
       "../../scripts/*.py": "scripts/",
       "../../tools/build-lipi-conjunct-fonts.py": "tools/build-lipi-conjunct-fonts.py",
       "../../tools/fonts-src/*.*": "tools/fonts-src/",
+      "../../tools/lipi-ocr/*.py": "tools/lipi-ocr/",
+      "../../tools/lipi-ocr/*.json": "tools/lipi-ocr/",
       "../../comfy/**/*": "comfy/",
       "../../docs/NOVA_USER_GUIDE.md": "docs/NOVA_USER_GUIDE.md",
       "../runtime/node/bin/node": "node/bin/node"

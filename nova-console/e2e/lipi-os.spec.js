@@ -138,3 +138,18 @@ test('Lipi OS: Brahmi gallery filters, opens an item with its credit', async ({ 
   await page.locator('#bgQ').press('Enter');
   await expect(page.locator('.bg-tile[data-gi="dhauli"]')).toBeVisible();
 });
+
+test('Lipi OS: Brahmi gallery shows the machine reading of an inscription', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.locator('.nav-item[data-view="lipios"]').click();
+  await page.locator('[data-lo-tab="gallery"]').click();
+  await page.locator('.bg-tile[data-gi="lumbini"]').click();
+  await expect(page.locator('#bgDetail .bg-ocr')).toBeVisible();
+  await expect(page.locator('#bgDetail .bg-pill')).toContainText('Draft reading');
+  expect(await page.locator('#bgDetail .bg-lines li').count()).toBeGreaterThanOrEqual(4);
+  await expect(page.locator('#bgDetail .bg-lines li').first().locator('.d')).not.toBeEmpty();
+  await page.locator('#bgClose').click();
+  await page.locator('.bg-tile[data-gi="bower"]').click();
+  await expect(page.locator('#bgDetail')).toContainText('not reliable');
+});
