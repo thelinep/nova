@@ -36,7 +36,7 @@ ROOT = os.path.join(os.path.dirname(__file__), '..')
 # Size of a subjoined letter and the space between a letter and the one below it. 0.75 / 0 lets the
 # lower letter touch the foot of the upper one, as in inscriptions; override to compare (LIPI_SUB_SCALE, LIPI_SUB_GAP).
 SCALE, GAP = float(os.environ.get('LIPI_SUB_SCALE', 0.75)), float(os.environ.get('LIPI_SUB_GAP', 0))
-SIDE = 50  # minimum clear space each side of a subjoined letter that is wider than its base
+SIDE = 40         # clear space kept each side of a lower letter that reaches past its upper letter
 SCRIPTS = json.load(open(os.path.join(ROOT, 'lib', 'lipi-scripts.json'), encoding='utf-8'))['scripts']
 CONFIG = {  # code: (Noto source file, family name, output slug)
     'Brah': ('NotoSansBrahmi-Regular.ttf', 'Maataa Lipi Brahmi', 'brahmi'),
@@ -143,26 +143,25 @@ def build(code, src, out, family):
                 a = rec.BaseAnchor[c0] if rec.BaseAnchor and len(rec.BaseAnchor) > c0 else None
                 if a is not None and gname not in foot:
                     foot[gname] = (a.XCoordinate, a.YCoordinate)
-    subs, anchors, sub_foot, sub_width = {}, {}, {}, {}
+    subs, geo, sub_foot = {}, {}, {}
     for g in consonants:
         bp = BoundsPen(gs); gs[g].draw(bp)
         x0, y0, x1, y1 = bp.bounds
         cx = (x0 + x1) / 2
         top = y1 * SCALE
         pen = TTGlyphPen(gs)
-        # centre on x = 0, top edge at y = -GAP
+        # top centre of the reduced letter at x = 0, its top edge at y = -GAP
         gs[g].draw(TransformPen(pen, (SCALE, 0, 0, SCALE, -cx * SCALE, -GAP - top)))
         name = g + '.sub'
         glyf[name] = pen.glyph()
         hmtx[name] = (0, 0)
         subs[g] = name
-        height = (y1 - y0) * SCALE
-        anchors[name] = (-GAP - height)          # bottom edge, where a further letter hangs
-        anchors[g] = ((x0 + x1) / 2, min(0, y0)) # bottom centre of the full letter
-        sub_width[name] = (x1 - x0) * SCALE
+        sw, sh = (x1 - x0) * SCALE, (y1 - y0) * SCALE
+        geo[g] = dict(x0=x0, x1=x1, cx=cx, w=x1 - x0, foot_y=min(0, y0), adv=hmtx[g][0])
+        geo[name] = dict(w=sw, half=sw / 2, bottom=-GAP - sh)
         if g in foot:  # where u / uu attach, moved with the reduced letter
             fx, fy = foot[g]
-            sub_foot[name] = (fx * SCALE - cx * SCALE, fy * SCALE - GAP - top)
+            sub_foot[name] = ((fx - cx) * SCALE, fy * SCALE - GAP - top)
 
     f.getReverseGlyphMap(rebuild=True)
     # GDEF: subjoined letters are marks
@@ -171,45 +170,66 @@ def build(code, src, out, family):
     for s in subs.values():
         classdefs[s] = 3
 
+    # Magnetic placement: a lower letter sticks to the RIGHT edge of the letter above it (right edges
+    # flush) whenever it is no wider than that letter; a lower letter too wide to fit snaps to the MIDDLE.
+    #   SubjoinRight   every pair: right edge of the reduced letter on the right edge of the upper ink
+    #   SubjoinCentre  re-applied (contextually) only for pairs where the lower letter is wider
+    # A third letter sticks to the right edge of the second in the same way.
     lig = '\n'.join(f'    sub {virama} {g} by {s};' for g, s in subs.items())
-    bases = '\n'.join(f'    pos base {g} <anchor {round(anchors[g][0])} {round(anchors[g][1])}> mark @SUBJ;' for g in subs)
+    right = '\n'.join(f"    pos base {g} <anchor {round(geo[g]['x1'])} {round(geo[g]['foot_y'])}> mark @SUBR;" for g in subs)
+    centre = '\n'.join(f"    pos base {g} <anchor {round(geo[g]['cx'])} {round(geo[g]['foot_y'])}> mark @SUBC;" for g in subs)
     def mark1(s):
         extra = f' <anchor {round(sub_foot[s][0])} {round(sub_foot[s][1])}> mark @BELOWV' if s in sub_foot and below_marks else ''
-        return f'    pos mark {s} <anchor 0 {round(anchors[s])}> mark @SUBJ{extra};'
+        return f"    pos mark {s} <anchor {round(geo[s]['half'])} {round(geo[s]['bottom'])}> mark @SUBR{extra};"
     marks = '\n'.join(mark1(s) for s in subs.values())
     belowv = '\n'.join(f'markClass {g} <anchor {x} {y}> @BELOWV;' for g, (x, y) in below_marks.items())
-    # A subjoined letter wider than its base would run into the neighbouring letters. Widen the base
-    # for that pair only (pair positioning on base + subjoined letter): push it right by half the extra
-    # width and add the extra to its advance.
-    # Bases and subjoined letters are grouped by width so the rule count stays small.
+    subr = '\n'.join(f"markClass {s} <anchor {round(geo[s]['half'])} 0> @SUBR;" for s in subs.values())
+
+    # Group letters in 40-unit steps to keep the contextual and spacing rules few: upper letters by ink
+    # width and by room around them, lower letters by width (rounded up).
     STEP = 40
-    def bucket(v): return int(v // STEP)
+    import math
+    fl = lambda v: int(v // STEP)
     base_groups, sub_groups = {}, {}
     for g in subs:
-        base_groups.setdefault(bucket(hmtx[g][0]), []).append(g)
-    for sname in subs.values():
-        sub_groups.setdefault(bucket(sub_width[sname]), []).append(sname)
-    widen = []
-    for bb, bl in sorted(base_groups.items()):
+        G = geo[g]
+        base_groups.setdefault((fl(G['w']), fl(G['x1']), fl(G['cx']), fl(G['adv'] - G['cx'])), []).append(g)
+    for s in subs.values():
+        sub_groups.setdefault(math.ceil(geo[s]['w'] / STEP), []).append(s)
+    centre_rules, widen = [], []
+    for (bw, bx1, bcx, bright), bl in sorted(base_groups.items()):
         for sb, sl in sorted(sub_groups.items()):
-            extra = (sb + 1) * STEP + 2 * SIDE - bb * STEP
-            if extra > 0:
-                widen.append(f"    pos [{' '.join(bl)}] [{' '.join(sl)}] <{round(extra / 2)} 0 {round(extra)} 0>;")
+            wider = (sb - 1) > (bw + 1)              # clearly wider than the upper letter: snap to the middle
+            if wider:
+                centre_rules.append(f"    pos [{' '.join(bl)}] [{' '.join(sl)}]' lookup SubjoinCentre;")
+                half = sb * STEP / 2
+                over_l = max(0, half + SIDE - bcx * STEP)
+                over_r = max(0, half + SIDE - bright * STEP)
+            else:                                     # right edges flush: it can only overhang on the left
+                over_l = max(0, sb * STEP + SIDE - bx1 * STEP)
+                over_r = 0
+            if over_l or over_r:
+                widen.append(f"    pos [{' '.join(bl)}] [{' '.join(sl)}] <{round(over_l)} 0 {round(over_l + over_r)} 0>;")
     widen_fea = ('feature dist {\n  lookup SubjoinRoom {\n' + '\n'.join(widen) + '\n  } SubjoinRoom;\n} dist;') if widen else ''
+    centre_ctx = ('  lookup SubjoinCentreWide {\n' + '\n'.join(centre_rules) + '\n  } SubjoinCentreWide;\n') if centre_rules else ''
     fea = f"""
 languagesystem DFLT dflt;
-markClass [{' '.join(subs.values())}] <anchor 0 0> @SUBJ;
+markClass [{' '.join(subs.values())}] <anchor 0 0> @SUBC;
+{subr}
 {belowv}
 lookup LipiConjunct {{
 {lig}
 }} LipiConjunct;
+lookup SubjoinCentre {{
+{centre}
+}} SubjoinCentre;
 feature blwf {{ lookup LipiConjunct; }} blwf;
 feature cjct {{ lookup LipiConjunct; }} cjct;
 feature blwm {{
-  lookup SubjoinBase {{
-{bases}
-  }} SubjoinBase;
-}} blwm;
+  lookup SubjoinRight {{
+{right}
+  }} SubjoinRight;
+{centre_ctx}}} blwm;
 {widen_fea}
 feature mkmk {{
   lookup SubjoinStack {{
@@ -227,7 +247,7 @@ feature mkmk {{
         graft(f[tag].table, scratch[tag].table)
 
     # room below the line for one stacked letter
-    depth = round(GAP + max(-anchors[s] for s in subs.values()) - GAP + 60)
+    depth = round(max(-geo[s]['bottom'] for s in subs.values()) + 60)
     for t, attr in (('hhea', 'descent'), ('OS/2', 'sTypoDescender')):
         setattr(f[t], attr, -max(abs(getattr(f[t], attr)), depth))
     f['OS/2'].usWinDescent = max(f['OS/2'].usWinDescent, depth)
