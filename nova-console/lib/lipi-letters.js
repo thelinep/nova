@@ -23,15 +23,16 @@ function board() {
   const scripts = lipiScripts.list().filter(s => s.code !== 'Deva' && s.code !== 'Khar');
   const letters = d.letters.map(l => {
     const renders = { Deva: l.sample };
-    for (const code of l.scripts.writes) {
+    const writes = l.scripts.writes.includes('Brah') ? [...l.scripts.writes, 'Brah+'] : l.scripts.writes;
+    for (const code of writes) {
       const r = lipiScripts.fromDeva(l.sample, code);
       renders[code] = r.missing.length ? null : r.text;
     }
-    return { ...l, renders };
+    return { ...l, scripts: { writes, lacks: l.scripts.lacks.includes('Brah') ? [...l.scripts.lacks, 'Brah+'] : l.scripts.lacks }, renders };
   });
   return {
     format: d.format, boards: d.boards, regions: d.regions, sources: d.sources,
-    scripts: scripts.map(s => ({ code: s.code, label: s.label, hi: s.hi, region: d.regions[s.code] || '' })),
+    scripts: scripts.map(s => ({ code: s.code, label: s.label, hi: s.hi, region: d.regions[s.sameAs || s.code] || '' })),
     counts: { letters: letters.length, withSound: letters.filter(l => l.sound.file).length, boards: d.boards.length },
     letters,
   };

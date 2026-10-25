@@ -66,7 +66,7 @@ test('HTTP: letters routes and MP3 type on a temporary data folder', { timeout: 
     const base = await new Promise((resolve, reject) => { let out = ''; const t = setTimeout(() => reject(new Error('Startup timeout: ' + out)), 15000); child.stdout.on('data', d => { out += d; const m = out.match(/listening on (http:\/\/127\.0\.0\.1:\d+)/); if (m) { clearTimeout(t); resolve(m[1]); } }); child.stderr.on('data', d => { out += d; }); child.once('exit', c => reject(new Error('exited ' + c + ': ' + out))); });
     const req = p => new Promise((resolve, reject) => { http.get(base + p, { headers: { Origin: base } }, res => { const c = []; res.on('data', x => c.push(x)); res.on('end', () => { const t = Buffer.concat(c); let json = null; try { json = JSON.parse(t.toString()); } catch (_) { json = null; } resolve({ status: res.statusCode, type: res.headers['content-type'], json, size: t.length }); }); }).on('error', reject); });
     const all = await req('/api/lipi/letters');
-    assert.equal(all.status, 200); assert.equal(all.json.counts.letters, all.json.letters.length); assert.equal(all.json.scripts.length, 23);
+    assert.equal(all.status, 200); assert.equal(all.json.counts.letters, all.json.letters.length); assert.equal(all.json.scripts.length, 24);
     assert.equal((await req('/api/lipi/letters/' + encodeURIComponent('क'))).json.iast, 'ka');
     assert.equal((await req('/api/lipi/letters/u+0915')).json.char, 'क');
     assert.equal((await req('/api/lipi/letters/Q')).status, 404);

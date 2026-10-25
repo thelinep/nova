@@ -35,10 +35,17 @@ test('visible halant: ZWNJ after a virama before a letter, not at the end of a w
   for (const r of conv.results) assert.ok(r.text.includes(ZWNJ), r.code + ' shows its halant');
 });
 
+test('Brahmi and Brahmi+ hold the same text and differ only in font', () => {
+  assert.equal(lipi.fromDeva('धर्म', 'Brah+').text, lipi.fromDeva('धर्म', 'Brah').text);
+  const r = lipi.convert('धर्म', { scripts: ['Brah', 'Brah+'] }).results;
+  assert.equal(r[0].text, r[1].text); assert.equal(r[1].label, 'Brahmi+');
+  assert.equal(lipi.fromDeva('क्त', 'Brah+', { halant: 'visible' }).text, '\u{11013}\u{11046}\u200C\u{11022}');
+});
+
 test('every script reports how its halant shows', () => {
   const list = lipi.list();
   for (const s of list) assert.ok(['stacked', 'partial', 'visible'].includes(s.halant), s.code);
   const by = Object.fromEntries(list.map(s => [s.code, s.halant]));
-  assert.equal(by.Brah, 'stacked'); assert.equal(by.Takr, 'visible'); assert.equal(by.Khar, 'partial');
+  assert.equal(by.Brah, 'visible'); assert.equal(by['Brah+'], 'stacked'); assert.equal(by.Takr, 'visible'); assert.equal(by.Khar, 'partial');
   assert.equal(lipi.viramaOf('Brah'), '\u{11046}');
 });

@@ -40,8 +40,8 @@ test('tables come from Unicode names: long e/o in Dravidian scripts, va as ba in
   assert.ok(takri.text.includes('ऋ'));
   assert.deepEqual(cps(one('क़', 'Brah')), [0x11013], 'a nukta with no counterpart is dropped, the base letter stands');
   const list = lipi.list();
-  assert.equal(list.length, 25, 'Devanagari plus twenty-four scripts');
-  assert.deepEqual(list.slice(0, 4).map(s => s.code), ['Deva', 'Khar', 'Brah', 'Bhks'], 'historic scripts come before modern ones');
+  assert.equal(list.length, 26, 'Devanagari plus twenty-four scripts, and Brahmi+');
+  assert.deepEqual(list.slice(0, 4).map(s => s.code), ['Deva', 'Khar', 'Brah', 'Brah+'], 'historic scripts come before modern ones');
   assert.equal(list.find(s => s.code === 'Khar').direction, 'rtl');
   for (const s of list) if (s.coverage != null) assert.ok(s.coverage >= 0.75, `${s.code} covers at least three quarters of the core letters`);
 });
@@ -163,7 +163,7 @@ test('HTTP routes on a temporary data folder', { timeout: 30000 }, async () => {
   try {
     const base = await new Promise((resolve, reject) => { let out = ''; const t = setTimeout(() => reject(new Error('Startup timeout: ' + out)), 15000); child.stdout.on('data', d => { out += d; const m = out.match(/listening on (http:\/\/127\.0\.0\.1:\d+)/); if (m) { clearTimeout(t); resolve(m[1]); } }); child.stderr.on('data', d => { out += d; }); child.once('exit', c => reject(new Error('exited ' + c + ': ' + out))); });
     const req = (p, method = 'GET', body) => new Promise((resolve, reject) => { const r = http.request(base + p, { method, headers: { Origin: base, 'Content-Type': 'application/json' } }, res => { const c = []; res.on('data', x => c.push(x)); res.on('end', () => { const t = Buffer.concat(c).toString(); let json = null; try { json = JSON.parse(t); } catch (_) { json = null; } resolve({ status: res.statusCode, type: res.headers['content-type'], json }); }); }); r.on('error', reject); r.end(body ? JSON.stringify(body) : undefined); });
-    assert.equal((await req('/api/lipi/scripts')).json.length, 25);
+    assert.equal((await req('/api/lipi/scripts')).json.length, 26);
     const conv = await req('/api/lipi/convert', 'POST', { text: 'आपका स्वागत है', hindi: true, scripts: ['Brah'] });
     assert.equal(conv.status, 200); assert.equal(conv.json.results[0].text, '𑀆𑀧𑁆𑀓𑀸 𑀲𑁆𑀯𑀸𑀕𑀢 𑀳𑁃');
     assert.equal((await req('/api/lipi/convert', 'POST', { text: '' })).status, 400);

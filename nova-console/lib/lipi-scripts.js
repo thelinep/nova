@@ -39,7 +39,8 @@ const ZWNJ = '\u{200C}';
  * no font forms conjuncts yet). Measured with HarfBuzz on the shipped fonts (tools/build-lipi-conjunct-fonts.py).
  */
 const HALANT = {
-  Brah: ['stacked', 'Maataa Lipi Brahmi adds the stacked conjuncts Noto Sans Brahmi lacks.'],
+  Brah: ['visible', 'Noto Sans Brahmi draws every virama as a bar. Brahmi+ shows the same text with stacked conjuncts.'],
+  'Brah+': ['stacked', 'Maataa Lipi Brahmi: the same Brahmi text, with the stacked conjuncts Noto Sans Brahmi lacks.'],
   Shrd: ['stacked', 'Maataa Lipi Sharada stacks the conjuncts Noto Sans Sharada leaves open.'],
   Diak: ['stacked', 'Maataa Lipi Dives Akuru stacks the conjuncts Noto Serif Dives Akuru leaves open.'],
   Khar: ['partial', 'Noto Sans Kharoshthi forms some conjuncts; others show the virama.'],
@@ -49,18 +50,22 @@ const HALANT = {
 };
 const halantOf = code => (HALANT[code] || ['stacked', ''])[0];
 /** The virama a script writes, from its table. */
-const viramaOf = code => code === 'Khar' ? '\u{10A3F}' : code === 'Deva' ? VIRAMA : (load().scripts[code] || { map: {} }).map[VIRAMA];
+const viramaOf = code => code === 'Brah+' ? viramaOf('Brah') : code === 'Khar' ? '\u{10A3F}' : code === 'Deva' ? VIRAMA : (load().scripts[code] || { map: {} }).map[VIRAMA];
 
 /** Every script Lipi can write, in display order. */
 function list() {
   const d = load();
   const out = [{ code: 'Deva', label: 'Devanagari', hi: 'देवनागरी', direction: 'ltr', coverage: 1, missing: [], note: 'The source script for conversion.', halant: 'stacked', halantNote: '' }];
   out.push({ code: 'Khar', label: 'Kharoshthi', hi: 'खरोष्ठी', direction: 'rtl', coverage: null, missing: [], note: 'Right to left. ai and au are written as e and o with the length mark (Guru convention).', halant: halantOf('Khar'), halantNote: HALANT.Khar[1] });
-  for (const s of Object.values(d.scripts).sort((a, b) => a.order - b.order)) out.push({ code: s.code, label: s.label, hi: s.hi, direction: s.direction, coverage: s.coverage, missing: s.missing, note: s.note, halant: halantOf(s.code), halantNote: (HALANT[s.code] || [])[1] || '' });
+  for (const s of Object.values(d.scripts).sort((a, b) => a.order - b.order)) {
+    out.push({ code: s.code, label: s.label, hi: s.hi, direction: s.direction, coverage: s.coverage, missing: s.missing, note: s.note, halant: halantOf(s.code), halantNote: (HALANT[s.code] || [])[1] || '' });
+    // Brahmi+ is a second view of the same Brahmi text: identical characters, drawn with stacked conjuncts.
+    if (s.code === 'Brah') out.push({ code: 'Brah+', label: 'Brahmi+', hi: 'ब्राह्मी+', direction: s.direction, coverage: s.coverage, missing: s.missing, note: 'Same Brahmi text as Brahmi, drawn with stacked conjuncts (Maataa Lipi Brahmi).', halant: halantOf('Brah+'), halantNote: HALANT['Brah+'][1], sameAs: 'Brah' });
+  }
   return out;
 }
 
-const known = code => code === 'Deva' || code === 'Khar' || !!load().scripts[code];
+const known = code => code === 'Deva' || code === 'Khar' || code === 'Brah+' || !!load().scripts[code];
 
 /**
  * Shows the halant instead of a conjunct: a zero-width non-joiner after every virama that is
@@ -89,6 +94,7 @@ function fromDeva(text, code, opts = {}) {
 }
 
 function fromDevaJoined(text, code) {
+  if (code === 'Brah+') code = 'Brah'; // same characters; only the font differs
   const src = String(text).normalize('NFD');
   if (code === 'Deva') return { text: src.normalize('NFC'), missing: [] };
   if (code === 'Khar') return { text: panini.fromDeva(src, 'kharoshthi'), missing: [] };

@@ -10,7 +10,7 @@
  * ========================================================================= */
 
 export const FONTS = {
-  Brah: ['brahmi', 'Noto Sans Brahmi'], Khar: ['kharoshthi', 'Noto Sans Kharoshthi'], Bhks: ['bhaiksuki', 'Noto Sans Bhaiksuki'],
+  Brah: ['brahmi', 'Noto Sans Brahmi'], 'Brah+': ['brahmi', 'Maataa Lipi Brahmi'], Khar: ['kharoshthi', 'Noto Sans Kharoshthi'], Bhks: ['bhaiksuki', 'Noto Sans Bhaiksuki'],
   Shrd: ['sharada', 'Noto Sans Sharada'], Sidd: ['siddham', 'Noto Sans Siddham'], Gran: ['grantha', 'Noto Sans Grantha'],
   Nand: ['nandinagari', 'Noto Sans Nandinagari'], Newa: ['newa', 'Noto Sans Newa'], Tirh: ['tirhuta', 'Noto Sans Tirhuta'],
   Takr: ['takri', 'Noto Sans Takri'], Modi: ['modi', 'Noto Sans Modi'], Kthi: ['kaithi', 'Noto Sans Kaithi'],
@@ -18,7 +18,7 @@ export const FONTS = {
 };
 const FONT_FILE = { Dogr: 'noto-serif-dogra-dogra', Diak: 'noto-serif-dives-akuru-dives-akuru' };
 // Maataa's own builds (tools/build-lipi-conjunct-fonts.py): Noto plus the stacked conjuncts its fonts lack.
-const MAATAA_FONT = { Brah: 'maataa-lipi-brahmi', Shrd: 'maataa-lipi-sharada', Diak: 'maataa-lipi-dives-akuru' };
+const MAATAA_FONT = { 'Brah+': 'maataa-lipi-brahmi', Shrd: 'maataa-lipi-sharada', Diak: 'maataa-lipi-dives-akuru' };
 const fontUrl = (c, slug) => MAATAA_FONT[c] ? `/fonts/lipi/${MAATAA_FONT[c]}.woff2` : `/fonts/lipi/${FONT_FILE[c] || 'noto-sans-' + slug + '-' + slug}-400-normal.woff2`;
 export const fontStyle = code => FONTS[code] ? `font-family:'Lipi ${code}','${FONTS[code][1]}',var(--font-ui);` : '';
 export const dirOf = code => (code === 'Khar' ? 'rtl' : 'ltr');
