@@ -57,3 +57,28 @@ test('Rakhigarhi: sources, draft itinerary from activities, field-visit budget, 
   await page.locator('#hrProvForm button[type=submit]').click();
   await expect(page.locator('#rakhigarhiView .hr-table')).toContainText('Test Runner Co');
 });
+
+test('Lipi OS: letters board with preview, sound, grammar, region and resources', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.locator('.nav-item[data-view="lipios"]').click();
+  await page.locator('[data-lo-tab="letters"]').click();
+  await expect(page.locator('#lipiosView .lt-tile').first()).toBeVisible();
+  const total = await page.locator('#lipiosView .lt-tile').count();
+  expect(total).toBeGreaterThan(100);
+  await page.locator('#ltAuto').uncheck();
+  await page.locator('.lt-tile[data-ch="घ"]').click();
+  await expect(page.locator('.lt-big')).toContainText('घ');
+  await expect(page.locator('.lt-side')).toContainText('महाप्राण');
+  await expect(page.locator('.lt-side')).toContainText('झष्');
+  await expect(page.locator('#ltPlay')).toBeVisible();
+  await page.locator('#ltScript').selectOption('Brah');
+  await expect(page.locator('.lt-big')).toContainText('𑀖');
+  await page.locator('[data-board="टवर्ग · Retroflexes"]').click();
+  await expect(page.locator('#lipiosView .lt-tile')).toHaveCount(5);
+  await page.locator('[data-board=""]').click();
+  await page.locator('#ltRegion').selectOption('Maldives');
+  expect(await page.locator('#lipiosView .lt-tile').count()).toBeLessThan(total);
+  const res = await page.request.get('/lipi-sounds/u0918.mp3');
+  expect(res.status()).toBe(200);
+});

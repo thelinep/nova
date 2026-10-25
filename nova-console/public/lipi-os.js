@@ -81,6 +81,31 @@ details.lo-det summary{cursor:pointer;color:var(--amber);font-size:12.5px;margin
 .lo-map text{fill:var(--muted);font:10px var(--font-mono)}
 .lo-pin{cursor:pointer}
 .lo-tl text{fill:var(--muted);font:10px var(--font-mono)}
+.lt-wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;align-items:start}
+@media(max-width:1100px){.lt-wrap{grid-template-columns:1fr}}
+.lt-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lt-boards{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lt-board h3{font:600 12px var(--font-sans);color:var(--muted);letter-spacing:.04em;margin:14px 0 6px}
+.lt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:6px}
+.lt-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 4px 5px;cursor:pointer;color:var(--ink);text-align:center;min-width:0;position:relative}
+.lt-tile[aria-pressed="true"]{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-line)}
+.lt-tile .g{font-size:28px;line-height:1.25;min-height:36px}
+.lt-tile .g.off{opacity:.28}
+.lt-tile .i{font:10.5px var(--font-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lt-tile .snd{position:absolute;top:3px;right:5px;font-size:9px;color:var(--muted)}
+.lt-side{position:sticky;top:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lt-big{font-size:96px;line-height:1.15;text-align:center;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}
+.lt-kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:5px 10px;font-size:12.5px}
+.lt-kv dt{color:var(--muted)}
+.lt-kv dd{margin:0}
+.lt-tag{display:inline-block;font:10.5px var(--font-mono);border:1px solid var(--line);border-radius:99px;padding:1px 7px;margin:0 4px 4px 0}
+.lt-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px}
+.lt-strip button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 2px;color:var(--ink);cursor:pointer;min-width:0}
+.lt-strip button[aria-pressed="true"]{border-color:var(--amber)}
+.lt-strip .g{font-size:24px;line-height:1.3}
+.lt-strip .c{font:9.5px var(--font-mono);color:var(--muted)}
+.lt-tract text{font:11px var(--font-sans);fill:var(--muted)}
+.lt-tract .on text{fill:var(--ink);font-weight:600}
 `;
 
 function ensureCss() {
@@ -96,11 +121,12 @@ const S = {
   news: null, editions: null, edId: null, view: 'multi', debugLane: 0, rotate: -14,
   chrono: { continent: '', category: '', from: -10000, to: 2026, data: null, sel: null },
   atlasSel: 0,
+  let: { data: null, board: '', type: '', region: '', q: '', script: 'Deva', sel: 'क', autoplay: true },
 };
 try { const p = JSON.parse(localStorage.getItem('maataa.lipi') || '{}'); if (p.focus) S.focus = p.focus; if (p.study) S.study = p.study; } catch (_) { /* per-browser convenience only */ }
 const remember = () => { try { localStorage.setItem('maataa.lipi', JSON.stringify({ focus: S.focus, study: S.study })); } catch (_) { /* ignore */ } };
 
-const TABS = [['welcome', 'Welcome'], ['convert', 'Convert'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
+const TABS = [['welcome', 'Welcome'], ['letters', 'Letters'], ['convert', 'Convert'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
 const ALPHABET = 'अ आ इ ई उ ऊ ऋ ए ऐ ओ औ · क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह · ० १ २ ३ ४ ५ ६ ७ ८ ९';
 
 /** Renders Lipi OS into root. deps: { apiGet, apiPost, toast, escapeHtml, FIELD, web } */
@@ -115,7 +141,7 @@ export async function renderLipiOS(root, deps, tab) {
     <div id="loBody" data-no-list-tools></div>`;
   root.querySelectorAll('[data-lo-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.loTab; renderLipiOS(root, deps); });
   const body = root.querySelector('#loBody');
-  const fn = { welcome, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
+  const fn = { welcome, letters, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
   try { await fn(body, deps, () => renderLipiOS(root, deps)); } catch (e) { body.innerHTML = `<p class="empty-hint" style="color:var(--red)">${h(e.message)}</p>`; }
 }
 
@@ -144,6 +170,108 @@ async function welcome(el, deps, rerender) {
   el.querySelectorAll('.lo-card').forEach(b => b.onclick = () => { S.focus = b.dataset.code; remember(); rerender(); });
   el.querySelector('#loStudy').onchange = e => { S.study = e.target.value; remember(); rerender(); };
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { S.tab = b.dataset.go; rerender(); });
+}
+
+// --- letters board ----------------------------------------------------------------------------------
+const TRACT = [['कण्ठ', 'throat', 40], ['तालु', 'palate', 120], ['मूर्धा', 'roof', 200], ['दन्त', 'teeth', 270], ['ओष्ठ', 'lips', 330]];
+function tractSvg(sthana) {
+  const on = new Set();
+  const s = sthana || '';
+  if (s.includes('कण्ठ')) on.add('कण्ठ'); if (s.includes('तालु')) on.add('तालु'); if (s.includes('मूर्धा')) on.add('मूर्धा');
+  if (s.includes('दन्त')) on.add('दन्त'); if (s.includes('ओष्ठ')) on.add('ओष्ठ');
+  const nose = s.includes('नासिका');
+  return `<svg class="lt-tract" viewBox="0 0 370 112" role="img" aria-label="Place of articulation: ${s || 'not applicable'}">
+    <path d="M20 62 C 90 70, 200 30, 352 54" fill="none" stroke="var(--line)" stroke-width="2"/>
+    <g class="${nose ? 'on' : ''}"><circle cx="230" cy="14" r="${nose ? 7 : 5}" fill="${nose ? 'var(--amber)' : 'var(--panel2)'}" stroke="var(--line)"/><text x="244" y="18">नासिका · nose</text></g>
+    ${TRACT.map(([k, en, x]) => { const y = x < 200 ? 64 - (x - 20) * 0.1 : 46 + (x - 200) * 0.05; const a = on.has(k); return `<g class="${a ? 'on' : ''}"><circle cx="${x}" cy="${y}" r="${a ? 8 : 5}" fill="${a ? 'var(--amber)' : 'var(--panel2)'}" stroke="var(--line)"/><text x="${x}" y="${y + 22}" text-anchor="middle">${k}</text><text x="${x}" y="${y + 34}" text-anchor="middle" style="font-size:9.5px">${en}</text></g>`; }).join('')}
+  </svg>`;
+}
+let letterAudio = null;
+function playLetter(l, toast) {
+  if (!l || !l.sound || !l.sound.file) return;
+  try { if (letterAudio) letterAudio.pause(); letterAudio = new Audio(l.sound.file); const p = letterAudio.play(); if (p && p.catch) p.catch(() => toast && toast('The sound could not play here.')); } catch (_) { toast && toast('The sound could not play here.'); }
+}
+async function letters(el, deps, rerender) {
+  const h = deps.escapeHtml, L = S.let;
+  if (!L.data) L.data = await deps.apiGet('/api/lipi/letters');
+  const d = L.data, meta = Object.fromEntries(d.scripts.map(s => [s.code, s]));
+  const regions = [...new Set(d.scripts.map(s => s.region))];
+  const inRegion = l => !L.region || l.scripts.writes.some(c => meta[c] && meta[c].region === L.region);
+  const q = L.q.trim().toLowerCase();
+  const shown = d.letters.filter(l => (!L.board || l.board === L.board) && (!L.type || l.type === L.type) && inRegion(l)
+    && (!q || [l.char, l.sample, l.name, l.hi, l.iast, l.used, (l.grammar.pratyahara || []).join(' ')].join(' ').toLowerCase().includes(q)));
+  const cur = d.letters.find(l => l.char === L.sel) || d.letters[0];
+  const glyph = l => { const t = L.script === 'Deva' ? l.renders.Deva : l.renders[L.script]; return t ? { t, off: false } : { t: l.renders.Deva, off: true }; };
+  const types = [...new Set(d.letters.map(l => l.type))];
+  const g = cur.grammar || {};
+  const bigText = L.script === 'Deva' ? cur.renders.Deva : cur.renders[L.script];
+  el.innerHTML = `<div class="panel" style="padding:12px">
+      <div class="lt-filters">
+        <label class="lo-note">Preview script <select id="ltScript" style="${deps.FIELD}"><option value="Deva">Devanagari</option>${d.scripts.map(s => `<option value="${s.code}" ${s.code === L.script ? 'selected' : ''}>${h(s.label)}</option>`).join('')}</select></label>
+        <label class="lo-note">Type <select id="ltType" style="${deps.FIELD}"><option value="">All types</option>${types.map(t => `<option ${t === L.type ? 'selected' : ''}>${h(t)}</option>`).join('')}</select></label>
+        <label class="lo-note">Region <select id="ltRegion" style="${deps.FIELD}"><option value="">All regions</option>${regions.map(r => `<option ${r === L.region ? 'selected' : ''}>${h(r)}</option>`).join('')}</select></label>
+        <input id="ltQ" type="search" placeholder="Find a letter, name or pratyahara" value="${h(L.q)}" style="${deps.FIELD};min-width:200px">
+        <label class="lo-note"><input type="checkbox" id="ltAuto" ${L.autoplay ? 'checked' : ''}> Play when selected</label>
+      </div>
+      <div class="lt-boards"><button class="lo-chip" aria-pressed="${!L.board}" data-board="">All boards · ${d.counts.letters}</button>${d.boards.map(b => `<button class="lo-chip" aria-pressed="${L.board === b}" data-board="${h(b)}">${h(b)} · ${d.letters.filter(l => l.board === b).length}</button>`).join('')}</div>
+    </div>
+    <div class="lt-wrap" style="margin-top:10px">
+      <div class="panel" style="padding:4px 12px 12px">
+        ${shown.length ? d.boards.filter(b => shown.some(l => l.board === b)).map(b => `<div class="lt-board"><h3>${h(b)}</h3><div class="lt-grid">${shown.filter(l => l.board === b).map(l => { const gl = glyph(l); return `<button class="lt-tile" aria-pressed="${l.char === cur.char}" data-ch="${h(l.char)}" title="${h(l.name)}${gl.off ? ' · not written in this script' : ''}"><span class="snd">${l.sound.file ? '♪' : ''}</span><div class="g ${gl.off ? 'off' : ''}" style="${fontStyle(L.script)}">${h(gl.t)}</div><div class="i">${h(l.iast)}</div></button>`; }).join('')}</div></div>`).join('') : '<p class="empty-hint">No letter matches these filters.</p>'}
+        <p class="lo-note" style="margin-top:10px">Faded tiles have no form in the preview script; Lipi OS keeps them in Devanagari when converting. Kharoshthi is left out here until its converter reports missing letters.</p>
+      </div>
+      <aside class="lt-side">
+        <div class="panel" style="padding:12px">
+          <div class="lt-big" style="${fontStyle(L.script)}" aria-label="${h(cur.name)}">${h(bigText || cur.renders.Deva)}</div>
+          ${!bigText ? `<p class="lo-note" style="color:var(--rose)">${h(meta[L.script] ? meta[L.script].label : 'This script')} has no form for this letter; shown in Devanagari.</p>` : ''}
+          <div class="lo-row" style="margin-top:8px;justify-content:space-between">
+            <div><strong style="font-size:18px" lang="hi">${h(cur.hi)}</strong> <span class="lo-note">${h(cur.iast)} · ${h(cur.name)}</span></div>
+            ${cur.sound.file ? `<button class="btn btn-amber" id="ltPlay">Play ♪</button>` : '<span class="lo-note">No sound</span>'}
+          </div>
+          ${cur.sound.ipa ? `<p class="lo-note">Sound /${h(cur.sound.ipa)}/${cur.sound.approx ? ' · approximate' : ''} · Hindi pronunciation</p>` : ''}
+          ${cur.note ? `<p class="lo-note">${h(cur.note)}</p>` : ''}
+        </div>
+        <div class="panel" style="padding:12px">
+          <div class="cap-section-label">Type and grammar · व्याकरण</div>
+          <dl class="lt-kv">
+            <dt>Board</dt><dd>${h(cur.board)}</dd><dt>Type</dt><dd>${h(cur.type)}</dd>
+            ${g.sthana ? `<dt>Place (स्थान)</dt><dd>${h(g.sthana)} · ${h(g.sthanaEn || '')}</dd>` : ''}
+            ${g.prayatna ? `<dt>Effort (प्रयत्न)</dt><dd>${h(g.prayatna)}</dd>` : ''}
+            ${g.voicing ? `<dt>Voicing</dt><dd>${h(g.voicing)}</dd>` : ''}
+            ${g.aspiration ? `<dt>Breath</dt><dd>${h(g.aspiration)}</dd>` : ''}
+            ${g.nasal ? `<dt>Nasal</dt><dd>${h(g.nasal)}</dd>` : ''}
+            ${g.length ? `<dt>Length</dt><dd>${h(g.length)}</dd>` : ''}
+            ${(g.pratyahara || []).length ? `<dt>Pratyaharas</dt><dd>${g.pratyahara.map(p => `<span class="lt-tag">${h(p)}</span>`).join('')}</dd>` : ''}
+            <dt>Unicode</dt><dd style="font-family:var(--font-mono);font-size:11.5px">${h(cur.codepoint)} · ${h(cur.unicodeName)}</dd>
+          </dl>
+          ${g.sthana ? tractSvg(g.sthana) : ''}
+        </div>
+        <div class="panel" style="padding:12px">
+          <div class="cap-section-label">Region · written in ${cur.scripts.writes.length} of ${d.scripts.length} scripts</div>
+          <p class="lo-note" style="margin:0 0 6px">Used in: ${h(cur.used)}</p>
+          <div class="lt-strip">${cur.scripts.writes.map(c => `<button data-script="${c}" aria-pressed="${c === L.script}" title="${h((meta[c] || {}).label || c)} · ${h((meta[c] || {}).region || '')}"><div class="g" style="${fontStyle(c)}">${h(cur.renders[c] || '·')}</div><div class="c">${h(((meta[c] || {}).label || c).split(/[ /–-]/)[0])}</div></button>`).join('')}</div>
+          ${cur.scripts.lacks.length ? `<p class="lo-note" style="margin-top:6px">No form in: ${cur.scripts.lacks.map(c => h((meta[c] || {}).label || c) + ' (' + h((meta[c] || {}).region || '') + ')').join(', ')}</p>` : ''}
+        </div>
+        <div class="panel" style="padding:12px">
+          <div class="cap-section-label">Resources</div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:12.5px">${cur.resources.map(r => r.url ? `<a href="${h(r.url)}" target="_blank" rel="noopener" style="color:var(--amber)">${h(r.label)}</a>` : `<button class="lo-chip" data-sutra="${h(r.sutra)}" style="text-align:left">${h(r.label)} · open in Ashtadhyayi</button>`).join('')}
+            <button class="lo-chip" id="ltConvert" style="text-align:left">Write ${h(cur.sample)} in every script (Convert)</button></div>
+          <p class="lo-note" style="margin-top:8px">${h(d.sources.grammar)} ${h(d.sources.sound)}</p>
+        </div>
+      </aside>
+    </div>`;
+  const pick = ch => { L.sel = ch; const l = d.letters.find(x => x.char === ch); if (L.autoplay) playLetter(l, deps.toast); rerender(); };
+  el.querySelectorAll('.lt-tile').forEach(b => b.onclick = () => pick(b.dataset.ch));
+  el.querySelectorAll('[data-board]').forEach(b => b.onclick = () => { L.board = b.dataset.board; rerender(); });
+  el.querySelectorAll('.lt-strip [data-script]').forEach(b => b.onclick = () => { L.script = b.dataset.script; rerender(); });
+  el.querySelector('#ltScript').onchange = e => { L.script = e.target.value; rerender(); };
+  el.querySelector('#ltType').onchange = e => { L.type = e.target.value; rerender(); };
+  el.querySelector('#ltRegion').onchange = e => { L.region = e.target.value; rerender(); };
+  el.querySelector('#ltAuto').onchange = e => { L.autoplay = e.target.checked; };
+  const qi = el.querySelector('#ltQ'); qi.onchange = () => { L.q = qi.value; rerender(); };
+  const play = el.querySelector('#ltPlay'); if (play) play.onclick = () => playLetter(cur, deps.toast);
+  el.querySelectorAll('[data-sutra]').forEach(b => b.onclick = () => { if (typeof window.openSutra === 'function') window.openSutra(b.dataset.sutra); else deps.toast('Open the Ashtadhyayi view and look up ' + b.dataset.sutra + '.'); });
+  el.querySelector('#ltConvert').onclick = () => { S.conv.text = cur.sample; S.conv.hindi = false; S.conv.out = null; S.tab = 'convert'; rerender(); };
 }
 
 // --- convert ---------------------------------------------------------------------------------------

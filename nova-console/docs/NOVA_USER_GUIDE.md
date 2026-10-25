@@ -685,7 +685,7 @@ The same converter runs in the web version of the notepad, which keeps its notes
 
 ## Lipi OS
 
-*A language layer for Maataa. A Hindi welcome in twelve historic scripts, a converter for twenty-five scripts, the 69-record script registry, courses and catalogues, a reading desk, workshop plans, a multi-script newsroom, the Ashokan text atlas and a sourced chronology.*
+*A language layer for Maataa. A Hindi welcome in twelve historic scripts, a letters board with sound and grammar for all 108 characters, a converter for twenty-five scripts, the 69-record script registry, courses and catalogues, a reading desk, workshop plans, a multi-script newsroom, the Ashokan text atlas and a sourced chronology.*
 
 **Lipi OS** (AAI group) is a language layer for Maataa. It began as the owner's Rakhigarhi / Lipi OS prototype and now runs inside Maataa, on this computer. A script is a writing system, not a language: Lipi OS keeps the two apart everywhere.
 
@@ -694,6 +694,17 @@ The same converter runs in the web version of the notepad, which keeps its notes
 The modern Hindi greeting **आपका स्वागत है** written in twelve historic scripts: Brahmi, Kharoshthi, Bhaiksuki, Sharada, Siddham, Grantha, Nandinagari, Newa, Tirhuta, Takri, Modi and Kaithi. Click a card to focus it. Your choice and your study language are remembered in this browser.
 
 The phrase is written **as it is pronounced** (आप्का स्वागत है), because historic scripts spell Sanskrit-style. These are draft renderings, not inscriptions or translations.
+
+### Letters
+
+The **Letters** board shows every character Lipi OS converts, 108 in all, on 14 boards: vowels (स्वर), vowel signs (मात्रा), the five vargas, semivowels (अन्तःस्थ), sibilants and h (ऊष्म), signs (anusvara, visarga, virama, nukta, avagraha), nukta letters, regional letters (ळ, ऴ, ऱ, the Sindhi implosives), digits, and punctuation and symbols.
+
+- **Preview script** writes every tile in one of 23 scripts. Faded tiles have no form in that script.
+- **Click a letter** to see it large, hear it (**Play**, or turn on *Play when selected*), and read its type and grammar: place of articulation (स्थान) with a small diagram, effort (प्रयत्न), voicing, breath, length, and the pratyaharas it belongs to.
+- **Region** shows the letter in every script that writes it, with where that script is used, and lists the scripts that cannot write it. The *Region* filter keeps the letters written by scripts of one region.
+- **Resources** links the Unicode record and chart, opens the Ashtadhyayi at the sutra behind the grammar (1.1.9 for place and effort, 1.1.71 for pratyaharas), and sends the letter to Convert.
+
+Grammar follows the places and efforts stated in the Siddhanta Kaumudi under Ashtadhyayi 1.1.9; pratyaharas are computed from the 14 Maheshvara sutras. Sounds were recorded once, offline, with Kokoro's Hindi voice from the IPA shown, so they use Hindi pronunciation. Letters marked *approximate* (such as ळ, the vocalic ऋ, aspirated voiced stops and the Sindhi implosives) are the nearest sound the voice can make. Avagraha, the dandas and the abbreviation sign have no sound.
 
 ### Convert
 

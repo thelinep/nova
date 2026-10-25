@@ -44,6 +44,7 @@ const aai = require('./lib/aai');
 const aaiEvidence = require('./lib/aai-evidence');
 const hkdm = require('./lib/hkdm-tensor');
 const lipiScripts = require('./lib/lipi-scripts');
+const lipiLetters = require('./lib/lipi-letters');
 const heritage = require('./lib/heritage');
 const brahmiNotes = require('./lib/brahmi-notes');
 const BRAHMI_PAD_JS = path.join(__dirname, 'lib', 'brahmi-pad.js');
@@ -355,7 +356,7 @@ function readJsonBody(req) {
   });
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm', '.woff2': 'font/woff2', '.woff': 'font/woff', '.txt': 'text/plain; charset=utf-8' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm', '.woff2': 'font/woff2', '.woff': 'font/woff', '.txt': 'text/plain; charset=utf-8', '.mp3': 'audio/mpeg' };
 function serveStatic(req, res, pathname) {
   let rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const filePath = path.resolve(PUBLIC_DIR, rel);
@@ -1069,6 +1070,8 @@ const routes = [
   // Lipi OS (lib/lipi-scripts.js, lib/heritage.js): many-script converter, script registry, learning library,
   // chronology and atlas, newsroom editions and the reading desk. Absorbed from the Rakhigarhi / Lipi OS prototype.
   { method: 'GET', pattern: /^\/api\/lipi\/scripts$/, handler: async (_req,res)=>sendJson(res,200,lipiScripts.list()) },
+  { method: 'GET', pattern: /^\/api\/lipi\/letters$/, handler: async (_req,res)=>sendJson(res,200,lipiLetters.board()) },
+  { method: 'GET', pattern: /^\/api\/lipi\/letters\/([^/]+)$/, handler: async (_req,res,[k])=>sendJson(res,200,lipiLetters.letter(decodeURIComponent(k))) },
   { method: 'POST', pattern: /^\/api\/lipi\/convert$/, handler: async (req,res)=>{const b=await readJsonBody(req);sendJson(res,200,lipiScripts.convert(b.text,{scripts:b.scripts,hindi:!!b.hindi}));} },
   { method: 'GET', pattern: /^\/api\/lipi\/os$/, handler: async (_req,res)=>sendJson(res,200,heritage.overview()) },
   { method: 'GET', pattern: /^\/api\/lipi\/registry$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.registry({q:q.get('q')||'',tier:q.get('tier')||''}));} },
