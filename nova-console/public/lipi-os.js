@@ -17,12 +17,15 @@ export const FONTS = {
   Dogr: ['dogra', 'Noto Serif Dogra'], Sind: ['khudawadi', 'Noto Sans Khudawadi'], Diak: ['dives-akuru', 'Noto Serif Dives Akuru'], Kawi: ['kawi', 'Noto Sans Kawi'],
 };
 const FONT_FILE = { Dogr: 'noto-serif-dogra-dogra', Diak: 'noto-serif-dives-akuru-dives-akuru' };
+// Maataa's own builds (tools/build-lipi-conjunct-fonts.py): Noto plus the stacked conjuncts its fonts lack.
+const MAATAA_FONT = { Brah: 'maataa-lipi-brahmi', Shrd: 'maataa-lipi-sharada', Diak: 'maataa-lipi-dives-akuru' };
+const fontUrl = (c, slug) => MAATAA_FONT[c] ? `/fonts/lipi/${MAATAA_FONT[c]}.woff2` : `/fonts/lipi/${FONT_FILE[c] || 'noto-sans-' + slug + '-' + slug}-400-normal.woff2`;
 export const fontStyle = code => FONTS[code] ? `font-family:'Lipi ${code}','${FONTS[code][1]}',var(--font-ui);` : '';
 export const dirOf = code => (code === 'Khar' ? 'rtl' : 'ltr');
 const INDIC = /[\u{0900}-\u{0dff}\u{11000}-\u{11fff}]/u;
 
 const CSS = `
-${Object.entries(FONTS).map(([c, [slug]]) => `@font-face{font-family:'Lipi ${c}';src:url('/fonts/lipi/${FONT_FILE[c] || 'noto-sans-' + slug + '-' + slug}-400-normal.woff2') format('woff2');font-display:swap}`).join('\n')}
+${Object.entries(FONTS).map(([c, [slug]]) => `@font-face{font-family:'Lipi ${c}';src:url('${fontUrl(c, slug)}') format('woff2');font-display:swap}`).join('\n')}
 .lo-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px;align-items:start}
 @media(max-width:1000px){.lo-hero{grid-template-columns:1fr}}
 .lo-big{font-size:46px;line-height:1.1;margin:6px 0}
@@ -115,7 +118,7 @@ function ensureCss() {
 
 const S = {
   tab: 'welcome', os: null, focus: 'Brah', study: 'Hindi',
-  conv: { text: 'आपका स्वागत है', hindi: true, sel: null, out: null },
+  conv: { text: 'आपका स्वागत है', hindi: true, halant: 'joined', sel: null, out: null },
   reg: { q: '', tier: '', data: null, focus: null, sample: null },
   learn: null, readings: null,
   news: null, editions: null, edId: null, view: 'multi', debugLane: 0, rotate: -14,
@@ -278,13 +281,14 @@ async function letters(el, deps, rerender) {
 async function convert(el, deps, rerender) {
   const h = deps.escapeHtml, all = S.os.scripts;
   if (!S.conv.sel) S.conv.sel = new Set(all.map(s => s.code));
-  const run = async () => { try { S.conv.out = await deps.apiPost('/api/lipi/convert', { text: S.conv.text, hindi: S.conv.hindi, scripts: [...S.conv.sel] }); } catch (e) { deps.toast(e.message); S.conv.out = null; } };
+  const run = async () => { try { S.conv.out = await deps.apiPost('/api/lipi/convert', { text: S.conv.text, hindi: S.conv.hindi, halant: S.conv.halant, scripts: [...S.conv.sel] }); } catch (e) { deps.toast(e.message); S.conv.out = null; } };
   if (!S.conv.out && S.conv.text.trim() && S.conv.sel.size) await run();
   const o = S.conv.out;
   el.innerHTML = `<div class="panel" style="padding:14px">
       <textarea id="loText" aria-label="Text to convert" style="${deps.FIELD};width:100%;min-height:80px;font-size:18px">${h(S.conv.text)}</textarea>
       <div class="lo-row" style="margin-top:8px"><button class="btn btn-amber" id="loGo">Convert</button>
         <label class="lo-note"><input type="checkbox" id="loHindi" ${S.conv.hindi ? 'checked' : ''}> Hindi: spell as pronounced (drops silent inherent vowels; a heuristic)</label>
+        <label class="lo-note" title="A halant between two letters normally joins them into a conjunct. Show it instead to see each letter separately."><input type="checkbox" id="loHalant" ${S.conv.halant === 'visible' ? 'checked' : ''}> Show halant (्) instead of conjuncts</label>
         <button class="lo-chip" id="loAll">All scripts</button><button class="lo-chip" id="loNone">None</button></div>
       <div class="lo-row" style="margin-top:8px">${all.map(s => `<button class="lo-chip" aria-pressed="${S.conv.sel.has(s.code)}" data-code="${s.code}" title="${h(s.note || '')}">${h(s.label)}${s.coverage != null && s.coverage < 1 ? ' · ' + Math.round(s.coverage * 100) + '%' : ''}</button>`).join('')}</div>
       <p class="lo-note" style="margin-top:6px">Type Devanagari, any script listed here, or SLP1 in Latin letters. Letters a script has no form for stay in Devanagari and are flagged; nothing is guessed or translated.</p>
@@ -293,11 +297,12 @@ async function convert(el, deps, rerender) {
       <div class="lo-res"><span class="lo-note">Read as Devanagari</span><span class="s" lang="hi">${h(o.devanagari)}</span><span></span></div>
       ${o.spelling === 'hindi-pronunciation' ? `<div class="lo-res"><span class="lo-note">Spelled as pronounced</span><span class="s" lang="hi">${h(o.spelled)}</span><span></span></div>` : ''}
       ${o.iast ? `<div class="lo-res"><span class="lo-note">IAST</span><span class="s" style="font-size:16px">${h(o.iast)}</span><button class="btn btn-line lo-copy" data-t="${h(o.iast)}">Copy</button></div>` : ''}
-      ${o.results.map(r => `<div class="lo-res"><span><strong style="font-size:13px">${h(r.label)}</strong><br><span class="lo-note">${h(r.hi || '')}</span></span><span><span class="s" dir="${r.direction}" style="${fontStyle(r.code)}">${h(r.text)}</span>${r.missing.length ? `<br><span class="m">Kept in Devanagari (no form in ${h(r.label)}): ${h(r.missing.join(' '))}</span>` : ''}</span><button class="btn btn-line lo-copy" data-t="${h(r.text)}">Copy</button></div>`).join('')}
+      ${o.results.map(r => `<div class="lo-res"><span><strong style="font-size:13px">${h(r.label)}</strong><br><span class="lo-note">${h(r.hi || '')}</span></span><span><span class="s" dir="${r.direction}" style="${fontStyle(r.code)}">${h(r.text)}</span>${r.missing.length ? `<br><span class="m">Kept in Devanagari (no form in ${h(r.label)}): ${h(r.missing.join(' '))}</span>` : ''}${S.conv.halant !== 'visible' && r.halantStyle && r.halantStyle !== 'stacked' ? `<br><span class="lo-note">${r.halantStyle === 'partial' ? 'Some conjuncts join; others show the halant.' : 'Shown with a visible halant.'} ${h((all.find(x => x.code === r.code) || {}).halantNote || '')}</span>` : ''}</span><button class="btn btn-line lo-copy" data-t="${h(r.text)}">Copy</button></div>`).join('')}
     </div>` : ''}`;
   const readText = () => { S.conv.text = el.querySelector('#loText').value; };
   el.querySelector('#loGo').onclick = async () => { readText(); await run(); rerender(); };
   el.querySelector('#loHindi').onchange = async e => { S.conv.hindi = e.target.checked; readText(); await run(); rerender(); };
+  el.querySelector('#loHalant').onchange = async e => { S.conv.halant = e.target.checked ? 'visible' : 'joined'; readText(); await run(); rerender(); };
   el.querySelector('#loAll').onclick = async () => { readText(); S.conv.sel = new Set(all.map(s => s.code)); await run(); rerender(); };
   el.querySelector('#loNone').onclick = () => { readText(); S.conv.sel = new Set(); S.conv.out = null; rerender(); };
   el.querySelectorAll('.lo-chip[data-code]').forEach(b => b.onclick = async () => { const c = b.dataset.code; S.conv.sel.has(c) ? S.conv.sel.delete(c) : S.conv.sel.add(c); readText(); if (S.conv.sel.size) await run(); else S.conv.out = null; rerender(); });

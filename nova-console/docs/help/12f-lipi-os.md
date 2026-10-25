@@ -4,7 +4,7 @@ title: Lipi OS
 section: Chat and knowledge
 order: 12.7
 summary: A language layer for Maataa. A Hindi welcome in twelve historic scripts, a letters board with sound and grammar for all 108 characters, a converter for twenty-five scripts, the 69-record script registry, courses and catalogues, a reading desk, workshop plans, a multi-script newsroom, the Ashokan text atlas and a sourced chronology.
-keywords: lipi os letters board varnamala alphabet akshara swar vyanjan matra sound pronunciation sthana pratyahara maheshvara script registry brahmi kharoshthi bhaiksuki sharada siddham grantha nandinagari newa tirhuta mithilakshar takri modi kaithi dogra khudawadi dives akuru kawi tulu tigalari transliteration hindi schwa newsroom vaigyaaniq times workshop futurism course reading desk atlas ashoka girnar dhauli jaugada kalsi chronology timeline
+keywords: lipi os halant virama conjunct samyuktakshar font letters board varnamala alphabet akshara swar vyanjan matra sound pronunciation sthana pratyahara maheshvara script registry brahmi kharoshthi bhaiksuki sharada siddham grantha nandinagari newa tirhuta mithilakshar takri modi kaithi dogra khudawadi dives akuru kawi tulu tigalari transliteration hindi schwa newsroom vaigyaaniq times workshop futurism course reading desk atlas ashoka girnar dhauli jaugada kalsi chronology timeline
 views: lipios
 ---
 **Lipi OS** (AAI group) is a language layer for Maataa. It began as the owner's Rakhigarhi / Lipi OS prototype and now runs inside Maataa, on this computer. A script is a writing system, not a language: Lipi OS keeps the two apart everywhere.
@@ -38,6 +38,12 @@ Type Devanagari, any listed script, or SLP1 in Latin letters, and read it in up 
 The conversion tables come from the Unicode character names, so a letter is converted only when Unicode gives the same letter in the other script. A letter a script lacks stays in Devanagari and is listed in amber, never guessed. Kharoshthi follows Guru's convention (ai and au as e and o with the length mark) and runs right to left.
 
 Maataa ships the free Noto fonts for the historic scripts, so they show without installing anything.
+
+### Halant and conjuncts
+
+A halant (virama, ्) between two consonants joins them into a conjunct (संयुक्ताक्षर). Lipi OS writes the halant the Unicode way and lets the font draw the conjunct. Turn on **Show halant instead of conjuncts** to see each letter with its halant instead; Lipi OS then puts a zero-width non-joiner after the halant, which is how Unicode asks for a visible one.
+
+The Noto fonts do not draw conjuncts for every script, so Maataa ships its own builds for three of them: **Maataa Lipi Brahmi**, **Maataa Lipi Sharada** and **Maataa Lipi Dives Akuru**. They are Noto fonts with stacked conjuncts added (the second letter written smaller, below the first), renamed as the SIL Open Font License requires. Takri and Khudawadi are normally written with a visible halant, Noto Serif Dogra forms no conjuncts, and Noto Sans Kharoshthi forms only some; Convert says so under those scripts.
 
 ## Scripts
 

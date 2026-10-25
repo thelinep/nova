@@ -719,6 +719,12 @@ The conversion tables come from the Unicode character names, so a letter is conv
 
 Maataa ships the free Noto fonts for the historic scripts, so they show without installing anything.
 
+#### Halant and conjuncts
+
+A halant (virama, ्) between two consonants joins them into a conjunct (संयुक्ताक्षर). Lipi OS writes the halant the Unicode way and lets the font draw the conjunct. Turn on **Show halant instead of conjuncts** to see each letter with its halant instead; Lipi OS then puts a zero-width non-joiner after the halant, which is how Unicode asks for a visible one.
+
+The Noto fonts do not draw conjuncts for every script, so Maataa ships its own builds for three of them: **Maataa Lipi Brahmi**, **Maataa Lipi Sharada** and **Maataa Lipi Dives Akuru**. They are Noto fonts with stacked conjuncts added (the second letter written smaller, below the first), renamed as the SIL Open Font License requires. Takri and Khudawadi are normally written with a visible halant, Noto Serif Dogra forms no conjuncts, and Noto Sans Kharoshthi forms only some; Convert says so under those scripts.
+
 ### Scripts
 
 The 69-record registry from the prototype, with its tiers (Flagship, Pilot, Research, Exhibition only). Search or filter by tier, and click a record to see its alphabet written out. Seventeen of the records can be written by the converter; the rest are historical styles without their own Unicode block. The Indus / Harappan signs stay **exhibition only**: no decipherment is claimed.

@@ -508,15 +508,18 @@
 .bp-notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
 .bp-notes button{width:100%;text-align:left;border:0;background:none;color:inherit;padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:2px;font:inherit}
 .bp-notes button[aria-current="true"]{background:var(--amber-soft,rgba(255,170,60,.12))}
-.bp-notes .t{font-family:'Noto Sans Brahmi',var(--font-sans);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@font-face{font-family:'Maataa Lipi Brahmi';src:url('/fonts/lipi/maataa-lipi-brahmi.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Noto Sans Kharoshthi';src:local('Noto Sans Kharoshthi'),url('/fonts/lipi/noto-sans-kharoshthi-kharoshthi-400-normal.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Noto Sans Siddham';src:local('Noto Sans Siddham'),url('/fonts/lipi/noto-sans-siddham-siddham-400-normal.woff2') format('woff2');font-display:swap}
+.bp-notes .t{font-family:'Maataa Lipi Brahmi','Noto Sans Brahmi',var(--font-sans);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bp-notes .m{font-size:12px;color:var(--muted)}
-.bp-src{width:100%;min-height:120px;resize:vertical;font-size:16px;line-height:1.6;font-family:var(--font-sans),'Noto Sans Brahmi'}
-.bp-out{font:clamp(26px,3.2vw,36px)/1.7 'Noto Sans Brahmi',var(--font-sans);white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid var(--line);padding-top:12px;margin-top:12px;min-height:1.7em}
+.bp-src{width:100%;min-height:120px;resize:vertical;font-size:16px;line-height:1.6;font-family:var(--font-sans),'Maataa Lipi Brahmi','Noto Sans Brahmi'}
+.bp-out{font:clamp(26px,3.2vw,36px)/1.7 'Maataa Lipi Brahmi','Noto Sans Brahmi',var(--font-sans);white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid var(--line);padding-top:12px;margin-top:12px;min-height:1.7em}
 .bp-reading{font-family:var(--font-mono,monospace);font-size:14px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
 .bp-keys{display:flex;flex-wrap:wrap;gap:5px}
 .bp-key{min-width:50px;border:1px solid var(--line);background:transparent;color:inherit;border-radius:6px;padding:3px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font:inherit}
 .bp-key:hover{border-color:var(--amber)}
-.bp-key .g{font:22px/1.35 'Noto Sans Brahmi',var(--font-sans)}
+.bp-key .g{font:22px/1.35 'Maataa Lipi Brahmi','Noto Sans Brahmi',var(--font-sans)}
 .bp-key .l{font-size:10.5px;color:var(--muted);font-family:var(--font-mono,monospace)}
 .bp-vargas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
 .hk-heat td,.hk-heat th{text-align:center;padding:4px 6px}
@@ -5586,7 +5589,7 @@ async function renderCollectorView(){
 // ── Ashtadhyayi ────────────────────────────────────────────────────────────────────
 // All 3,983 sutras and the Dhatupatha (lib/panini.js; Vidyut by ambuda.org, MIT licence).
 const PANINI = { tab:'sutras', q:'1.1', script:'devanagari', root:'', info:null };
-const PANINI_FONTS = { brahmi:"'Noto Sans Brahmi'", kharoshthi:"'Noto Sans Kharoshthi'", siddham:"'Noto Sans Siddham'" };
+const PANINI_FONTS = { brahmi:"'Maataa Lipi Brahmi','Noto Sans Brahmi'", kharoshthi:"'Noto Sans Kharoshthi'", siddham:"'Noto Sans Siddham'" };
 function openSutra(id){ PANINI.tab='sutras'; PANINI.q=String(id); showView('panini'); }
 async function paniniFetch(path){ const r=await fetch(apiUrl(path)); const d=await r.json(); if(!r.ok) throw new Error(d.error||'Request failed'); return d; }
 async function renderPaniniView(){
@@ -6042,7 +6045,7 @@ async function renderRakhigarhiView(tab){
 }
 async function renderLipiView(){
   const pad=$('lipiView').querySelector('.view-pad');
-  const out=AAI.lipiOut, rows=[['devanagari','Devanagari',''],['iast','IAST',''],['slp1','SLP1','mono'],['brahmi','Brahmi',"font-family:'Noto Sans Brahmi',var(--font-sans)"],['kharoshthi','Kharoshthi (right to left)',"font-family:'Noto Sans Kharoshthi',var(--font-sans);direction:rtl"],['siddham','Siddham',"font-family:'Noto Sans Siddham',var(--font-sans)"]];
+  const out=AAI.lipiOut, rows=[['devanagari','Devanagari',''],['iast','IAST',''],['slp1','SLP1','mono'],['brahmi','Brahmi',"font-family:'Maataa Lipi Brahmi','Noto Sans Brahmi',var(--font-sans)"],['kharoshthi','Kharoshthi (right to left)',"font-family:'Noto Sans Kharoshthi',var(--font-sans);direction:rtl"],['siddham','Siddham',"font-family:'Noto Sans Siddham',var(--font-sans)"]];
   pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · Lipi</span><h1 class="view-title">Lipi</h1><p class="view-desc">Type Devanagari, Brahmi or Siddham (Latin letters are read as SLP1) and see it in every script at once. The same conversion Guru uses, checked on all 3,983 sutras.</p></div><button class="btn btn-line" type="button" id="lipiToOs">Twenty-five scripts in Lipi OS</button></div>
   <div class="panel" style="padding:14px"><textarea id="lipiText" aria-label="Text to convert" style="width:100%;min-height:80px;font-size:18px">${escapeHtml(AAI.lipi)}</textarea><button class="btn btn-amber" id="lipiGo" style="margin-top:8px">Convert</button></div>
   ${out?`<div style="margin-top:10px">${rows.map(([k,l,style])=>`<div class="panel panini-sutra"><span class="mono panini-sub" style="min-width:150px">${l}</span><div class="panini-text ${style==='mono'?'mono':''}" style="flex:1;${style==='mono'?'':style}">${escapeHtml(out[k])}</div><button class="btn btn-line lipi-copy" data-k="${k}">Copy</button></div>`).join('')}<p class="panini-sub" style="margin-top:8px">Kharoshthi has no ai/au: they are written as e/o plus the length mark (Guru convention), and its digits stay in Devanagari. If letters show as boxes, install the free Noto Sans Brahmi, Kharoshthi or Siddham font.</p></div>`:''}`;

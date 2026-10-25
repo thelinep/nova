@@ -1072,7 +1072,7 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/lipi\/scripts$/, handler: async (_req,res)=>sendJson(res,200,lipiScripts.list()) },
   { method: 'GET', pattern: /^\/api\/lipi\/letters$/, handler: async (_req,res)=>sendJson(res,200,lipiLetters.board()) },
   { method: 'GET', pattern: /^\/api\/lipi\/letters\/([^/]+)$/, handler: async (_req,res,[k])=>sendJson(res,200,lipiLetters.letter(decodeURIComponent(k))) },
-  { method: 'POST', pattern: /^\/api\/lipi\/convert$/, handler: async (req,res)=>{const b=await readJsonBody(req);sendJson(res,200,lipiScripts.convert(b.text,{scripts:b.scripts,hindi:!!b.hindi}));} },
+  { method: 'POST', pattern: /^\/api\/lipi\/convert$/, handler: async (req,res)=>{const b=await readJsonBody(req);sendJson(res,200,lipiScripts.convert(b.text,{scripts:b.scripts,hindi:!!b.hindi,halant:b.halant}));} },
   { method: 'GET', pattern: /^\/api\/lipi\/os$/, handler: async (_req,res)=>sendJson(res,200,heritage.overview()) },
   { method: 'GET', pattern: /^\/api\/lipi\/registry$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.registry({q:q.get('q')||'',tier:q.get('tier')||''}));} },
   { method: 'GET', pattern: /^\/api\/lipi\/learning$/, handler: async (_req,res)=>sendJson(res,200,heritage.learning()) },

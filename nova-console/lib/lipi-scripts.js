@@ -30,20 +30,65 @@ const isDevaModifier = ch => /[\u{0900}-\u{0903}]/u.test(ch);
 const isDevaIndependentVowel = ch => /[\u{0904}-\u{0914}]/u.test(ch);
 const VIRAMA = '\u{094d}', NUKTA = '\u{093c}';
 const KAWI_CONJOINER = '\u{11F42}';
+const ZWNJ = '\u{200C}';
+
+/**
+ * How each script's halant (virama) shows with the fonts Maataa ships. "stacked": a virama
+ * between consonants forms a conjunct; "partial": the font forms only some conjuncts and shows
+ * a visible halant elsewhere; "visible": the halant is drawn (by script convention, or because
+ * no font forms conjuncts yet). Measured with HarfBuzz on the shipped fonts (tools/build-lipi-conjunct-fonts.py).
+ */
+const HALANT = {
+  Brah: ['stacked', 'Maataa Lipi Brahmi adds the stacked conjuncts Noto Sans Brahmi lacks.'],
+  Shrd: ['stacked', 'Maataa Lipi Sharada stacks the conjuncts Noto Sans Sharada leaves open.'],
+  Diak: ['stacked', 'Maataa Lipi Dives Akuru stacks the conjuncts Noto Serif Dives Akuru leaves open.'],
+  Khar: ['partial', 'Noto Sans Kharoshthi forms some conjuncts; others show the virama.'],
+  Takr: ['visible', 'Takri is usually written with a visible halant.'],
+  Dogr: ['visible', 'Noto Serif Dogra forms no conjuncts; the halant is shown.'],
+  Sind: ['visible', 'Khudawadi does not form conjuncts; the halant is shown.'],
+};
+const halantOf = code => (HALANT[code] || ['stacked', ''])[0];
+/** The virama a script writes, from its table. */
+const viramaOf = code => code === 'Khar' ? '\u{10A3F}' : code === 'Deva' ? VIRAMA : (load().scripts[code] || { map: {} }).map[VIRAMA];
 
 /** Every script Lipi can write, in display order. */
 function list() {
   const d = load();
-  const out = [{ code: 'Deva', label: 'Devanagari', hi: 'देवनागरी', direction: 'ltr', coverage: 1, missing: [], note: 'The source script for conversion.' }];
-  out.push({ code: 'Khar', label: 'Kharoshthi', hi: 'खरोष्ठी', direction: 'rtl', coverage: null, missing: [], note: 'Right to left. ai and au are written as e and o with the length mark (Guru convention).' });
-  for (const s of Object.values(d.scripts).sort((a, b) => a.order - b.order)) out.push({ code: s.code, label: s.label, hi: s.hi, direction: s.direction, coverage: s.coverage, missing: s.missing, note: s.note });
+  const out = [{ code: 'Deva', label: 'Devanagari', hi: 'देवनागरी', direction: 'ltr', coverage: 1, missing: [], note: 'The source script for conversion.', halant: 'stacked', halantNote: '' }];
+  out.push({ code: 'Khar', label: 'Kharoshthi', hi: 'खरोष्ठी', direction: 'rtl', coverage: null, missing: [], note: 'Right to left. ai and au are written as e and o with the length mark (Guru convention).', halant: halantOf('Khar'), halantNote: HALANT.Khar[1] });
+  for (const s of Object.values(d.scripts).sort((a, b) => a.order - b.order)) out.push({ code: s.code, label: s.label, hi: s.hi, direction: s.direction, coverage: s.coverage, missing: s.missing, note: s.note, halant: halantOf(s.code), halantNote: (HALANT[s.code] || [])[1] || '' });
   return out;
 }
 
 const known = code => code === 'Deva' || code === 'Khar' || !!load().scripts[code];
 
-/** Devanagari text -> one script. Returns { text, missing: [chars kept in Devanagari] }. */
-function fromDeva(text, code) {
+/**
+ * Shows the halant instead of a conjunct: a zero-width non-joiner after every virama that is
+ * followed by a letter (the Unicode way to ask for an explicit virama).
+ */
+function visibleHalant(text, code) {
+  const v = viramaOf(code);
+  if (!v) return text;
+  const chars = [...text], out = [];
+  for (let i = 0; i < chars.length; i++) {
+    out.push(chars[i]);
+    const next = chars[i + 1] || '';
+    if (chars[i] === v && next && next !== ZWNJ && !/[\s\p{P}]/u.test(next)) out.push(ZWNJ);
+  }
+  return out.join('');
+}
+
+/**
+ * Devanagari text -> one script. Returns { text, missing: [chars kept in Devanagari] }.
+ * opts.halant: 'joined' (default; conjuncts where the script forms them) or 'visible'.
+ */
+function fromDeva(text, code, opts = {}) {
+  const r = fromDevaJoined(text, code);
+  if (opts.halant !== 'visible') return r;
+  return { ...r, text: visibleHalant(code === 'Kawi' ? r.text.split(KAWI_CONJOINER).join(viramaOf('Kawi')) : r.text, code) };
+}
+
+function fromDevaJoined(text, code) {
   const src = String(text).normalize('NFD');
   if (code === 'Deva') return { text: src.normalize('NFC'), missing: [] };
   if (code === 'Khar') return { text: panini.fromDeva(src, 'kharoshthi'), missing: [] };
@@ -134,7 +179,7 @@ function hindiSpelling(text) {
   }).join('');
 }
 
-/** Convert text into many scripts at once. opts: { scripts: [codes], hindi: bool } */
+/** Convert text into many scripts at once. opts: { scripts: [codes], hindi: bool, halant: 'joined' | 'visible' } */
 function convert(text, opts = {}) {
   const raw = String(text || '');
   if (!raw.trim()) throw error('Type some text.');
@@ -148,8 +193,8 @@ function convert(text, opts = {}) {
   let iast = '';
   try { iast = slp1.toIast(slp1.fromDevanagari(spelled)); } catch (_) { iast = ''; }
   return {
-    input: raw, devanagari, spelling: opts.hindi ? 'hindi-pronunciation' : 'as-written', spelled, iast,
-    results: codes.map(code => ({ code, label: meta[code].label, hi: meta[code].hi, direction: meta[code].direction, ...fromDeva(spelled, code) })),
+    input: raw, devanagari, spelling: opts.hindi ? 'hindi-pronunciation' : 'as-written', spelled, iast, halant: opts.halant === 'visible' ? 'visible' : 'joined',
+    results: codes.map(code => ({ code, label: meta[code].label, hi: meta[code].hi, direction: meta[code].direction, halantStyle: meta[code].halant || 'stacked', ...fromDeva(spelled, code, { halant: opts.halant }) })),
   };
 }
 
@@ -162,4 +207,4 @@ function welcome(scripts = WELCOME_SCRIPTS) {
   return { ...WELCOME, spelled: r.spelled, note: 'Heritage rendering draft: the modern Hindi phrase written in each script as it is pronounced. It is not an ancient inscription or a translation, and script-specific spelling still needs scholarly review.', results: r.results };
 }
 
-module.exports = { list, known, fromDeva, toDeva, hindiSpelling, convert, welcome, WELCOME, WELCOME_SCRIPTS, _reset: () => { data = null; reverse = null; } };
+module.exports = { HALANT, viramaOf, visibleHalant, list, known, fromDeva, toDeva, hindiSpelling, convert, welcome, WELCOME, WELCOME_SCRIPTS, _reset: () => { data = null; reverse = null; } };
