@@ -207,7 +207,10 @@ def grammar(ch, rec):
 def build():
     out = []
     order = {b: i for i, b in enumerate(BOARDS)}
-    keys = sorted({k for s in SCRIPTS['scripts'].values() for k in s['map']}, key=lambda c: (order.get(L.get(c, {}).get('board'), 99), [ord(x) for x in c]))
+    pos = {c: i for i, c in enumerate(L)}  # traditional order, as the records are written above
+    for i, c in enumerate('अआइईउऊऋॠऌॡएऐओऔऎऒ' + 'ािीुूृॄॢॣेैोौॆॊॅॉॎऺऻॖॗ'):
+        pos[c] = i - 100  # varnamala order for vowels and their signs
+    keys = sorted({k for s in SCRIPTS['scripts'].values() for k in s['map']}, key=lambda c: (order.get(L.get(c, {}).get('board'), 99), pos.get(c, 999)))
     missing = [k for k in keys if k not in L]
     if missing:
         raise SystemExit('No letter record for: ' + ' '.join(f'{k} U+{ord(k):04X}' for k in missing))
