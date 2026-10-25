@@ -1,0 +1,2188 @@
+{
+ "about": "Indus (Harappan) script signs from openly licensed pictures. The script is undeciphered and not in Unicode. Sign boxes were drawn by hand; groups are an informal visual sorting, not a sign list.",
+ "signLists": [
+  {
+   "who": "Iravatham Mahadevan",
+   "year": 1977,
+   "signs": 417,
+   "note": "The Indus Script: Texts, Concordance and Tables (Archaeological Survey of India). 2,906 texts; later counts 419 signs and 2,911 texts. Read online at the Roja Muthiah Research Library.",
+   "url": "https://www.rmrl.in/en/dl/research-papers/mahadevan"
+  },
+  {
+   "who": "Asko Parpola",
+   "year": 1994,
+   "signs": 386,
+   "note": "Deciphering the Indus Script (Cambridge University Press); also the Corpus of Indus Seals and Inscriptions."
+  },
+  {
+   "who": "Bryan K. Wells",
+   "year": 2015,
+   "signs": 694,
+   "note": "The Archaeology and Epigraphy of Indus Writing (Archaeopress)."
+  }
+ ],
+ "facts": [
+  "More than 4,700 inscribed objects are known: stamp seals, sealings, copper plates, small tablets, pottery and ivory rods.",
+  "Most texts are short: about five signs on average; the longest has a few dozen.",
+  "Texts on seals usually run from right to left; impressions show them reversed.",
+  "There is no bilingual text, and the script has not been deciphered. Claims of decipherment, including links to Brahmi, are debated."
+ ],
+ "resources": [
+  {
+   "title": "Mahadevan, The Indus Script: Texts, Concordance and Tables (online, RMRL)",
+   "url": "https://www.rmrl.in/en/dl/research-papers/mahadevan"
+  },
+  {
+   "title": "Harappa.com: Indus concordance now online",
+   "url": "https://www.harappa.com/blog/indus-concordance-and-tamil-potsherds-now-online"
+  },
+  {
+   "title": "Yadav (2018), The Indus Script and Economics (arXiv)",
+   "url": "https://arxiv.org/abs/1812.00049"
+  },
+  {
+   "title": "Wikimedia Commons: Category Indus script",
+   "url": "https://commons.wikimedia.org/wiki/Category:Indus_script"
+  }
+ ],
+ "groups": {
+  "wheel": {
+   "en": "Spoked circle",
+   "hi": "चक्र जैसा",
+   "refs": [
+    "368"
+   ]
+  },
+  "oval": {
+   "en": "Diamond and oval",
+   "hi": "हीरा और अंडाकार",
+   "refs": [
+    "376"
+   ]
+  },
+  "cross": {
+   "en": "X and cross",
+   "hi": "क्रॉस",
+   "refs": []
+  },
+  "stroke": {
+   "en": "Single stroke",
+   "hi": "एक रेखा",
+   "refs": []
+  },
+  "strokes": {
+   "en": "Groups of strokes",
+   "hi": "रेखाओं के समूह",
+   "refs": []
+  },
+  "spear": {
+   "en": "T and spear",
+   "hi": "भाला / T",
+   "refs": []
+  },
+  "jar": {
+   "en": "U-shape (“jar”)",
+   "hi": "U आकार (“घड़ा”)",
+   "refs": [
+    "296",
+    "311"
+   ]
+  },
+  "comb": {
+   "en": "Comb and rake",
+   "hi": "कंघी",
+   "refs": []
+  },
+  "ladder": {
+   "en": "Ladder and grid",
+   "hi": "सीढ़ी और जाली",
+   "refs": []
+  },
+  "human": {
+   "en": "Human figure",
+   "hi": "मानव आकृति",
+   "refs": [
+    "2",
+    "3",
+    "4",
+    "7",
+    "13"
+   ]
+  },
+  "arc": {
+   "en": "Arc, bracket and S",
+   "hi": "चाप, कोष्ठ और S",
+   "refs": []
+  },
+  "triangle": {
+   "en": "Triangle and arrowhead",
+   "hi": "त्रिकोण",
+   "refs": [
+    "193"
+   ]
+  },
+  "fshape": {
+   "en": "F-shape",
+   "hi": "F आकार",
+   "refs": []
+  },
+  "loops": {
+   "en": "Crossed loops",
+   "hi": "लिपटे फंदे",
+   "refs": []
+  },
+  "other": {
+   "en": "Not grouped",
+   "hi": "असमूहित",
+   "refs": []
+  }
+ },
+ "objects": [
+  {
+   "id": "dholavira-banner",
+   "title": "Dholavira “signboard” (drawing)",
+   "place": "Dholavira, Kutch, Gujarat, India",
+   "date": "c. 2600–1900 BCE (find)",
+   "kind": "Drawing of an inlaid inscription",
+   "note": "Ten large signs, once inlaid in wood, found near the north gate of the citadel; each up to about 37 cm high.",
+   "image": "/lipi-indus/dholavira-banner.jpg",
+   "w": 900,
+   "h": 184,
+   "credit": {
+    "author": "Swastik Harish, original Harappan Inlay work",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Banner_at_the_North_Gate_of_Dholavira.svg",
+    "file": "Banner at the North Gate of Dholavira.svg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Trace in SVG format of existing image in Article: Dholavira"
+   },
+   "signs": [
+    "s0",
+    "s3",
+    "s7",
+    "s8",
+    "s4",
+    "s5",
+    "s6",
+    "s1",
+    "s2",
+    "s9"
+   ]
+  },
+  {
+   "id": "dholavira-photo",
+   "title": "Dholavira “signboard” (photograph of a copy)",
+   "place": "Dholavira, Kutch, Gujarat, India",
+   "date": "c. 2600–1900 BCE (find)",
+   "kind": "Inlaid inscription",
+   "note": "The same ten signs, one of the longest Indus texts written in large letters.",
+   "image": "/lipi-indus/dholavira-photo.jpg",
+   "w": 549,
+   "h": 173,
+   "credit": {
+    "author": "Siyajkak",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:The_%27Ten_Indus_Scripts%27_discovered_near_the_northern_gateway_of_the_Dholavira_citadel.jpg",
+    "file": "The 'Ten Indus Scripts' discovered near the northern gateway of the Dholavira citadel.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "siyajkak drew this picture by pencil and recopy"
+   },
+   "signs": []
+  },
+  {
+   "id": "khirsara",
+   "title": "Khirsara inscribed bar seal",
+   "place": "Khirsara, Kutch, Gujarat, India",
+   "date": "Mature Harappan",
+   "kind": "Inscribed bar seal",
+   "note": "A bar seal with a line of signs and no animal, from the Khirsara excavations.",
+   "image": "/lipi-indus/khirsara.jpg",
+   "w": 900,
+   "h": 292,
+   "credit": {
+    "author": "Anil K. Pokharia, Rajesh Agnihotri , Shalini Sharma, Sunil Bajpai, Jitendra Nath, R. N. Kumaran, Bipin Chandra Negi",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_script_recovered_from_Khirsara,_Indus_Valley_Civilization.jpg",
+    "file": "Indus script recovered from Khirsara, Indus Valley Civilization.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Altered cropping pattern and cultural continuation with declined prosperity following abrupt and extreme arid event at ~4,200 yrs BP: Evidence from an Indus arc"
+   },
+   "signs": [
+    "s26",
+    "s24",
+    "s23",
+    "s20",
+    "s21",
+    "s22",
+    "s25",
+    "s27",
+    "s28"
+   ]
+  },
+  {
+   "id": "cleveland-1964",
+   "title": "Stamp seal with a bull (Cleveland 1964.104)",
+   "place": "Indus valley (now Cleveland Museum of Art)",
+   "date": "c. 2500–2000 BCE",
+   "kind": "Stamp seal",
+   "note": "Signs along the top over an animal, the usual Indus seal layout.",
+   "image": "/lipi-indus/cleveland-1964.jpg",
+   "w": 900,
+   "h": 692,
+   "credit": {
+    "author": "Unknown",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Clevelandart_1964.104.jpg",
+    "file": "Clevelandart 1964.104.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "https://clevelandart.org/art/1964.104"
+   },
+   "signs": [
+    "s33",
+    "s32",
+    "s31",
+    "s30"
+   ]
+  },
+  {
+   "id": "cleveland-1973-160",
+   "title": "Stamp seal with a zebu (Cleveland 1973.160)",
+   "place": "Indus valley (now Cleveland Museum of Art)",
+   "date": "c. 2500–2000 BCE",
+   "kind": "Stamp seal",
+   "note": "Ladder-like and human-like signs above a humped bull.",
+   "image": "/lipi-indus/cleveland-1973-160.jpg",
+   "w": 900,
+   "h": 830,
+   "credit": {
+    "author": "Unknown",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Clevelandart_1973.160.jpg",
+    "file": "Clevelandart 1973.160.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "https://clevelandart.org/art/1973.160"
+   },
+   "signs": [
+    "s35",
+    "s38",
+    "s36",
+    "s37",
+    "s39",
+    "s40"
+   ]
+  },
+  {
+   "id": "cleveland-1973-161",
+   "title": "Stamp seal with a bull (Cleveland 1973.161)",
+   "place": "Indus valley (now Cleveland Museum of Art)",
+   "date": "c. 2500–2000 BCE",
+   "kind": "Stamp seal",
+   "note": "Nine signs, among them strokes, arcs and a rayed sign.",
+   "image": "/lipi-indus/cleveland-1973-161.jpg",
+   "w": 900,
+   "h": 827,
+   "credit": {
+    "author": "Unknown",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Clevelandart_1973.161.jpg",
+    "file": "Clevelandart 1973.161.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "https://clevelandart.org/art/1973.161"
+   },
+   "signs": [
+    "s47",
+    "s41",
+    "s45",
+    "s46",
+    "s48",
+    "s42",
+    "s43",
+    "s44"
+   ]
+  },
+  {
+   "id": "met-1984",
+   "title": "Stamp seal (Met 1984.482)",
+   "place": "Pakistan (now Metropolitan Museum of Art)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Stamp seal",
+   "note": "Stroke signs stacked in two rows inside the line of text.",
+   "image": "/lipi-indus/met-1984.jpg",
+   "w": 900,
+   "h": 976,
+   "credit": {
+    "author": "Unknown",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:MET_1984_482_237872.jpg",
+    "file": "MET 1984 482 237872.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "This file was donated to Wikimedia Commons as part of a project by the Metropolitan Museum of Art. See the Image and Data Resources Open Access Policy"
+   },
+   "signs": [
+    "s53",
+    "s52",
+    "s54",
+    "s55",
+    "s51"
+   ]
+  },
+  {
+   "id": "met-buffalo",
+   "title": "Stamp seal: buffalo and “incense burner”",
+   "place": "Indus valley (now Metropolitan Museum of Art)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Stamp seal",
+   "note": "Jar-like and cross-like signs above the animal.",
+   "image": "/lipi-indus/met-buffalo.jpg",
+   "w": 389,
+   "h": 347,
+   "credit": {
+    "author": "Unknown",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Stamp_seal-_buffalo_with_incense_burner_(%3F)_MET_ss49_40_2.jpg",
+    "file": "Stamp seal- buffalo with incense burner (?) MET ss49 40 2.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "This file was donated to Wikimedia Commons as part of a project by the Metropolitan Museum of Art. See the Image and Data Resources Open Access Policy"
+   },
+   "signs": [
+    "s56",
+    "s57",
+    "s58",
+    "s59"
+   ]
+  },
+  {
+   "id": "met-unicorn",
+   "title": "Stamp seal and modern impression: “unicorn”",
+   "place": "Indus valley (now Metropolitan Museum of Art)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Stamp seal with impression",
+   "note": "Diamond and triangle signs; the impression shows the text the right way round.",
+   "image": "/lipi-indus/met-unicorn.jpg",
+   "w": 900,
+   "h": 899,
+   "credit": {
+    "author": "Unknown",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Stamp_seal_and_modern_impression-_unicorn_and_incense_burner_(%3F)_MET_DP23101.jpg",
+    "file": "Stamp seal and modern impression- unicorn and incense burner (?) MET DP23101.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "This file was donated to Wikimedia Commons as part of a project by the Metropolitan Museum of Art. See the Image and Data Resources Open Access Policy"
+   },
+   "signs": [
+    "s75",
+    "s76",
+    "s74"
+   ]
+  },
+  {
+   "id": "met-bar",
+   "title": "Bar-shaped plaque seal (Met)",
+   "place": "Indus valley (now Metropolitan Museum of Art)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Plaque seal",
+   "note": "Four signs and no animal.",
+   "image": "/lipi-indus/met-bar.jpg",
+   "w": 338,
+   "h": 202,
+   "credit": {
+    "author": "Unknown",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Bar-shaped_rectangular_plaque_seal_MET_ss49_40_4.jpg",
+    "file": "Bar-shaped rectangular plaque seal MET ss49 40 4.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "This file was donated to Wikimedia Commons as part of a project by the Metropolitan Museum of Art. See the Image and Data Resources Open Access Policy"
+   },
+   "signs": [
+    "s102",
+    "s100",
+    "s99",
+    "s101"
+   ]
+  },
+  {
+   "id": "bm-1912",
+   "title": "Steatite seal with impression (BM 1912,0629.1)",
+   "place": "North-western Pakistan (now British Museum)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Seal and impression",
+   "note": "A text-only seal shown beside its impression.",
+   "image": "/lipi-indus/bm-1912.jpg",
+   "w": 900,
+   "h": 310,
+   "credit": {
+    "author": "Zunkir",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Steatite_stamp_seal_Indus_script_-_BM_1912_0629_1.jpg",
+    "file": "Steatite stamp seal Indus script - BM 1912 0629 1.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": [
+    "s66",
+    "s64",
+    "s62",
+    "s63",
+    "s65",
+    "s67"
+   ]
+  },
+  {
+   "id": "bm-impression",
+   "title": "Seal impression with five signs (British Museum)",
+   "place": "Indus valley (now British Museum)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Seal impression",
+   "note": "A clear five-sign text, often used to illustrate the script.",
+   "image": "/lipi-indus/bm-impression.jpg",
+   "w": 276,
+   "h": 130,
+   "credit": {
+    "author": "PHGCOM IndusValleySeals.JPG",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_seal_impression.jpg",
+    "file": "Indus seal impression.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "IndusValleySeals.JPG"
+   },
+   "signs": [
+    "s73",
+    "s70",
+    "s71",
+    "s72",
+    "s69",
+    "s68"
+   ]
+  },
+  {
+   "id": "mumbai-unicorn",
+   "title": "“Unicorn” seal cast",
+   "place": "Indus valley (cast at Chhatrapati Shivaji Maharaj Vastu Sangrahalaya, Mumbai)",
+   "date": "c. 2500–1500 BCE (as labelled)",
+   "kind": "Cast of a seal",
+   "note": "Nine signs in a row over a “unicorn” and a standard.",
+   "image": "/lipi-indus/mumbai-unicorn.jpg",
+   "w": 900,
+   "h": 867,
+   "credit": {
+    "author": "Ismoon (talk) 17:48, 21 February 2012 (UTC)",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Unicorn._Mold_of_Seal,_Indus_valley_civilization.jpg",
+    "file": "Unicorn. Mold of Seal, Indus valley civilization.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": [
+    "s78",
+    "s81",
+    "s82",
+    "s80",
+    "s85",
+    "s86",
+    "s79",
+    "s83"
+   ]
+  },
+  {
+   "id": "bhopal-elephant",
+   "title": "Elephant seal cast",
+   "place": "Indus valley (cast at State Museum, Bhopal)",
+   "date": "c. 2500–1500 BCE (as labelled)",
+   "kind": "Cast of a seal",
+   "note": "Four signs over an elephant.",
+   "image": "/lipi-indus/bhopal-elephant.jpg",
+   "w": 900,
+   "h": 826,
+   "credit": {
+    "author": "Ismoon (talk) 11:17, 22 February 2012 (UTC)",
+    "licence": "CC0",
+    "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Elephant._Mold_of_Seal,_Indus_valley_civilization.JPG",
+    "file": "Elephant. Mold of Seal, Indus valley civilization.JPG",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": []
+  },
+  {
+   "id": "guimet-bull",
+   "title": "Bull seal with impression (Musée Guimet)",
+   "place": "Mohenjo-daro, Pakistan (now Musée Guimet, Paris)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Seal and impression",
+   "note": "Seal (top) and modern impression (bottom) of the same text.",
+   "image": "/lipi-indus/guimet-bull.jpg",
+   "w": 900,
+   "h": 1664,
+   "credit": {
+    "author": "Zunkir",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sceau_Indus_taureau_Guimet.jpg",
+    "file": "Sceau Indus taureau Guimet.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": [
+    "s92",
+    "s95",
+    "s97",
+    "s94"
+   ]
+  },
+  {
+   "id": "guimet-unicorn",
+   "title": "“Unicorn” seal with impression (Musée Guimet)",
+   "place": "Mohenjo-daro, Pakistan (now Musée Guimet, Paris)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Seal and impression",
+   "note": "Seal and modern impression.",
+   "image": "/lipi-indus/guimet-unicorn.jpg",
+   "w": 900,
+   "h": 1702,
+   "credit": {
+    "author": "Zunkir",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sceau_Indus_unicorne_Guimet.jpg",
+    "file": "Sceau Indus unicorne Guimet.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": []
+  },
+  {
+   "id": "longest",
+   "title": "A long Indus inscription (copper plate)",
+   "place": "Indus valley",
+   "date": "c. 2600–2000 BCE",
+   "kind": "Inscribed plate",
+   "note": "Several rows of signs; published as the longest Indus text by Shinde and Willis.",
+   "image": "/lipi-indus/longest.jpg",
+   "w": 608,
+   "h": 570,
+   "credit": {
+    "author": "Vasant Shinde, Rick J Willis",
+    "licence": "Public domain",
+    "licenceUrl": null,
+    "source": "https://commons.wikimedia.org/wiki/File:Longest_Indus_script_inscription_2600-2000_BCE.jpg",
+    "file": "Longest Indus script inscription 2600-2000 BCE.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Ancient Asia Journal Retained non-creative 2D portion of the photograph of this ancient artifact (2600-2000 BCE) per Wikipedia Commons guidelines. Also provided"
+   },
+   "signs": []
+  },
+  {
+   "id": "longest-colour",
+   "title": "The same long inscription, in colour",
+   "place": "Indus valley",
+   "date": "c. 2600–2000 BCE",
+   "kind": "Inscribed plate",
+   "note": "Colour photograph of the same object.",
+   "image": "/lipi-indus/longest-colour.jpg",
+   "w": 667,
+   "h": 705,
+   "credit": {
+    "author": "Vasant Shinde, Rick J Willis",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Longest_Indus_script_inscription_(colour).jpg",
+    "file": "Longest Indus script inscription (colour).jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Ancient Asia Journal Full article provided under CC BY 3.0 per description on page."
+   },
+   "signs": []
+  },
+  {
+   "id": "copper-plates",
+   "title": "Copper plates with Indus script",
+   "place": "Indus valley",
+   "date": "c. 2600–2000 BCE",
+   "kind": "Inscribed copper plates",
+   "note": "Small copper plates with short texts.",
+   "image": "/lipi-indus/copper-plates.jpg",
+   "w": 900,
+   "h": 957,
+   "credit": {
+    "author": "Vasant Shinde, Rick J Willis",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Copper_plates_with_Indus_script.jpg",
+    "file": "Copper plates with Indus script.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Ancient Asia Journal Full article provided under CC BY 3.0 per description on page."
+   },
+   "signs": []
+  },
+  {
+   "id": "pashupati",
+   "title": "“Pashupati” seal",
+   "place": "Mohenjo-daro, Pakistan",
+   "date": "c. 2350–2000 BCE",
+   "kind": "Stamp seal",
+   "note": "A seated horned figure among animals, with signs along the top.",
+   "image": "/lipi-indus/pashupati.jpg",
+   "w": 900,
+   "h": 906,
+   "credit": {
+    "author": "unknown Indus Valley Civilization sealmaker from Mohenjodaro archaeological site",
+    "licence": "Public domain",
+    "licenceUrl": null,
+    "source": "https://commons.wikimedia.org/wiki/File:Shiva_Pashupati.jpg",
+    "file": "Shiva Pashupati.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://www.columbia.edu/itc/mealac/pritchett/00routesdata/bce_500back/indusvalley/protoshiva/protoshiva.jpg"
+   },
+   "signs": []
+  },
+  {
+   "id": "prism-sealing",
+   "title": "Triangular prism sealing",
+   "place": "Mohenjo-daro, Pakistan",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Prism sealing",
+   "note": "A seated figure with animals; one face of a three-sided sealing.",
+   "image": "/lipi-indus/prism-sealing.jpg",
+   "w": 900,
+   "h": 429,
+   "credit": {
+    "author": "Zunkir",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Yogi_seal_Mohenjodaro_EAMd13.jpg",
+    "file": "Yogi seal Mohenjodaro EAMd13.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": []
+  },
+  {
+   "id": "kalibangan-cylinder",
+   "title": "Kalibangan cylinder seal (impression)",
+   "place": "Kalibangan, Rajasthan, India",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Cylinder seal impression",
+   "note": "A rare Indus cylinder seal: figures, animals and a few signs.",
+   "image": "/lipi-indus/kalibangan-cylinder.jpg",
+   "w": 900,
+   "h": 405,
+   "credit": {
+    "author": "Ministry of Culture",
+    "licence": "GODL-India",
+    "licenceUrl": "https://data.gov.in/sites/default/files/Gazette_Notification_OGDL.pdf",
+    "source": "https://commons.wikimedia.org/wiki/File:Kalibangan_cylinder_seal_(impression).jpg",
+    "file": "Kalibangan cylinder seal (impression).jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "[1] Photograph from the Archaeological Survey of India"
+   },
+   "signs": []
+  },
+  {
+   "id": "mohenjodaro-two",
+   "title": "Two seals from Mohenjo-daro",
+   "place": "Mohenjo-daro, Pakistan",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Stamp seals (old photograph)",
+   "note": "Two seal impressions from the early excavations.",
+   "image": "/lipi-indus/mohenjodaro-two.jpg",
+   "w": 900,
+   "h": 1719,
+   "credit": {
+    "author": "Unknown authorUnknown author",
+    "licence": "Public domain",
+    "licenceUrl": null,
+    "source": "https://commons.wikimedia.org/wiki/File:Mohenjo-Daro_Seals.png",
+    "file": "Mohenjo-Daro Seals.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Mohenjo-daro"
+   },
+   "signs": []
+  },
+  {
+   "id": "susa-scheil",
+   "title": "Indus seal impression from Susa (drawing)",
+   "place": "Susa, Iran",
+   "date": "c. 2600–1700 BCE",
+   "kind": "Cylinder-seal impression (drawing)",
+   "note": "Indus signs on a seal found in Elam: evidence of trade with Mesopotamia and Iran.",
+   "image": "/lipi-indus/susa-scheil.jpg",
+   "w": 582,
+   "h": 311,
+   "credit": {
+    "author": "V. Scheil (1858-1940)",
+    "licence": "Public domain",
+    "licenceUrl": null,
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_seal_impression_from_Susa_excavations.jpg",
+    "file": "Indus seal impression from Susa excavations.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Mémoires Mission archéologique en IranPublished in 1900"
+   },
+   "signs": [
+    "s12",
+    "s17",
+    "s18",
+    "s13",
+    "s19",
+    "s11"
+   ]
+  },
+  {
+   "id": "susa-louvre",
+   "title": "Susa cylinder seal with Indus signs",
+   "place": "Susa, Iran (now Louvre)",
+   "date": "c. 2600–1700 BCE",
+   "kind": "Cylinder seal impression",
+   "note": "The uploader drew the signs above the impression with list numbers.",
+   "image": "/lipi-indus/susa-louvre.jpg",
+   "w": 900,
+   "h": 680,
+   "credit": {
+    "author": "ALFGRN",
+    "licence": "CC BY-SA 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Susa_seal_with_Indus_signs.jpg",
+    "file": "Susa seal with Indus signs.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "This file was derived from: Indus cylinder seal with elongated buffalo with Harappan script imported to Susa in 2600-1700 BCE LOUVRE Sb 2425.jpg Transcription: "
+   },
+   "signs": [
+    "s105",
+    "s103",
+    "s111",
+    "s108",
+    "s104",
+    "s112",
+    "s109",
+    "s106"
+   ]
+  },
+  {
+   "id": "umma",
+   "title": "Indus seal impression from Umma (drawing)",
+   "place": "Djokha (Umma), Iraq",
+   "date": "c. 2500–2000 BCE",
+   "kind": "Seal impression (drawing)",
+   "note": "An Indus-type seal from southern Mesopotamia.",
+   "image": "/lipi-indus/umma.jpg",
+   "w": 476,
+   "h": 394,
+   "credit": {
+    "author": "V. SCHEIL (born 10 June 1858, Kœnigsmacker – died 21 September 1940, Paris)",
+    "licence": "Public domain",
+    "licenceUrl": null,
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_seal_impression_discovered_in_Djokha_(Umma)_near_Telloh,_Irak.jpg",
+    "file": "Indus seal impression discovered in Djokha (Umma) near Telloh, Irak.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "UN NOUVEAU SCEAU HINDOU PSEUDO-SUMÉRIEN, V. SCHEIL, Revue d'Assyriologie et d'archéologie orientale, Vol. 22, No. 2 (1925), pp. 55-56"
+   },
+   "signs": []
+  },
+  {
+   "id": "kish",
+   "title": "Indus seal found at Kish",
+   "place": "Kish, Iraq",
+   "date": "c. 2500–2000 BCE",
+   "kind": "Stamp seal (1931 photograph)",
+   "note": "Published by Langdon in 1931; another sign of contact between the Indus and Mesopotamia.",
+   "image": "/lipi-indus/kish.jpg",
+   "w": 900,
+   "h": 478,
+   "credit": {
+    "author": "Stephen Herbert Langdon (1876 – May 19, 1937)",
+    "licence": "Public domain",
+    "licenceUrl": null,
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_seal_found_in_Kish_by_Langdon_1931.jpg",
+    "file": "Indus seal found in Kish by Langdon 1931.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "https://www.jstor.org/stable/25194308 A New Factor in the Problem of Sumerian Origins S. Langdon The Journal of the Royal Asiatic Society of Great Britain and I"
+   },
+   "signs": []
+  },
+  {
+   "id": "cunningham",
+   "title": "“Cunningham” seal",
+   "place": "Harappa, Pakistan (now British Museum)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Stamp seal with impression",
+   "note": "The first Indus seal to be published, by Alexander Cunningham in 1875.",
+   "image": "/lipi-indus/cunningham.jpg",
+   "w": 900,
+   "h": 422,
+   "credit": {
+    "author": "Zunkir",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Cunningham_Seal_-_BM.jpg",
+    "file": "Cunningham Seal - BM.jpg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": []
+  },
+  {
+   "id": "nmi-04",
+   "title": "Seal in the National Museum, New Delhi",
+   "place": "Harappan site (now National Museum, New Delhi)",
+   "date": "c. 2600–1900 BCE",
+   "kind": "Stamp seal",
+   "note": "Diamond, oval and stroke signs over a “unicorn”.",
+   "image": "/lipi-indus/nmi-04.jpg",
+   "w": 900,
+   "h": 860,
+   "credit": {
+    "author": "Nomu420",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Harappa_seals_nm_india_04.JPG",
+    "file": "Harappa seals nm india 04.JPG",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "signs": []
+  }
+ ],
+ "signs": [
+  {
+   "id": "s0",
+   "group": "wheel",
+   "object": "dholavira-banner",
+   "box": [
+    0.0575,
+    0.2408,
+    0.135,
+    0.7347
+   ]
+  },
+  {
+   "id": "s3",
+   "group": "wheel",
+   "object": "dholavira-banner",
+   "box": [
+    0.3717,
+    0.2408,
+    0.4583,
+    0.7388
+   ]
+  },
+  {
+   "id": "s7",
+   "group": "wheel",
+   "object": "dholavira-banner",
+   "box": [
+    0.6675,
+    0.2041,
+    0.755,
+    0.7347
+   ]
+  },
+  {
+   "id": "s8",
+   "group": "wheel",
+   "object": "dholavira-banner",
+   "box": [
+    0.7625,
+    0.2041,
+    0.8467,
+    0.7143
+   ]
+  },
+  {
+   "id": "s73",
+   "group": "wheel",
+   "object": "bm-impression",
+   "box": [
+    0.687,
+    0.1,
+    0.8326,
+    0.85
+   ]
+  },
+  {
+   "id": "s78",
+   "group": "wheel",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.2062,
+    0.17,
+    0.262,
+    0.27
+   ]
+  },
+  {
+   "id": "s4",
+   "group": "oval",
+   "object": "dholavira-banner",
+   "box": [
+    0.4717,
+    0.2204,
+    0.5592,
+    0.7469
+   ]
+  },
+  {
+   "id": "s33",
+   "group": "oval",
+   "object": "cleveland-1964",
+   "box": [
+    0.5152,
+    0.35,
+    0.5692,
+    0.46
+   ]
+  },
+  {
+   "id": "s75",
+   "group": "oval",
+   "object": "met-unicorn",
+   "box": [
+    0.565,
+    0.41,
+    0.615,
+    0.53
+   ]
+  },
+  {
+   "id": "s92",
+   "group": "oval",
+   "object": "guimet-bull",
+   "box": [
+    0.6245,
+    0.05,
+    0.7632,
+    0.22
+   ]
+  },
+  {
+   "id": "s95",
+   "group": "oval",
+   "object": "guimet-bull",
+   "box": [
+    0.369,
+    0.55,
+    0.4639,
+    0.7
+   ]
+  },
+  {
+   "id": "s5",
+   "group": "cross",
+   "object": "dholavira-banner",
+   "box": [
+    0.5592,
+    0.2571,
+    0.6217,
+    0.7469
+   ]
+  },
+  {
+   "id": "s26",
+   "group": "cross",
+   "object": "khirsara",
+   "box": [
+    0.6903,
+    0.12,
+    0.7926,
+    0.72
+   ]
+  },
+  {
+   "id": "s47",
+   "group": "cross",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.5694,
+    0.32,
+    0.6597,
+    0.48
+   ]
+  },
+  {
+   "id": "s102",
+   "group": "cross",
+   "object": "met-bar",
+   "box": [
+    0.5,
+    0.15,
+    0.77,
+    0.85
+   ]
+  },
+  {
+   "id": "s6",
+   "group": "stroke",
+   "object": "dholavira-banner",
+   "box": [
+    0.6342,
+    0.2653,
+    0.6567,
+    0.7061
+   ]
+  },
+  {
+   "id": "s41",
+   "group": "stroke",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.3243,
+    0.32,
+    0.3587,
+    0.48
+   ]
+  },
+  {
+   "id": "s105",
+   "group": "stroke",
+   "object": "susa-louvre",
+   "box": [
+    0.18,
+    0.1,
+    0.22,
+    0.25
+   ]
+  },
+  {
+   "id": "s32",
+   "group": "strokes",
+   "object": "cleveland-1964",
+   "box": [
+    0.4684,
+    0.35,
+    0.5116,
+    0.46
+   ]
+  },
+  {
+   "id": "s53",
+   "group": "strokes",
+   "object": "met-1984",
+   "box": [
+    0.482,
+    0.17,
+    0.5535,
+    0.42
+   ]
+  },
+  {
+   "id": "s66",
+   "group": "strokes",
+   "object": "bm-1912",
+   "box": [
+    0.7435,
+    0.27,
+    0.7805,
+    0.47
+   ]
+  },
+  {
+   "id": "s103",
+   "group": "strokes",
+   "object": "susa-louvre",
+   "box": [
+    0.0,
+    0.1,
+    0.1,
+    0.25
+   ]
+  },
+  {
+   "id": "s111",
+   "group": "strokes",
+   "object": "susa-louvre",
+   "box": [
+    0.78,
+    0.1,
+    0.88,
+    0.25
+   ]
+  },
+  {
+   "id": "s1",
+   "group": "spear",
+   "object": "dholavira-banner",
+   "box": [
+    0.1642,
+    0.2816,
+    0.2525,
+    0.7184
+   ]
+  },
+  {
+   "id": "s64",
+   "group": "spear",
+   "object": "bm-1912",
+   "box": [
+    0.651,
+    0.27,
+    0.7028,
+    0.47
+   ]
+  },
+  {
+   "id": "s70",
+   "group": "spear",
+   "object": "bm-impression",
+   "box": [
+    0.2775,
+    0.1,
+    0.414,
+    0.85
+   ]
+  },
+  {
+   "id": "s100",
+   "group": "spear",
+   "object": "met-bar",
+   "box": [
+    0.266,
+    0.15,
+    0.365,
+    0.85
+   ]
+  },
+  {
+   "id": "s31",
+   "group": "jar",
+   "object": "cleveland-1964",
+   "box": [
+    0.4288,
+    0.35,
+    0.4684,
+    0.46
+   ]
+  },
+  {
+   "id": "s56",
+   "group": "jar",
+   "object": "met-buffalo",
+   "box": [
+    0.134,
+    0.06,
+    0.2156,
+    0.37
+   ]
+  },
+  {
+   "id": "s71",
+   "group": "jar",
+   "object": "bm-impression",
+   "box": [
+    0.4595,
+    0.1,
+    0.5869,
+    0.85
+   ]
+  },
+  {
+   "id": "s72",
+   "group": "jar",
+   "object": "bm-impression",
+   "box": [
+    0.5869,
+    0.1,
+    0.6688,
+    0.85
+   ]
+  },
+  {
+   "id": "s99",
+   "group": "jar",
+   "object": "met-bar",
+   "box": [
+    0.095,
+    0.15,
+    0.266,
+    0.85
+   ]
+  },
+  {
+   "id": "s12",
+   "group": "comb",
+   "object": "susa-scheil",
+   "box": [
+    0.2732,
+    0.2444,
+    0.3969,
+    0.4695
+   ]
+  },
+  {
+   "id": "s45",
+   "group": "comb",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.4748,
+    0.32,
+    0.5264,
+    0.48
+   ]
+  },
+  {
+   "id": "s46",
+   "group": "comb",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.5221,
+    0.32,
+    0.5694,
+    0.48
+   ]
+  },
+  {
+   "id": "s52",
+   "group": "comb",
+   "object": "met-1984",
+   "box": [
+    0.352,
+    0.17,
+    0.4755,
+    0.42
+   ]
+  },
+  {
+   "id": "s81",
+   "group": "comb",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.3736,
+    0.17,
+    0.448,
+    0.27
+   ]
+  },
+  {
+   "id": "s82",
+   "group": "comb",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.4666,
+    0.17,
+    0.5286,
+    0.27
+   ]
+  },
+  {
+   "id": "s108",
+   "group": "comb",
+   "object": "susa-louvre",
+   "box": [
+    0.53,
+    0.1,
+    0.63,
+    0.25
+   ]
+  },
+  {
+   "id": "s17",
+   "group": "ladder",
+   "object": "susa-scheil",
+   "box": [
+    0.7337,
+    0.2219,
+    0.7852,
+    0.4695
+   ]
+  },
+  {
+   "id": "s18",
+   "group": "ladder",
+   "object": "susa-scheil",
+   "box": [
+    0.7869,
+    0.2251,
+    0.8625,
+    0.4695
+   ]
+  },
+  {
+   "id": "s24",
+   "group": "ladder",
+   "object": "khirsara",
+   "box": [
+    0.5136,
+    0.12,
+    0.6066,
+    0.72
+   ]
+  },
+  {
+   "id": "s35",
+   "group": "ladder",
+   "object": "cleveland-1973-160",
+   "box": [
+    0.4232,
+    0.33,
+    0.4616,
+    0.48
+   ]
+  },
+  {
+   "id": "s38",
+   "group": "ladder",
+   "object": "cleveland-1973-160",
+   "box": [
+    0.5608,
+    0.33,
+    0.6056,
+    0.48
+   ]
+  },
+  {
+   "id": "s48",
+   "group": "ladder",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.6597,
+    0.32,
+    0.7156,
+    0.48
+   ]
+  },
+  {
+   "id": "s80",
+   "group": "ladder",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.3116,
+    0.17,
+    0.3612,
+    0.27
+   ]
+  },
+  {
+   "id": "s104",
+   "group": "ladder",
+   "object": "susa-louvre",
+   "box": [
+    0.1,
+    0.1,
+    0.18,
+    0.25
+   ]
+  },
+  {
+   "id": "s112",
+   "group": "ladder",
+   "object": "susa-louvre",
+   "box": [
+    0.89,
+    0.1,
+    1.0,
+    0.25
+   ]
+  },
+  {
+   "id": "s13",
+   "group": "human",
+   "object": "susa-scheil",
+   "box": [
+    0.4399,
+    0.2379,
+    0.5481,
+    0.4695
+   ]
+  },
+  {
+   "id": "s23",
+   "group": "human",
+   "object": "khirsara",
+   "box": [
+    0.4113,
+    0.12,
+    0.5136,
+    0.72
+   ]
+  },
+  {
+   "id": "s36",
+   "group": "human",
+   "object": "cleveland-1973-160",
+   "box": [
+    0.468,
+    0.33,
+    0.516,
+    0.48
+   ]
+  },
+  {
+   "id": "s109",
+   "group": "human",
+   "object": "susa-louvre",
+   "box": [
+    0.65,
+    0.1,
+    0.73,
+    0.25
+   ]
+  },
+  {
+   "id": "s19",
+   "group": "arc",
+   "object": "susa-scheil",
+   "box": [
+    0.8986,
+    0.1994,
+    0.9485,
+    0.4695
+   ]
+  },
+  {
+   "id": "s37",
+   "group": "arc",
+   "object": "cleveland-1973-160",
+   "box": [
+    0.5192,
+    0.33,
+    0.5576,
+    0.48
+   ]
+  },
+  {
+   "id": "s39",
+   "group": "arc",
+   "object": "cleveland-1973-160",
+   "box": [
+    0.6056,
+    0.33,
+    0.6472,
+    0.48
+   ]
+  },
+  {
+   "id": "s40",
+   "group": "arc",
+   "object": "cleveland-1973-160",
+   "box": [
+    0.6472,
+    0.33,
+    0.6888,
+    0.48
+   ]
+  },
+  {
+   "id": "s42",
+   "group": "arc",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.3587,
+    0.32,
+    0.3931,
+    0.48
+   ]
+  },
+  {
+   "id": "s43",
+   "group": "arc",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.3931,
+    0.32,
+    0.4318,
+    0.48
+   ]
+  },
+  {
+   "id": "s44",
+   "group": "arc",
+   "object": "cleveland-1973-161",
+   "box": [
+    0.4361,
+    0.32,
+    0.4748,
+    0.48
+   ]
+  },
+  {
+   "id": "s106",
+   "group": "arc",
+   "object": "susa-louvre",
+   "box": [
+    0.23,
+    0.1,
+    0.33,
+    0.25
+   ]
+  },
+  {
+   "id": "s54",
+   "group": "triangle",
+   "object": "met-1984",
+   "box": [
+    0.56,
+    0.17,
+    0.651,
+    0.42
+   ]
+  },
+  {
+   "id": "s55",
+   "group": "triangle",
+   "object": "met-1984",
+   "box": [
+    0.651,
+    0.17,
+    0.768,
+    0.42
+   ]
+  },
+  {
+   "id": "s76",
+   "group": "triangle",
+   "object": "met-unicorn",
+   "box": [
+    0.615,
+    0.41,
+    0.65,
+    0.53
+   ]
+  },
+  {
+   "id": "s85",
+   "group": "triangle",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.6526,
+    0.17,
+    0.727,
+    0.27
+   ]
+  },
+  {
+   "id": "s86",
+   "group": "triangle",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.7332,
+    0.17,
+    0.8138,
+    0.27
+   ]
+  },
+  {
+   "id": "s62",
+   "group": "fshape",
+   "object": "bm-1912",
+   "box": [
+    0.5585,
+    0.27,
+    0.5955,
+    0.47
+   ]
+  },
+  {
+   "id": "s63",
+   "group": "fshape",
+   "object": "bm-1912",
+   "box": [
+    0.5992,
+    0.27,
+    0.6473,
+    0.47
+   ]
+  },
+  {
+   "id": "s69",
+   "group": "fshape",
+   "object": "bm-impression",
+   "box": [
+    0.1774,
+    0.1,
+    0.2684,
+    0.85
+   ]
+  },
+  {
+   "id": "s97",
+   "group": "fshape",
+   "object": "guimet-bull",
+   "box": [
+    0.5661,
+    0.55,
+    0.661,
+    0.7
+   ]
+  },
+  {
+   "id": "s101",
+   "group": "fshape",
+   "object": "met-bar",
+   "box": [
+    0.365,
+    0.15,
+    0.491,
+    0.85
+   ]
+  },
+  {
+   "id": "s2",
+   "group": "loops",
+   "object": "dholavira-banner",
+   "box": [
+    0.275,
+    0.2286,
+    0.355,
+    0.7102
+   ]
+  },
+  {
+   "id": "s9",
+   "group": "loops",
+   "object": "dholavira-banner",
+   "box": [
+    0.8592,
+    0.2816,
+    0.945,
+    0.6612
+   ]
+  },
+  {
+   "id": "s11",
+   "group": "other",
+   "object": "susa-scheil",
+   "box": [
+    0.1117,
+    0.2026,
+    0.2165,
+    0.4695
+   ]
+  },
+  {
+   "id": "s20",
+   "group": "other",
+   "object": "khirsara",
+   "box": [
+    0.0858,
+    0.12,
+    0.1974,
+    0.72
+   ]
+  },
+  {
+   "id": "s21",
+   "group": "other",
+   "object": "khirsara",
+   "box": [
+    0.1974,
+    0.12,
+    0.309,
+    0.72
+   ]
+  },
+  {
+   "id": "s22",
+   "group": "other",
+   "object": "khirsara",
+   "box": [
+    0.309,
+    0.12,
+    0.4113,
+    0.72
+   ]
+  },
+  {
+   "id": "s25",
+   "group": "other",
+   "object": "khirsara",
+   "box": [
+    0.6066,
+    0.12,
+    0.6903,
+    0.72
+   ]
+  },
+  {
+   "id": "s27",
+   "group": "other",
+   "object": "khirsara",
+   "box": [
+    0.7926,
+    0.12,
+    0.867,
+    0.72
+   ]
+  },
+  {
+   "id": "s28",
+   "group": "other",
+   "object": "khirsara",
+   "box": [
+    0.867,
+    0.12,
+    0.9414,
+    0.72
+   ]
+  },
+  {
+   "id": "s30",
+   "group": "other",
+   "object": "cleveland-1964",
+   "box": [
+    0.3892,
+    0.35,
+    0.4288,
+    0.46
+   ]
+  },
+  {
+   "id": "s51",
+   "group": "other",
+   "object": "met-1984",
+   "box": [
+    0.3,
+    0.17,
+    0.352,
+    0.42
+   ]
+  },
+  {
+   "id": "s57",
+   "group": "other",
+   "object": "met-buffalo",
+   "box": [
+    0.2156,
+    0.06,
+    0.27,
+    0.37
+   ]
+  },
+  {
+   "id": "s58",
+   "group": "other",
+   "object": "met-buffalo",
+   "box": [
+    0.27,
+    0.06,
+    0.3244,
+    0.37
+   ]
+  },
+  {
+   "id": "s59",
+   "group": "other",
+   "object": "met-buffalo",
+   "box": [
+    0.3312,
+    0.06,
+    0.4808,
+    0.37
+   ]
+  },
+  {
+   "id": "s65",
+   "group": "other",
+   "object": "bm-1912",
+   "box": [
+    0.7028,
+    0.27,
+    0.7398,
+    0.47
+   ]
+  },
+  {
+   "id": "s67",
+   "group": "other",
+   "object": "bm-1912",
+   "box": [
+    0.7879,
+    0.27,
+    0.836,
+    0.47
+   ]
+  },
+  {
+   "id": "s68",
+   "group": "other",
+   "object": "bm-impression",
+   "box": [
+    0.0773,
+    0.1,
+    0.1774,
+    0.85
+   ]
+  },
+  {
+   "id": "s74",
+   "group": "other",
+   "object": "met-unicorn",
+   "box": [
+    0.5275,
+    0.41,
+    0.565,
+    0.53
+   ]
+  },
+  {
+   "id": "s79",
+   "group": "other",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.262,
+    0.17,
+    0.3116,
+    0.27
+   ]
+  },
+  {
+   "id": "s83",
+   "group": "other",
+   "object": "mumbai-unicorn",
+   "box": [
+    0.5286,
+    0.17,
+    0.5844,
+    0.27
+   ]
+  },
+  {
+   "id": "s94",
+   "group": "other",
+   "object": "guimet-bull",
+   "box": [
+    0.2376,
+    0.55,
+    0.369,
+    0.7
+   ]
+  }
+ ],
+ "refs": [
+  {
+   "id": "ref-7",
+   "number": "7",
+   "image": "/lipi-indus/ref-7.jpg",
+   "w": 672,
+   "h": 110,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_7.png",
+    "file": "Indus sign 7.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "human"
+   ]
+  },
+  {
+   "id": "ref-13",
+   "number": "13",
+   "image": "/lipi-indus/ref-13.jpg",
+   "w": 464,
+   "h": 166,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_13.png",
+    "file": "Indus sign 13.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "human"
+   ]
+  },
+  {
+   "id": "ref-46",
+   "number": "46",
+   "image": "/lipi-indus/ref-46.jpg",
+   "w": 700,
+   "h": 118,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_46.png",
+    "file": "Indus sign 46.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-60",
+   "number": "60",
+   "image": "/lipi-indus/ref-60.jpg",
+   "w": 284,
+   "h": 166,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_60.png",
+    "file": "Indus sign 60.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-87",
+   "number": "87",
+   "image": "/lipi-indus/ref-87.jpg",
+   "w": 700,
+   "h": 116,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_87.png",
+    "file": "Indus sign 87.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-88",
+   "number": "88",
+   "image": "/lipi-indus/ref-88.jpg",
+   "w": 700,
+   "h": 123,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_88.png",
+    "file": "Indus sign 88.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-91",
+   "number": "91",
+   "image": "/lipi-indus/ref-91.jpg",
+   "w": 700,
+   "h": 107,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_91.png",
+    "file": "Indus sign 91.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-187",
+   "number": "187",
+   "image": "/lipi-indus/ref-187.jpg",
+   "w": 548,
+   "h": 158,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_187.png",
+    "file": "Indus sign 187.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-193",
+   "number": "193",
+   "image": "/lipi-indus/ref-193.jpg",
+   "w": 384,
+   "h": 144,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_193.png",
+    "file": "Indus sign 193.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "triangle"
+   ]
+  },
+  {
+   "id": "ref-202",
+   "number": "202",
+   "image": "/lipi-indus/ref-202.jpg",
+   "w": 700,
+   "h": 118,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_202.png",
+    "file": "Indus sign 202.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-296",
+   "number": "296",
+   "image": "/lipi-indus/ref-296.jpg",
+   "w": 584,
+   "h": 194,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_296.png",
+    "file": "Indus sign 296.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "jar"
+   ]
+  },
+  {
+   "id": "ref-311",
+   "number": "311",
+   "image": "/lipi-indus/ref-311.jpg",
+   "w": 700,
+   "h": 108,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_311.png",
+    "file": "Indus sign 311.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "jar"
+   ]
+  },
+  {
+   "id": "ref-368",
+   "number": "368",
+   "image": "/lipi-indus/ref-368.jpg",
+   "w": 636,
+   "h": 170,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_368.png",
+    "file": "Indus sign 368.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "wheel"
+   ]
+  },
+  {
+   "id": "ref-376",
+   "number": "376",
+   "image": "/lipi-indus/ref-376.jpg",
+   "w": 634,
+   "h": 158,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_sign_376.png",
+    "file": "Indus sign 376.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "oval"
+   ]
+  },
+  {
+   "id": "ref-45",
+   "number": "45",
+   "image": "/lipi-indus/ref-45.jpg",
+   "w": 700,
+   "h": 926,
+   "credit": {
+    "author": "Drmccreedy",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_script_sign_045.svg",
+    "file": "Indus script sign 045.svg",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "Own work"
+   },
+   "groups": []
+  },
+  {
+   "id": "ref-2",
+   "number": "2",
+   "image": "/lipi-indus/ref-2.jpg",
+   "w": 288,
+   "h": 294,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_script_sign_2.png",
+    "file": "Indus script sign 2.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "human"
+   ]
+  },
+  {
+   "id": "ref-3",
+   "number": "3",
+   "image": "/lipi-indus/ref-3.jpg",
+   "w": 700,
+   "h": 770,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_script_sign_3.png",
+    "file": "Indus script sign 3.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "human"
+   ]
+  },
+  {
+   "id": "ref-4",
+   "number": "4",
+   "image": "/lipi-indus/ref-4.jpg",
+   "w": 646,
+   "h": 770,
+   "credit": {
+    "author": "Font by Shabir Kumbhar; mapping by Amar Fayaz Buriro",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Indus_script_sign_4.png",
+    "file": "Indus script sign 4.png",
+    "via": "Wikimedia Commons",
+    "commonsCredit": "http://mohenjodaroonline.net/index.php/indus-script/corpus-by-asko-parpola"
+   },
+   "groups": [
+    "human"
+   ]
+  }
+ ]
+}

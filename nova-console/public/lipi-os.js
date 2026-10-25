@@ -46,6 +46,22 @@ const CSS = `
 .lo-res{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
 .lo-res .s{font-size:22px;overflow-wrap:anywhere}
 .lo-res .m{font-size:11px;color:var(--amber)}
+.in-facts{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px}
+.in-refs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.in-ref{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;color:#111}
+.in-ref img{width:100%;height:64px;object-fit:contain}
+.in-ref b{font-size:12px}
+.in-signs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.in-sign{border:2px solid var(--line);box-sizing:content-box;border-radius:6px;background-repeat:no-repeat;background-color:#ddd;cursor:pointer;padding:0}
+.in-sign[aria-pressed="true"]{outline:2px solid var(--amber)}
+.in-objs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-top:8px}
+.in-obj{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0;overflow:hidden;cursor:pointer;color:var(--ink);text-align:left}
+.in-obj img{width:100%;height:110px;object-fit:cover;display:block}
+.in-obj span{display:block;padding:5px 7px;font-size:12px}
+.in-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.in-ov rect{vector-effect:non-scaling-stroke;fill:none;stroke:var(--c);stroke-width:2}
+.in-ov rect.on{stroke-width:4;fill:var(--c);fill-opacity:.25}
+@media (max-width:900px){.in-facts{grid-template-columns:1fr}}
 .bg-imgwrap{position:relative;width:100%}
 .bg-imgwrap img{display:block;width:100%;height:auto;max-height:none!important;object-fit:fill!important;border-radius:8px}
 .bg-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -175,13 +191,14 @@ const S = {
   chrono: { continent: '', category: '', from: -10000, to: 2026, data: null, sel: null },
   atlasSel: 0,
   let: { data: null, board: '', type: '', region: '', q: '', script: 'Deva', sel: 'क', autoplay: true },
+  ind: { data: null, group: '', open: '', sel: '' },
   gal: { data: null, variant: '', q: '', open: '', sort: 'date', ocr: null, fresh: {}, own: null, busy: '', ocrMsg: '', view: 'grid', rep: null, repItem: {}, layers: null, hl: -1 },
   cj: { data: null, code: 'Brah', up: 'क', low: 'त', ov: null, dirty: false, status: '', busy: false, preview: '' },
 };
 try { const p = JSON.parse(localStorage.getItem('maataa.lipi') || '{}'); if (p.focus) S.focus = p.focus; if (p.study) S.study = p.study; } catch (_) { /* per-browser convenience only */ }
 const remember = () => { try { localStorage.setItem('maataa.lipi', JSON.stringify({ focus: S.focus, study: S.study })); } catch (_) { /* ignore */ } };
 
-const TABS = [['welcome', 'Welcome'], ['letters', 'Letters'], ['convert', 'Convert'], ['conjuncts', 'Conjunct editor'], ['gallery', 'Brahmi gallery'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
+const TABS = [['welcome', 'Welcome'], ['letters', 'Letters'], ['convert', 'Convert'], ['conjuncts', 'Conjunct editor'], ['gallery', 'Brahmi gallery'], ['indus', 'Indus signs'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
 const ALPHABET = 'अ आ इ ई उ ऊ ऋ ए ऐ ओ औ · क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह · ० १ २ ३ ४ ५ ६ ७ ८ ९';
 
 /** Renders Lipi OS into root. deps: { apiGet, apiPost, toast, escapeHtml, FIELD, web } */
@@ -196,7 +213,7 @@ export async function renderLipiOS(root, deps, tab) {
     <div id="loBody" data-no-list-tools></div>`;
   root.querySelectorAll('[data-lo-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.loTab; renderLipiOS(root, deps); });
   const body = root.querySelector('#loBody');
-  const fn = { welcome, letters, conjuncts, gallery, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
+  const fn = { welcome, letters, conjuncts, gallery, indus, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
   try { await fn(body, deps, () => renderLipiOS(root, deps)); } catch (e) { body.innerHTML = `<p class="empty-hint" style="color:var(--red)">${h(e.message)}</p>`; }
 }
 
@@ -381,6 +398,66 @@ function bgReport(rep, d, h) {
     ${table('antariksh', C.antariksh || [])}
     ${table('anya', C.anya || [], 'विषय')}
   </div>`;
+}
+
+/* Indus signs: openly licensed reference signs and signs cut from seals (lib/lipi-indus.json) */
+const IN_COLORS = { wheel: '#3b82f6', oval: '#10b981', cross: '#ef4444', stroke: '#94a3b8', strokes: '#64748b', spear: '#f59e0b', jar: '#a855f7', comb: '#ec4899', ladder: '#14b8a6', human: '#f97316', arc: '#6366f1', triangle: '#84cc16', fshape: '#06b6d4', loops: '#e11d48', other: '#9ca3af' };
+function inCrop(o, box, h = 72) {
+  const [a, b, c, d] = box, bw = c - a, bh = d - b;
+  // keep the sign's own proportions
+  const w = Math.max(28, Math.min(130, Math.round(h * (bw * o.w) / (bh * o.h))));
+  // show only the box: scale the picture so the box fills the tile, then shift it into place
+  const px = bw < 1 ? (a / (1 - bw)) * 100 : 0, py = bh < 1 ? (b / (1 - bh)) * 100 : 0;
+  return `background-image:url('${o.image}');background-size:${(100 / bw).toFixed(1)}% ${(100 / bh).toFixed(1)}%;background-position:${px.toFixed(1)}% ${py.toFixed(1)}%;width:${w}px;height:${h}px`;
+}
+async function indus(el, deps, rerender) {
+  const h = deps.escapeHtml, I = S.ind;
+  if (!I.data) I.data = await deps.apiGet('/api/lipi/indus');
+  const d = I.data, byId = Object.fromEntries(d.objects.map(o => [o.id, o]));
+  const signs = I.group ? d.signs.filter(s => s.group === I.group) : d.signs;
+  const cur = byId[I.open];
+  const credit = c => `${h(c.author)} · ${c.licenceUrl ? `<a href="${h(c.licenceUrl)}" target="_blank" rel="noopener">${h(c.licence)}</a>` : h(c.licence)} · <a href="${h(c.source)}" target="_blank" rel="noopener">${h(c.via)}</a>`;
+  el.innerHTML = `
+    <div class="panel" style="padding:12px">
+      <div class="in-facts">
+        <div><div class="cap-section-label">सिंधु लिपि · The Indus script</div>
+          <ul style="margin:6px 0 0 18px;padding:0;font-size:13px;line-height:1.5">${d.facts.map(f => `<li>${h(f)}</li>`).join('')}</ul>
+          <p class="lo-note" style="margin-top:6px">${h(d.about)}</p></div>
+        <div><div class="cap-section-label">How many signs? (sign lists)</div>
+          <table class="bg-rt" style="min-width:0"><thead><tr><th>Sign list</th><th>Year</th><th>Signs</th></tr></thead><tbody>${d.signLists.map(l => `<tr><td>${l.url ? `<a href="${h(l.url)}" target="_blank" rel="noopener">${h(l.who)}</a>` : h(l.who)}<br><span class="lo-note">${h(l.note)}</span></td><td>${l.year}</td><td>${l.signs}</td></tr>`).join('')}</tbody></table>
+          <p class="lo-note">The lists disagree because scholars split or merge variant forms differently. The full lists are published works and are not reproduced here; Mahadevan’s concordance can be read online at the link.</p></div>
+      </div>
+    </div>
+    <div class="panel" style="padding:12px;margin-top:10px">
+      <div class="cap-section-label">Reference signs on Wikimedia Commons · ${d.refs.length}</div>
+      <p class="lo-note">Each image shows one sign with its variant forms, numbered as on Commons (the numbering follows Mahadevan’s list, drawn with a font by Shabir Kumbhar).</p>
+      <div class="in-refs">${d.refs.map(r => `<div class="in-ref"><img src="${h(r.image)}" alt="Indus sign ${h(r.number)}" loading="lazy"><b>Sign ${h(r.number)}</b><span class="lo-note" style="color:#555">${credit(r.credit)}</span></div>`).join('')}</div>
+    </div>
+    <div class="panel" style="padding:12px;margin-top:10px">
+      <div class="lo-row" style="justify-content:space-between"><div class="cap-section-label">Signs cut from ${d.objects.length} seals, tablets and drawings · ${d.signs.length}</div></div>
+      <div class="lo-row" style="margin-top:6px"><button class="lo-chip" aria-pressed="${!I.group}" data-ig="">All · ${d.signs.length}</button>${Object.entries(d.groups).map(([g, v]) => `<button class="lo-chip bg-layer" style="--c:${IN_COLORS[g]}" aria-pressed="${I.group === g}" data-ig="${g}"><i></i>${h(v.en)} · ${h(v.hi)} · ${d.counts[g]}</button>`).join('')}</div>
+      <p class="lo-note">The groups are an informal sorting by shape, made for browsing; they are not sign numbers. Click a sign to see it on its seal.</p>
+      <div class="in-signs">${signs.map(s => `<button class="in-sign" data-is="${s.id}" aria-pressed="${I.sel === s.id}" title="${h(d.groups[s.group].en)} · ${h(byId[s.object].title)}" style="${inCrop(byId[s.object], s.box)};border-color:${IN_COLORS[s.group]}"></button>`).join('')}</div>
+      ${cur ? `<div class="panel" style="padding:12px;margin-top:10px" id="inDetail"><div class="bg-detail">
+        <div><div class="bg-imgwrap" style="max-width:${Math.round(520 * cur.w / cur.h)}px"><img src="${h(cur.image)}" alt="${h(cur.title)}"><svg class="in-ov" viewBox="0 0 1 1" preserveAspectRatio="none">${d.signs.filter(s => s.object === cur.id).map(s => `<rect style="--c:${IN_COLORS[s.group]}" class="${s.id === I.sel ? 'on' : ''}" x="${s.box[0]}" y="${s.box[1]}" width="${(s.box[2] - s.box[0]).toFixed(4)}" height="${(s.box[3] - s.box[1]).toFixed(4)}"/>`).join('')}</svg></div>
+          <p class="lo-note" style="margin-top:6px">${credit(cur.credit)}</p></div>
+        <div><div class="lo-row" style="justify-content:space-between"><strong style="font-size:16px">${h(cur.title)}</strong><button class="btn btn-line" id="inClose">Close</button></div>
+          <p style="margin:8px 0">${h(cur.note)}</p>
+          <dl class="bg-dl"><dt>Place</dt><dd>${h(cur.place)}</dd><dt>Date</dt><dd>${h(cur.date)}</dd><dt>Object</dt><dd>${h(cur.kind)}</dd><dt>Signs marked</dt><dd>${cur.signs.length}</dd><dt>Source</dt><dd><a href="${h(cur.credit.source)}" target="_blank" rel="noopener">${h(cur.credit.file)}</a></dd></dl>
+          <div class="in-signs">${d.signs.filter(s => s.object === cur.id).map(s => `<button class="in-sign" data-is="${s.id}" aria-pressed="${I.sel === s.id}" title="${h(d.groups[s.group].en)}" style="${inCrop(cur, s.box)};border-color:${IN_COLORS[s.group]}"></button>`).join('')}</div>
+          <p class="lo-note">Boxes were drawn by hand around each sign. Texts on seals read right to left; on impressions they are reversed.</p></div>
+      </div></div>` : ''}
+    </div>
+    <div class="panel" style="padding:12px;margin-top:10px">
+      <div class="cap-section-label">All pictures · ${d.objects.length}</div>
+      <div class="in-objs">${d.objects.map(o => `<button class="in-obj" data-io="${o.id}"><img src="${h(o.image)}" alt="" loading="lazy"><span>${h(o.title)}<br><span class="lo-note">${o.signs.length ? o.signs.length + ' signs marked' : 'not marked'}</span></span></button>`).join('')}</div>
+      <p class="lo-note" style="margin-top:8px">${d.resources.map(r => `<a href="${h(r.url)}" target="_blank" rel="noopener">${h(r.title)}</a>`).join(' · ')}</p>
+    </div>`;
+  el.querySelectorAll('[data-ig]').forEach(b => b.onclick = () => { I.group = b.dataset.ig; rerender(); });
+  const show = () => setTimeout(() => { const x = el.querySelector('#inDetail'); if (x) x.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
+  el.querySelectorAll('[data-is]').forEach(b => b.onclick = () => { const s = d.signs.find(x => x.id === b.dataset.is); I.sel = s.id; I.open = s.object; rerender(); show(); });
+  el.querySelectorAll('[data-io]').forEach(b => b.onclick = () => { I.open = b.dataset.io; I.sel = ''; rerender(); show(); });
+  const c = el.querySelector('#inClose'); if (c) c.onclick = () => { I.open = ''; I.sel = ''; rerender(); };
 }
 
 /* Brahmi gallery: original inscriptions and manuscripts with credits (lib/lipi-brahmi-gallery.json) */

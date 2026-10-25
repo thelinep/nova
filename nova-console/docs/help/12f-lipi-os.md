@@ -89,6 +89,17 @@ In a picture, the detected areas are drawn on the image in the category’s colo
 
 A find is **sure** (solid outline) when the spelling matches exactly, the line was read with at least 80% confidence, and the script variant is one the model reads well. Everything else is **possible** (dashed): a lead to check against a published reading. The words come from a list of Ashokan Prakrit vocabulary, so OCR mistakes can produce false finds and words outside the list are not reported.
 
+## Indus signs
+
+The Indus (Harappan) script of about 2600–1900 BCE is undeciphered and has no Unicode encoding. **Indus signs** shows what is openly available:
+
+- How many signs the main sign lists count: Mahadevan 1977 (417), Parpola 1994 (386), Wells 2015 (694), with a link to read Mahadevan’s concordance online. The full lists are published works and are not copied into Maataa.
+- 18 reference signs uploaded to Wikimedia Commons, each with its variant forms, numbered as on Commons (following Mahadevan).
+- 91 signs cut from 29 openly licensed seals, tablets and drawings, sorted into informal shape groups (spoked circle, U-shape, comb, ladder, human figure and so on). The groups are for browsing; they are not sign numbers.
+- Click a sign to open its seal with every marked sign boxed in its group’s colour. The boxes were drawn by hand.
+
+Every picture has its author, licence and source; the list is in `public/lipi-indus/CREDITS.md`.
+
 ## Scripts
 
 The 69-record registry from the prototype, with its tiers (Flagship, Pilot, Research, Exhibition only). Search or filter by tier, and click a record to see its alphabet written out. Seventeen of the records can be written by the converter; the rest are historical styles without their own Unicode block. The Indus / Harappan signs stay **exhibition only**: no decipherment is claimed.

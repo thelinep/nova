@@ -173,3 +173,19 @@ test('Lipi OS: Brahmi report with detected areas on the picture', async ({ page 
   await page.locator('.bg-report [data-rgo="lumbini"]').first().click();
   await expect(page.locator('#bgDetail')).toContainText('Lumbini');
 });
+
+test('Lipi OS: Indus signs board shows signs and their places on a seal', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.locator('.nav-item[data-view="lipios"]').click();
+  await page.locator('[data-lo-tab="indus"]').click();
+  await expect(page.locator('.in-ref').first()).toBeVisible();
+  const all = await page.locator('.in-sign').count();
+  expect(all).toBeGreaterThan(80);
+  await page.locator('[data-ig="wheel"]').click();
+  expect(await page.locator('.in-sign').count()).toBeLessThan(all);
+  await page.locator('.in-sign').first().click();
+  await expect(page.locator('#inDetail')).toBeVisible();
+  await expect(page.locator('#inDetail rect.on')).toHaveCount(1);
+  await expect(page.locator('.lipios-view, #lipiosView')).toContainText('417');
+});
