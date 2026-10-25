@@ -37,6 +37,7 @@
       "../../public/cs-assets/toon/*.*": "public/cs-assets/toon/",
       "../../public/fonts/lipi/*.*": "public/fonts/lipi/",
       "../../public/lipi-sounds/*.*": "public/lipi-sounds/",
+      "../../public/lipi-brahmi/*.*": "public/lipi-brahmi/",
       "../../public/vendor/mediapipe/*.*": "public/vendor/mediapipe/",
       "../../public/help/media/*.*": "public/help/media/",
       "../../scripts/*.sh": "scripts/",

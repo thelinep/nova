@@ -116,3 +116,25 @@ test('Lipi OS: conjunct editor drags, snaps, saves and resizes', async ({ page }
   await page.locator('#cjSave').click();
   await expect(page.locator('#lipiosView')).toContainText('None yet.');
 });
+
+test('Lipi OS: Brahmi gallery filters, opens an item with its credit', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.locator('.nav-item[data-view="lipios"]').click();
+  await page.locator('[data-lo-tab="gallery"]').click();
+  await expect(page.locator('.bg-tile').first()).toBeVisible();
+  const total = await page.locator('.bg-tile').count();
+  expect(total).toBeGreaterThan(50);
+  await page.locator('[data-gv="tamil"]').click();
+  expect(await page.locator('.bg-tile').count()).toBeLessThan(total);
+  await page.locator('.bg-tile[data-gi="mangulam"]').click();
+  await expect(page.locator('#bgDetail')).toContainText('Mangulam');
+  await expect(page.locator('#bgDetail')).toContainText('CC BY-SA 3.0');
+  await expect(page.locator('#bgDetail a[href^="https://commons.wikimedia.org/wiki/File:"]')).toHaveCount(2);
+  expect(await page.locator('#bgDetail img').evaluate(i => i.naturalWidth)).toBeGreaterThan(100);
+  await page.locator('#bgClose').click();
+  await page.locator('[data-gv=""]').click();
+  await page.locator('#bgQ').fill('Kalinga');
+  await page.locator('#bgQ').press('Enter');
+  await expect(page.locator('.bg-tile[data-gi="dhauli"]')).toBeVisible();
+});

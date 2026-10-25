@@ -46,6 +46,18 @@ const CSS = `
 .lo-res{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
 .lo-res .s{font-size:22px;overflow-wrap:anywhere}
 .lo-res .m{font-size:11px;color:var(--amber)}
+.bg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px}
+.bg-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:0;cursor:pointer;color:var(--ink);text-align:left;overflow:hidden;display:flex;flex-direction:column}
+.bg-tile[aria-pressed="true"]{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-line)}
+.bg-tile img{width:100%;height:130px;object-fit:cover;background:#111;display:block}
+.bg-tile .t{padding:7px 9px 8px;font-size:12.5px;line-height:1.35}
+.bg-tile .d{color:var(--muted);font-size:11.5px}
+.bg-detail{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px}
+.bg-detail img{width:100%;height:auto;max-height:560px;object-fit:contain;background:#111;border-radius:8px}
+.bg-dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}
+.bg-dl dt{color:var(--muted)}
+.bg-dl dd{margin:0}
+@media (max-width:900px){.bg-detail{grid-template-columns:1fr}}
 .lo-chip{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:3px 9px;font-size:12px;cursor:pointer}
 .lo-chip[aria-pressed="true"]{background:var(--amber-soft);border-color:var(--amber-line);color:var(--ink)}
 .lo-table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -128,12 +140,13 @@ const S = {
   chrono: { continent: '', category: '', from: -10000, to: 2026, data: null, sel: null },
   atlasSel: 0,
   let: { data: null, board: '', type: '', region: '', q: '', script: 'Deva', sel: 'क', autoplay: true },
+  gal: { data: null, variant: '', q: '', open: '', sort: 'date' },
   cj: { data: null, code: 'Brah', up: 'क', low: 'त', ov: null, dirty: false, status: '', busy: false, preview: '' },
 };
 try { const p = JSON.parse(localStorage.getItem('maataa.lipi') || '{}'); if (p.focus) S.focus = p.focus; if (p.study) S.study = p.study; } catch (_) { /* per-browser convenience only */ }
 const remember = () => { try { localStorage.setItem('maataa.lipi', JSON.stringify({ focus: S.focus, study: S.study })); } catch (_) { /* ignore */ } };
 
-const TABS = [['welcome', 'Welcome'], ['letters', 'Letters'], ['convert', 'Convert'], ['conjuncts', 'Conjunct editor'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
+const TABS = [['welcome', 'Welcome'], ['letters', 'Letters'], ['convert', 'Convert'], ['conjuncts', 'Conjunct editor'], ['gallery', 'Brahmi gallery'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
 const ALPHABET = 'अ आ इ ई उ ऊ ऋ ए ऐ ओ औ · क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह · ० १ २ ३ ४ ५ ६ ७ ८ ९';
 
 /** Renders Lipi OS into root. deps: { apiGet, apiPost, toast, escapeHtml, FIELD, web } */
@@ -148,7 +161,7 @@ export async function renderLipiOS(root, deps, tab) {
     <div id="loBody" data-no-list-tools></div>`;
   root.querySelectorAll('[data-lo-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.loTab; renderLipiOS(root, deps); });
   const body = root.querySelector('#loBody');
-  const fn = { welcome, letters, conjuncts, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
+  const fn = { welcome, letters, conjuncts, gallery, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
   try { await fn(body, deps, () => renderLipiOS(root, deps)); } catch (e) { body.innerHTML = `<p class="empty-hint" style="color:var(--red)">${h(e.message)}</p>`; }
 }
 
@@ -289,6 +302,56 @@ async function letters(el, deps, rerender) {
 const CJ_SCRIPTS = [['Brah', 'Brahmi+', 'Brah+'], ['Shrd', 'Sharada', 'Shrd'], ['Diak', 'Dives Akuru', 'Diak']];
 const SNAP = 30; // font units: how close a drag must come to an edge or the line to stick to it
 function cjOv(code) { const L = S.cj; if (!L.ov[code]) L.ov[code] = { pairs: {}, scale: {} }; return L.ov[code]; }
+/* Brahmi gallery: original inscriptions and manuscripts with credits (lib/lipi-brahmi-gallery.json) */
+async function gallery(el, deps, rerender) {
+  const h = deps.escapeHtml, G = S.gal;
+  if (!G.data) G.data = await deps.apiGet('/api/lipi/brahmi-gallery');
+  const d = G.data, needle = G.q.trim().toLowerCase();
+  let items = d.items.filter(i => (!G.variant || i.variant === G.variant)
+    && (!needle || [i.title, i.site, i.region, i.country, i.language, i.note, i.credit.author].join(' ').toLowerCase().includes(needle)));
+  if (G.sort === 'place') items = items.slice().sort((a, b) => (a.country + a.region + a.site).localeCompare(b.country + b.region + b.site));
+  const cur = d.items.find(i => i.id === G.open);
+  const credit = i => { const c = i.credit; const lic = c.licenceUrl ? `<a href="${h(c.licenceUrl)}" target="_blank" rel="noopener">${h(c.licence)}</a>` : h(c.licence); return `${h(c.author)} · ${lic} · via <a href="${h(c.source)}" target="_blank" rel="noopener">${h(c.via)}</a>`; };
+  el.innerHTML = `
+    <div class="panel" style="padding:12px">
+      <div class="lo-row" style="justify-content:space-between">
+        <div class="lo-row"><button class="lo-chip" aria-pressed="${!G.variant}" data-gv="">All · ${d.total}</button>${Object.entries(d.variants).map(([k, l]) => `<button class="lo-chip" aria-pressed="${G.variant === k}" data-gv="${k}">${h(l)} · ${d.counts[k]}</button>`).join('')}</div>
+        <div class="lo-row"><input id="bgQ" placeholder="Search place, language, ruler…" value="${h(G.q)}" style="${deps.FIELD};width:220px">
+          <select id="bgSort" style="${deps.FIELD}"><option value="date" ${G.sort === 'date' ? 'selected' : ''}>Oldest first</option><option value="place" ${G.sort === 'place' ? 'selected' : ''}>By place</option></select></div>
+      </div>
+      ${cur ? `<div class="panel" style="padding:12px;margin-top:10px" id="bgDetail">
+        <div class="bg-detail">
+          <div><img src="${h(cur.image)}" alt="${h(cur.title)}"><p class="lo-note" style="margin-top:6px">${credit(cur)}</p></div>
+          <div>
+            <div class="lo-row" style="justify-content:space-between"><strong style="font-size:16px">${h(cur.title)}</strong><button class="btn btn-line" id="bgClose">Close</button></div>
+            <p style="margin:8px 0">${h(cur.note)}</p>
+            <dl class="bg-dl">
+              <dt>Variant</dt><dd>${h(d.variants[cur.variant])}</dd>
+              <dt>Date</dt><dd>${h(cur.dateLabel)}</dd>
+              <dt>Place</dt><dd>${h(cur.site)}, ${h(cur.region)}${cur.country && cur.country !== '—' ? ', ' + h(cur.country) : ''}</dd>
+              <dt>Language</dt><dd>${h(cur.language)}</dd>
+              <dt>Object</dt><dd>${h(cur.kind)}</dd>
+              <dt>Image</dt><dd>${h(cur.credit.author)}</dd>
+              <dt>Licence</dt><dd>${cur.credit.licenceUrl ? `<a href="${h(cur.credit.licenceUrl)}" target="_blank" rel="noopener">${h(cur.credit.licence)}</a>` : h(cur.credit.licence)}</dd>
+              <dt>Source</dt><dd><a href="${h(cur.credit.source)}" target="_blank" rel="noopener">${h(cur.credit.file)}</a></dd>
+              ${cur.credit.commonsCredit ? `<dt>Credit line</dt><dd class="lo-note">${h(cur.credit.commonsCredit)}</dd>` : ''}
+            </dl>
+          </div>
+        </div></div>` : ''}
+      <div class="bg-grid">${items.map(i => `<button class="bg-tile" data-gi="${i.id}" aria-pressed="${i.id === G.open}"><img loading="lazy" src="${h(i.image)}" alt=""><span class="t">${h(i.title)}<br><span class="d">${h(i.dateLabel)} · ${h(i.country === '—' ? i.site : i.country)}</span></span></button>`).join('') || '<p class="empty-hint">Nothing matches.</p>'}</div>
+    </div>
+    <div class="lo-grid2" style="margin-top:10px">
+      <div class="panel" style="padding:12px"><div class="cap-section-label">Resources</div>
+        <ul style="margin:6px 0 0 18px;padding:0;font-size:13px;line-height:1.5">${d.resources.map(r => `<li>${r.url ? `<a href="${h(r.url)}" target="_blank" rel="noopener">${h(r.title)}</a>` : h(r.title)} <span class="lo-note">· ${h(r.kind)}. ${h(r.note)}</span></li>`).join('')}</ul></div>
+      <div class="panel" style="padding:12px"><div class="cap-section-label">About these images</div><p class="lo-note" style="margin-top:6px">${h(d.notes)}</p><p class="lo-note">${h(d.source)}. Full credits: public/lipi-brahmi/CREDITS.md. Links open on the web; the images themselves are stored in Maataa and work offline.</p></div>
+    </div>`;
+  el.querySelectorAll('[data-gv]').forEach(b => b.onclick = () => { G.variant = b.dataset.gv; rerender(); });
+  el.querySelectorAll('[data-gi]').forEach(b => b.onclick = () => { G.open = G.open === b.dataset.gi ? '' : b.dataset.gi; rerender(); setTimeout(() => { const x = el.querySelector('#bgDetail'); if (x) x.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0); });
+  const close = el.querySelector('#bgClose'); if (close) close.onclick = () => { G.open = ''; rerender(); };
+  const q = el.querySelector('#bgQ'); q.onchange = () => { G.q = q.value; rerender(); };
+  el.querySelector('#bgSort').onchange = e => { G.sort = e.target.value; rerender(); };
+}
+
 async function conjuncts(el, deps, rerender) {
   const h = deps.escapeHtml, L = S.cj;
   if (!L.data) { L.data = await deps.apiGet('/api/lipi/conjuncts'); L.ov = JSON.parse(JSON.stringify(L.data.overrides || {})); }

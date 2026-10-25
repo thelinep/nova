@@ -47,6 +47,7 @@ const lipiScripts = require('./lib/lipi-scripts');
 const lipiLetters = require('./lib/lipi-letters');
 const lipiConjuncts = require('./lib/lipi-conjuncts');
 const heritage = require('./lib/heritage');
+const lipiGallery = require('./lib/lipi-gallery');
 const brahmiNotes = require('./lib/brahmi-notes');
 const BRAHMI_PAD_JS = path.join(__dirname, 'lib', 'brahmi-pad.js');
 const backgroundJobs = require('./lib/background-jobs');
@@ -1078,6 +1079,8 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/lipi\/letters$/, handler: async (_req,res)=>sendJson(res,200,lipiLetters.board()) },
   { method: 'GET', pattern: /^\/api\/lipi\/letters\/([^/]+)$/, handler: async (_req,res,[k])=>sendJson(res,200,lipiLetters.letter(decodeURIComponent(k))) },
   { method: 'POST', pattern: /^\/api\/lipi\/convert$/, handler: async (req,res)=>{const b=await readJsonBody(req);sendJson(res,200,lipiScripts.convert(b.text,{scripts:b.scripts,hindi:!!b.hindi,halant:b.halant}));} },
+  { method: 'GET', pattern: /^\/api\/lipi\/brahmi-gallery$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,lipiGallery.gallery({variant:q.get('variant')||'',q:q.get('q')||''}));} },
+  { method: 'GET', pattern: /^\/api\/lipi\/brahmi-gallery\/([a-z0-9-]+)$/, handler: async (_req,res,m)=>sendJson(res,200,lipiGallery.item(m[0])) },
   { method: 'GET', pattern: /^\/api\/lipi\/os$/, handler: async (_req,res)=>sendJson(res,200,heritage.overview()) },
   { method: 'GET', pattern: /^\/api\/lipi\/registry$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.registry({q:q.get('q')||'',tier:q.get('tier')||''}));} },
   { method: 'GET', pattern: /^\/api\/lipi\/learning$/, handler: async (_req,res)=>sendJson(res,200,heritage.learning()) },

@@ -56,6 +56,15 @@ Open **Conjunct editor** to change how a pair is drawn in Brahmi+, Sharada or Di
 
 Rebuilding needs the font tools once: double-click **Lipi - Install font tools.command** in the `launchers` folder (about 10 MB). The editor says so if they are missing.
 
+## Brahmi gallery
+
+Photographs, rubbings and drawings of original Brahmi writing, from the earliest finds to the scripts that grew out of it: Ashokan edicts, post-Mauryan cave and stupa records, Bhattiprolu, Tamil-Brahmi, Sri Lankan Brahmi, Kushan and Kshatrapa, Gupta and Central Asian manuscripts, and the charts used to decipher it.
+
+- Filter by variant, search by place, language or ruler, and sort oldest first or by place.
+- Click a picture for its date, place, language and a short note, with the photographer or author, the licence and a link to the original file.
+- The pictures are stored in Maataa and work offline. Every one comes from Wikimedia Commons under a public domain, CC0, Creative Commons or Government Open Data licence. Keep the credit line when you reuse one. The full list is in `public/lipi-brahmi/CREDITS.md`.
+- Dates are approximate, and a few (such as Sohgaura and Piprahwa) are debated.
+
 ## Scripts
 
 The 69-record registry from the prototype, with its tiers (Flagship, Pilot, Research, Exhibition only). Search or filter by tier, and click a record to see its alphabet written out. Seventeen of the records can be written by the converter; the rest are historical styles without their own Unicode block. The Indus / Harappan signs stay **exhibition only**: no decipherment is claimed.
