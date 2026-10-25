@@ -33,7 +33,10 @@ from fontTools.pens.boundsPen import BoundsPen
 from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
-SCALE, GAP = 0.62, 40          # size of a subjoined letter; space between a letter and the one below
+# Size of a subjoined letter and the space between a letter and the one below it. 0.75 / 0 lets the
+# lower letter touch the foot of the upper one, as in inscriptions; override to compare (LIPI_SUB_SCALE, LIPI_SUB_GAP).
+SCALE, GAP = float(os.environ.get('LIPI_SUB_SCALE', 0.75)), float(os.environ.get('LIPI_SUB_GAP', 0))
+SIDE = 50  # minimum clear space each side of a subjoined letter that is wider than its base
 SCRIPTS = json.load(open(os.path.join(ROOT, 'lib', 'lipi-scripts.json'), encoding='utf-8'))['scripts']
 CONFIG = {  # code: (Noto source file, family name, output slug)
     'Brah': ('NotoSansBrahmi-Regular.ttf', 'Maataa Lipi Brahmi', 'brahmi'),
@@ -46,6 +49,22 @@ DEVA_CONSONANTS = [chr(c) for c in range(0x0915, 0x093A)] + ['ळ']
 def graft(dst, src):
     """Append src's lookups and features to dst and enable them for every script and language."""
     base = len(dst.LookupList.Lookup)
+    # contextual lookups name other lookups by index: renumber those references too
+    for lk in src.LookupList.Lookup:
+        for st in lk.SubTable:
+            st = getattr(st, 'ExtSubTable', st)
+            for attr in ('PosLookupRecord', 'SubstLookupRecord'):
+                for rec in getattr(st, attr, None) or []:
+                    rec.LookupListIndex += base
+            for rs_attr in ('ChainPosRuleSet', 'ChainPosClassSet', 'PosRuleSet', 'PosClassSet', 'ChainSubRuleSet', 'ChainSubClassSet', 'SubRuleSet', 'SubClassSet'):
+                for rs in getattr(st, rs_attr, None) or []:
+                    if rs is None:
+                        continue
+                    for rule in (getattr(rs, 'ChainPosRule', None) or getattr(rs, 'ChainPosClassRule', None) or getattr(rs, 'PosRule', None) or getattr(rs, 'PosClassRule', None)
+                                 or getattr(rs, 'ChainSubRule', None) or getattr(rs, 'ChainSubClassRule', None) or getattr(rs, 'SubRule', None) or getattr(rs, 'SubClassRule', None) or []):
+                        for attr in ('PosLookupRecord', 'SubstLookupRecord'):
+                            for rec in getattr(rule, attr, None) or []:
+                                rec.LookupListIndex += base
     dst.LookupList.Lookup.extend(src.LookupList.Lookup)
     dst.LookupList.LookupCount = len(dst.LookupList.Lookup)
     added = []
@@ -88,6 +107,11 @@ def build(code, src, out, family):
         if t and len(t) == 1 and ord(t) in cmap and cmap[ord(t)] not in consonants:
             consonants.append(cmap[ord(t)])
     below_glyphs = {cmap[ord(smap[v])] for v in 'ुूृॄ' if len(smap.get(v, '')) == 1 and ord(smap[v]) in cmap}
+    u_sign = cmap.get(ord(smap['ु'])) if len(smap.get('ु', '')) == 1 else None
+
+    def rec_is_above(st, c):  # a mark class whose base anchors sit high is an above-base class
+        ys = [r.BaseAnchor[c].YCoordinate for r in st.BaseArray.BaseRecord if r.BaseAnchor and len(r.BaseAnchor) > c and r.BaseAnchor[c] is not None]
+        return bool(ys) and sorted(ys)[len(ys) // 2] > 300
     # Noto's ccmp already fuses some clusters (क्ष, स्व, a consonant + u / uu ...) before conjuncts form;
     # those fused glyphs get subjoined forms too, so virama + fused glyph still stacks.
     base_set = set(consonants)
@@ -107,10 +131,11 @@ def build(code, src, out, family):
         if lk.LookupType != 4:
             continue
         for st in lk.SubTable:
-            cls = {rec.Class for gname, rec in zip(st.MarkCoverage.glyphs, st.MarkArray.MarkRecord) if gname in below_glyphs}
-            if len(cls) != 1:
+            # the class the u-sign attaches with (r / rr signs may use another class; they keep their place)
+            cls = [rec.Class for gname, rec in zip(st.MarkCoverage.glyphs, st.MarkArray.MarkRecord) if gname == u_sign]
+            if not cls or rec_is_above(st, cls[0]):
                 continue
-            c0 = cls.pop()
+            c0 = cls[0]
             for gname, rec in zip(st.MarkCoverage.glyphs, st.MarkArray.MarkRecord):
                 if rec.Class == c0:
                     below_marks[gname] = (rec.MarkAnchor.XCoordinate, rec.MarkAnchor.YCoordinate)
@@ -118,7 +143,7 @@ def build(code, src, out, family):
                 a = rec.BaseAnchor[c0] if rec.BaseAnchor and len(rec.BaseAnchor) > c0 else None
                 if a is not None and gname not in foot:
                     foot[gname] = (a.XCoordinate, a.YCoordinate)
-    subs, anchors, sub_foot = {}, {}, {}
+    subs, anchors, sub_foot, sub_width = {}, {}, {}, {}
     for g in consonants:
         bp = BoundsPen(gs); gs[g].draw(bp)
         x0, y0, x1, y1 = bp.bounds
@@ -134,6 +159,7 @@ def build(code, src, out, family):
         height = (y1 - y0) * SCALE
         anchors[name] = (-GAP - height)          # bottom edge, where a further letter hangs
         anchors[g] = ((x0 + x1) / 2, min(0, y0)) # bottom centre of the full letter
+        sub_width[name] = (x1 - x0) * SCALE
         if g in foot:  # where u / uu attach, moved with the reduced letter
             fx, fy = foot[g]
             sub_foot[name] = (fx * SCALE - cx * SCALE, fy * SCALE - GAP - top)
@@ -152,6 +178,24 @@ def build(code, src, out, family):
         return f'    pos mark {s} <anchor 0 {round(anchors[s])}> mark @SUBJ{extra};'
     marks = '\n'.join(mark1(s) for s in subs.values())
     belowv = '\n'.join(f'markClass {g} <anchor {x} {y}> @BELOWV;' for g, (x, y) in below_marks.items())
+    # A subjoined letter wider than its base would run into the neighbouring letters. Widen the base
+    # for that pair only (pair positioning on base + subjoined letter): push it right by half the extra
+    # width and add the extra to its advance.
+    # Bases and subjoined letters are grouped by width so the rule count stays small.
+    STEP = 40
+    def bucket(v): return int(v // STEP)
+    base_groups, sub_groups = {}, {}
+    for g in subs:
+        base_groups.setdefault(bucket(hmtx[g][0]), []).append(g)
+    for sname in subs.values():
+        sub_groups.setdefault(bucket(sub_width[sname]), []).append(sname)
+    widen = []
+    for bb, bl in sorted(base_groups.items()):
+        for sb, sl in sorted(sub_groups.items()):
+            extra = (sb + 1) * STEP + 2 * SIDE - bb * STEP
+            if extra > 0:
+                widen.append(f"    pos [{' '.join(bl)}] [{' '.join(sl)}] <{round(extra / 2)} 0 {round(extra)} 0>;")
+    widen_fea = ('feature dist {\n  lookup SubjoinRoom {\n' + '\n'.join(widen) + '\n  } SubjoinRoom;\n} dist;') if widen else ''
     fea = f"""
 languagesystem DFLT dflt;
 markClass [{' '.join(subs.values())}] <anchor 0 0> @SUBJ;
@@ -166,6 +210,7 @@ feature blwm {{
 {bases}
   }} SubjoinBase;
 }} blwm;
+{widen_fea}
 feature mkmk {{
   lookup SubjoinStack {{
 {marks}
