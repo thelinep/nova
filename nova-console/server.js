@@ -45,6 +45,7 @@ const aaiEvidence = require('./lib/aai-evidence');
 const hkdm = require('./lib/hkdm-tensor');
 const lipiScripts = require('./lib/lipi-scripts');
 const lipiLetters = require('./lib/lipi-letters');
+const lipiConjuncts = require('./lib/lipi-conjuncts');
 const heritage = require('./lib/heritage');
 const brahmiNotes = require('./lib/brahmi-notes');
 const BRAHMI_PAD_JS = path.join(__dirname, 'lib', 'brahmi-pad.js');
@@ -1070,6 +1071,10 @@ const routes = [
   // Lipi OS (lib/lipi-scripts.js, lib/heritage.js): many-script converter, script registry, learning library,
   // chronology and atlas, newsroom editions and the reading desk. Absorbed from the Rakhigarhi / Lipi OS prototype.
   { method: 'GET', pattern: /^\/api\/lipi\/scripts$/, handler: async (_req,res)=>sendJson(res,200,lipiScripts.list()) },
+  { method: 'GET', pattern: /^\/api\/lipi\/conjuncts$/, handler: async (_req,res)=>sendJson(res,200,lipiConjuncts.data(store)) },
+  { method: 'POST', pattern: /^\/api\/lipi\/conjuncts$/, handler: async (req,res)=>sendJson(res,200,lipiConjuncts.save(store,await readJsonBody(req))) },
+  { method: 'POST', pattern: /^\/api\/lipi\/conjuncts\/rebuild$/, handler: async (_req,res)=>sendJson(res,200,await lipiConjuncts.rebuild(store)) },
+  { method: 'POST', pattern: /^\/api\/lipi\/conjuncts\/reset-fonts$/, handler: async (_req,res)=>sendJson(res,200,lipiConjuncts.resetFonts()) },
   { method: 'GET', pattern: /^\/api\/lipi\/letters$/, handler: async (_req,res)=>sendJson(res,200,lipiLetters.board()) },
   { method: 'GET', pattern: /^\/api\/lipi\/letters\/([^/]+)$/, handler: async (_req,res,[k])=>sendJson(res,200,lipiLetters.letter(decodeURIComponent(k))) },
   { method: 'POST', pattern: /^\/api\/lipi\/convert$/, handler: async (req,res)=>{const b=await readJsonBody(req);sendJson(res,200,lipiScripts.convert(b.text,{scripts:b.scripts,hindi:!!b.hindi,halant:b.halant}));} },
@@ -1653,6 +1658,16 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' || req.method === 'HEAD') {
+    // Conjunct fonts rebuilt in the shape editor live in the data folder and replace the shipped ones.
+    const edited = lipiConjuncts.editedFont(pathname);
+    if (edited) {
+      fs.readFile(edited, (err, data) => {
+        if (err) { serveStatic(req, res, pathname); return; }
+        res.writeHead(200, { 'Content-Type': 'font/woff2', 'Content-Length': data.length, 'Cache-Control': 'no-cache' });
+        res.end(req.method === 'HEAD' ? undefined : data);
+      });
+      return;
+    }
     serveStatic(req, res, pathname);
     return;
   }

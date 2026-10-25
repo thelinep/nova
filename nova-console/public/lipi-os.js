@@ -19,13 +19,14 @@ export const FONTS = {
 const FONT_FILE = { Dogr: 'noto-serif-dogra-dogra', Diak: 'noto-serif-dives-akuru-dives-akuru' };
 // Maataa's own builds (tools/build-lipi-conjunct-fonts.py): Noto plus the stacked conjuncts its fonts lack.
 const MAATAA_FONT = { 'Brah+': 'maataa-lipi-brahmi', Shrd: 'maataa-lipi-sharada', Diak: 'maataa-lipi-dives-akuru' };
-const fontUrl = (c, slug) => MAATAA_FONT[c] ? `/fonts/lipi/${MAATAA_FONT[c]}.woff2` : `/fonts/lipi/${FONT_FILE[c] || 'noto-sans-' + slug + '-' + slug}-400-normal.woff2`;
+let FONT_V = 0; // bumped after the conjunct editor rebuilds the fonts, so the browser loads the new files
+const fontUrl = (c, slug) => MAATAA_FONT[c] ? `/fonts/lipi/${MAATAA_FONT[c]}.woff2${FONT_V ? '?v=' + FONT_V : ''}` : `/fonts/lipi/${FONT_FILE[c] || 'noto-sans-' + slug + '-' + slug}-400-normal.woff2`;
+const fontFaces = () => Object.entries(FONTS).map(([c, [slug]]) => `@font-face{font-family:'Lipi ${c}';src:url('${fontUrl(c, slug)}') format('woff2');font-display:swap}`).join('\n');
 export const fontStyle = code => FONTS[code] ? `font-family:'Lipi ${code}','${FONTS[code][1]}',var(--font-ui);` : '';
 export const dirOf = code => (code === 'Khar' ? 'rtl' : 'ltr');
 const INDIC = /[\u{0900}-\u{0dff}\u{11000}-\u{11fff}]/u;
 
 const CSS = `
-${Object.entries(FONTS).map(([c, [slug]]) => `@font-face{font-family:'Lipi ${c}';src:url('${fontUrl(c, slug)}') format('woff2');font-display:swap}`).join('\n')}
 .lo-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px;align-items:start}
 @media(max-width:1000px){.lo-hero{grid-template-columns:1fr}}
 .lo-big{font-size:46px;line-height:1.1;margin:6px 0}
@@ -112,9 +113,11 @@ details.lo-det summary{cursor:pointer;color:var(--amber);font-size:12.5px;margin
 `;
 
 function ensureCss() {
+  if (!document.getElementById('lipi-os-fonts')) { const f = document.createElement('style'); f.id = 'lipi-os-fonts'; f.textContent = fontFaces(); document.head.appendChild(f); }
   if (document.getElementById('lipi-os-css')) return;
   const s = document.createElement('style'); s.id = 'lipi-os-css'; s.textContent = CSS; document.head.appendChild(s);
 }
+function reloadFonts() { FONT_V = Date.now(); const f = document.getElementById('lipi-os-fonts'); if (f) f.textContent = fontFaces(); }
 
 const S = {
   tab: 'welcome', os: null, focus: 'Brah', study: 'Hindi',
@@ -125,11 +128,12 @@ const S = {
   chrono: { continent: '', category: '', from: -10000, to: 2026, data: null, sel: null },
   atlasSel: 0,
   let: { data: null, board: '', type: '', region: '', q: '', script: 'Deva', sel: 'क', autoplay: true },
+  cj: { data: null, code: 'Brah', up: 'क', low: 'त', ov: null, dirty: false, status: '', busy: false, preview: '' },
 };
 try { const p = JSON.parse(localStorage.getItem('maataa.lipi') || '{}'); if (p.focus) S.focus = p.focus; if (p.study) S.study = p.study; } catch (_) { /* per-browser convenience only */ }
 const remember = () => { try { localStorage.setItem('maataa.lipi', JSON.stringify({ focus: S.focus, study: S.study })); } catch (_) { /* ignore */ } };
 
-const TABS = [['welcome', 'Welcome'], ['letters', 'Letters'], ['convert', 'Convert'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
+const TABS = [['welcome', 'Welcome'], ['letters', 'Letters'], ['convert', 'Convert'], ['conjuncts', 'Conjunct editor'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
 const ALPHABET = 'अ आ इ ई उ ऊ ऋ ए ऐ ओ औ · क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह · ० १ २ ३ ४ ५ ६ ७ ८ ९';
 
 /** Renders Lipi OS into root. deps: { apiGet, apiPost, toast, escapeHtml, FIELD, web } */
@@ -144,7 +148,7 @@ export async function renderLipiOS(root, deps, tab) {
     <div id="loBody" data-no-list-tools></div>`;
   root.querySelectorAll('[data-lo-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.loTab; renderLipiOS(root, deps); });
   const body = root.querySelector('#loBody');
-  const fn = { welcome, letters, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
+  const fn = { welcome, letters, conjuncts, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
   try { await fn(body, deps, () => renderLipiOS(root, deps)); } catch (e) { body.innerHTML = `<p class="empty-hint" style="color:var(--red)">${h(e.message)}</p>`; }
 }
 
@@ -275,6 +279,145 @@ async function letters(el, deps, rerender) {
   const play = el.querySelector('#ltPlay'); if (play) play.onclick = () => playLetter(cur, deps.toast);
   el.querySelectorAll('[data-sutra]').forEach(b => b.onclick = () => { if (typeof window.openSutra === 'function') window.openSutra(b.dataset.sutra); else deps.toast('Open the Ashtadhyayi view and look up ' + b.dataset.sutra + '.'); });
   el.querySelector('#ltConvert').onclick = () => { S.conv.text = cur.sample; S.conv.hindi = false; S.conv.out = null; S.tab = 'convert'; rerender(); };
+}
+
+// --- conjunct shape editor --------------------------------------------------------------------------
+// Draws the upper letter and the reduced lower letter from the outlines the font tool exports, places
+// the lower letter by the same edge rule as the font (no edge: middle, one edge: that edge, two or
+// more: the right-most), and lets the reader drag or nudge it. Edits are saved per pair (and a size per
+// lower letter); "Rebuild fonts" bakes them into the fonts in the data folder.
+const CJ_SCRIPTS = [['Brah', 'Brahmi+', 'Brah+'], ['Shrd', 'Sharada', 'Shrd'], ['Diak', 'Dives Akuru', 'Diak']];
+const SNAP = 30; // font units: how close a drag must come to an edge or the line to stick to it
+function cjOv(code) { const L = S.cj; if (!L.ov[code]) L.ov[code] = { pairs: {}, scale: {} }; return L.ov[code]; }
+async function conjuncts(el, deps, rerender) {
+  const h = deps.escapeHtml, L = S.cj;
+  if (!L.data) { L.data = await deps.apiGet('/api/lipi/conjuncts'); L.ov = JSON.parse(JSON.stringify(L.data.overrides || {})); }
+  const sc = L.data.scripts[L.code];
+  if (!sc) { el.innerHTML = '<p class="empty-hint">No glyph data for this script.</p>'; return; }
+  const letters = Object.keys(sc.letters);
+  if (!sc.letters[L.up]) L.up = letters[0];
+  if (!sc.letters[L.low]) L.low = letters[0];
+  const up = sc.letters[L.up], low = sc.letters[L.low], ov = cjOv(L.code);
+  const key = L.up + '+' + L.low;
+  const nudge = ov.pairs[key] || { dx: 0, dy: 0 };
+  const size = ov.scale[L.low] != null ? ov.scale[L.low] : low.sub.scale;
+  const [bx0, by0, bx1] = up.base.bounds;
+  const targets = [{ x: (bx0 + bx1) / 2, label: 'middle' }, ...up.base.edges.map((x, i) => ({ x, label: 'edge ' + (i + 1) }))];
+  const ax = up.base.attach[0], ay = up.base.attach[1];
+  const fontCode = (CJ_SCRIPTS.find(s => s[0] === L.code) || [])[2];
+  const edited = Object.entries(ov.pairs).filter(([, v]) => v.dx || v.dy);
+  const resized = Object.entries(ov.scale);
+  const rule = up.base.rule === 'middle' ? 'no edge, so the middle' : up.base.rule === 'edge' ? 'one edge, so that edge' : 'two or more edges, so the right-most';
+  el.innerHTML = `<div class="lo-grid2" style="grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)">
+    <div class="panel" style="padding:12px">
+      <div class="lo-row" style="justify-content:space-between">
+        <div class="lo-row">${CJ_SCRIPTS.map(([c, l]) => `<button class="lo-chip" aria-pressed="${c === L.code}" data-cj-code="${c}">${l}</button>`).join('')}</div>
+        <span class="lo-note">${h(L.up)} + ${h(L.low)} · ${h(L.up)}्${h(L.low)}</span>
+      </div>
+      <svg id="cjSvg" viewBox="-300 -1150 1600 2150" style="width:100%;height:auto;max-height:520px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;margin-top:8px;touch-action:none" role="img" aria-label="Conjunct ${h(L.up)} over ${h(L.low)}">
+        <g stroke="var(--line)" stroke-width="2">
+          <line x1="-300" x2="1300" y1="0" y2="0" stroke="var(--amber-line)" stroke-dasharray="12 10"/>
+          <line x1="-300" x2="1300" y1="${-up.base.bounds[3]}" y2="${-up.base.bounds[3]}" stroke-dasharray="4 12"/>
+          <line x1="0" x2="0" y1="-1150" y2="1000" stroke-dasharray="4 12"/><line x1="${up.base.adv}" x2="${up.base.adv}" y1="-1150" y2="1000" stroke-dasharray="4 12"/>
+        </g>
+        <g transform="scale(1,-1)"><path d="${up.base.d}" fill="var(--ink)"/></g>
+        ${targets.map((t, i) => `<g data-target="${t.x}"><path d="M${t.x} ${-ay + 18} l-16 26 h32 z" fill="${Math.abs(t.x - (ax + nudge.dx)) < 1 ? 'var(--amber)' : 'var(--muted)'}"/><text x="${t.x}" y="${-ay + 80 + i * 38}" text-anchor="middle" font-size="34" fill="var(--muted)">${t.label}</text></g>`).join('')}
+        <g id="cjSub" transform="translate(${ax + nudge.dx},${-(ay + nudge.dy)})" style="cursor:grab;pointer-events:bounding-box">
+          <g transform="scale(${size / low.sub.scale},${-size / low.sub.scale})"><path d="${low.sub.d}" fill="var(--amber)"/></g>
+          <circle r="22" fill="transparent" stroke="var(--amber)" stroke-width="4"/>
+        </g>
+      </svg>
+      <div class="lo-row" style="margin-top:8px">
+        <label class="lo-note">Across <input id="cjDx" type="number" step="5" value="${nudge.dx}" style="${deps.FIELD};width:80px"></label>
+        <label class="lo-note">Up/down <input id="cjDy" type="number" step="5" value="${nudge.dy}" style="${deps.FIELD};width:80px"></label>
+        <button class="btn btn-line" data-nudge="-10,0" title="Left">←</button><button class="btn btn-line" data-nudge="10,0" title="Right">→</button><button class="btn btn-line" data-nudge="0,10" title="Up">↑</button><button class="btn btn-line" data-nudge="0,-10" title="Down">↓</button>
+        <button class="btn btn-line" id="cjAuto">Back to the rule</button>
+      </div>
+      <div class="lo-row" style="margin-top:6px"><span class="lo-note">Stick to</span>${targets.map(t => `<button class="lo-chip" data-snap="${t.x}" aria-pressed="${Math.abs(t.x - (ax + nudge.dx)) < 1 && !nudge.dy}">${t.label}</button>`).join('')}</div>
+      <div class="lo-row" style="margin-top:6px"><label class="lo-note">Size of ${h(L.low)} below other letters <input id="cjSize" type="range" min="0.4" max="1" step="0.01" value="${size}"> <span id="cjSizeV">${Math.round(size * 100)}%</span></label><span class="lo-note">(applies to ${h(L.low)} under every letter)</span></div>
+      <p class="lo-note" style="margin-top:6px">Drag the lower letter (amber) or nudge it; it sticks to an edge or the line when it comes within ${SNAP} units. The rule picked ${rule} of ${h(L.up)}. Arrow keys nudge by 10 when the drawing has focus (Shift: 50).</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <div class="panel" style="padding:12px">
+        <div class="cap-section-label">Upper letter</div>
+        <div class="lo-row">${letters.map(c => `<button class="lo-chip" aria-pressed="${c === L.up}" data-cj-up="${h(c)}">${h(c)}</button>`).join('')}</div>
+        <div class="cap-section-label" style="margin-top:8px">Lower letter</div>
+        <div class="lo-row">${letters.map(c => `<button class="lo-chip" aria-pressed="${c === L.low}" data-cj-low="${h(c)}">${h(c)}${ov.scale[c] != null ? ' ·' : ''}</button>`).join('')}</div>
+      </div>
+      <div class="panel" style="padding:12px">
+        <div class="cap-section-label">In the font now</div>
+        <div style="font-size:64px;line-height:1.9;${fontStyle(fontCode)}" id="cjFontPreview">${h(L.preview || '')}</div>
+        <p class="lo-note">${L.data.fonts[L.code] && L.data.fonts[L.code].edited ? 'Using your rebuilt font (' + h(new Date(L.data.fonts[L.code].builtAt).toLocaleString()) + ').' : 'Using the font that ships with Maataa.'} Saved edits show here after a rebuild.</p>
+      </div>
+      <div class="panel" style="padding:12px">
+        <div class="cap-section-label">Your edits · ${edited.length} pair${edited.length === 1 ? '' : 's'}, ${resized.length} size${resized.length === 1 ? '' : 's'}</div>
+        <div class="lo-row">${edited.map(([k, v]) => `<button class="lo-chip" data-cj-go="${h(k)}" title="across ${v.dx}, up ${v.dy}">${h(k.replace('+', '्'))}</button>`).join('') || '<span class="lo-note">None yet.</span>'}</div>
+        ${resized.length ? `<p class="lo-note">Sizes: ${resized.map(([c, v]) => h(c) + ' ' + Math.round(v * 100) + '%').join(', ')}</p>` : ''}
+        <div class="lo-row" style="margin-top:8px">
+          <button class="btn btn-amber" id="cjSave" ${L.dirty ? '' : 'disabled'}>Save edits</button>
+          <button class="btn btn-line" id="cjBuild" ${L.busy ? 'disabled' : ''}>${L.busy ? 'Rebuilding…' : 'Rebuild fonts'}</button>
+          <button class="btn btn-line" id="cjShipped">Use shipped fonts</button>
+        </div>
+        ${L.status ? `<p class="lo-note" style="margin-top:6px">${h(L.status)}</p>` : ''}
+        ${L.data.python ? '' : '<p class="lo-note" style="color:var(--amber)">To rebuild, install the font tools once: double-click “Lipi - Install font tools.command” in brahmini/launchers.</p>'}
+      </div>
+    </div>
+  </div>`;
+  // the pair in the real font
+  deps.apiPost('/api/lipi/convert', { text: L.up + '्' + L.low, scripts: [fontCode] }).then(r => { L.preview = r.results[0].text; const p = el.querySelector('#cjFontPreview'); if (p) p.textContent = L.preview; }).catch(() => {});
+  const setNudge = (dx, dy, redraw = true) => {
+    dx = Math.round(dx); dy = Math.round(dy);
+    if (dx || dy) ov.pairs[key] = { dx, dy }; else delete ov.pairs[key];
+    L.dirty = true;
+    if (redraw) rerender();
+  };
+  const svg = el.querySelector('#cjSvg'), sub = el.querySelector('#cjSub');
+  const toFont = e => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse()); return { x: p.x, y: -p.y }; };
+  let drag = null;
+  sub.addEventListener('pointerdown', e => { e.preventDefault(); sub.setPointerCapture(e.pointerId); const p = toFont(e); drag = { sx: p.x, sy: p.y, dx: nudge.dx, dy: nudge.dy }; sub.style.cursor = 'grabbing'; });
+  sub.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const p = toFont(e);
+    let dx = drag.dx + (p.x - drag.sx), dy = drag.dy + (p.y - drag.sy);
+    const hit = targets.find(t => Math.abs(ax + dx - t.x) < SNAP);
+    if (hit) dx = hit.x - ax;
+    if (Math.abs(dy) < SNAP) dy = 0;
+    drag.cur = { dx, dy };
+    sub.setAttribute('transform', `translate(${ax + dx},${-(ay + dy)})`);
+    el.querySelector('#cjDx').value = Math.round(dx); el.querySelector('#cjDy').value = Math.round(dy);
+  });
+  sub.addEventListener('pointerup', () => { if (drag && drag.cur) setNudge(drag.cur.dx, drag.cur.dy); drag = null; });
+  svg.tabIndex = 0;
+  svg.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 50 : 10, m = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+    if (m) { e.preventDefault(); setNudge(nudge.dx + m[0], nudge.dy + m[1]); }
+  });
+  el.querySelector('#cjDx').onchange = e => setNudge(Number(e.target.value) || 0, nudge.dy);
+  el.querySelector('#cjDy').onchange = e => setNudge(nudge.dx, Number(e.target.value) || 0);
+  el.querySelectorAll('[data-nudge]').forEach(b => b.onclick = () => { const [x, y] = b.dataset.nudge.split(',').map(Number); setNudge(nudge.dx + x, nudge.dy + y); });
+  el.querySelectorAll('[data-snap]').forEach(b => b.onclick = () => setNudge(Number(b.dataset.snap) - ax, 0));
+  el.querySelector('#cjAuto').onclick = () => setNudge(0, 0);
+  const sizeIn = el.querySelector('#cjSize');
+  sizeIn.oninput = () => { el.querySelector('#cjSizeV').textContent = Math.round(sizeIn.value * 100) + '%'; const k = sizeIn.value / low.sub.scale; sub.firstElementChild.setAttribute('transform', `scale(${k},${-k})`); };
+  sizeIn.onchange = () => { const v = Number(sizeIn.value); if (Math.abs(v - low.sub.scale) < 0.005) delete ov.scale[L.low]; else ov.scale[L.low] = v; L.dirty = true; rerender(); };
+  el.querySelectorAll('[data-cj-code]').forEach(b => b.onclick = () => { L.code = b.dataset.cjCode; L.preview = ''; rerender(); });
+  el.querySelectorAll('[data-cj-up]').forEach(b => b.onclick = () => { L.up = b.dataset.cjUp; L.preview = ''; rerender(); });
+  el.querySelectorAll('[data-cj-low]').forEach(b => b.onclick = () => { L.low = b.dataset.cjLow; L.preview = ''; rerender(); });
+  el.querySelectorAll('[data-cj-go]').forEach(b => b.onclick = () => { [L.up, L.low] = b.dataset.cjGo.split('+'); L.preview = ''; rerender(); });
+  el.querySelector('#cjSave').onclick = async () => {
+    try { const r = await deps.apiPost('/api/lipi/conjuncts', { scripts: L.ov }); L.ov = JSON.parse(JSON.stringify(r.overrides)); L.dirty = false; L.status = 'Saved. Rebuild the fonts to see the edits in Maataa.'; deps.toast('Conjunct edits saved'); } catch (e) { L.status = e.message; }
+    rerender();
+  };
+  el.querySelector('#cjBuild').onclick = async () => {
+    if (L.dirty) { try { const r = await deps.apiPost('/api/lipi/conjuncts', { scripts: L.ov }); L.ov = JSON.parse(JSON.stringify(r.overrides)); L.dirty = false; } catch (e) { L.status = e.message; rerender(); return; } }
+    L.busy = true; L.status = 'Rebuilding the fonts. This takes a few seconds.'; rerender();
+    try { await deps.apiPost('/api/lipi/conjuncts/rebuild', {}); L.data = await deps.apiGet('/api/lipi/conjuncts'); reloadFonts(); L.status = 'Rebuilt. Maataa now uses your edited fonts.'; deps.toast('Fonts rebuilt'); } catch (e) { L.status = e.message; }
+    L.busy = false; L.preview = ''; rerender();
+  };
+  el.querySelector('#cjShipped').onclick = async () => {
+    try { await deps.apiPost('/api/lipi/conjuncts/reset-fonts', {}); L.data = await deps.apiGet('/api/lipi/conjuncts'); reloadFonts(); L.status = 'Back to the shipped fonts. Your saved edits are kept; rebuild to use them again.'; } catch (e) { L.status = e.message; }
+    L.preview = ''; rerender();
+  };
 }
 
 // --- convert ---------------------------------------------------------------------------------------

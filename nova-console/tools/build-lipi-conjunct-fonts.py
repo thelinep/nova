@@ -22,10 +22,16 @@ The same treatment is applied, as an option per script, where a Noto font forms 
 conjuncts (see CONFIG). Scripts that by convention show a visible virama (Takri, Dogra,
 Khudawadi) are left alone.
 
-Run:  python3 tools/build-lipi-conjunct-fonts.py <folder with the Noto *-Regular.ttf files>
-Writes public/fonts/lipi/maataa-lipi-<script>.woff2
+Shape editor: Lipi OS's Conjunct editor saves per-pair nudges and per-letter sizes; pass them with
+--overrides (JSON: {"Brah": {"pairs": {"क+त": {"dx": 20, "dy": -10}}, "scale": {"त": 0.8}}}) and the
+pair is moved by a contextual positioning rule applied after the attachment. --glyphs writes the
+outlines and attachment points the editor draws with.
+
+Run:  python3 tools/build-lipi-conjunct-fonts.py [--src tools/fonts-src] [--out public/fonts/lipi]
+                                                 [--overrides file.json] [--glyphs file.json] [Brah Shrd Diak]
 """
-import json, os, sys
+import argparse, json, os, sys
+from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.ttLib import TTFont
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.transformPen import TransformPen
@@ -96,7 +102,13 @@ def graft(dst, src):
             ls.FeatureCount = len(ls.FeatureIndex)
 
 
-def build(code, src, out, family):
+def build(code, src, out, family, overrides=None, glyph_out=None):
+    overrides = overrides or {}
+    scale_of = {}
+    for d, v in (overrides.get('scale') or {}).items():
+        t = SCRIPTS[code]['map'].get(d)
+        if t and len(t) == 1:
+            scale_of[t] = max(0.4, min(1.0, float(v)))
     f = TTFont(src)
     cmap = f.getBestCmap()
     gs = f.getGlyphSet()
@@ -179,23 +191,25 @@ def build(code, src, out, family):
     for g in consonants:
         bp = BoundsPen(gs); gs[g].draw(bp)
         x0, y0, x1, y1 = bp.bounds
-        top = y1 * SCALE
+        uni = next((chr(cp) for cp, gn in cmap.items() if gn == g), None)
+        sc = scale_of.get(uni, SCALE)
+        top = y1 * sc
         fx, why_b = snap(g, 'bottom', x0, x1)   # where a lower letter hangs from this letter
         tx, why_t = snap(g, 'top', x0, x1)      # where this letter, reduced, is hung from
         rule_count[why_b] = rule_count.get(why_b, 0) + 1
         pen = TTGlyphPen(gs)
         # the hanging point of the reduced letter at x = 0, its top edge at y = -GAP
-        gs[g].draw(TransformPen(pen, (SCALE, 0, 0, SCALE, -tx * SCALE, -GAP - top)))
+        gs[g].draw(TransformPen(pen, (sc, 0, 0, sc, -tx * sc, -GAP - top)))
         name = g + '.sub'
         glyf[name] = pen.glyph()
         hmtx[name] = (0, 0)
         subs[g] = name
-        sh = (y1 - y0) * SCALE
-        geo[g] = dict(fx=fx, foot_y=min(0, y0), adv=hmtx[g][0])
-        geo[name] = dict(fx=(fx - tx) * SCALE, bottom=-GAP - sh, reach_l=(tx - x0) * SCALE, reach_r=(x1 - tx) * SCALE)
+        sh = (y1 - y0) * sc
+        geo[g] = dict(fx=fx, foot_y=min(0, y0), adv=hmtx[g][0], x0=x0, x1=x1, y0=y0, y1=y1, tx=tx, scale=sc, edges_b=edges(g, 'bottom'), edges_t=edges(g, 'top'), why=why_b)
+        geo[name] = dict(fx=(fx - tx) * sc, bottom=-GAP - sh, reach_l=(tx - x0) * sc, reach_r=(x1 - tx) * sc)
         if g in foot:  # where u / uu attach, moved with the reduced letter
             ux, uy = foot[g]
-            sub_foot[name] = ((ux - tx) * SCALE, uy * SCALE - GAP - top)
+            sub_foot[name] = ((ux - tx) * sc, uy * sc - GAP - top)
 
     f.getReverseGlyphMap(rebuild=True)
     # GDEF: subjoined letters are marks
@@ -233,6 +247,33 @@ def build(code, src, out, family):
             if over_l or over_r:
                 widen.append(f"    pos [{' '.join(bl)}] [{' '.join(sl)}] <{round(over_l)} 0 {round(over_l + over_r)} 0>;")
     widen_fea = ('feature dist {\n  lookup SubjoinRoom {\n' + '\n'.join(widen) + '\n  } SubjoinRoom;\n} dist;') if widen else ''
+    # Shape-editor nudges for single pairs, applied after the attachment (lookup order follows definition)
+    deva_of = {}
+    for d in DEVA_CONSONANTS:
+        t = smap.get(d)
+        if t and len(t) == 1 and ord(t) in cmap:
+            deva_of.setdefault(cmap[ord(t)], d)
+    glyph_of = {d: g for g, d in deva_of.items()}
+    nudges = []
+    for key, v in (overrides.get('pairs') or {}).items():
+        up, _, low = key.partition('+')
+        gu, gl = glyph_of.get(up), glyph_of.get(low)
+        if gu in subs and gl in subs:
+            dx, dy = round(float(v.get('dx', 0))), round(float(v.get('dy', 0)))
+            if dx or dy:
+                nudges.append(f"    pos {gu} {subs[gl]}' <{dx} {dy} 0 0>;")
+    nudge_fea = ('feature mkmk {\n  lookup PairNudge {\n' + '\n'.join(nudges) + '\n  } PairNudge;\n} mkmk;') if nudges else ''
+    if glyph_out is not None:
+        def path(gn):
+            pen = SVGPathPen(gs); gs[gn].draw(pen); return pen.getCommands()
+        glyph_out[code] = {
+            'unitsPerEm': f['head'].unitsPerEm, 'ascent': f['hhea'].ascent, 'descent': f['hhea'].descent, 'scale': SCALE, 'gap': GAP,
+            'letters': {d: {
+                'base': {'d': path(g), 'adv': geo[g]['adv'], 'bounds': [geo[g][k] for k in ('x0', 'y0', 'x1', 'y1')], 'attach': [geo[g]['fx'], geo[g]['foot_y']],
+                         'edges': geo[g]['edges_b'], 'rule': geo[g]['why']},
+                'sub': {'d': path(subs[g]), 'scale': geo[g]['scale'], 'hang': geo[g]['tx'], 'topEdges': geo[g]['edges_t']},
+            } for g, d in deva_of.items() if g in subs},
+        }
     print(f'  {code} placement of lower letters:', ', '.join(f'{k} {v}' for k, v in sorted(rule_count.items())))
     fea = f"""
 languagesystem DFLT dflt;
@@ -254,6 +295,7 @@ feature mkmk {{
 {marks}
   }} SubjoinStack;
 }} mkmk;
+{nudge_fea}
 """
     # feaLib writes whole tables, so build the new lookups in a scratch copy and graft them
     # onto the font's own GSUB/GPOS (keeping Noto's vowel-sign, mark and kerning rules).
@@ -283,10 +325,26 @@ feature mkmk {{
 
 
 if __name__ == '__main__':
-    folder = sys.argv[1] if len(sys.argv) > 1 else '.'
-    only = sys.argv[2:] or list(CONFIG)
-    for code in only:
+    ap = argparse.ArgumentParser(description='Build the Maataa Lipi conjunct fonts')
+    ap.add_argument('codes', nargs='*', help='scripts to build (default: all)')
+    ap.add_argument('--src', default=os.path.join(ROOT, 'tools', 'fonts-src'), help='folder with the Noto *-Regular.ttf sources')
+    ap.add_argument('--out', default=os.path.join(ROOT, 'public', 'fonts', 'lipi'), help='where the woff2 files go')
+    ap.add_argument('--overrides', help='JSON with shape-editor nudges and sizes')
+    ap.add_argument('--glyphs', help='write outlines and attachment points for the editor here')
+    a = ap.parse_args()
+    if len(a.codes) == 1 and os.path.isdir(a.codes[0]):  # older call style: folder first
+        a.src, a.codes = a.codes[0], []
+    elif a.codes and os.path.isdir(a.codes[0]):
+        a.src, a.codes = a.codes[0], a.codes[1:]
+    ov = json.load(open(a.overrides, encoding='utf-8')) if a.overrides else {}
+    glyphs = {} if a.glyphs else None
+    os.makedirs(a.out, exist_ok=True)
+    for code in a.codes or list(CONFIG):
         src_name, family, slug = CONFIG[code]
-        out = os.path.join(ROOT, 'public', 'fonts', 'lipi', f'maataa-lipi-{slug}.woff2')
-        n = build(code, os.path.join(folder, src_name), out, family)
-        print(f'{code}: {n} subjoined forms -> {os.path.relpath(out, ROOT)} ({os.path.getsize(out)} bytes)')
+        out = os.path.join(a.out, f'maataa-lipi-{slug}.woff2')
+        n = build(code, os.path.join(a.src, src_name), out, family, ov.get(code), glyphs)
+        print(f'{code}: {n} subjoined forms -> {out} ({os.path.getsize(out)} bytes)')
+    if glyphs is not None:
+        with open(a.glyphs, 'w', encoding='utf-8') as fh:
+            json.dump({'format': 'maataa.lipi-conjunct-glyphs.v1', 'scripts': glyphs}, fh, ensure_ascii=False, separators=(',', ':'))
+        print('glyphs ->', a.glyphs)

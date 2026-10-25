@@ -82,3 +82,37 @@ test('Lipi OS: letters board with preview, sound, grammar, region and resources'
   const res = await page.request.get('/lipi-sounds/u0918.mp3');
   expect(res.status()).toBe(200);
 });
+
+test('Lipi OS: conjunct editor drags, snaps, saves and resizes', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.locator('.nav-item[data-view="lipios"]').click();
+  await page.locator('[data-lo-tab="conjuncts"]').click();
+  await expect(page.locator('#cjSvg')).toBeVisible();
+  await page.locator('[data-cj-up="क"]').click();
+  await page.locator('[data-cj-low="त"]').click();
+  await expect(page.locator('#cjFontPreview')).not.toBeEmpty();
+  await page.locator('#cjSvg').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.locator('#cjSvg').focus();
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect(page.locator('#cjDx')).toHaveValue('10');
+  await expect(page.locator('#cjDy')).toHaveValue('-50');
+  const box = await page.locator('#cjSub circle').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  const k = (await page.locator('#cjSvg').boundingBox()).width / 1600; // screen pixels per font unit
+  await page.mouse.move(box.x + box.width / 2 + 3 * k, box.y + box.height / 2 - 40 * k, { steps: 5 }); // near the line: it sticks
+  await page.mouse.up();
+  await expect(page.locator('#cjDy')).toHaveValue('0');
+  await page.locator('[data-snap]').first().click();
+  await expect(page.locator('[data-snap]').first()).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('[data-nudge="0,10"]').click();
+  await page.locator('#cjSave').click();
+  await expect(page.locator('#lipiosView')).toContainText('Saved.');
+  const saved = await (await page.request.get('/api/lipi/conjuncts')).json();
+  expect(saved.overrides.Brah.pairs['क+त'].dy).toBe(10);
+  await page.locator('#cjAuto').click();
+  await page.locator('#cjSave').click();
+  await expect(page.locator('#lipiosView')).toContainText('None yet.');
+});

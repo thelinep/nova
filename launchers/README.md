@@ -12,6 +12,7 @@ Double-click **Maataa.command** in the brahmini folder for a menu of everything 
 | Add upscale model · Add tensor view · Add audio models · Add ACE-Step 1.5 · Add Wan video models | ComfyUI add-ons and models |
 | Install Kokoro voices for NOVA · Add multilingual speech model · Install LTX-2 video for NOVA | Voices, speech-to-text, video with sound |
 | AAI - Set up | The Vidyut derivation engine for Maataa AAI |
+| Lipi - Install font tools | fontTools (about 10 MB) so the Lipi OS conjunct editor can rebuild the Maataa Lipi fonts |
 | Guru 0–6 | Guru: fix PyTorch, set up, corpus, train, talk, add to Ollama, look up a sutra. Corpus and Train are blocked by the current I7 gate |
 | Build / Rebuild event directory · Fill event directory gaps from Google · Build event map | The Brahmini Knowledge Collector's event directory |
 | Compare song engines · Rename local model to guru-maataa · Push to GitHub | Utilities |

@@ -45,6 +45,17 @@ A halant (virama, ्) between two consonants joins them into a conjunct (सं
 
 The Noto fonts do not draw conjuncts for every script, so Maataa ships its own builds for three of them: **Maataa Lipi Brahmi**, **Maataa Lipi Sharada** and **Maataa Lipi Dives Akuru**. In these fonts the lower letter is three-quarters size and touches the foot of the upper one, as in inscriptions. Placement is magnetic, by the stroke ends (edges) at the foot of the upper letter: with no edge the lower letter hangs from the middle, with one edge from that edge, and with two or more from the right-most edge. The lower letter is hung by the edge at its own top, chosen the same way, and a third letter hangs from the second by the same rule. A wide pair gets extra space so it does not run into its neighbours, and u and uu move under the lower letter. Brahmi is offered both ways: **Brahmi** uses Noto Sans Brahmi, which draws every halant as a bar, and **Brahmi+** shows exactly the same text with stacked conjuncts. Copying either gives the same characters. They are Noto fonts with stacked conjuncts added (the second letter written smaller, below the first), renamed as the SIL Open Font License requires. Takri and Khudawadi are normally written with a visible halant, Noto Serif Dogra forms no conjuncts, and Noto Sans Kharoshthi forms only some; Convert says so under those scripts.
 
+### Conjunct editor
+
+Open **Conjunct editor** to change how a pair is drawn in Brahmi+, Sharada or Dives Akuru.
+
+1. Pick the script, the **upper letter** and the **lower letter**. The pair is drawn large, with the edges and the middle of the upper letter marked.
+2. Drag the lower letter, or use the arrow keys (10 units; hold Shift for 50) or the nudge buttons. It sticks to an edge, the middle or the starting height when it comes near. **Stick to** jumps to a mark, and **Back to the rule** undoes the move for this pair.
+3. **Size** changes the lower letter wherever it is written under any letter in that script.
+4. Press **Save edits**, then **Rebuild fonts**. Maataa writes the edited fonts into its data folder and uses them everywhere at once; the shipped fonts are not changed. **Use shipped fonts** goes back to them and keeps your edits for later.
+
+Rebuilding needs the font tools once: double-click **Lipi - Install font tools.command** in the `launchers` folder (about 10 MB). The editor says so if they are missing.
+
 ## Scripts
 
 The 69-record registry from the prototype, with its tiers (Flagship, Pilot, Research, Exhibition only). Search or filter by tier, and click a record to see its alphabet written out. Seventeen of the records can be written by the converter; the rest are historical styles without their own Unicode block. The Indus / Harappan signs stay **exhibition only**: no decipherment is claimed.

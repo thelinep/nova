@@ -41,6 +41,8 @@
       "../../public/help/media/*.*": "public/help/media/",
       "../../scripts/*.sh": "scripts/",
       "../../scripts/*.py": "scripts/",
+      "../../tools/build-lipi-conjunct-fonts.py": "tools/build-lipi-conjunct-fonts.py",
+      "../../tools/fonts-src/*.*": "tools/fonts-src/",
       "../../comfy/**/*": "comfy/",
       "../../docs/NOVA_USER_GUIDE.md": "docs/NOVA_USER_GUIDE.md",
       "../runtime/node/bin/node": "node/bin/node"
