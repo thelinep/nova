@@ -358,6 +358,15 @@ function bgReport(rep, d, h) {
   const legible = Object.values(rep.items).filter(i => i.legible).length;
   return `<div class="bg-report">
     <p class="lo-note">From the OCR readings of all ${Object.keys(rep.items).length} pictures (${legible} read clearly). <b>Sure</b> = exact spelling in a line read with at least ${Math.round(rep.sureConfidence * 100)}% confidence, in a script variant the model reads well. <b>Possible</b> = a lead to check. Words come from a list of Ashokan Prakrit vocabulary; verb forms are traced to their dhatu in Panini’s Dhatupatha.</p>
+    ${(() => {
+      const vs = {};
+      for (const it of Object.values(rep.items)) {
+        const v = vs[it.variant] || (vs[it.variant] = { n: 0, legible: 0, sure: 0, possible: 0 });
+        v.n++; if (it.legible) v.legible++;
+        for (const [c, k] of Object.entries(it.counts || {})) if (c !== 'akshar' && c !== 'sanyukta') { v.sure += k.sure; v.possible += k.possible; }
+      }
+      return `<div class="bg-rcard" style="--c:#64748b"><div class="bg-rh"><i></i><strong>लिपि के रूप · By script variant</strong></div><table class="bg-rt"><thead><tr><th>Variant</th><th>Pictures</th><th>Read clearly</th><th>Words: sure / possible</th></tr></thead><tbody>${Object.entries(d.variants).filter(([k]) => vs[k]).map(([k, l]) => `<tr><td>${h(l)}</td><td>${vs[k].n}</td><td>${vs[k].legible}</td><td>${vs[k].sure} / ${vs[k].possible}</td></tr>`).join('')}</tbody></table><p class="lo-note">Later styles were learned from synthetic letters only, so their words are never counted as sure.</p></div>`;
+    })()}
     <div class="bg-rcard" style="--c:${BG_COLORS.akshar}"><div class="bg-rh"><i></i><strong>${h(L.akshar)}</strong><span class="lo-note">${rep.totals.letters} aksharas read in all</span></div>
       <div class="bg-bars">${cons.map(([k, v]) => `<div class="bg-bar"><span class="bk">${h(k)}</span><span class="bt"><span class="bv" style="width:${Math.max(4, Math.round(v / max * 100))}%"></span></span><span class="bn">${v}</span></div>`).join('')}</div>
       <p class="lo-note">Most frequent consonants across all readings (every line, so OCR noise is included).</p></div>
@@ -423,7 +432,7 @@ async function gallery(el, deps, rerender) {
     if (!r) return '<p class="lo-note">No machine reading yet.</p>';
     const pct = Math.round((r.confidence || 0) * 100);
     const ok = r.legible !== undefined ? r.legible : r.lines.some(l => l.conf >= (G.ocr.threshold || 0.8) && l.text.length >= 4);
-    return `<div class="bg-ocr"><div class="lo-row" style="justify-content:space-between"><span class="cap-section-label">${h(label)}</span><span class="bg-pill ${ok ? 'ok' : ''}">${ok ? 'Draft reading' : 'Not legible to the model'} · ${pct}%</span></div>
+    return `<div class="bg-ocr"><div class="lo-row" style="justify-content:space-between"><span class="cap-section-label">${h(label)}</span><span class="bg-pill ${ok ? 'ok' : ''}">${ok ? (r.verified === false ? 'Unverified reading' : 'Draft reading') : 'Not legible to the model'} · ${pct}%</span></div>
       ${r.lines.length ? `<ol class="bg-lines">${r.lines.map(l => `<li class="${l.legible === false || (l.legible === undefined && l.conf < (G.ocr.threshold || 0.8)) ? 'dim' : ''}"><span class="b" style="${fontStyle('Brah')}">${h(l.text)}</span><span class="d">${h(l.deva || '')}</span><span class="c">${Math.round(l.conf * 100)}%</span></li>`).join('')}</ol>` : '<p class="lo-note">The model found no lines it could read.</p>'}
       ${r.note ? `<p class="lo-note" style="color:var(--amber)">${h(r.note)}</p>` : ''}
       <p class="lo-note">Faded lines are below ${Math.round((G.ocr.threshold || 0.8) * 100)}% confidence. Machine reading by the Lipi OCR model, trained only on synthetic lines. Treat it as a guess to check against a published reading, not as a transcription.</p></div>`;

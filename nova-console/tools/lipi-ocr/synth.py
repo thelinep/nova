@@ -25,6 +25,48 @@ FONTS = [
     os.environ.get('LIPI_OCR_MAATAA_TTF', os.path.join(HERE, 'maataa-lipi-brahmi.ttf')),
 ]
 HEIGHT = 40          # model input height in pixels
+# Later members of the Brahmi family, drawn with their own fonts but labelled in Brahmi, so the model learns
+# Gupta-period (Siddham, Bhaiksuki, Sharada, Nandinagari), Pallava (Grantha) and Southeast Asian (Kawi) shapes.
+STYLE_FONTS = {
+    'Sidd': 'noto-sans-siddham-siddham-400-normal', 'Bhks': 'noto-sans-bhaiksuki-bhaiksuki-400-normal',
+    'Shrd': 'noto-sans-sharada-sharada-400-normal', 'Nand': 'noto-sans-nandinagari-nandinagari-400-normal',
+    'Gran': 'noto-sans-grantha-grantha-400-normal', 'Kawi': 'noto-sans-kawi-kawi-400-normal',
+}
+STYLE_DIR = os.environ.get('LIPI_OCR_STYLE_FONTS', os.path.join(HERE, 'fonts'))
+# share of samples per look: Brahmi fonts (plain, or with Kushan-style head marks) and the later shapes
+STYLE_MIX = [('brahmi', 0.42), ('kushan', 0.10), ('Sidd', 0.09), ('Bhks', 0.07), ('Shrd', 0.06), ('Nand', 0.04), ('Gran', 0.10), ('Kawi', 0.12)]
+_style_map = None
+def style_map():
+    global _style_map
+    if _style_map is None:
+        import json
+        p = os.path.join(HERE, 'style-map.json')
+        _style_map = json.load(open(p, encoding='utf-8')) if os.path.exists(p) else {}
+    return _style_map
+
+
+def style_font(code):
+    """TTF for a later script (converted once from the woff2 the app ships)."""
+    ttf = os.path.join(STYLE_DIR, STYLE_FONTS[code] + '.ttf')
+    if not os.path.exists(ttf):
+        woff = os.path.join(ROOT, 'public', 'fonts', 'lipi', STYLE_FONTS[code] + '.woff2')
+        if not os.path.exists(woff): return None
+        from fontTools.ttLib import TTFont
+        os.makedirs(STYLE_DIR, exist_ok=True)
+        f = TTFont(woff); f.flavor = None; f.save(ttf)
+    return ttf
+
+
+def restyle(cl, code):
+    """Brahmi aksharas → the same aksharas in a later script, or None if a letter has no form there."""
+    m = style_map().get(code)
+    if not m: return None
+    out = []
+    for c in cl:
+        parts = [m.get(ch) for ch in c]
+        if any(p is None for p in parts): return None
+        out.append(''.join(parts))
+    return out
 
 # --- the alphabet the model reads ------------------------------------------------------------
 VOWELS = [chr(c) for c in range(0x11005, 0x11013)]                     # a … au
@@ -146,8 +188,9 @@ def font(path, size):
     return _font_cache[k]
 
 
-def render_mask(cl, rng, fpath, size, weight):
-    """Black-on-white mask (0..255, 255 = ink) of one line, akshara by akshara."""
+def render_mask(cl, rng, fpath, size, weight, heads=False):
+    """Black-on-white mask (0..255, 255 = ink) of one line, akshara by akshara.
+    heads: add the small wedges or bars that Kushan and early Gupta carvers put on top of letters."""
     pieces = []
     for c in cl:
         s = max(12, int(size * rng.uniform(0.88, 1.12)))
@@ -157,6 +200,20 @@ def render_mask(cl, rng, fpath, size, weight):
         im = Image.new('L', (w + 16, int(size * 2.2)), 0)
         d = ImageDraw.Draw(im)
         d.text((8 - l, int(size * 0.55)), c, font=f, fill=255, stroke_width=weight, stroke_fill=255)
+        if heads:
+            bb = im.getbbox()
+            if bb:
+                a = np.asarray(im)
+                # tops of the strokes: for each column, the first ink pixel; mark the highest ones
+                cols = [x for x in range(bb[0], bb[2]) if a[:, x].any()]
+                if cols:
+                    tops = {x: int(np.argmax(a[:, x] > 0)) for x in cols}
+                    ymin = min(tops.values()); th = max(2, int(s * rng.uniform(0.05, 0.09)))
+                    for x, y in tops.items():
+                        if y <= ymin + s * 0.12:
+                            d.rectangle([x - th // 2, y - th // 2, x + th // 2, y + th // 3], fill=255)
+                    if rng.random() < 0.5:   # a flat bar over the whole letter (Gupta box-head)
+                        d.rectangle([bb[0], ymin - th // 2, bb[2], ymin + th // 3], fill=255)
         ang = rng.gauss(0, 3.0)
         im = im.rotate(ang, resample=Image.BILINEAR, expand=False)
         pieces.append((im, int(rng.gauss(0, size * 0.04))))
@@ -247,14 +304,22 @@ def make_sample(rng):
         cl = clusters(text)
         if 2 <= len(cl) <= 22: break
     label = ''.join(cl)
-    fpath = rng.choice([f for f in FONTS if os.path.exists(f)])
+    looks, weights = zip(*STYLE_MIX)
+    look = os.environ.get('LIPI_OCR_LOOK') or rng.choices(looks, weights)[0]   # LIPI_OCR_LOOK fixes one look (for per-look tests)
+    draw, fpath, heads = cl, None, look == 'kushan'
+    if look in STYLE_FONTS:
+        alt, ttf = restyle(cl, look), style_font(look)
+        if alt and ttf: draw, fpath = alt, ttf
+    if fpath is None: fpath = rng.choice([f for f in FONTS if os.path.exists(f)])
     size = rng.randint(30, 56)
-    mask = render_mask(cl, rng, fpath, size, weight=rng.choice([0, 0, 0, 1, 1, 2]))
+    mask = render_mask(draw, rng, fpath, size, weight=rng.choice([0, 0, 0, 1, 1, 2]), heads=heads)
     if mask is None: return make_sample(rng)
     if rng.random() < 0.35:  # parts of the lines above and below, as a real line cut from a page has
         H = mask.height; extra = []
         for _ in range(2):
-            n = render_mask(clusters(random_text(rng))[:14] or ['\U00011013'], rng, fpath, size, 0)
+            ncl = clusters(random_text(rng))[:14] or ['\U00011013']
+            if look in STYLE_FONTS and fpath not in FONTS: ncl = restyle(ncl, look) or ['\U00011013']
+            n = render_mask(ncl, rng, fpath, size, 0)
             extra.append(n)
         cut_t, cut_b = int(H * rng.uniform(0.1, 0.35)), int(H * rng.uniform(0.1, 0.35))
         canvas = Image.new('L', (mask.width, H + cut_t + cut_b), 0)
@@ -264,8 +329,8 @@ def make_sample(rng):
             e = extra[1]; canvas.paste(e.crop((0, 0, min(e.width, mask.width), cut_b)), (0, H + cut_t))
         canvas.paste(mask, (0, cut_t), mask)
         mask = canvas
-    if rng.random() < 0.5:   # slight shear / perspective
-        sh = rng.uniform(-0.15, 0.15)
+    if rng.random() < 0.5 or look in ('Sidd', 'Bhks'):   # shear; slanted like Turkestani (Central Asian) Brahmi
+        sh = rng.uniform(-0.15, 0.15) if look not in ('Sidd', 'Bhks') or rng.random() < 0.5 else rng.uniform(0.15, 0.4)
         mask = mask.transform(mask.size, Image.AFFINE, (1, sh, -sh * mask.height / 2, 0, 1, 0), resample=Image.BILINEAR)
     im = style(mask, rng)
     if rng.random() < 0.5:   # JPEG artefacts

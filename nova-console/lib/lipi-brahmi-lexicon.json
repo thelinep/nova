@@ -19,7 +19,8 @@
   "plants": "वनस्पति",
   "buildings": "निर्माण",
   "people": "लोग और समुदाय",
-  "places": "स्थान"
+  "places": "स्थान",
+  "religion": "धर्म और देवता"
  },
  "entries": [
   {
@@ -493,6 +494,246 @@
    ],
    "hi": "आठवाँ भाग (कर)",
    "en": "one-eighth share (tax)"
+  },
+  {
+   "cat": "sangya",
+   "head": "महाराज",
+   "forms": [
+    {
+     "deva": "महाराज",
+     "brahmi": "𑀫𑀳𑀸𑀭𑀸𑀚"
+    },
+    {
+     "deva": "महाराजस्य",
+     "brahmi": "𑀫𑀳𑀸𑀭𑀸𑀚𑀲𑁆𑀬"
+    },
+    {
+     "deva": "महाराजाधिराज",
+     "brahmi": "𑀫𑀳𑀸𑀭𑀸𑀚𑀸𑀥𑀺𑀭𑀸𑀚"
+    },
+    {
+     "deva": "महाराजाधिराजस्य",
+     "brahmi": "𑀫𑀳𑀸𑀭𑀸𑀚𑀸𑀥𑀺𑀭𑀸𑀚𑀲𑁆𑀬"
+    },
+    {
+     "deva": "राज्ञः",
+     "brahmi": "𑀭𑀸𑀚𑁆𑀜𑀂"
+    }
+   ],
+   "hi": "महाराज, महाराजाधिराज",
+   "en": "great king, king of kings"
+  },
+  {
+   "cat": "sangya",
+   "head": "कनिष्क",
+   "forms": [
+    {
+     "deva": "कनिष्क",
+     "brahmi": "𑀓𑀦𑀺𑀱𑁆𑀓"
+    },
+    {
+     "deva": "कनिष्कस्य",
+     "brahmi": "𑀓𑀦𑀺𑀱𑁆𑀓𑀲𑁆𑀬"
+    },
+    {
+     "deva": "कणिष्कस्य",
+     "brahmi": "𑀓𑀡𑀺𑀱𑁆𑀓𑀲𑁆𑀬"
+    },
+    {
+     "deva": "हुविष्क",
+     "brahmi": "𑀳𑀼𑀯𑀺𑀱𑁆𑀓"
+    },
+    {
+     "deva": "हुविष्कस्य",
+     "brahmi": "𑀳𑀼𑀯𑀺𑀱𑁆𑀓𑀲𑁆𑀬"
+    },
+    {
+     "deva": "वासुदेव",
+     "brahmi": "𑀯𑀸𑀲𑀼𑀤𑁂𑀯"
+    }
+   ],
+   "hi": "कनिष्क, हुविष्क, वासुदेव (कुषाण राजा)",
+   "en": "Kanishka, Huvishka, Vasudeva (Kushan kings)"
+  },
+  {
+   "cat": "sangya",
+   "head": "देवपुत्र",
+   "forms": [
+    {
+     "deva": "देवपुत्र",
+     "brahmi": "𑀤𑁂𑀯𑀧𑀼𑀢𑁆𑀭"
+    },
+    {
+     "deva": "देवपुत्रस्य",
+     "brahmi": "𑀤𑁂𑀯𑀧𑀼𑀢𑁆𑀭𑀲𑁆𑀬"
+    }
+   ],
+   "hi": "देवपुत्र (कुषाण उपाधि)",
+   "en": "son of the gods (Kushan title)"
+  },
+  {
+   "cat": "sangya",
+   "head": "समुद्रगुप्त",
+   "forms": [
+    {
+     "deva": "समुद्रगुप्त",
+     "brahmi": "𑀲𑀫𑀼𑀤𑁆𑀭𑀕𑀼𑀧𑁆𑀢"
+    },
+    {
+     "deva": "चन्द्रगुप्त",
+     "brahmi": "𑀘𑀦𑁆𑀤𑁆𑀭𑀕𑀼𑀧𑁆𑀢"
+    },
+    {
+     "deva": "कुमारगुप्त",
+     "brahmi": "𑀓𑀼𑀫𑀸𑀭𑀕𑀼𑀧𑁆𑀢"
+    },
+    {
+     "deva": "स्कन्दगुप्त",
+     "brahmi": "𑀲𑁆𑀓𑀦𑁆𑀤𑀕𑀼𑀧𑁆𑀢"
+    },
+    {
+     "deva": "गुप्त",
+     "brahmi": "𑀕𑀼𑀧𑁆𑀢"
+    },
+    {
+     "deva": "गुप्तस्य",
+     "brahmi": "𑀕𑀼𑀧𑁆𑀢𑀲𑁆𑀬"
+    }
+   ],
+   "hi": "गुप्त राजा",
+   "en": "Gupta kings"
+  },
+  {
+   "cat": "sangya",
+   "head": "मूलवर्म",
+   "forms": [
+    {
+     "deva": "मूलवर्म",
+     "brahmi": "𑀫𑀽𑀮𑀯𑀭𑁆𑀫"
+    },
+    {
+     "deva": "मूलवर्मा",
+     "brahmi": "𑀫𑀽𑀮𑀯𑀭𑁆𑀫𑀸"
+    },
+    {
+     "deva": "मूलवर्मणः",
+     "brahmi": "𑀫𑀽𑀮𑀯𑀭𑁆𑀫𑀡𑀂"
+    },
+    {
+     "deva": "पूर्णवर्म",
+     "brahmi": "𑀧𑀽𑀭𑁆𑀡𑀯𑀭𑁆𑀫"
+    },
+    {
+     "deva": "पूर्णवर्मणः",
+     "brahmi": "𑀧𑀽𑀭𑁆𑀡𑀯𑀭𑁆𑀫𑀡𑀂"
+    },
+    {
+     "deva": "कुण्डुङ्ग",
+     "brahmi": "𑀓𑀼𑀡𑁆𑀟𑀼𑀗𑁆𑀕"
+    },
+    {
+     "deva": "अश्ववर्म",
+     "brahmi": "𑀅𑀰𑁆𑀯𑀯𑀭𑁆𑀫"
+    }
+   ],
+   "hi": "मूलवर्मा, पूर्णवर्मा (इंडोनेशिया के राजा)",
+   "en": "Mulavarman, Purnavarman (kings in Indonesia)"
+  },
+  {
+   "cat": "sangya",
+   "head": "यूप",
+   "forms": [
+    {
+     "deva": "यूप",
+     "brahmi": "𑀬𑀽𑀧"
+    },
+    {
+     "deva": "यूपो",
+     "brahmi": "𑀬𑀽𑀧𑁄"
+    },
+    {
+     "deva": "यूपोयं",
+     "brahmi": "𑀬𑀽𑀧𑁄𑀬𑀁"
+    }
+   ],
+   "hi": "यूप (यज्ञ-स्तंभ)",
+   "en": "sacrificial post"
+  },
+  {
+   "cat": "sangya",
+   "head": "बोधिसत्व",
+   "forms": [
+    {
+     "deva": "बोधिसत्व",
+     "brahmi": "𑀩𑁄𑀥𑀺𑀲𑀢𑁆𑀯"
+    },
+    {
+     "deva": "बोधिसत्त्व",
+     "brahmi": "𑀩𑁄𑀥𑀺𑀲𑀢𑁆𑀢𑁆𑀯"
+    },
+    {
+     "deva": "भिक्षु",
+     "brahmi": "𑀪𑀺𑀓𑁆𑀱𑀼"
+    },
+    {
+     "deva": "भिक्षुस्य",
+     "brahmi": "𑀪𑀺𑀓𑁆𑀱𑀼𑀲𑁆𑀬"
+    }
+   ],
+   "hi": "बोधिसत्त्व, भिक्षु",
+   "en": "Bodhisattva, monk"
+  },
+  {
+   "cat": "sangya",
+   "head": "स्वस्ति",
+   "forms": [
+    {
+     "deva": "स्वस्ति",
+     "brahmi": "𑀲𑁆𑀯𑀲𑁆𑀢𑀺"
+    },
+    {
+     "deva": "सिद्धम्",
+     "brahmi": "𑀲𑀺𑀤𑁆𑀥𑀫𑁆"
+    },
+    {
+     "deva": "सिद्धम",
+     "brahmi": "𑀲𑀺𑀤𑁆𑀥𑀫"
+    },
+    {
+     "deva": "श्री",
+     "brahmi": "𑀰𑁆𑀭𑀻"
+    },
+    {
+     "deva": "श्रीमत्",
+     "brahmi": "𑀰𑁆𑀭𑀻𑀫𑀢𑁆"
+    }
+   ],
+   "hi": "स्वस्ति, सिद्धम्, श्री (मंगल-शब्द)",
+   "en": "svasti, siddham, śrī (auspicious openings)"
+  },
+  {
+   "cat": "sangya",
+   "head": "दातु",
+   "forms": [
+    {
+     "deva": "दातु",
+     "brahmi": "𑀤𑀸𑀢𑀼"
+    },
+    {
+     "deva": "कदातुआन",
+     "brahmi": "𑀓𑀤𑀸𑀢𑀼𑀆𑀦"
+    },
+    {
+     "deva": "वनुआ",
+     "brahmi": "𑀯𑀦𑀼𑀆"
+    },
+    {
+     "deva": "हुलुन",
+     "brahmi": "𑀳𑀼𑀮𑀼𑀦"
+    }
+   ],
+   "hi": "दातु, राज्य, देश, प्रजा (प्राचीन मलय)",
+   "en": "ruler, kingdom, country, subjects (Old Malay)"
   },
   {
    "cat": "sarvanaam",
@@ -1083,6 +1324,78 @@
    "en": "one and a half"
   },
   {
+   "cat": "sankhya",
+   "head": "संवत्सर",
+   "forms": [
+    {
+     "deva": "संवत्सर",
+     "brahmi": "𑀲𑀁𑀯𑀢𑁆𑀲𑀭"
+    },
+    {
+     "deva": "संवत्सरे",
+     "brahmi": "𑀲𑀁𑀯𑀢𑁆𑀲𑀭𑁂"
+    },
+    {
+     "deva": "सं",
+     "brahmi": "𑀲𑀁"
+    },
+    {
+     "deva": "शकवर्ष",
+     "brahmi": "𑀰𑀓𑀯𑀭𑁆𑀱"
+    },
+    {
+     "deva": "शकवर्षातीत",
+     "brahmi": "𑀰𑀓𑀯𑀭𑁆𑀱𑀸𑀢𑀻𑀢"
+    },
+    {
+     "deva": "वर्ष",
+     "brahmi": "𑀯𑀭𑁆𑀱"
+    }
+   ],
+   "hi": "संवत्सर, शक वर्ष",
+   "en": "year, Saka year (era dates)"
+  },
+  {
+   "cat": "sankhya",
+   "head": "शत",
+   "forms": [
+    {
+     "deva": "शत",
+     "brahmi": "𑀰𑀢"
+    },
+    {
+     "deva": "सहस्र",
+     "brahmi": "𑀲𑀳𑀲𑁆𑀭"
+    },
+    {
+     "deva": "सहस्राणि",
+     "brahmi": "𑀲𑀳𑀲𑁆𑀭𑀸𑀡𑀺"
+    },
+    {
+     "deva": "विंशति",
+     "brahmi": "𑀯𑀺𑀁𑀰𑀢𑀺"
+    },
+    {
+     "deva": "त्रिंशत्",
+     "brahmi": "𑀢𑁆𑀭𑀺𑀁𑀰𑀢𑁆"
+    },
+    {
+     "deva": "प्रथम",
+     "brahmi": "𑀧𑁆𑀭𑀣𑀫"
+    },
+    {
+     "deva": "द्वितीय",
+     "brahmi": "𑀤𑁆𑀯𑀺𑀢𑀻𑀬"
+    },
+    {
+     "deva": "तृतीय",
+     "brahmi": "𑀢𑀾𑀢𑀻𑀬"
+    }
+   ],
+   "hi": "सौ, हज़ार, बीस, तीस, पहला, दूसरा, तीसरा",
+   "en": "hundred, thousand, twenty, thirty, first, second, third"
+  },
+  {
    "cat": "jyamiti",
    "head": "योजन",
    "forms": [
@@ -1449,6 +1762,50 @@
    ],
    "hi": "स्वर्ग",
    "en": "heaven"
+  },
+  {
+   "cat": "antariksh",
+   "head": "सूर्य",
+   "forms": [
+    {
+     "deva": "सूर्य",
+     "brahmi": "𑀲𑀽𑀭𑁆𑀬"
+    },
+    {
+     "deva": "आदित्य",
+     "brahmi": "𑀆𑀤𑀺𑀢𑁆𑀬"
+    },
+    {
+     "deva": "चन्द्र",
+     "brahmi": "𑀘𑀦𑁆𑀤𑁆𑀭"
+    },
+    {
+     "deva": "चन्द्रमस्",
+     "brahmi": "𑀘𑀦𑁆𑀤𑁆𑀭𑀫𑀲𑁆"
+    },
+    {
+     "deva": "नक्षत्र",
+     "brahmi": "𑀦𑀓𑁆𑀱𑀢𑁆𑀭"
+    },
+    {
+     "deva": "ग्रह",
+     "brahmi": "𑀕𑁆𑀭𑀳"
+    },
+    {
+     "deva": "शुक्ल",
+     "brahmi": "𑀰𑀼𑀓𑁆𑀮"
+    },
+    {
+     "deva": "कृष्ण",
+     "brahmi": "𑀓𑀾𑀱𑁆𑀡"
+    },
+    {
+     "deva": "पक्ष",
+     "brahmi": "𑀧𑀓𑁆𑀱"
+    }
+   ],
+   "hi": "सूर्य, चंद्र, नक्षत्र, ग्रह, पक्ष",
+   "en": "sun, moon, nakshatra, planet, lunar fortnight"
   },
   {
    "cat": "anya",
@@ -2060,6 +2417,43 @@
    "hi": "कलिंग, तोसली, उज्जैनी, पाटलिपुत्र, जम्बुद्वीप",
    "en": "Kalinga, Tosali, Ujjeni, Pataliputra, Jambudvipa",
    "topic": "places"
+  },
+  {
+   "cat": "anya",
+   "head": "विष्णु",
+   "forms": [
+    {
+     "deva": "विष्णु",
+     "brahmi": "𑀯𑀺𑀱𑁆𑀡𑀼"
+    },
+    {
+     "deva": "विष्णोः",
+     "brahmi": "𑀯𑀺𑀱𑁆𑀡𑁄𑀂"
+    },
+    {
+     "deva": "शिव",
+     "brahmi": "𑀰𑀺𑀯"
+    },
+    {
+     "deva": "लिङ्ग",
+     "brahmi": "𑀮𑀺𑀗𑁆𑀕"
+    },
+    {
+     "deva": "लिंग",
+     "brahmi": "𑀮𑀺𑀁𑀕"
+    },
+    {
+     "deva": "गोमती",
+     "brahmi": "𑀕𑁄𑀫𑀢𑀻"
+    },
+    {
+     "deva": "तारुम",
+     "brahmi": "𑀢𑀸𑀭𑀼𑀫"
+    }
+   ],
+   "hi": "विष्णु, शिव, लिंग, गोमती नदी, तारुमा",
+   "en": "Vishnu, Shiva, lingam, Gomati river, Taruma",
+   "topic": "religion"
   },
   {
    "cat": "dhatu",

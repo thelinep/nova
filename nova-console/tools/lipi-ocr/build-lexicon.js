@@ -40,6 +40,16 @@ const LEX = {
     ['अतन|अतना', 'स्वयं', 'himself, in person'],
     ['उबलिक|उबलिके', 'कर-मुक्त', 'free of tax'],
     ['अठभागिय|अठभागिये', 'आठवाँ भाग (कर)', 'one-eighth share (tax)'],
+    // Sanskrit and Old Malay of the Kushan, Gupta, Pallava and Southeast Asian inscriptions
+    ['महाराज|महाराजस्य|महाराजाधिराज|महाराजाधिराजस्य|राज्ञः', 'महाराज, महाराजाधिराज', 'great king, king of kings'],
+    ['कनिष्क|कनिष्कस्य|कणिष्कस्य|हुविष्क|हुविष्कस्य|वासुदेव', 'कनिष्क, हुविष्क, वासुदेव (कुषाण राजा)', 'Kanishka, Huvishka, Vasudeva (Kushan kings)'],
+    ['देवपुत्र|देवपुत्रस्य', 'देवपुत्र (कुषाण उपाधि)', 'son of the gods (Kushan title)'],
+    ['समुद्रगुप्त|चन्द्रगुप्त|कुमारगुप्त|स्कन्दगुप्त|गुप्त|गुप्तस्य', 'गुप्त राजा', 'Gupta kings'],
+    ['मूलवर्म|मूलवर्मा|मूलवर्मणः|पूर्णवर्म|पूर्णवर्मणः|कुण्डुङ्ग|अश्ववर्म', 'मूलवर्मा, पूर्णवर्मा (इंडोनेशिया के राजा)', 'Mulavarman, Purnavarman (kings in Indonesia)'],
+    ['यूप|यूपो|यूपोयं', 'यूप (यज्ञ-स्तंभ)', 'sacrificial post'],
+    ['बोधिसत्व|बोधिसत्त्व|भिक्षु|भिक्षुस्य', 'बोधिसत्त्व, भिक्षु', 'Bodhisattva, monk'],
+    ['स्वस्ति|सिद्धम्|सिद्धम|श्री|श्रीमत्', 'स्वस्ति, सिद्धम्, श्री (मंगल-शब्द)', 'svasti, siddham, śrī (auspicious openings)'],
+    ['दातु|कदातुआन|वनुआ|हुलुन', 'दातु, राज्य, देश, प्रजा (प्राचीन मलय)', 'ruler, kingdom, country, subjects (Old Malay)'],
   ],
   sarvanaam: [
     ['अयं|इयं|इयम|इमं|इमे|इमाय|इमस', 'यह, ये', 'this, these'],
@@ -70,6 +80,8 @@ const LEX = {
     ['सहस|सहसानि|सतसहस|सतसहसानि', 'हज़ार, लाख', 'thousand, hundred thousand'],
     ['पठम|पठमं|प्रथम', 'पहला', 'first'],
     ['दियढ|दियढिय', 'डेढ़', 'one and a half'],
+    ['संवत्सर|संवत्सरे|सं|शकवर्ष|शकवर्षातीत|वर्ष', 'संवत्सर, शक वर्ष', 'year, Saka year (era dates)'],
+    ['शत|सहस्र|सहस्राणि|विंशति|त्रिंशत्|प्रथम|द्वितीय|तृतीय', 'सौ, हज़ार, बीस, तीस, पहला, दूसरा, तीसरा', 'hundred, thousand, twenty, thirty, first, second, third'],
   ],
   jyamiti: [
     ['योजन|योजनानि|योजनसतेसु', 'योजन (दूरी की माप)', 'yojana (measure of distance)'],
@@ -92,6 +104,7 @@ const LEX = {
     ['विमान|विमानदसना|विमानदसणा', 'विमान (आकाशीय रथ)', 'celestial chariots'],
     ['अगिकंध|अगिखंध|अगिकंधानि', 'अग्नि-स्कंध (आकाश में अग्नि-पुंज)', 'masses of fire (heavenly display)'],
     ['स्वग|स्वगं|सग|सगं|स्वगस', 'स्वर्ग', 'heaven'],
+    ['सूर्य|आदित्य|चन्द्र|चन्द्रमस्|नक्षत्र|ग्रह|शुक्ल|कृष्ण|पक्ष', 'सूर्य, चंद्र, नक्षत्र, ग्रह, पक्ष', 'sun, moon, nakshatra, planet, lunar fortnight'],
   ],
   anya: [
     ['दया|दयाय', 'दया', 'compassion', 'dharma'],
@@ -121,6 +134,7 @@ const LEX = {
     ['दास|भटक|दासभटक', 'दास, सेवक', 'slaves, servants', 'people'],
     ['लुंमिनिगाम|लुमिनिगाम|गाम|गामे', 'लुम्बिनी ग्राम, गाँव', 'Lumbini village, village', 'places'],
     ['कलिंग|कलिग|तोसलि|उजेनि|पाटलिपुत|जंबुदीप|जंबुदीपसि', 'कलिंग, तोसली, उज्जैनी, पाटलिपुत्र, जम्बुद्वीप', 'Kalinga, Tosali, Ujjeni, Pataliputra, Jambudvipa', 'places'],
+    ['विष्णु|विष्णोः|शिव|लिङ्ग|लिंग|गोमती|तारुम', 'विष्णु, शिव, लिंग, गोमती नदी, तारुमा', 'Vishnu, Shiva, lingam, Gomati river, Taruma', 'religion'],
   ],
   // verb forms → Sanskrit dhatu (SLP1 as in the Dhatupatha, without svara marks)
   dhatu: [
@@ -214,7 +228,7 @@ if (require.main === module) {
   const out = {
     about: 'Ashokan Prakrit and Sanskrit words the Brahmi report looks for. Verb forms point to their dhatu in the Paninian Dhatupatha (Vidyut / ashtadhyayi.com data, MIT).',
     categories: { akshar: 'अक्षर', dhatu: 'धातु', sanyukta: 'संयुक्त अक्षर', sangya: 'संज्ञा', sarvanaam: 'सर्वनाम', sankhya: 'संख्या', jyamiti: 'ज्यामिति और माप', antariksh: 'अंतरिक्ष', anya: 'अन्य विषय' },
-    topics: { dharma: 'धम्म और नीति', administration: 'प्रशासन', animals: 'जीव-जंतु', medicine: 'चिकित्सा', plants: 'वनस्पति', buildings: 'निर्माण', people: 'लोग और समुदाय', places: 'स्थान' },
+    topics: { dharma: 'धम्म और नीति', administration: 'प्रशासन', animals: 'जीव-जंतु', medicine: 'चिकित्सा', plants: 'वनस्पति', buildings: 'निर्माण', people: 'लोग और समुदाय', places: 'स्थान', religion: 'धर्म और देवता' },
     entries,
   };
   fs.writeFileSync(path.join(ROOT, 'lib', 'lipi-brahmi-lexicon.json'), JSON.stringify(out, null, 1));

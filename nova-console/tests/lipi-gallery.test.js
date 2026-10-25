@@ -22,7 +22,7 @@ test('every item has an image on disk, a credit, an open licence and a Commons s
     assert.ok(buf[0] === 0xff && buf[1] === 0xd8 && buf.length > 5000 && buf.length < 400000, i.id + ' is a JPEG of sane size');
     assert.ok(d.variants[i.variant], i.id + ' variant');
     assert.ok(i.credit.author && i.credit.author.length > 1, i.id + ' author');
-    assert.ok(OPEN.has(i.credit.licence), i.id + ' licence ' + i.credit.licence);
+    assert.ok(OPEN.has(i.credit.licence) || /^CC BY(-SA)? [0-9.]+( [a-z]{2})?$/.test(i.credit.licence), i.id + ' licence ' + i.credit.licence);
     if (!/^(Public domain|CC0)$/.test(i.credit.licence)) assert.match(i.credit.licenceUrl, /^https?:\/\//, i.id + ' licence link');
     assert.match(i.credit.source, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/, i.id + ' source');
     assert.ok(Number.isFinite(i.from) && i.from <= i.to, i.id + ' dates');

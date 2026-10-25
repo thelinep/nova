@@ -738,7 +738,7 @@ Rebuilding needs the font tools once: double-click **Lipi - Install font tools.c
 
 ### Brahmi gallery
 
-Photographs, rubbings and drawings of original Brahmi writing, from the earliest finds to the scripts that grew out of it: Ashokan edicts, post-Mauryan cave and stupa records, Bhattiprolu, Tamil-Brahmi, Sri Lankan Brahmi, Kushan and Kshatrapa, Gupta and Central Asian manuscripts, and the charts used to decipher it.
+Photographs, rubbings and drawings of original Brahmi writing, from the earliest finds to the scripts that grew out of it: Ashokan edicts, post-Mauryan cave and stupa records, Bhattiprolu, Tamil-Brahmi, Sri Lankan Brahmi, Kushan and Kshatrapa, Gupta, Pallava, Kadamba and Grantha in South India, Southeast Asian inscriptions (Indonesia, Champa, the Philippines) and Central Asian manuscripts, and the charts used to decipher it.
 
 - Filter by variant, search by place, language or ruler, and sort oldest first or by place.
 - Click a picture for its date, place, language and a short note, with the photographer or author, the licence and a link to the original file.
@@ -747,10 +747,11 @@ Photographs, rubbings and drawings of original Brahmi writing, from the earliest
 
 #### Reading Brahmi (OCR)
 
-Each gallery picture has a **machine reading**: the lines the Lipi OCR model found, in Brahmi and in Devanagari, with how sure it is of each line. Lines below 80% confidence are faded, and a picture with no confident line is marked **Not legible to the model**. For Kushan, Gupta and Central Asian Brahmi the reading is always marked unreliable, because their letter shapes differ from the ones the model learned.
+Each gallery picture has a **machine reading**: the lines the Lipi OCR model found, in Brahmi and in Devanagari, with how sure it is of each line. Lines below 80% confidence are faded, and a picture with no confident line is marked **Not legible to the model**. For later styles (Kushan, Gupta, Pallava, Southeast Asian, Central Asian) the reading is marked unverified, and words found in it are never counted as sure.
 
 - The model was trained only on synthetic lines: Brahmi text drawn with fonts and aged to look like printed plates, rubbings and carved stone. No real photograph was used for training, so treat every reading as a guess to check against a published one.
 - It does best on plates, rubbings and clear photographs. Weathered stone photographed in flat light is usually beyond it.
+- Besides Ashokan letters, it has learned later shapes from synthetic examples: Gupta-period forms (drawn with Siddham, Bhaiksuki, Sharada and Nandinagari fonts), Pallava and Grantha, Southeast Asian Kawi, Kushan head marks and the slant of Central Asian Brahmi. It always answers in Brahmi letters. Readings of these later styles are marked **Unverified reading** because no published reading of them has been used to check the model.
 - **Read again** reads a gallery picture with the model on this computer. **Read Brahmi in your own image** reads a PNG, JPEG or WebP you choose. Both need the OCR tools once: double-click **Lipi - Install OCR.command** in the `launchers` folder (about 80 MB).
 - **Lipi - Train OCR.command** retrains the model on this Mac from new synthetic lines (several hours, and it installs PyTorch the first time). Maataa then uses your model instead of the one it ships with.
 - Nothing is uploaded: reading and training both run locally.

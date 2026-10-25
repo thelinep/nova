@@ -71,7 +71,17 @@
  "height": 40,
  "stride": 4,
  "blank": 0,
- "valCER": 0.0653,
- "trainedOn": "160000 synthetic lines (Noto Sans Brahmi and Maataa Lipi Brahmi, aged as plates, rubbings and carved stone); 5 epochs",
- "created": "2026-10-25"
+ "valCER": 0.068,
+ "trainedOn": "160,000 synthetic Brahmi lines (Noto Sans Brahmi, Maataa Lipi Brahmi), then fine-tuned 3 epochs on 160,000 lines mixing those with Kushan head marks and later shapes drawn from Siddham, Bhaiksuki, Sharada, Nandinagari, Grantha and Kawi fonts, labelled in Brahmi",
+ "created": "2026-10-25",
+ "valCERByLook": {
+  "Ashokan-style Brahmi": 0.062,
+  "Kushan head marks": 0.105,
+  "Siddham (Gupta/late)": 0.22,
+  "Bhaiksuki": 0.332,
+  "Sharada": 0.182,
+  "Nandinagari": 0.195,
+  "Grantha (Pallava)": 0.095,
+  "Kawi (Southeast Asian)": 0.112
+ }
 }

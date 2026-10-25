@@ -151,7 +151,7 @@ test('Lipi OS: Brahmi gallery shows the machine reading of an inscription', asyn
   await expect(page.locator('#bgDetail .bg-lines li').first().locator('.d')).not.toBeEmpty();
   await page.locator('#bgClose').click();
   await page.locator('.bg-tile[data-gi="bower"]').click();
-  await expect(page.locator('#bgDetail')).toContainText('not reliable');
+  await expect(page.locator('#bgDetail')).toContainText('synthetic examples');
 });
 
 test('Lipi OS: Brahmi report with detected areas on the picture', async ({ page }) => {
