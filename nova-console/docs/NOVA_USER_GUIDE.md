@@ -755,6 +755,19 @@ Each gallery picture has a **machine reading**: the lines the Lipi OCR model fou
 - **Lipi - Train OCR.command** retrains the model on this Mac from new synthetic lines (several hours, and it installs PyTorch the first time). Maataa then uses your model instead of the one it ships with.
 - Nothing is uploaded: reading and training both run locally.
 
+#### Brahmi report and detected areas
+
+Press **Brahmi report** above the gallery for what the readings contain, picture by picture and over the whole gallery:
+
+- **अक्षर** (letters): how many aksharas were read and the most frequent consonants.
+- **संयुक्त अक्षर** (conjuncts): consonant + halant + consonant. Halant marks that join nothing are counted separately as OCR slips.
+- **धातु** (verb roots): verb forms such as *jāte*, *kālāpita*, *āha*, each traced to its root in Panini’s Dhatupatha with its number and meaning.
+- **संज्ञा, सर्वनाम, संख्या** (nouns, pronouns, numbers), **ज्यामिति और माप** (geometry and measures), **अंतरिक्ष** (sun, moon, nakshatras, heavenly signs) and **अन्य विषय** (dhamma, administration, animals, medicine, plants, buildings, people, places).
+
+In a picture, the detected areas are drawn on the image in the category’s colour. Turn categories on and off with the chips under the picture, and click a word to light up every place it was found. **अक्षर** shows the box of every akshara the model read.
+
+A find is **sure** (solid outline) when the spelling matches exactly, the line was read with at least 80% confidence, and the script variant is one the model reads well. Everything else is **possible** (dashed): a lead to check against a published reading. The words come from a list of Ashokan Prakrit vocabulary, so OCR mistakes can produce false finds and words outside the list are not reported.
+
 ### Scripts
 
 The 69-record registry from the prototype, with its tiers (Flagship, Pilot, Research, Exhibition only). Search or filter by tier, and click a record to see its alphabet written out. Seventeen of the records can be written by the converter; the rest are historical styles without their own Unicode block. The Indus / Harappan signs stay **exhibition only**: no decipherment is claimed.

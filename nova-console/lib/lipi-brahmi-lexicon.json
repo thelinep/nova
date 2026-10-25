@@ -1,0 +1,2823 @@
+{
+ "about": "Ashokan Prakrit and Sanskrit words the Brahmi report looks for. Verb forms point to their dhatu in the Paninian Dhatupatha (Vidyut / ashtadhyayi.com data, MIT).",
+ "categories": {
+  "akshar": "अक्षर",
+  "dhatu": "धातु",
+  "sanyukta": "संयुक्त अक्षर",
+  "sangya": "संज्ञा",
+  "sarvanaam": "सर्वनाम",
+  "sankhya": "संख्या",
+  "jyamiti": "ज्यामिति और माप",
+  "antariksh": "अंतरिक्ष",
+  "anya": "अन्य विषय"
+ },
+ "topics": {
+  "dharma": "धम्म और नीति",
+  "administration": "प्रशासन",
+  "animals": "जीव-जंतु",
+  "medicine": "चिकित्सा",
+  "plants": "वनस्पति",
+  "buildings": "निर्माण",
+  "people": "लोग और समुदाय",
+  "places": "स्थान"
+ },
+ "entries": [
+  {
+   "cat": "sangya",
+   "head": "देवानंपिय",
+   "forms": [
+    {
+     "deva": "देवानंपिय",
+     "brahmi": "𑀤𑁂𑀯𑀸𑀦𑀁𑀧𑀺𑀬"
+    },
+    {
+     "deva": "देवानंपियेन",
+     "brahmi": "𑀤𑁂𑀯𑀸𑀦𑀁𑀧𑀺𑀬𑁂𑀦"
+    },
+    {
+     "deva": "देवानंपियो",
+     "brahmi": "𑀤𑁂𑀯𑀸𑀦𑀁𑀧𑀺𑀬𑁄"
+    },
+    {
+     "deva": "देवानंपियस",
+     "brahmi": "𑀤𑁂𑀯𑀸𑀦𑀁𑀧𑀺𑀬𑀲"
+    },
+    {
+     "deva": "देवानपिय",
+     "brahmi": "𑀤𑁂𑀯𑀸𑀦𑀧𑀺𑀬"
+    },
+    {
+     "deva": "देवानपियेन",
+     "brahmi": "𑀤𑁂𑀯𑀸𑀦𑀧𑀺𑀬𑁂𑀦"
+    }
+   ],
+   "hi": "देवताओं का प्रिय (अशोक की उपाधि)",
+   "en": "Beloved of the gods (Ashoka’s title)"
+  },
+  {
+   "cat": "sangya",
+   "head": "पियदसि",
+   "forms": [
+    {
+     "deva": "पियदसि",
+     "brahmi": "𑀧𑀺𑀬𑀤𑀲𑀺"
+    },
+    {
+     "deva": "पियदसिन",
+     "brahmi": "𑀧𑀺𑀬𑀤𑀲𑀺𑀦"
+    },
+    {
+     "deva": "पियदसी",
+     "brahmi": "𑀧𑀺𑀬𑀤𑀲𑀻"
+    },
+    {
+     "deva": "प्रियदसि",
+     "brahmi": "𑀧𑁆𑀭𑀺𑀬𑀤𑀲𑀺"
+    }
+   ],
+   "hi": "प्रियदर्शी (अशोक का नाम)",
+   "en": "Piyadasi (Ashoka’s name)"
+  },
+  {
+   "cat": "sangya",
+   "head": "असोक",
+   "forms": [
+    {
+     "deva": "असोक",
+     "brahmi": "𑀅𑀲𑁄𑀓"
+    },
+    {
+     "deva": "असोकस",
+     "brahmi": "𑀅𑀲𑁄𑀓𑀲"
+    }
+   ],
+   "hi": "अशोक",
+   "en": "Asoka"
+  },
+  {
+   "cat": "sangya",
+   "head": "राजा",
+   "forms": [
+    {
+     "deva": "राजा",
+     "brahmi": "𑀭𑀸𑀚𑀸"
+    },
+    {
+     "deva": "लाजा",
+     "brahmi": "𑀮𑀸𑀚𑀸"
+    },
+    {
+     "deva": "राजिना",
+     "brahmi": "𑀭𑀸𑀚𑀺𑀦𑀸"
+    },
+    {
+     "deva": "लाजिना",
+     "brahmi": "𑀮𑀸𑀚𑀺𑀦𑀸"
+    },
+    {
+     "deva": "राञो",
+     "brahmi": "𑀭𑀸𑀜𑁄"
+    },
+    {
+     "deva": "लाजिने",
+     "brahmi": "𑀮𑀸𑀚𑀺𑀦𑁂"
+    }
+   ],
+   "hi": "राजा",
+   "en": "king"
+  },
+  {
+   "cat": "sangya",
+   "head": "धंम",
+   "forms": [
+    {
+     "deva": "धंम",
+     "brahmi": "𑀥𑀁𑀫"
+    },
+    {
+     "deva": "धम",
+     "brahmi": "𑀥𑀫"
+    },
+    {
+     "deva": "ध्रंम",
+     "brahmi": "𑀥𑁆𑀭𑀁𑀫"
+    },
+    {
+     "deva": "धंमं",
+     "brahmi": "𑀥𑀁𑀫𑀁"
+    },
+    {
+     "deva": "धंमस",
+     "brahmi": "𑀥𑀁𑀫𑀲"
+    },
+    {
+     "deva": "धंमलिपि",
+     "brahmi": "𑀥𑀁𑀫𑀮𑀺𑀧𑀺"
+    },
+    {
+     "deva": "धमलिपि",
+     "brahmi": "𑀥𑀫𑀮𑀺𑀧𑀺"
+    }
+   ],
+   "hi": "धम्म, धर्म",
+   "en": "dhamma, righteousness"
+  },
+  {
+   "cat": "sangya",
+   "head": "जन",
+   "forms": [
+    {
+     "deva": "जन",
+     "brahmi": "𑀚𑀦"
+    },
+    {
+     "deva": "जनो",
+     "brahmi": "𑀚𑀦𑁄"
+    },
+    {
+     "deva": "जणो",
+     "brahmi": "𑀚𑀡𑁄"
+    },
+    {
+     "deva": "जणे",
+     "brahmi": "𑀚𑀡𑁂"
+    },
+    {
+     "deva": "जने",
+     "brahmi": "𑀚𑀦𑁂"
+    }
+   ],
+   "hi": "लोग",
+   "en": "people"
+  },
+  {
+   "cat": "sangya",
+   "head": "मनुस",
+   "forms": [
+    {
+     "deva": "मनुस",
+     "brahmi": "𑀫𑀦𑀼𑀲"
+    },
+    {
+     "deva": "मनुसा",
+     "brahmi": "𑀫𑀦𑀼𑀲𑀸"
+    },
+    {
+     "deva": "मनुसानं",
+     "brahmi": "𑀫𑀦𑀼𑀲𑀸𑀦𑀁"
+    }
+   ],
+   "hi": "मनुष्य",
+   "en": "human beings"
+  },
+  {
+   "cat": "sangya",
+   "head": "पान",
+   "forms": [
+    {
+     "deva": "पान",
+     "brahmi": "𑀧𑀸𑀦"
+    },
+    {
+     "deva": "पाना",
+     "brahmi": "𑀧𑀸𑀦𑀸"
+    },
+    {
+     "deva": "प्राण",
+     "brahmi": "𑀧𑁆𑀭𑀸𑀡"
+    },
+    {
+     "deva": "पानानं",
+     "brahmi": "𑀧𑀸𑀦𑀸𑀦𑀁"
+    }
+   ],
+   "hi": "प्राणी",
+   "en": "living beings"
+  },
+  {
+   "cat": "sangya",
+   "head": "पुत",
+   "forms": [
+    {
+     "deva": "पुत",
+     "brahmi": "𑀧𑀼𑀢"
+    },
+    {
+     "deva": "पुत्र",
+     "brahmi": "𑀧𑀼𑀢𑁆𑀭"
+    },
+    {
+     "deva": "पुता",
+     "brahmi": "𑀧𑀼𑀢𑀸"
+    },
+    {
+     "deva": "पुतलाभेसु",
+     "brahmi": "𑀧𑀼𑀢𑀮𑀸𑀪𑁂𑀲𑀼"
+    },
+    {
+     "deva": "पुत्रलाभेसु",
+     "brahmi": "𑀧𑀼𑀢𑁆𑀭𑀮𑀸𑀪𑁂𑀲𑀼"
+    }
+   ],
+   "hi": "पुत्र",
+   "en": "son"
+  },
+  {
+   "cat": "sangya",
+   "head": "माता",
+   "forms": [
+    {
+     "deva": "माता",
+     "brahmi": "𑀫𑀸𑀢𑀸"
+    },
+    {
+     "deva": "पितु",
+     "brahmi": "𑀧𑀺𑀢𑀼"
+    },
+    {
+     "deva": "मातापितु",
+     "brahmi": "𑀫𑀸𑀢𑀸𑀧𑀺𑀢𑀼"
+    },
+    {
+     "deva": "मातरि",
+     "brahmi": "𑀫𑀸𑀢𑀭𑀺"
+    }
+   ],
+   "hi": "माता, पिता",
+   "en": "mother, father"
+  },
+  {
+   "cat": "sangya",
+   "head": "पजा",
+   "forms": [
+    {
+     "deva": "पजा",
+     "brahmi": "𑀧𑀚𑀸"
+    }
+   ],
+   "hi": "प्रजा",
+   "en": "subjects, children"
+  },
+  {
+   "cat": "sangya",
+   "head": "भगव",
+   "forms": [
+    {
+     "deva": "भगव",
+     "brahmi": "𑀪𑀕𑀯"
+    },
+    {
+     "deva": "भगवं",
+     "brahmi": "𑀪𑀕𑀯𑀁"
+    },
+    {
+     "deva": "भगवता",
+     "brahmi": "𑀪𑀕𑀯𑀢𑀸"
+    }
+   ],
+   "hi": "भगवान",
+   "en": "the Blessed One"
+  },
+  {
+   "cat": "sangya",
+   "head": "बुध",
+   "forms": [
+    {
+     "deva": "बुध",
+     "brahmi": "𑀩𑀼𑀥"
+    },
+    {
+     "deva": "बुधे",
+     "brahmi": "𑀩𑀼𑀥𑁂"
+    },
+    {
+     "deva": "बुधस",
+     "brahmi": "𑀩𑀼𑀥𑀲"
+    }
+   ],
+   "hi": "बुद्ध",
+   "en": "the Buddha"
+  },
+  {
+   "cat": "sangya",
+   "head": "सक्यमुनि",
+   "forms": [
+    {
+     "deva": "सक्यमुनि",
+     "brahmi": "𑀲𑀓𑁆𑀬𑀫𑀼𑀦𑀺"
+    },
+    {
+     "deva": "सक्यमुनी",
+     "brahmi": "𑀲𑀓𑁆𑀬𑀫𑀼𑀦𑀻"
+    },
+    {
+     "deva": "सकमुनि",
+     "brahmi": "𑀲𑀓𑀫𑀼𑀦𑀺"
+    }
+   ],
+   "hi": "शाक्यमुनि",
+   "en": "Sakyamuni"
+  },
+  {
+   "cat": "sangya",
+   "head": "लिपि",
+   "forms": [
+    {
+     "deva": "लिपि",
+     "brahmi": "𑀮𑀺𑀧𑀺"
+    },
+    {
+     "deva": "दिपि",
+     "brahmi": "𑀤𑀺𑀧𑀺"
+    },
+    {
+     "deva": "लिपी",
+     "brahmi": "𑀮𑀺𑀧𑀻"
+    }
+   ],
+   "hi": "लिपि, लेख",
+   "en": "writing, edict"
+  },
+  {
+   "cat": "sangya",
+   "head": "मंगल",
+   "forms": [
+    {
+     "deva": "मंगल",
+     "brahmi": "𑀫𑀁𑀕𑀮"
+    },
+    {
+     "deva": "मगल",
+     "brahmi": "𑀫𑀕𑀮"
+    },
+    {
+     "deva": "मंगलं",
+     "brahmi": "𑀫𑀁𑀕𑀮𑀁"
+    },
+    {
+     "deva": "मगलं",
+     "brahmi": "𑀫𑀕𑀮𑀁"
+    }
+   ],
+   "hi": "मंगल-कर्म, अनुष्ठान",
+   "en": "ceremony, rite"
+  },
+  {
+   "cat": "sangya",
+   "head": "दान",
+   "forms": [
+    {
+     "deva": "दान",
+     "brahmi": "𑀤𑀸𑀦"
+    },
+    {
+     "deva": "दानं",
+     "brahmi": "𑀤𑀸𑀦𑀁"
+    },
+    {
+     "deva": "दाने",
+     "brahmi": "𑀤𑀸𑀦𑁂"
+    }
+   ],
+   "hi": "दान",
+   "en": "gift"
+  },
+  {
+   "cat": "sangya",
+   "head": "वस",
+   "forms": [
+    {
+     "deva": "वस",
+     "brahmi": "𑀯𑀲"
+    },
+    {
+     "deva": "वसानि",
+     "brahmi": "𑀯𑀲𑀸𑀦𑀺"
+    },
+    {
+     "deva": "वसाभिसित",
+     "brahmi": "𑀯𑀲𑀸𑀪𑀺𑀲𑀺𑀢"
+    },
+    {
+     "deva": "वसाभिसितेन",
+     "brahmi": "𑀯𑀲𑀸𑀪𑀺𑀲𑀺𑀢𑁂𑀦"
+    }
+   ],
+   "hi": "वर्ष (राज्याभिषेक के वर्ष)",
+   "en": "year (of reign)"
+  },
+  {
+   "cat": "sangya",
+   "head": "अतन",
+   "forms": [
+    {
+     "deva": "अतन",
+     "brahmi": "𑀅𑀢𑀦"
+    },
+    {
+     "deva": "अतना",
+     "brahmi": "𑀅𑀢𑀦𑀸"
+    }
+   ],
+   "hi": "स्वयं",
+   "en": "himself, in person"
+  },
+  {
+   "cat": "sangya",
+   "head": "उबलिक",
+   "forms": [
+    {
+     "deva": "उबलिक",
+     "brahmi": "𑀉𑀩𑀮𑀺𑀓"
+    },
+    {
+     "deva": "उबलिके",
+     "brahmi": "𑀉𑀩𑀮𑀺𑀓𑁂"
+    }
+   ],
+   "hi": "कर-मुक्त",
+   "en": "free of tax"
+  },
+  {
+   "cat": "sangya",
+   "head": "अठभागिय",
+   "forms": [
+    {
+     "deva": "अठभागिय",
+     "brahmi": "𑀅𑀞𑀪𑀸𑀕𑀺𑀬"
+    },
+    {
+     "deva": "अठभागिये",
+     "brahmi": "𑀅𑀞𑀪𑀸𑀕𑀺𑀬𑁂"
+    }
+   ],
+   "hi": "आठवाँ भाग (कर)",
+   "en": "one-eighth share (tax)"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "अयं",
+   "forms": [
+    {
+     "deva": "अयं",
+     "brahmi": "𑀅𑀬𑀁"
+    },
+    {
+     "deva": "इयं",
+     "brahmi": "𑀇𑀬𑀁"
+    },
+    {
+     "deva": "इयम",
+     "brahmi": "𑀇𑀬𑀫"
+    },
+    {
+     "deva": "इमं",
+     "brahmi": "𑀇𑀫𑀁"
+    },
+    {
+     "deva": "इमे",
+     "brahmi": "𑀇𑀫𑁂"
+    },
+    {
+     "deva": "इमाय",
+     "brahmi": "𑀇𑀫𑀸𑀬"
+    },
+    {
+     "deva": "इमस",
+     "brahmi": "𑀇𑀫𑀲"
+    }
+   ],
+   "hi": "यह, ये",
+   "en": "this, these"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "एतं",
+   "forms": [
+    {
+     "deva": "एतं",
+     "brahmi": "𑀏𑀢𑀁"
+    },
+    {
+     "deva": "एतस",
+     "brahmi": "𑀏𑀢𑀲"
+    },
+    {
+     "deva": "एतेन",
+     "brahmi": "𑀏𑀢𑁂𑀦"
+    },
+    {
+     "deva": "एताय",
+     "brahmi": "𑀏𑀢𑀸𑀬"
+    },
+    {
+     "deva": "एतिय",
+     "brahmi": "𑀏𑀢𑀺𑀬"
+    },
+    {
+     "deva": "एते",
+     "brahmi": "𑀏𑀢𑁂"
+    },
+    {
+     "deva": "एतरिस",
+     "brahmi": "𑀏𑀢𑀭𑀺𑀲"
+    },
+    {
+     "deva": "एतरिसा",
+     "brahmi": "𑀏𑀢𑀭𑀺𑀲𑀸"
+    }
+   ],
+   "hi": "यह, ऐसा",
+   "en": "this, such"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "तस",
+   "forms": [
+    {
+     "deva": "तस",
+     "brahmi": "𑀢𑀲"
+    },
+    {
+     "deva": "तेन",
+     "brahmi": "𑀢𑁂𑀦"
+    },
+    {
+     "deva": "ताय",
+     "brahmi": "𑀢𑀸𑀬"
+    },
+    {
+     "deva": "तानि",
+     "brahmi": "𑀢𑀸𑀦𑀺"
+    },
+    {
+     "deva": "तेसं",
+     "brahmi": "𑀢𑁂𑀲𑀁"
+    }
+   ],
+   "hi": "वह, उसके",
+   "en": "that, his"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "ममया",
+   "forms": [
+    {
+     "deva": "ममया",
+     "brahmi": "𑀫𑀫𑀬𑀸"
+    },
+    {
+     "deva": "मम",
+     "brahmi": "𑀫𑀫"
+    },
+    {
+     "deva": "मया",
+     "brahmi": "𑀫𑀬𑀸"
+    }
+   ],
+   "hi": "मेरा, मेरे द्वारा",
+   "en": "my, by me"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "हकं",
+   "forms": [
+    {
+     "deva": "हकं",
+     "brahmi": "𑀳𑀓𑀁"
+    },
+    {
+     "deva": "अहं",
+     "brahmi": "𑀅𑀳𑀁"
+    }
+   ],
+   "hi": "मैं",
+   "en": "I"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "अञ",
+   "forms": [
+    {
+     "deva": "अञ",
+     "brahmi": "𑀅𑀜"
+    },
+    {
+     "deva": "अञं",
+     "brahmi": "𑀅𑀜𑀁"
+    },
+    {
+     "deva": "अञे",
+     "brahmi": "𑀅𑀜𑁂"
+    },
+    {
+     "deva": "अञमञ",
+     "brahmi": "𑀅𑀜𑀫𑀜"
+    }
+   ],
+   "hi": "अन्य, दूसरा",
+   "en": "other"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "सव",
+   "forms": [
+    {
+     "deva": "सव",
+     "brahmi": "𑀲𑀯"
+    },
+    {
+     "deva": "सवे",
+     "brahmi": "𑀲𑀯𑁂"
+    },
+    {
+     "deva": "सवत",
+     "brahmi": "𑀲𑀯𑀢"
+    },
+    {
+     "deva": "सवता",
+     "brahmi": "𑀲𑀯𑀢𑀸"
+    },
+    {
+     "deva": "सवेसु",
+     "brahmi": "𑀲𑀯𑁂𑀲𑀼"
+    },
+    {
+     "deva": "सवस",
+     "brahmi": "𑀲𑀯𑀲"
+    }
+   ],
+   "hi": "सब, सर्वत्र",
+   "en": "all, everywhere"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "यथा",
+   "forms": [
+    {
+     "deva": "यथा",
+     "brahmi": "𑀬𑀣𑀸"
+    },
+    {
+     "deva": "तथा",
+     "brahmi": "𑀢𑀣𑀸"
+    },
+    {
+     "deva": "यत",
+     "brahmi": "𑀬𑀢"
+    },
+    {
+     "deva": "यं",
+     "brahmi": "𑀬𑀁"
+    },
+    {
+     "deva": "यो",
+     "brahmi": "𑀬𑁄"
+    },
+    {
+     "deva": "ये",
+     "brahmi": "𑀬𑁂"
+    }
+   ],
+   "hi": "जैसे, जो",
+   "en": "as, which, who"
+  },
+  {
+   "cat": "sarvanaam",
+   "head": "किंति",
+   "forms": [
+    {
+     "deva": "किंति",
+     "brahmi": "𑀓𑀺𑀁𑀢𑀺"
+    },
+    {
+     "deva": "किति",
+     "brahmi": "𑀓𑀺𑀢𑀺"
+    },
+    {
+     "deva": "कोचि",
+     "brahmi": "𑀓𑁄𑀘𑀺"
+    },
+    {
+     "deva": "किचि",
+     "brahmi": "𑀓𑀺𑀘𑀺"
+    }
+   ],
+   "hi": "कोई, क्या",
+   "en": "some, what"
+  },
+  {
+   "cat": "sankhya",
+   "head": "एक",
+   "forms": [
+    {
+     "deva": "एक",
+     "brahmi": "𑀏𑀓"
+    },
+    {
+     "deva": "एके",
+     "brahmi": "𑀏𑀓𑁂"
+    },
+    {
+     "deva": "एकं",
+     "brahmi": "𑀏𑀓𑀁"
+    },
+    {
+     "deva": "एकतिया",
+     "brahmi": "𑀏𑀓𑀢𑀺𑀬𑀸"
+    }
+   ],
+   "hi": "एक",
+   "en": "one"
+  },
+  {
+   "cat": "sankhya",
+   "head": "दुवे",
+   "forms": [
+    {
+     "deva": "दुवे",
+     "brahmi": "𑀤𑀼𑀯𑁂"
+    },
+    {
+     "deva": "दुवि",
+     "brahmi": "𑀤𑀼𑀯𑀺"
+    },
+    {
+     "deva": "दुतिय",
+     "brahmi": "𑀤𑀼𑀢𑀺𑀬"
+    }
+   ],
+   "hi": "दो, दूसरा",
+   "en": "two, second"
+  },
+  {
+   "cat": "sankhya",
+   "head": "तिनि",
+   "forms": [
+    {
+     "deva": "तिनि",
+     "brahmi": "𑀢𑀺𑀦𑀺"
+    },
+    {
+     "deva": "तीनि",
+     "brahmi": "𑀢𑀻𑀦𑀺"
+    },
+    {
+     "deva": "ततिय",
+     "brahmi": "𑀢𑀢𑀺𑀬"
+    }
+   ],
+   "hi": "तीन, तीसरा",
+   "en": "three, third"
+  },
+  {
+   "cat": "sankhya",
+   "head": "चतु",
+   "forms": [
+    {
+     "deva": "चतु",
+     "brahmi": "𑀘𑀢𑀼"
+    },
+    {
+     "deva": "चतुर",
+     "brahmi": "𑀘𑀢𑀼𑀭"
+    },
+    {
+     "deva": "चतालि",
+     "brahmi": "𑀘𑀢𑀸𑀮𑀺"
+    },
+    {
+     "deva": "चतुरं",
+     "brahmi": "𑀘𑀢𑀼𑀭𑀁"
+    }
+   ],
+   "hi": "चार",
+   "en": "four"
+  },
+  {
+   "cat": "sankhya",
+   "head": "पंच",
+   "forms": [
+    {
+     "deva": "पंच",
+     "brahmi": "𑀧𑀁𑀘"
+    },
+    {
+     "deva": "पच",
+     "brahmi": "𑀧𑀘"
+    },
+    {
+     "deva": "पंचसु",
+     "brahmi": "𑀧𑀁𑀘𑀲𑀼"
+    },
+    {
+     "deva": "पंचमं",
+     "brahmi": "𑀧𑀁𑀘𑀫𑀁"
+    }
+   ],
+   "hi": "पाँच",
+   "en": "five"
+  },
+  {
+   "cat": "sankhya",
+   "head": "छ",
+   "forms": [
+    {
+     "deva": "छ",
+     "brahmi": "𑀙"
+    },
+    {
+     "deva": "सड",
+     "brahmi": "𑀲𑀟"
+    },
+    {
+     "deva": "सडु",
+     "brahmi": "𑀲𑀟𑀼"
+    }
+   ],
+   "hi": "छह",
+   "en": "six"
+  },
+  {
+   "cat": "sankhya",
+   "head": "सत",
+   "forms": [
+    {
+     "deva": "सत",
+     "brahmi": "𑀲𑀢"
+    },
+    {
+     "deva": "सपत",
+     "brahmi": "𑀲𑀧𑀢"
+    }
+   ],
+   "hi": "सात / सौ",
+   "en": "seven / a hundred"
+  },
+  {
+   "cat": "sankhya",
+   "head": "अठ",
+   "forms": [
+    {
+     "deva": "अठ",
+     "brahmi": "𑀅𑀞"
+    },
+    {
+     "deva": "अठम",
+     "brahmi": "𑀅𑀞𑀫"
+    },
+    {
+     "deva": "अठवसा",
+     "brahmi": "𑀅𑀞𑀯𑀲𑀸"
+    }
+   ],
+   "hi": "आठ, आठवाँ",
+   "en": "eight, eighth"
+  },
+  {
+   "cat": "sankhya",
+   "head": "नव",
+   "forms": [
+    {
+     "deva": "नव",
+     "brahmi": "𑀦𑀯"
+    }
+   ],
+   "hi": "नौ",
+   "en": "nine"
+  },
+  {
+   "cat": "sankhya",
+   "head": "दस",
+   "forms": [
+    {
+     "deva": "दस",
+     "brahmi": "𑀤𑀲"
+    },
+    {
+     "deva": "दसवस",
+     "brahmi": "𑀤𑀲𑀯𑀲"
+    },
+    {
+     "deva": "दसवसाभिसित",
+     "brahmi": "𑀤𑀲𑀯𑀲𑀸𑀪𑀺𑀲𑀺𑀢"
+    }
+   ],
+   "hi": "दस",
+   "en": "ten"
+  },
+  {
+   "cat": "sankhya",
+   "head": "दुवाडस",
+   "forms": [
+    {
+     "deva": "दुवाडस",
+     "brahmi": "𑀤𑀼𑀯𑀸𑀟𑀲"
+    },
+    {
+     "deva": "दुवादस",
+     "brahmi": "𑀤𑀼𑀯𑀸𑀤𑀲"
+    },
+    {
+     "deva": "बादस",
+     "brahmi": "𑀩𑀸𑀤𑀲"
+    }
+   ],
+   "hi": "बारह",
+   "en": "twelve"
+  },
+  {
+   "cat": "sankhya",
+   "head": "तेडस",
+   "forms": [
+    {
+     "deva": "तेडस",
+     "brahmi": "𑀢𑁂𑀟𑀲"
+    },
+    {
+     "deva": "तेदस",
+     "brahmi": "𑀢𑁂𑀤𑀲"
+    },
+    {
+     "deva": "त्रैदस",
+     "brahmi": "𑀢𑁆𑀭𑁃𑀤𑀲"
+    }
+   ],
+   "hi": "तेरह",
+   "en": "thirteen"
+  },
+  {
+   "cat": "sankhya",
+   "head": "वीसति",
+   "forms": [
+    {
+     "deva": "वीसति",
+     "brahmi": "𑀯𑀻𑀲𑀢𑀺"
+    },
+    {
+     "deva": "वीसतिवस",
+     "brahmi": "𑀯𑀻𑀲𑀢𑀺𑀯𑀲"
+    },
+    {
+     "deva": "वीसतिवसाभिसितेन",
+     "brahmi": "𑀯𑀻𑀲𑀢𑀺𑀯𑀲𑀸𑀪𑀺𑀲𑀺𑀢𑁂𑀦"
+    }
+   ],
+   "hi": "बीस",
+   "en": "twenty"
+  },
+  {
+   "cat": "sankhya",
+   "head": "छवीसति",
+   "forms": [
+    {
+     "deva": "छवीसति",
+     "brahmi": "𑀙𑀯𑀻𑀲𑀢𑀺"
+    },
+    {
+     "deva": "सडुवीसति",
+     "brahmi": "𑀲𑀟𑀼𑀯𑀻𑀲𑀢𑀺"
+    }
+   ],
+   "hi": "छब्बीस",
+   "en": "twenty-six"
+  },
+  {
+   "cat": "sankhya",
+   "head": "सहस",
+   "forms": [
+    {
+     "deva": "सहस",
+     "brahmi": "𑀲𑀳𑀲"
+    },
+    {
+     "deva": "सहसानि",
+     "brahmi": "𑀲𑀳𑀲𑀸𑀦𑀺"
+    },
+    {
+     "deva": "सतसहस",
+     "brahmi": "𑀲𑀢𑀲𑀳𑀲"
+    },
+    {
+     "deva": "सतसहसानि",
+     "brahmi": "𑀲𑀢𑀲𑀳𑀲𑀸𑀦𑀺"
+    }
+   ],
+   "hi": "हज़ार, लाख",
+   "en": "thousand, hundred thousand"
+  },
+  {
+   "cat": "sankhya",
+   "head": "पठम",
+   "forms": [
+    {
+     "deva": "पठम",
+     "brahmi": "𑀧𑀞𑀫"
+    },
+    {
+     "deva": "पठमं",
+     "brahmi": "𑀧𑀞𑀫𑀁"
+    },
+    {
+     "deva": "प्रथम",
+     "brahmi": "𑀧𑁆𑀭𑀣𑀫"
+    }
+   ],
+   "hi": "पहला",
+   "en": "first"
+  },
+  {
+   "cat": "sankhya",
+   "head": "दियढ",
+   "forms": [
+    {
+     "deva": "दियढ",
+     "brahmi": "𑀤𑀺𑀬𑀠"
+    },
+    {
+     "deva": "दियढिय",
+     "brahmi": "𑀤𑀺𑀬𑀠𑀺𑀬"
+    }
+   ],
+   "hi": "डेढ़",
+   "en": "one and a half"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "योजन",
+   "forms": [
+    {
+     "deva": "योजन",
+     "brahmi": "𑀬𑁄𑀚𑀦"
+    },
+    {
+     "deva": "योजनानि",
+     "brahmi": "𑀬𑁄𑀚𑀦𑀸𑀦𑀺"
+    },
+    {
+     "deva": "योजनसतेसु",
+     "brahmi": "𑀬𑁄𑀚𑀦𑀲𑀢𑁂𑀲𑀼"
+    }
+   ],
+   "hi": "योजन (दूरी की माप)",
+   "en": "yojana (measure of distance)"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "कोस",
+   "forms": [
+    {
+     "deva": "कोस",
+     "brahmi": "𑀓𑁄𑀲"
+    },
+    {
+     "deva": "कोसिक",
+     "brahmi": "𑀓𑁄𑀲𑀺𑀓"
+    },
+    {
+     "deva": "अढकोसिक",
+     "brahmi": "𑀅𑀠𑀓𑁄𑀲𑀺𑀓"
+    },
+    {
+     "deva": "अढकोसिक्यानि",
+     "brahmi": "𑀅𑀠𑀓𑁄𑀲𑀺𑀓𑁆𑀬𑀸𑀦𑀺"
+    }
+   ],
+   "hi": "कोस, आधा कोस",
+   "en": "kos, half a kos (distance)"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "अढ",
+   "forms": [
+    {
+     "deva": "अढ",
+     "brahmi": "𑀅𑀠"
+    },
+    {
+     "deva": "अढिय",
+     "brahmi": "𑀅𑀠𑀺𑀬"
+    }
+   ],
+   "hi": "आधा",
+   "en": "half"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "मंडल",
+   "forms": [
+    {
+     "deva": "मंडल",
+     "brahmi": "𑀫𑀁𑀟𑀮"
+    },
+    {
+     "deva": "मडल",
+     "brahmi": "𑀫𑀟𑀮"
+    }
+   ],
+   "hi": "मंडल, वृत्त",
+   "en": "circle, region"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "चतुरस",
+   "forms": [
+    {
+     "deva": "चतुरस",
+     "brahmi": "𑀘𑀢𑀼𑀭𑀲"
+    },
+    {
+     "deva": "चतुरंस",
+     "brahmi": "𑀘𑀢𑀼𑀭𑀁𑀲"
+    }
+   ],
+   "hi": "चौकोर",
+   "en": "square"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "दीघ",
+   "forms": [
+    {
+     "deva": "दीघ",
+     "brahmi": "𑀤𑀻𑀖"
+    },
+    {
+     "deva": "दीघं",
+     "brahmi": "𑀤𑀻𑀖𑀁"
+    }
+   ],
+   "hi": "लंबा",
+   "en": "long"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "थंभ",
+   "forms": [
+    {
+     "deva": "थंभ",
+     "brahmi": "𑀣𑀁𑀪"
+    },
+    {
+     "deva": "थभ",
+     "brahmi": "𑀣𑀪"
+    },
+    {
+     "deva": "सिलाथभ",
+     "brahmi": "𑀲𑀺𑀮𑀸𑀣𑀪"
+    },
+    {
+     "deva": "सिलाथभे",
+     "brahmi": "𑀲𑀺𑀮𑀸𑀣𑀪𑁂"
+    },
+    {
+     "deva": "थंभानि",
+     "brahmi": "𑀣𑀁𑀪𑀸𑀦𑀺"
+    }
+   ],
+   "hi": "स्तंभ (खड़ा बेलन)",
+   "en": "pillar (upright column)"
+  },
+  {
+   "cat": "jyamiti",
+   "head": "भाग",
+   "forms": [
+    {
+     "deva": "भाग",
+     "brahmi": "𑀪𑀸𑀕"
+    },
+    {
+     "deva": "भागिय",
+     "brahmi": "𑀪𑀸𑀕𑀺𑀬"
+    }
+   ],
+   "hi": "भाग, हिस्सा",
+   "en": "part, share"
+  },
+  {
+   "cat": "antariksh",
+   "head": "सुरिय",
+   "forms": [
+    {
+     "deva": "सुरिय",
+     "brahmi": "𑀲𑀼𑀭𑀺𑀬"
+    },
+    {
+     "deva": "सूलिय",
+     "brahmi": "𑀲𑀽𑀮𑀺𑀬"
+    },
+    {
+     "deva": "सुलिय",
+     "brahmi": "𑀲𑀼𑀮𑀺𑀬"
+    },
+    {
+     "deva": "सूरिय",
+     "brahmi": "𑀲𑀽𑀭𑀺𑀬"
+    }
+   ],
+   "hi": "सूर्य",
+   "en": "sun"
+  },
+  {
+   "cat": "antariksh",
+   "head": "चंदम",
+   "forms": [
+    {
+     "deva": "चंदम",
+     "brahmi": "𑀘𑀁𑀤𑀫"
+    },
+    {
+     "deva": "चंदमसूलिय",
+     "brahmi": "𑀘𑀁𑀤𑀫𑀲𑀽𑀮𑀺𑀬"
+    },
+    {
+     "deva": "चंदमसुरिय",
+     "brahmi": "𑀘𑀁𑀤𑀫𑀲𑀼𑀭𑀺𑀬"
+    },
+    {
+     "deva": "चद",
+     "brahmi": "𑀘𑀤"
+    }
+   ],
+   "hi": "चंद्रमा",
+   "en": "moon"
+  },
+  {
+   "cat": "antariksh",
+   "head": "नखत",
+   "forms": [
+    {
+     "deva": "नखत",
+     "brahmi": "𑀦𑀔𑀢"
+    },
+    {
+     "deva": "नखतेन",
+     "brahmi": "𑀦𑀔𑀢𑁂𑀦"
+    },
+    {
+     "deva": "नक्खत",
+     "brahmi": "𑀦𑀓𑁆𑀔𑀢"
+    }
+   ],
+   "hi": "नक्षत्र",
+   "en": "lunar mansion, star"
+  },
+  {
+   "cat": "antariksh",
+   "head": "तिस",
+   "forms": [
+    {
+     "deva": "तिस",
+     "brahmi": "𑀢𑀺𑀲"
+    },
+    {
+     "deva": "तिसेन",
+     "brahmi": "𑀢𑀺𑀲𑁂𑀦"
+    },
+    {
+     "deva": "तिसाय",
+     "brahmi": "𑀢𑀺𑀲𑀸𑀬"
+    }
+   ],
+   "hi": "तिष्य नक्षत्र",
+   "en": "Tishya (a nakshatra)"
+  },
+  {
+   "cat": "antariksh",
+   "head": "पुनावसु",
+   "forms": [
+    {
+     "deva": "पुनावसु",
+     "brahmi": "𑀧𑀼𑀦𑀸𑀯𑀲𑀼"
+    },
+    {
+     "deva": "पुनावसुने",
+     "brahmi": "𑀧𑀼𑀦𑀸𑀯𑀲𑀼𑀦𑁂"
+    }
+   ],
+   "hi": "पुनर्वसु नक्षत्र",
+   "en": "Punarvasu (a nakshatra)"
+  },
+  {
+   "cat": "antariksh",
+   "head": "चातुंमासी",
+   "forms": [
+    {
+     "deva": "चातुंमासी",
+     "brahmi": "𑀘𑀸𑀢𑀼𑀁𑀫𑀸𑀲𑀻"
+    },
+    {
+     "deva": "चातुमासि",
+     "brahmi": "𑀘𑀸𑀢𑀼𑀫𑀸𑀲𑀺"
+    },
+    {
+     "deva": "चातुंमासिसु",
+     "brahmi": "𑀘𑀸𑀢𑀼𑀁𑀫𑀸𑀲𑀺𑀲𑀼"
+    }
+   ],
+   "hi": "चातुर्मास (ऋतु)",
+   "en": "the four-month season"
+  },
+  {
+   "cat": "antariksh",
+   "head": "दिविय",
+   "forms": [
+    {
+     "deva": "दिविय",
+     "brahmi": "𑀤𑀺𑀯𑀺𑀬"
+    },
+    {
+     "deva": "दिव्य",
+     "brahmi": "𑀤𑀺𑀯𑁆𑀬"
+    },
+    {
+     "deva": "दिवियानि",
+     "brahmi": "𑀤𑀺𑀯𑀺𑀬𑀸𑀦𑀺"
+    },
+    {
+     "deva": "दिव्यानि",
+     "brahmi": "𑀤𑀺𑀯𑁆𑀬𑀸𑀦𑀺"
+    }
+   ],
+   "hi": "दिव्य, आकाशीय",
+   "en": "heavenly"
+  },
+  {
+   "cat": "antariksh",
+   "head": "विमान",
+   "forms": [
+    {
+     "deva": "विमान",
+     "brahmi": "𑀯𑀺𑀫𑀸𑀦"
+    },
+    {
+     "deva": "विमानदसना",
+     "brahmi": "𑀯𑀺𑀫𑀸𑀦𑀤𑀲𑀦𑀸"
+    },
+    {
+     "deva": "विमानदसणा",
+     "brahmi": "𑀯𑀺𑀫𑀸𑀦𑀤𑀲𑀡𑀸"
+    }
+   ],
+   "hi": "विमान (आकाशीय रथ)",
+   "en": "celestial chariots"
+  },
+  {
+   "cat": "antariksh",
+   "head": "अगिकंध",
+   "forms": [
+    {
+     "deva": "अगिकंध",
+     "brahmi": "𑀅𑀕𑀺𑀓𑀁𑀥"
+    },
+    {
+     "deva": "अगिखंध",
+     "brahmi": "𑀅𑀕𑀺𑀔𑀁𑀥"
+    },
+    {
+     "deva": "अगिकंधानि",
+     "brahmi": "𑀅𑀕𑀺𑀓𑀁𑀥𑀸𑀦𑀺"
+    }
+   ],
+   "hi": "अग्नि-स्कंध (आकाश में अग्नि-पुंज)",
+   "en": "masses of fire (heavenly display)"
+  },
+  {
+   "cat": "antariksh",
+   "head": "स्वग",
+   "forms": [
+    {
+     "deva": "स्वग",
+     "brahmi": "𑀲𑁆𑀯𑀕"
+    },
+    {
+     "deva": "स्वगं",
+     "brahmi": "𑀲𑁆𑀯𑀕𑀁"
+    },
+    {
+     "deva": "सग",
+     "brahmi": "𑀲𑀕"
+    },
+    {
+     "deva": "सगं",
+     "brahmi": "𑀲𑀕𑀁"
+    },
+    {
+     "deva": "स्वगस",
+     "brahmi": "𑀲𑁆𑀯𑀕𑀲"
+    }
+   ],
+   "hi": "स्वर्ग",
+   "en": "heaven"
+  },
+  {
+   "cat": "anya",
+   "head": "दया",
+   "forms": [
+    {
+     "deva": "दया",
+     "brahmi": "𑀤𑀬𑀸"
+    },
+    {
+     "deva": "दयाय",
+     "brahmi": "𑀤𑀬𑀸𑀬"
+    }
+   ],
+   "hi": "दया",
+   "en": "compassion",
+   "topic": "dharma"
+  },
+  {
+   "cat": "anya",
+   "head": "सच",
+   "forms": [
+    {
+     "deva": "सच",
+     "brahmi": "𑀲𑀘"
+    },
+    {
+     "deva": "सचे",
+     "brahmi": "𑀲𑀘𑁂"
+    },
+    {
+     "deva": "सचं",
+     "brahmi": "𑀲𑀘𑀁"
+    }
+   ],
+   "hi": "सत्य",
+   "en": "truth",
+   "topic": "dharma"
+  },
+  {
+   "cat": "anya",
+   "head": "सोचय",
+   "forms": [
+    {
+     "deva": "सोचय",
+     "brahmi": "𑀲𑁄𑀘𑀬"
+    },
+    {
+     "deva": "सोचये",
+     "brahmi": "𑀲𑁄𑀘𑀬𑁂"
+    }
+   ],
+   "hi": "शुद्धता",
+   "en": "purity",
+   "topic": "dharma"
+  },
+  {
+   "cat": "anya",
+   "head": "संयम",
+   "forms": [
+    {
+     "deva": "संयम",
+     "brahmi": "𑀲𑀁𑀬𑀫"
+    },
+    {
+     "deva": "सयम",
+     "brahmi": "𑀲𑀬𑀫"
+    },
+    {
+     "deva": "सयमे",
+     "brahmi": "𑀲𑀬𑀫𑁂"
+    }
+   ],
+   "hi": "संयम",
+   "en": "self-restraint",
+   "topic": "dharma"
+  },
+  {
+   "cat": "anya",
+   "head": "अविहिसा",
+   "forms": [
+    {
+     "deva": "अविहिसा",
+     "brahmi": "𑀅𑀯𑀺𑀳𑀺𑀲𑀸"
+    },
+    {
+     "deva": "अविहिंसा",
+     "brahmi": "𑀅𑀯𑀺𑀳𑀺𑀁𑀲𑀸"
+    },
+    {
+     "deva": "अनालंभो",
+     "brahmi": "𑀅𑀦𑀸𑀮𑀁𑀪𑁄"
+    },
+    {
+     "deva": "अनारंभो",
+     "brahmi": "𑀅𑀦𑀸𑀭𑀁𑀪𑁄"
+    }
+   ],
+   "hi": "अहिंसा",
+   "en": "non-violence",
+   "topic": "dharma"
+  },
+  {
+   "cat": "anya",
+   "head": "सुसूसा",
+   "forms": [
+    {
+     "deva": "सुसूसा",
+     "brahmi": "𑀲𑀼𑀲𑀽𑀲𑀸"
+    },
+    {
+     "deva": "सुस्रुसा",
+     "brahmi": "𑀲𑀼𑀲𑁆𑀭𑀼𑀲𑀸"
+    }
+   ],
+   "hi": "सेवा, आज्ञापालन",
+   "en": "obedience, service",
+   "topic": "dharma"
+  },
+  {
+   "cat": "anya",
+   "head": "महामात",
+   "forms": [
+    {
+     "deva": "महामात",
+     "brahmi": "𑀫𑀳𑀸𑀫𑀸𑀢"
+    },
+    {
+     "deva": "महामाता",
+     "brahmi": "𑀫𑀳𑀸𑀫𑀸𑀢𑀸"
+    },
+    {
+     "deva": "महामात्र",
+     "brahmi": "𑀫𑀳𑀸𑀫𑀸𑀢𑁆𑀭"
+    }
+   ],
+   "hi": "महामात्र (अधिकारी)",
+   "en": "high officials",
+   "topic": "administration"
+  },
+  {
+   "cat": "anya",
+   "head": "राजुक",
+   "forms": [
+    {
+     "deva": "राजुक",
+     "brahmi": "𑀭𑀸𑀚𑀼𑀓"
+    },
+    {
+     "deva": "लजुक",
+     "brahmi": "𑀮𑀚𑀼𑀓"
+    },
+    {
+     "deva": "लजूक",
+     "brahmi": "𑀮𑀚𑀽𑀓"
+    }
+   ],
+   "hi": "रज्जुक (अधिकारी)",
+   "en": "rajuka officers",
+   "topic": "administration"
+  },
+  {
+   "cat": "anya",
+   "head": "युत",
+   "forms": [
+    {
+     "deva": "युत",
+     "brahmi": "𑀬𑀼𑀢"
+    },
+    {
+     "deva": "युता",
+     "brahmi": "𑀬𑀼𑀢𑀸"
+    }
+   ],
+   "hi": "युक्त (अधिकारी)",
+   "en": "yuta officers",
+   "topic": "administration"
+  },
+  {
+   "cat": "anya",
+   "head": "पटिवेदक",
+   "forms": [
+    {
+     "deva": "पटिवेदक",
+     "brahmi": "𑀧𑀝𑀺𑀯𑁂𑀤𑀓"
+    },
+    {
+     "deva": "पटिवेदना",
+     "brahmi": "𑀧𑀝𑀺𑀯𑁂𑀤𑀦𑀸"
+    }
+   ],
+   "hi": "प्रतिवेदक (सूचना देने वाले)",
+   "en": "reporters",
+   "topic": "administration"
+  },
+  {
+   "cat": "anya",
+   "head": "मिग",
+   "forms": [
+    {
+     "deva": "मिग",
+     "brahmi": "𑀫𑀺𑀕"
+    },
+    {
+     "deva": "मिगे",
+     "brahmi": "𑀫𑀺𑀕𑁂"
+    },
+    {
+     "deva": "मजूर",
+     "brahmi": "𑀫𑀚𑀽𑀭"
+    },
+    {
+     "deva": "मजुला",
+     "brahmi": "𑀫𑀚𑀼𑀮𑀸"
+    },
+    {
+     "deva": "मोर",
+     "brahmi": "𑀫𑁄𑀭"
+    }
+   ],
+   "hi": "हिरण, मोर",
+   "en": "deer, peacock",
+   "topic": "animals"
+  },
+  {
+   "cat": "anya",
+   "head": "हथि",
+   "forms": [
+    {
+     "deva": "हथि",
+     "brahmi": "𑀳𑀣𑀺"
+    },
+    {
+     "deva": "हथी",
+     "brahmi": "𑀳𑀣𑀻"
+    },
+    {
+     "deva": "हस्ति",
+     "brahmi": "𑀳𑀲𑁆𑀢𑀺"
+    }
+   ],
+   "hi": "हाथी",
+   "en": "elephant",
+   "topic": "animals"
+  },
+  {
+   "cat": "anya",
+   "head": "पसु",
+   "forms": [
+    {
+     "deva": "पसु",
+     "brahmi": "𑀧𑀲𑀼"
+    },
+    {
+     "deva": "पसू",
+     "brahmi": "𑀧𑀲𑀽"
+    },
+    {
+     "deva": "पसुओपगानि",
+     "brahmi": "𑀧𑀲𑀼𑀑𑀧𑀕𑀸𑀦𑀺"
+    }
+   ],
+   "hi": "पशु",
+   "en": "animals, cattle",
+   "topic": "animals"
+  },
+  {
+   "cat": "anya",
+   "head": "ओसध",
+   "forms": [
+    {
+     "deva": "ओसध",
+     "brahmi": "𑀑𑀲𑀥"
+    },
+    {
+     "deva": "ओसधानि",
+     "brahmi": "𑀑𑀲𑀥𑀸𑀦𑀺"
+    },
+    {
+     "deva": "ओसढानि",
+     "brahmi": "𑀑𑀲𑀠𑀸𑀦𑀺"
+    },
+    {
+     "deva": "चिकिसा",
+     "brahmi": "𑀘𑀺𑀓𑀺𑀲𑀸"
+    },
+    {
+     "deva": "चिकीछ",
+     "brahmi": "𑀘𑀺𑀓𑀻𑀙"
+    }
+   ],
+   "hi": "औषधि, चिकित्सा",
+   "en": "medicinal herbs, medical care",
+   "topic": "medicine"
+  },
+  {
+   "cat": "anya",
+   "head": "लुख",
+   "forms": [
+    {
+     "deva": "लुख",
+     "brahmi": "𑀮𑀼𑀔"
+    },
+    {
+     "deva": "लुखानि",
+     "brahmi": "𑀮𑀼𑀔𑀸𑀦𑀺"
+    },
+    {
+     "deva": "वड",
+     "brahmi": "𑀯𑀟"
+    },
+    {
+     "deva": "अंब",
+     "brahmi": "𑀅𑀁𑀩"
+    },
+    {
+     "deva": "अंबावडिक्य",
+     "brahmi": "𑀅𑀁𑀩𑀸𑀯𑀟𑀺𑀓𑁆𑀬"
+    },
+    {
+     "deva": "मूल",
+     "brahmi": "𑀫𑀽𑀮"
+    },
+    {
+     "deva": "फल",
+     "brahmi": "𑀨𑀮"
+    },
+    {
+     "deva": "फलानि",
+     "brahmi": "𑀨𑀮𑀸𑀦𑀺"
+    }
+   ],
+   "hi": "वृक्ष, बरगद, आम, मूल, फल",
+   "en": "trees, banyan, mango, roots, fruit",
+   "topic": "plants"
+  },
+  {
+   "cat": "anya",
+   "head": "उदुपान",
+   "forms": [
+    {
+     "deva": "उदुपान",
+     "brahmi": "𑀉𑀤𑀼𑀧𑀸𑀦"
+    },
+    {
+     "deva": "उदुपानानि",
+     "brahmi": "𑀉𑀤𑀼𑀧𑀸𑀦𑀸𑀦𑀺"
+    },
+    {
+     "deva": "कूप",
+     "brahmi": "𑀓𑀽𑀧"
+    }
+   ],
+   "hi": "कुएँ",
+   "en": "wells",
+   "topic": "buildings"
+  },
+  {
+   "cat": "anya",
+   "head": "सिला",
+   "forms": [
+    {
+     "deva": "सिला",
+     "brahmi": "𑀲𑀺𑀮𑀸"
+    },
+    {
+     "deva": "सिलाय",
+     "brahmi": "𑀲𑀺𑀮𑀸𑀬"
+    }
+   ],
+   "hi": "शिला",
+   "en": "rock, stone",
+   "topic": "buildings"
+  },
+  {
+   "cat": "anya",
+   "head": "तोरण",
+   "forms": [
+    {
+     "deva": "तोरण",
+     "brahmi": "𑀢𑁄𑀭𑀡"
+    },
+    {
+     "deva": "तोरणो",
+     "brahmi": "𑀢𑁄𑀭𑀡𑁄"
+    },
+    {
+     "deva": "वेदिका",
+     "brahmi": "𑀯𑁂𑀤𑀺𑀓𑀸"
+    }
+   ],
+   "hi": "तोरण, वेदिका",
+   "en": "gateway, railing",
+   "topic": "buildings"
+  },
+  {
+   "cat": "anya",
+   "head": "गुहा",
+   "forms": [
+    {
+     "deva": "गुहा",
+     "brahmi": "𑀕𑀼𑀳𑀸"
+    },
+    {
+     "deva": "कुभा",
+     "brahmi": "𑀓𑀼𑀪𑀸"
+    },
+    {
+     "deva": "लेण",
+     "brahmi": "𑀮𑁂𑀡"
+    }
+   ],
+   "hi": "गुफा",
+   "en": "cave",
+   "topic": "buildings"
+  },
+  {
+   "cat": "anya",
+   "head": "बाभन",
+   "forms": [
+    {
+     "deva": "बाभन",
+     "brahmi": "𑀩𑀸𑀪𑀦"
+    },
+    {
+     "deva": "बम्हण",
+     "brahmi": "𑀩𑀫𑁆𑀳𑀡"
+    },
+    {
+     "deva": "ब्राह्मण",
+     "brahmi": "𑀩𑁆𑀭𑀸𑀳𑁆𑀫𑀡"
+    },
+    {
+     "deva": "बमण",
+     "brahmi": "𑀩𑀫𑀡"
+    }
+   ],
+   "hi": "ब्राह्मण",
+   "en": "brahmins",
+   "topic": "people"
+  },
+  {
+   "cat": "anya",
+   "head": "समण",
+   "forms": [
+    {
+     "deva": "समण",
+     "brahmi": "𑀲𑀫𑀡"
+    },
+    {
+     "deva": "स्रमण",
+     "brahmi": "𑀲𑁆𑀭𑀫𑀡"
+    },
+    {
+     "deva": "श्रमण",
+     "brahmi": "𑀰𑁆𑀭𑀫𑀡"
+    }
+   ],
+   "hi": "श्रमण",
+   "en": "ascetics",
+   "topic": "people"
+  },
+  {
+   "cat": "anya",
+   "head": "संघ",
+   "forms": [
+    {
+     "deva": "संघ",
+     "brahmi": "𑀲𑀁𑀖"
+    },
+    {
+     "deva": "सघ",
+     "brahmi": "𑀲𑀖"
+    },
+    {
+     "deva": "संघे",
+     "brahmi": "𑀲𑀁𑀖𑁂"
+    }
+   ],
+   "hi": "संघ",
+   "en": "the Sangha",
+   "topic": "people"
+  },
+  {
+   "cat": "anya",
+   "head": "भिखु",
+   "forms": [
+    {
+     "deva": "भिखु",
+     "brahmi": "𑀪𑀺𑀔𑀼"
+    },
+    {
+     "deva": "भिखुनि",
+     "brahmi": "𑀪𑀺𑀔𑀼𑀦𑀺"
+    },
+    {
+     "deva": "भिखुनी",
+     "brahmi": "𑀪𑀺𑀔𑀼𑀦𑀻"
+    }
+   ],
+   "hi": "भिक्षु, भिक्षुणी",
+   "en": "monks, nuns",
+   "topic": "people"
+  },
+  {
+   "cat": "anya",
+   "head": "योन",
+   "forms": [
+    {
+     "deva": "योन",
+     "brahmi": "𑀬𑁄𑀦"
+    },
+    {
+     "deva": "योना",
+     "brahmi": "𑀬𑁄𑀦𑀸"
+    },
+    {
+     "deva": "कंबोज",
+     "brahmi": "𑀓𑀁𑀩𑁄𑀚"
+    },
+    {
+     "deva": "गंधार",
+     "brahmi": "𑀕𑀁𑀥𑀸𑀭"
+    }
+   ],
+   "hi": "यवन, कंबोज, गांधार",
+   "en": "Greeks, Kambojas, Gandharans",
+   "topic": "people"
+  },
+  {
+   "cat": "anya",
+   "head": "दास",
+   "forms": [
+    {
+     "deva": "दास",
+     "brahmi": "𑀤𑀸𑀲"
+    },
+    {
+     "deva": "भटक",
+     "brahmi": "𑀪𑀝𑀓"
+    },
+    {
+     "deva": "दासभटक",
+     "brahmi": "𑀤𑀸𑀲𑀪𑀝𑀓"
+    }
+   ],
+   "hi": "दास, सेवक",
+   "en": "slaves, servants",
+   "topic": "people"
+  },
+  {
+   "cat": "anya",
+   "head": "लुंमिनिगाम",
+   "forms": [
+    {
+     "deva": "लुंमिनिगाम",
+     "brahmi": "𑀮𑀼𑀁𑀫𑀺𑀦𑀺𑀕𑀸𑀫"
+    },
+    {
+     "deva": "लुमिनिगाम",
+     "brahmi": "𑀮𑀼𑀫𑀺𑀦𑀺𑀕𑀸𑀫"
+    },
+    {
+     "deva": "गाम",
+     "brahmi": "𑀕𑀸𑀫"
+    },
+    {
+     "deva": "गामे",
+     "brahmi": "𑀕𑀸𑀫𑁂"
+    }
+   ],
+   "hi": "लुम्बिनी ग्राम, गाँव",
+   "en": "Lumbini village, village",
+   "topic": "places"
+  },
+  {
+   "cat": "anya",
+   "head": "कलिंग",
+   "forms": [
+    {
+     "deva": "कलिंग",
+     "brahmi": "𑀓𑀮𑀺𑀁𑀕"
+    },
+    {
+     "deva": "कलिग",
+     "brahmi": "𑀓𑀮𑀺𑀕"
+    },
+    {
+     "deva": "तोसलि",
+     "brahmi": "𑀢𑁄𑀲𑀮𑀺"
+    },
+    {
+     "deva": "उजेनि",
+     "brahmi": "𑀉𑀚𑁂𑀦𑀺"
+    },
+    {
+     "deva": "पाटलिपुत",
+     "brahmi": "𑀧𑀸𑀝𑀮𑀺𑀧𑀼𑀢"
+    },
+    {
+     "deva": "जंबुदीप",
+     "brahmi": "𑀚𑀁𑀩𑀼𑀤𑀻𑀧"
+    },
+    {
+     "deva": "जंबुदीपसि",
+     "brahmi": "𑀚𑀁𑀩𑀼𑀤𑀻𑀧𑀲𑀺"
+    }
+   ],
+   "hi": "कलिंग, तोसली, उज्जैनी, पाटलिपुत्र, जम्बुद्वीप",
+   "en": "Kalinga, Tosali, Ujjeni, Pataliputra, Jambudvipa",
+   "topic": "places"
+  },
+  {
+   "cat": "dhatu",
+   "head": "आह",
+   "forms": [
+    {
+     "deva": "आह",
+     "brahmi": "𑀆𑀳"
+    },
+    {
+     "deva": "आहा",
+     "brahmi": "𑀆𑀳𑀸"
+    },
+    {
+     "deva": "हेवं आहा",
+     "brahmi": "𑀳𑁂𑀯𑀁𑀆𑀳𑀸"
+    }
+   ],
+   "hi": "कहा",
+   "en": "said (Panini 3.4.84 replaces brū with āha)",
+   "dhatu": {
+    "slp1": "brUY",
+    "deva": "ब्रूञ्",
+    "code": "02.0039",
+    "artha": "व्यक्तायां वाचि"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "लिखापित",
+   "forms": [
+    {
+     "deva": "लिखापित",
+     "brahmi": "𑀮𑀺𑀔𑀸𑀧𑀺𑀢"
+    },
+    {
+     "deva": "लिखापिता",
+     "brahmi": "𑀮𑀺𑀔𑀸𑀧𑀺𑀢𑀸"
+    },
+    {
+     "deva": "लिखापितं",
+     "brahmi": "𑀮𑀺𑀔𑀸𑀧𑀺𑀢𑀁"
+    },
+    {
+     "deva": "लेखापेसामि",
+     "brahmi": "𑀮𑁂𑀔𑀸𑀧𑁂𑀲𑀸𑀫𑀺"
+    },
+    {
+     "deva": "लेखापिता",
+     "brahmi": "𑀮𑁂𑀔𑀸𑀧𑀺𑀢𑀸"
+    },
+    {
+     "deva": "लिखित",
+     "brahmi": "𑀮𑀺𑀔𑀺𑀢"
+    }
+   ],
+   "hi": "लिखवाया",
+   "en": "caused to be written",
+   "dhatu": {
+    "slp1": "liKa",
+    "deva": "लिख",
+    "code": "06.0092",
+    "artha": "अक्षरविन्यासे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "कालापित",
+   "forms": [
+    {
+     "deva": "कालापित",
+     "brahmi": "𑀓𑀸𑀮𑀸𑀧𑀺𑀢"
+    },
+    {
+     "deva": "कारापित",
+     "brahmi": "𑀓𑀸𑀭𑀸𑀧𑀺𑀢"
+    },
+    {
+     "deva": "कट",
+     "brahmi": "𑀓𑀝"
+    },
+    {
+     "deva": "कटे",
+     "brahmi": "𑀓𑀝𑁂"
+    },
+    {
+     "deva": "कतं",
+     "brahmi": "𑀓𑀢𑀁"
+    },
+    {
+     "deva": "कलेति",
+     "brahmi": "𑀓𑀮𑁂𑀢𑀺"
+    },
+    {
+     "deva": "करोति",
+     "brahmi": "𑀓𑀭𑁄𑀢𑀺"
+    },
+    {
+     "deva": "करोते",
+     "brahmi": "𑀓𑀭𑁄𑀢𑁂"
+    },
+    {
+     "deva": "कलोति",
+     "brahmi": "𑀓𑀮𑁄𑀢𑀺"
+    },
+    {
+     "deva": "कटविय",
+     "brahmi": "𑀓𑀝𑀯𑀺𑀬"
+    },
+    {
+     "deva": "कतविय",
+     "brahmi": "𑀓𑀢𑀯𑀺𑀬"
+    }
+   ],
+   "hi": "किया, करवाया",
+   "en": "did, caused to be made",
+   "dhatu": {
+    "slp1": "qukfY",
+    "deva": "डुकृञ्",
+    "code": "08.0010",
+    "artha": "करणे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "उसपापिते",
+   "forms": [
+    {
+     "deva": "उसपापिते",
+     "brahmi": "𑀉𑀲𑀧𑀸𑀧𑀺𑀢𑁂"
+    },
+    {
+     "deva": "उसपापित",
+     "brahmi": "𑀉𑀲𑀧𑀸𑀧𑀺𑀢"
+    },
+    {
+     "deva": "उस्पापित",
+     "brahmi": "𑀉𑀲𑁆𑀧𑀸𑀧𑀺𑀢"
+    }
+   ],
+   "hi": "खड़ा करवाया (उत् + श्रि)",
+   "en": "caused to be raised (ut + śri)",
+   "dhatu": {
+    "slp1": "SriY",
+    "deva": "श्रिञ्",
+    "code": "01.1044",
+    "artha": "सेवायाम्"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "जाते",
+   "forms": [
+    {
+     "deva": "जाते",
+     "brahmi": "𑀚𑀸𑀢𑁂"
+    },
+    {
+     "deva": "जात",
+     "brahmi": "𑀚𑀸𑀢"
+    },
+    {
+     "deva": "जातो",
+     "brahmi": "𑀚𑀸𑀢𑁄"
+    }
+   ],
+   "hi": "उत्पन्न हुआ",
+   "en": "was born",
+   "dhatu": {
+    "slp1": "janI",
+    "deva": "जनी",
+    "code": "04.0044",
+    "artha": "प्रादुर्भावे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "आगाच",
+   "forms": [
+    {
+     "deva": "आगाच",
+     "brahmi": "𑀆𑀕𑀸𑀘"
+    },
+    {
+     "deva": "आगच",
+     "brahmi": "𑀆𑀕𑀘"
+    },
+    {
+     "deva": "आगछ",
+     "brahmi": "𑀆𑀕𑀙"
+    },
+    {
+     "deva": "आगम",
+     "brahmi": "𑀆𑀕𑀫"
+    },
+    {
+     "deva": "गछेयु",
+     "brahmi": "𑀕𑀙𑁂𑀬𑀼"
+    },
+    {
+     "deva": "गछति",
+     "brahmi": "𑀕𑀙𑀢𑀺"
+    }
+   ],
+   "hi": "आया, जाता है",
+   "en": "came, goes",
+   "dhatu": {
+    "slp1": "gamx",
+    "deva": "गमॢ",
+    "code": "01.1137",
+    "artha": "गतौ"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "महीयिते",
+   "forms": [
+    {
+     "deva": "महीयिते",
+     "brahmi": "𑀫𑀳𑀻𑀬𑀺𑀢𑁂"
+    },
+    {
+     "deva": "महीयित",
+     "brahmi": "𑀫𑀳𑀻𑀬𑀺𑀢"
+    },
+    {
+     "deva": "महियिते",
+     "brahmi": "𑀫𑀳𑀺𑀬𑀺𑀢𑁂"
+    }
+   ],
+   "hi": "पूजा की",
+   "en": "worshipped",
+   "dhatu": {
+    "slp1": "maha",
+    "deva": "मह",
+    "code": "01.0831",
+    "artha": "पूजायाम्"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "अभिसित",
+   "forms": [
+    {
+     "deva": "अभिसित",
+     "brahmi": "𑀅𑀪𑀺𑀲𑀺𑀢"
+    },
+    {
+     "deva": "अभिसितेन",
+     "brahmi": "𑀅𑀪𑀺𑀲𑀺𑀢𑁂𑀦"
+    },
+    {
+     "deva": "अभिसितस",
+     "brahmi": "𑀅𑀪𑀺𑀲𑀺𑀢𑀲"
+    }
+   ],
+   "hi": "अभिषिक्त (अभि + सिच्)",
+   "en": "consecrated (abhi + sic)",
+   "dhatu": {
+    "slp1": "zica",
+    "deva": "षिच",
+    "code": "06.0170",
+    "artha": "क्षरणे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "वढति",
+   "forms": [
+    {
+     "deva": "वढति",
+     "brahmi": "𑀯𑀠𑀢𑀺"
+    },
+    {
+     "deva": "वढिसति",
+     "brahmi": "𑀯𑀠𑀺𑀲𑀢𑀺"
+    },
+    {
+     "deva": "वढि",
+     "brahmi": "𑀯𑀠𑀺"
+    },
+    {
+     "deva": "वढिया",
+     "brahmi": "𑀯𑀠𑀺𑀬𑀸"
+    }
+   ],
+   "hi": "बढ़ता है",
+   "en": "grows",
+   "dhatu": {
+    "slp1": "vfDu",
+    "deva": "वृधु",
+    "code": "01.0863",
+    "artha": "वृद्धौ"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "पवतति",
+   "forms": [
+    {
+     "deva": "पवतति",
+     "brahmi": "𑀧𑀯𑀢𑀢𑀺"
+    },
+    {
+     "deva": "पवतिसति",
+     "brahmi": "𑀧𑀯𑀢𑀺𑀲𑀢𑀺"
+    },
+    {
+     "deva": "पवतितु",
+     "brahmi": "𑀧𑀯𑀢𑀺𑀢𑀼"
+    }
+   ],
+   "hi": "प्रवृत्त होता है",
+   "en": "proceeds",
+   "dhatu": {
+    "slp1": "vftu",
+    "deva": "वृतु",
+    "code": "01.0862",
+    "artha": "वर्तने"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "दिसति",
+   "forms": [
+    {
+     "deva": "दिसति",
+     "brahmi": "𑀤𑀺𑀲𑀢𑀺"
+    },
+    {
+     "deva": "देखति",
+     "brahmi": "𑀤𑁂𑀔𑀢𑀺"
+    },
+    {
+     "deva": "दखति",
+     "brahmi": "𑀤𑀔𑀢𑀺"
+    },
+    {
+     "deva": "देखिये",
+     "brahmi": "𑀤𑁂𑀔𑀺𑀬𑁂"
+    }
+   ],
+   "hi": "देखता है",
+   "en": "sees",
+   "dhatu": {
+    "slp1": "dfSir",
+    "deva": "दृशिर्",
+    "code": "01.1143",
+    "artha": "प्रेक्षणे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "सुनेयु",
+   "forms": [
+    {
+     "deva": "सुनेयु",
+     "brahmi": "𑀲𑀼𑀦𑁂𑀬𑀼"
+    },
+    {
+     "deva": "सुणेयु",
+     "brahmi": "𑀲𑀼𑀡𑁂𑀬𑀼"
+    },
+    {
+     "deva": "सुनातु",
+     "brahmi": "𑀲𑀼𑀦𑀸𑀢𑀼"
+    },
+    {
+     "deva": "सुसूसा",
+     "brahmi": "𑀲𑀼𑀲𑀽𑀲𑀸"
+    }
+   ],
+   "hi": "सुने",
+   "en": "should hear",
+   "dhatu": {
+    "slp1": "Sru",
+    "deva": "श्रु",
+    "code": "01.1092",
+    "artha": "श्रवणे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "पालयति",
+   "forms": [
+    {
+     "deva": "पालयति",
+     "brahmi": "𑀧𑀸𑀮𑀬𑀢𑀺"
+    },
+    {
+     "deva": "पालन",
+     "brahmi": "𑀧𑀸𑀮𑀦"
+    },
+    {
+     "deva": "पालनं",
+     "brahmi": "𑀧𑀸𑀮𑀦𑀁"
+    }
+   ],
+   "hi": "रक्षा करता है",
+   "en": "protects",
+   "dhatu": {
+    "slp1": "pAla",
+    "deva": "पाल",
+    "code": "10.0098",
+    "artha": "रक्षणे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "अनुसासति",
+   "forms": [
+    {
+     "deva": "अनुसासति",
+     "brahmi": "𑀅𑀦𑀼𑀲𑀸𑀲𑀢𑀺"
+    },
+    {
+     "deva": "अनुसासनं",
+     "brahmi": "𑀅𑀦𑀼𑀲𑀸𑀲𑀦𑀁"
+    },
+    {
+     "deva": "सासन",
+     "brahmi": "𑀲𑀸𑀲𑀦"
+    },
+    {
+     "deva": "सासने",
+     "brahmi": "𑀲𑀸𑀲𑀦𑁂"
+    }
+   ],
+   "hi": "अनुशासन करता है",
+   "en": "instructs",
+   "dhatu": {
+    "slp1": "SAsu",
+    "deva": "शासु",
+    "code": "02.0070",
+    "artha": "अनुशिष्टौ"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "विजित",
+   "forms": [
+    {
+     "deva": "विजित",
+     "brahmi": "𑀯𑀺𑀚𑀺𑀢"
+    },
+    {
+     "deva": "विजय",
+     "brahmi": "𑀯𑀺𑀚𑀬"
+    },
+    {
+     "deva": "विजयमते",
+     "brahmi": "𑀯𑀺𑀚𑀬𑀫𑀢𑁂"
+    },
+    {
+     "deva": "विजितसि",
+     "brahmi": "𑀯𑀺𑀚𑀺𑀢𑀲𑀺"
+    }
+   ],
+   "hi": "जीता हुआ",
+   "en": "conquered",
+   "dhatu": {
+    "slp1": "ji",
+    "deva": "जि",
+    "code": "01.0642",
+    "artha": "जये"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "आलभित",
+   "forms": [
+    {
+     "deva": "आलभित",
+     "brahmi": "𑀆𑀮𑀪𑀺𑀢"
+    },
+    {
+     "deva": "आरभित",
+     "brahmi": "𑀆𑀭𑀪𑀺𑀢"
+    },
+    {
+     "deva": "आलभितु",
+     "brahmi": "𑀆𑀮𑀪𑀺𑀢𑀼"
+    },
+    {
+     "deva": "आरभितु",
+     "brahmi": "𑀆𑀭𑀪𑀺𑀢𑀼"
+    },
+    {
+     "deva": "आलभियंति",
+     "brahmi": "𑀆𑀮𑀪𑀺𑀬𑀁𑀢𑀺"
+    }
+   ],
+   "hi": "वध करना (आ + रभ्)",
+   "en": "to slaughter (ā + rabh)",
+   "dhatu": {
+    "slp1": "raBa",
+    "deva": "रभ",
+    "code": "01.1129",
+    "artha": "राभस्ये"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "पजोहितविय",
+   "forms": [
+    {
+     "deva": "पजोहितविय",
+     "brahmi": "𑀧𑀚𑁄𑀳𑀺𑀢𑀯𑀺𑀬"
+    },
+    {
+     "deva": "पजोहितव्य",
+     "brahmi": "𑀧𑀚𑁄𑀳𑀺𑀢𑀯𑁆𑀬"
+    },
+    {
+     "deva": "पजोहितविये",
+     "brahmi": "𑀧𑀚𑁄𑀳𑀺𑀢𑀯𑀺𑀬𑁂"
+    }
+   ],
+   "hi": "आहुति देनी चाहिए (प्र + हु)",
+   "en": "should be sacrificed (pra + hu)",
+   "dhatu": {
+    "slp1": "hu",
+    "deva": "हु",
+    "code": "03.0001",
+    "artha": "दानादानयोः आदाने प्रीणने च"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "देति",
+   "forms": [
+    {
+     "deva": "देति",
+     "brahmi": "𑀤𑁂𑀢𑀺"
+    },
+    {
+     "deva": "ददाति",
+     "brahmi": "𑀤𑀤𑀸𑀢𑀺"
+    },
+    {
+     "deva": "दिंना",
+     "brahmi": "𑀤𑀺𑀁𑀦𑀸"
+    },
+    {
+     "deva": "दिना",
+     "brahmi": "𑀤𑀺𑀦𑀸"
+    },
+    {
+     "deva": "दिंने",
+     "brahmi": "𑀤𑀺𑀁𑀦𑁂"
+    }
+   ],
+   "hi": "देता है, दिया",
+   "en": "gives, was given",
+   "dhatu": {
+    "slp1": "qudAY",
+    "deva": "डुदाञ्",
+    "code": "03.0010",
+    "artha": "दाने"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "वसति",
+   "forms": [
+    {
+     "deva": "वसति",
+     "brahmi": "𑀯𑀲𑀢𑀺"
+    },
+    {
+     "deva": "वसेयु",
+     "brahmi": "𑀯𑀲𑁂𑀬𑀼"
+    },
+    {
+     "deva": "वसंति",
+     "brahmi": "𑀯𑀲𑀁𑀢𑀺"
+    }
+   ],
+   "hi": "रहता है",
+   "en": "lives",
+   "dhatu": {
+    "slp1": "vasa",
+    "deva": "वस",
+    "code": "01.1160",
+    "artha": "निवासे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "चलति",
+   "forms": [
+    {
+     "deva": "चलति",
+     "brahmi": "𑀘𑀮𑀢𑀺"
+    },
+    {
+     "deva": "चलेयु",
+     "brahmi": "𑀘𑀮𑁂𑀬𑀼"
+    },
+    {
+     "deva": "चरति",
+     "brahmi": "𑀘𑀭𑀢𑀺"
+    },
+    {
+     "deva": "चलितु",
+     "brahmi": "𑀘𑀮𑀺𑀢𑀼"
+    }
+   ],
+   "hi": "आचरण करता है",
+   "en": "acts, lives by",
+   "dhatu": {
+    "slp1": "cara",
+    "deva": "चर",
+    "code": "01.0640",
+    "artha": "गतौ भक्षणे च"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "निखमथ",
+   "forms": [
+    {
+     "deva": "निखमथ",
+     "brahmi": "𑀦𑀺𑀔𑀫𑀣"
+    },
+    {
+     "deva": "निखमितु",
+     "brahmi": "𑀦𑀺𑀔𑀫𑀺𑀢𑀼"
+    },
+    {
+     "deva": "निकमतु",
+     "brahmi": "𑀦𑀺𑀓𑀫𑀢𑀼"
+    },
+    {
+     "deva": "पकमे",
+     "brahmi": "𑀧𑀓𑀫𑁂"
+    },
+    {
+     "deva": "पकमितु",
+     "brahmi": "𑀧𑀓𑀫𑀺𑀢𑀼"
+    }
+   ],
+   "hi": "निकलना, उद्यम करना",
+   "en": "to go forth, to strive",
+   "dhatu": {
+    "slp1": "kramu",
+    "deva": "क्रमु",
+    "code": "01.0545",
+    "artha": "पादविक्षेपे"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "पसवति",
+   "forms": [
+    {
+     "deva": "पसवति",
+     "brahmi": "𑀧𑀲𑀯𑀢𑀺"
+    },
+    {
+     "deva": "पसवे",
+     "brahmi": "𑀧𑀲𑀯𑁂"
+    }
+   ],
+   "hi": "उत्पन्न करता है (पुण्य)",
+   "en": "produces (merit)",
+   "dhatu": {
+    "slp1": "zUN",
+    "deva": "षूङ्",
+    "code": "02.0025",
+    "artha": "प्राणिगर्भविमोचने"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "इछति",
+   "forms": [
+    {
+     "deva": "इछति",
+     "brahmi": "𑀇𑀙𑀢𑀺"
+    },
+    {
+     "deva": "इछा",
+     "brahmi": "𑀇𑀙𑀸"
+    },
+    {
+     "deva": "इछामि",
+     "brahmi": "𑀇𑀙𑀸𑀫𑀺"
+    },
+    {
+     "deva": "इछितविये",
+     "brahmi": "𑀇𑀙𑀺𑀢𑀯𑀺𑀬𑁂"
+    }
+   ],
+   "hi": "चाहता है",
+   "en": "wishes",
+   "dhatu": {
+    "slp1": "izu",
+    "deva": "इषु",
+    "code": "06.0078",
+    "artha": "इच्छायाम्"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "मंञति",
+   "forms": [
+    {
+     "deva": "मंञति",
+     "brahmi": "𑀫𑀁𑀜𑀢𑀺"
+    },
+    {
+     "deva": "मनति",
+     "brahmi": "𑀫𑀦𑀢𑀺"
+    },
+    {
+     "deva": "मञति",
+     "brahmi": "𑀫𑀜𑀢𑀺"
+    }
+   ],
+   "hi": "मानता है",
+   "en": "thinks",
+   "dhatu": {
+    "slp1": "mana",
+    "deva": "मन",
+    "code": "04.0073",
+    "artha": "ज्ञाने"
+   }
+  },
+  {
+   "cat": "dhatu",
+   "head": "लभति",
+   "forms": [
+    {
+     "deva": "लभति",
+     "brahmi": "𑀮𑀪𑀢𑀺"
+    },
+    {
+     "deva": "लभेयु",
+     "brahmi": "𑀮𑀪𑁂𑀬𑀼"
+    },
+    {
+     "deva": "लाभ",
+     "brahmi": "𑀮𑀸𑀪"
+    },
+    {
+     "deva": "लाभेसु",
+     "brahmi": "𑀮𑀸𑀪𑁂𑀲𑀼"
+    }
+   ],
+   "hi": "पाता है, लाभ",
+   "en": "obtains, gain",
+   "dhatu": {
+    "slp1": "qulaBaz",
+    "deva": "डुलभष्",
+    "code": "01.1130",
+    "artha": "प्राप्तौ"
+   }
+  }
+ ]
+}

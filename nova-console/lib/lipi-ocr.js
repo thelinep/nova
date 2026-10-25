@@ -15,6 +15,7 @@ const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 const scripts = require('./lipi-scripts');
 const gallery = require('./lipi-gallery');
+const analysis = require('./lipi-analysis');
 
 const ROOT = path.join(__dirname, '..');
 const READER = path.join(ROOT, 'tools', 'lipi-ocr', 'read.py');
@@ -94,7 +95,8 @@ function run(file) {
 async function read(body = {}) {
   if (body.gallery) {
     const it = gallery.item(String(body.gallery));
-    return run(path.join(ROOT, 'public', it.image));
+    const r = await run(path.join(ROOT, 'public', it.image));
+    return { ...r, analysis: analysis.analyse(r, it.variant) };
   }
   const m = /^data:image\/(png|jpe?g|webp);base64,(.+)$/s.exec(String(body.image || ''));
   if (!m) throw error('Send a gallery id or a PNG, JPEG or WebP image.');
@@ -102,7 +104,20 @@ async function read(body = {}) {
   if (buf.length > MAX_IMAGE) throw error('The image is larger than 15 MB.', 413);
   const tmp = path.join(os.tmpdir(), `lipi-ocr-${process.pid}-${Date.now()}.${m[1] === 'jpeg' ? 'jpg' : m[1]}`);
   fs.writeFileSync(tmp, buf);
-  try { return await run(tmp); } finally { try { fs.unlinkSync(tmp); } catch (_) { /* ignore */ } }
+  try { const r = await run(tmp); return { ...r, analysis: analysis.analyse(r) }; } finally { try { fs.unlinkSync(tmp); } catch (_) { /* ignore */ } }
 }
 
-module.exports = { status, read, readings, model, findPython, withDeva, _reset: () => { readingsCache = null; pyCache = null; } };
+/** The Brahmi report over the gallery readings (summary), or one picture's finds with their areas. */
+function report(id) {
+  const rep = analysis.report(readings().items || {}, require('./lipi-brahmi-gallery.json'));
+  if (!id) {
+    const items = Object.fromEntries(Object.entries(rep.items).map(([k, v]) => [k, { title: v.title, variant: v.variant, legible: v.legible, counts: v.counts }]));
+    return { ...rep, items };
+  }
+  const it = rep.items[id];
+  if (!it) throw error(`No report for ${id}.`, 404);
+  const r = readings().items[id];
+  return { id, ...it, lines: r.lines.map(l => ({ conf: l.conf, poly: l.poly, aksharas: l.aksharas })), labels: rep.labels, topics: rep.topics };
+}
+
+module.exports = { report, status, read, readings, model, findPython, withDeva, _reset: () => { readingsCache = null; pyCache = null; analysis._reset(); } };

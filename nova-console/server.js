@@ -1082,6 +1082,8 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/lipi\/convert$/, handler: async (req,res)=>{const b=await readJsonBody(req);sendJson(res,200,lipiScripts.convert(b.text,{scripts:b.scripts,hindi:!!b.hindi,halant:b.halant}));} },
   { method: 'GET', pattern: /^\/api\/lipi\/ocr$/, handler: async (_req,res)=>sendJson(res,200,lipiOcr.status()) },
   { method: 'POST', pattern: /^\/api\/lipi\/ocr\/read$/, handler: async (req,res)=>sendJson(res,200,await lipiOcr.read(await readJsonBody(req))) },
+  { method: 'GET', pattern: /^\/api\/lipi\/brahmi-report$/, handler: async (_req,res)=>sendJson(res,200,lipiOcr.report()) },
+  { method: 'GET', pattern: /^\/api\/lipi\/brahmi-report\/([a-z0-9-]+)$/, handler: async (_req,res,m)=>sendJson(res,200,lipiOcr.report(m[0])) },
   { method: 'GET', pattern: /^\/api\/lipi\/brahmi-gallery$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,lipiGallery.gallery({variant:q.get('variant')||'',q:q.get('q')||''}));} },
   { method: 'GET', pattern: /^\/api\/lipi\/brahmi-gallery\/([a-z0-9-]+)$/, handler: async (_req,res,m)=>sendJson(res,200,lipiGallery.item(m[0])) },
   { method: 'GET', pattern: /^\/api\/lipi\/os$/, handler: async (_req,res)=>sendJson(res,200,heritage.overview()) },

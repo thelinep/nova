@@ -34,17 +34,40 @@ class Reader:
         if np.median(a) > 0.5: a = 1 - a
         logp = self.sess.run(None, {'image': a[None, None]})[0][0]
         p = np.exp(logp); best = p.argmax(-1)
-        text, confs, prev = [], [], 0
+        text, confs, steps, prev = [], [], [], 0
         for t, k in enumerate(best):
-            if k != prev and k != 0: text.append(self.charset[k - 1]); confs.append(float(p[t, k]))
+            if k != prev and k != 0: text.append(self.charset[k - 1]); confs.append(float(p[t, k])); steps.append(t)
             prev = k
+        # where each character fired, in crop pixels (centre of its CTC step)
+        xs = [(t + 0.5) * self.stride * w / W for t in steps]
+        self.last_positions = xs
         return ''.join(text), (float(np.mean(confs)) if confs else 0.0)
+
+    MARKS = None
+    def aksharas(self, text, xs, width):
+        """Groups characters into aksharas and gives each an x-range in the line crop."""
+        if Reader.MARKS is None:
+            Reader.MARKS = {c for c in self.charset if 0x11000 <= ord(c) <= 0x11002 or 0x11038 <= ord(c) <= 0x11046}
+        groups = []
+        for ch, x in zip(text, xs):
+            if groups and (ch in Reader.MARKS or groups[-1][0].endswith('\U00011046')):
+                groups[-1][0] += ch; groups[-1][1].append(x)
+            else: groups.append([ch, [x]])
+        cents = [float(np.mean(g[1])) for g in groups]
+        out = []
+        for i, (g, c) in enumerate(zip(groups, cents)):
+            half = ((cents[1] - cents[0]) / 2 if len(cents) > 1 else width / 2)
+            x0 = (cents[i - 1] + c) / 2 if i else max(0.0, c - half)
+            x1 = (c + cents[i + 1]) / 2 if i + 1 < len(cents) else min(float(width), c + half)
+            out.append((g[0], x0, x1))
+        return out
 
     # --- page layout ---------------------------------------------------------------------------
     def lines(self, gray):
-        g = gray
+        g = gray; self.scale = 1.0
         if max(g.shape) > 1600:
-            s = 1600 / max(g.shape); g = cv2.resize(g, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
+            s = 1600 / max(g.shape); g = cv2.resize(g, None, fx=s, fy=s, interpolation=cv2.INTER_AREA); self.scale = s
+        self.M = np.array([[1, 0, 0], [0, 1, 0]], np.float64)
         clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
         e = clahe.apply(cv2.medianBlur(g, 3))
         best = None
@@ -74,6 +97,7 @@ class Reader:
             scores.append(np.var(r.sum(1).astype(np.float64)))
         ang = float(angles[int(np.argmax(scores))])
         M = cv2.getRotationMatrix2D((mask.shape[1] / 2, mask.shape[0] / 2), ang, 1)
+        self.M = M
         mask = cv2.warpAffine(mask, M, (mask.shape[1], mask.shape[0]))
         e_rot = cv2.warpAffine(e, M, (e.shape[1], e.shape[0]), borderMode=cv2.BORDER_REPLICATE)
         prof = mask.sum(1).astype(np.float64)
@@ -117,13 +141,25 @@ class Reader:
     def read(self, path):
         gray = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
         if gray is None: raise ValueError('cannot open ' + path)
+        H0, W0 = gray.shape
         boxes, pol, mh, e = self.lines(gray)
+        inv = cv2.invertAffineTransform(self.M)
+        def poly(x0, y0, x1, y1):
+            # rotated, scaled coordinates → original image, as fractions of width and height
+            pts = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], np.float64)
+            back = (inv[:, :2] @ pts.T).T + inv[:, 2]
+            back /= self.scale
+            return [[round(float(x) / W0, 4), round(float(y) / H0, 4)] for x, y in back]
         res = []
         for (x0, y0, x1, y1) in boxes[:40]:
             crop = e[y0:y1, x0:x1]
             if crop.size == 0 or crop.shape[1] < crop.shape[0]: continue
             text, conf = self.recognise(crop)
-            if text: res.append({'text': text, 'conf': round(conf, 3), 'box': [int(x0), int(y0), int(x1), int(y1)]})
+            if not text: continue
+            # each akshara as [text, start, end], start/end as fractions along the line (the line's polygon gives the rest)
+            cw = float(crop.shape[1])
+            aks = [[t, round(a / cw, 4), round(b / cw, 4)] for t, a, b in self.aksharas(text, self.last_positions, crop.shape[1])]
+            res.append({'text': text, 'conf': round(conf, 3), 'box': [int(x0), int(y0), int(x1), int(y1)], 'poly': poly(x0, y0, x1, y1), 'aksharas': aks})
         n = sum(len(r['text']) for r in res)
         confidence = round(sum(r['conf'] * len(r['text']) for r in res) / n, 3) if n else 0.0
         return {'lines': res, 'confidence': confidence, 'polarity': pol, 'letterHeight': mh}

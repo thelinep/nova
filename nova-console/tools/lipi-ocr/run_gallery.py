@@ -65,7 +65,7 @@ def main():
                'characters': sum(len(l['text']) for v in items.values() for l in v['lines']), 'seconds': round(time.time() - t0, 1)}
     json.dump({'createdAt': time.strftime('%Y-%m-%d'), 'threshold': THRESHOLD,
                'model': {'valCER': meta.get('valCER'), 'trainedOn': meta.get('trainedOn'), 'created': meta.get('created')},
-               'summary': summary, 'evaluation': evaluation, 'items': items}, open(out, 'w'), ensure_ascii=False, indent=1)
+               'summary': summary, 'evaluation': evaluation, 'items': items}, open(out, 'w'), ensure_ascii=False, separators=(',', ':'))
     print(json.dumps({'summary': summary, 'evaluation': evaluation}, ensure_ascii=False))
 
 

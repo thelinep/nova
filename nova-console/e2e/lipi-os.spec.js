@@ -145,11 +145,31 @@ test('Lipi OS: Brahmi gallery shows the machine reading of an inscription', asyn
   await page.locator('.nav-item[data-view="lipios"]').click();
   await page.locator('[data-lo-tab="gallery"]').click();
   await page.locator('.bg-tile[data-gi="lumbini"]').click();
-  await expect(page.locator('#bgDetail .bg-ocr')).toBeVisible();
+  await expect(page.locator('#bgDetail .bg-ocr').last()).toBeVisible();
   await expect(page.locator('#bgDetail .bg-pill')).toContainText('Draft reading');
   expect(await page.locator('#bgDetail .bg-lines li').count()).toBeGreaterThanOrEqual(4);
   await expect(page.locator('#bgDetail .bg-lines li').first().locator('.d')).not.toBeEmpty();
   await page.locator('#bgClose').click();
   await page.locator('.bg-tile[data-gi="bower"]').click();
   await expect(page.locator('#bgDetail')).toContainText('not reliable');
+});
+
+test('Lipi OS: Brahmi report with detected areas on the picture', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.locator('.nav-item[data-view="lipios"]').click();
+  await page.locator('[data-lo-tab="gallery"]').click();
+  await page.locator('.bg-tile[data-gi="lumbini"]').click();
+  await expect(page.locator('#bgDetail .bg-ov polygon').first()).toBeAttached();
+  const before = await page.locator('#bgDetail .bg-ov polygon').count();
+  await page.locator('[data-layer="akshar"]').click();
+  expect(await page.locator('#bgDetail .bg-ov polygon').count()).toBeGreaterThan(before);
+  await expect(page.locator('#bgDetail')).toContainText('धातुपाठ');
+  await page.locator('#bgDetail .bg-find').first().click();
+  await expect(page.locator('#bgDetail .bg-ov polygon.hl').first()).toBeAttached();
+  await page.locator('[data-gview="report"]').click();
+  await expect(page.locator('.bg-report')).toContainText('धातु');
+  await expect(page.locator('.bg-report')).toContainText('संज्ञा');
+  await page.locator('.bg-report [data-rgo="lumbini"]').first().click();
+  await expect(page.locator('#bgDetail')).toContainText('Lumbini');
 });

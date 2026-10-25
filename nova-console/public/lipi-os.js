@@ -46,6 +46,32 @@ const CSS = `
 .lo-res{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
 .lo-res .s{font-size:22px;overflow-wrap:anywhere}
 .lo-res .m{font-size:11px;color:var(--amber)}
+.bg-imgwrap{position:relative;width:100%}
+.bg-imgwrap img{display:block;width:100%;height:auto;max-height:none!important;object-fit:fill!important;border-radius:8px}
+.bg-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.bg-ov polygon{vector-effect:non-scaling-stroke;fill:none}
+.bg-ov .ak{stroke:#94a3b8;stroke-width:.75;stroke-opacity:.7}
+.bg-ov .f{stroke:var(--c);stroke-width:2;fill:var(--c);fill-opacity:.14;pointer-events:all;cursor:pointer}
+.bg-ov .f.poss{stroke-dasharray:4 3;fill-opacity:.06}
+.bg-ov .f.hl{stroke-width:4;fill-opacity:.35}
+.bg-layer i,.bg-fh i,.bg-rh i{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);margin-right:5px}
+.bg-fg{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:4px 0}
+.bg-fh{font-size:12px;font-weight:600;min-width:120px}
+.bg-find{background:none;border:1px dashed var(--line);border-radius:6px;padding:2px 7px;font-size:13px;color:var(--ink);cursor:pointer}
+.bg-find.sure{border-style:solid}
+.bg-find.on{border-color:var(--amber);background:var(--amber-soft)}
+.bg-report{display:grid;gap:10px;margin-top:10px}
+.bg-rcard{border:1px solid var(--line);border-left:3px solid var(--c);border-radius:8px;padding:10px 12px;min-width:0;overflow-x:auto}
+.bg-rh{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+.bg-rt{border-collapse:collapse;width:100%;font-size:13px;min-width:620px}
+.bg-rt th,.bg-rt td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.bg-rt th{color:var(--muted);font-weight:500}
+.bg-rt td.w{font-size:15px;white-space:nowrap}
+.bg-bars{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:3px 16px}
+.bg-bar{display:grid;grid-template-columns:28px 1fr 44px;gap:6px;align-items:center;font-size:14px}
+.bg-bar .bt{display:block;height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bg-bar .bv{display:block;height:100%;background:#94a3b8;border-radius:4px}
+.bg-bar .bn{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
 .bg-ocr{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
 .bg-pill{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted)}
 .bg-pill.ok{border-color:var(--amber-line);color:var(--ink);background:var(--amber-soft)}
@@ -149,7 +175,7 @@ const S = {
   chrono: { continent: '', category: '', from: -10000, to: 2026, data: null, sel: null },
   atlasSel: 0,
   let: { data: null, board: '', type: '', region: '', q: '', script: 'Deva', sel: 'क', autoplay: true },
-  gal: { data: null, variant: '', q: '', open: '', sort: 'date', ocr: null, fresh: {}, own: null, busy: '', ocrMsg: '' },
+  gal: { data: null, variant: '', q: '', open: '', sort: 'date', ocr: null, fresh: {}, own: null, busy: '', ocrMsg: '', view: 'grid', rep: null, repItem: {}, layers: null, hl: -1 },
   cj: { data: null, code: 'Brah', up: 'क', low: 'त', ov: null, dirty: false, status: '', busy: false, preview: '' },
 };
 try { const p = JSON.parse(localStorage.getItem('maataa.lipi') || '{}'); if (p.focus) S.focus = p.focus; if (p.study) S.study = p.study; } catch (_) { /* per-browser convenience only */ }
@@ -311,6 +337,43 @@ async function letters(el, deps, rerender) {
 const CJ_SCRIPTS = [['Brah', 'Brahmi+', 'Brah+'], ['Shrd', 'Sharada', 'Shrd'], ['Diak', 'Dives Akuru', 'Diak']];
 const SNAP = 30; // font units: how close a drag must come to an edge or the line to stick to it
 function cjOv(code) { const L = S.cj; if (!L.ov[code]) L.ov[code] = { pairs: {}, scale: {} }; return L.ov[code]; }
+const BG_COLORS = { akshar: '#94a3b8', sanyukta: '#84cc16', dhatu: '#ef6c3a', sangya: '#3b82f6', sarvanaam: '#a855f7', sankhya: '#f5b014', jyamiti: '#10b981', antariksh: '#06b6d4', anya: '#ec4899' };
+const bgKey = f => f.cat + '|' + (f.head || f.deva) + '|' + (f.read || '');
+function bgStrip(poly, t0, t1) {
+  const [tl, tr, br, bl] = poly, at = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+  return [at(tl, tr, t0), at(tl, tr, t1), at(bl, br, t1), at(bl, br, t0)];
+}
+/* The Brahmi report: every category over all gallery pictures, with where each word was found */
+function bgReport(rep, d, h) {
+  if (!rep) return '<p class="lo-note" style="margin-top:10px">The report is loading…</p>';
+  const title = id => (d.items.find(i => i.id === id) || {}).title || id;
+  const L = rep.labels, T = rep.topics || {};
+  const imgs = e => e.images.slice(0, 6).map(x => `<button class="lo-chip" data-rgo="${x.id}">${h(title(x.id))}${x.n > 1 ? ' ×' + x.n : ''}</button>`).join('') + (e.images.length > 6 ? `<span class="lo-note">+${e.images.length - 6}</span>` : '');
+  const table = (cat, rows, extra) => `<div class="bg-rcard" style="--c:${BG_COLORS[cat]}"><div class="bg-rh"><i></i><strong>${h(L[cat])}</strong><span class="lo-note">${rows.reduce((a, e) => a + e.sure, 0)} sure · ${rows.reduce((a, e) => a + e.possible, 0)} possible</span></div>
+    ${rows.length ? `<table class="bg-rt"><thead><tr><th>शब्द</th><th>अर्थ</th>${extra ? '<th>' + extra + '</th>' : ''}<th>पक्का / संभावित</th><th>चित्र</th></tr></thead><tbody>${rows.map(e => `<tr><td class="w">${h(e.key)}</td><td>${h(e.hi)}<br><span class="lo-note">${h(e.en)}</span></td>${extra ? `<td>${cat === 'dhatu' && e.dhatu ? '√' + h(e.dhatu.deva) + (e.dhatu.code ? '<br><span class="lo-note">धातुपाठ ' + h(e.dhatu.code) + ' · ' + h(e.dhatu.artha || '') + '</span>' : '') : h(T[e.topic] || '')}</td>` : ''}<td>${e.sure} / ${e.possible}</td><td><div class="lo-row">${imgs(e)}</div></td></tr>`).join('')}</tbody></table>` : '<p class="lo-note">Nothing found.</p>'}</div>`;
+  const C = rep.categories || {};
+  const conjAll = (C.sanyukta || []).filter(e => e.valid), conj = conjAll.filter(e => e.sure > 0);
+  const slips = (C.sanyukta || []).filter(e => !e.valid).reduce((a, e) => a + e.sure + e.possible, 0);
+  const cons = Object.entries(rep.totals.consonants).slice(0, 18), max = cons.length ? cons[0][1] : 1;
+  const legible = Object.values(rep.items).filter(i => i.legible).length;
+  return `<div class="bg-report">
+    <p class="lo-note">From the OCR readings of all ${Object.keys(rep.items).length} pictures (${legible} read clearly). <b>Sure</b> = exact spelling in a line read with at least ${Math.round(rep.sureConfidence * 100)}% confidence, in a script variant the model reads well. <b>Possible</b> = a lead to check. Words come from a list of Ashokan Prakrit vocabulary; verb forms are traced to their dhatu in Panini’s Dhatupatha.</p>
+    <div class="bg-rcard" style="--c:${BG_COLORS.akshar}"><div class="bg-rh"><i></i><strong>${h(L.akshar)}</strong><span class="lo-note">${rep.totals.letters} aksharas read in all</span></div>
+      <div class="bg-bars">${cons.map(([k, v]) => `<div class="bg-bar"><span class="bk">${h(k)}</span><span class="bt"><span class="bv" style="width:${Math.max(4, Math.round(v / max * 100))}%"></span></span><span class="bn">${v}</span></div>`).join('')}</div>
+      <p class="lo-note">Most frequent consonants across all readings (every line, so OCR noise is included).</p></div>
+    <div class="bg-rcard" style="--c:${BG_COLORS.sanyukta}"><div class="bg-rh"><i></i><strong>${h(L.sanyukta)}</strong><span class="lo-note">${conj.length} kinds in clearly read lines · ${conjAll.length - conj.length} more only in doubtful lines · ${slips} halant marks that do not form a conjunct (OCR slips)</span></div>
+      <div class="lo-row">${conj.slice(0, 40).map(e => `<button class="lo-chip" data-rgo="${e.images[0].id}" title="${e.sure} sure, ${e.possible} possible">${h(e.key)} · ${e.sure}</button>`).join('') || '<span class="lo-note">None.</span>'}</div>
+      <p class="lo-note">Ashokan Brahmi seldom writes conjuncts, so many of these are OCR mistakes. Only the sure ones come from clearly read lines.</p></div>
+    ${table('dhatu', C.dhatu || [], 'धातु')}
+    ${table('sangya', C.sangya || [])}
+    ${table('sarvanaam', C.sarvanaam || [])}
+    ${table('sankhya', C.sankhya || [])}
+    ${table('jyamiti', C.jyamiti || [])}
+    ${table('antariksh', C.antariksh || [])}
+    ${table('anya', C.anya || [], 'विषय')}
+  </div>`;
+}
+
 /* Brahmi gallery: original inscriptions and manuscripts with credits (lib/lipi-brahmi-gallery.json) */
 async function gallery(el, deps, rerender) {
   const h = deps.escapeHtml, G = S.gal;
@@ -321,6 +384,41 @@ async function gallery(el, deps, rerender) {
     && (!needle || [i.title, i.site, i.region, i.country, i.language, i.note, i.credit.author].join(' ').toLowerCase().includes(needle)));
   if (G.sort === 'place') items = items.slice().sort((a, b) => (a.country + a.region + a.site).localeCompare(b.country + b.region + b.site));
   const cur = d.items.find(i => i.id === G.open);
+  if (!G.layers) G.layers = new Set(['dhatu', 'sangya', 'sarvanaam', 'sankhya', 'jyamiti', 'antariksh', 'anya', 'sanyukta']);
+  if (G.view === 'report' && !G.rep) { G.rep = await deps.apiGet('/api/lipi/brahmi-report').catch(() => null); }
+  if (cur && !G.repItem[cur.id]) { G.repItem[cur.id] = 'loading'; deps.apiGet('/api/lipi/brahmi-report/' + cur.id).then(r => { G.repItem[cur.id] = r; rerender(); }).catch(() => { G.repItem[cur.id] = null; }); }
+  // the analysis of what is on screen: a fresh reading or one's own image brings its own
+  const repFor = id => G.fresh[id] && G.fresh[id].analysis ? { ...G.fresh[id].analysis, lines: G.fresh[id].lines, labels: (G.repItem[id] || {}).labels, topics: (G.repItem[id] || {}).topics } : (G.repItem[id] && G.repItem[id] !== 'loading' ? G.repItem[id] : null);
+  const LAB = (G.rep && G.rep.labels) || (Object.values(G.repItem).find(x => x && x.labels) || {}).labels || { akshar: 'अक्षर', dhatu: 'धातु', sanyukta: 'संयुक्त अक्षर', sangya: 'संज्ञा', sarvanaam: 'सर्वनाम', sankhya: 'संख्या', jyamiti: 'ज्यामिति और माप', antariksh: 'अंतरिक्ष', anya: 'अन्य विषय' };
+  const overlay = (rep, w, hgt) => {
+    if (!rep) return '';
+    let svg = '';
+    if (G.layers.has('akshar')) for (const l of rep.lines || []) if (l.poly) for (const a of l.aksharas || []) svg += `<polygon class="ak" points="${bgStrip(l.poly, a[1], a[2]).map(p => p.join(',')).join(' ')}"/>`;
+    rep.finds.forEach((f, i) => {
+      if (!f.area || !G.layers.has(f.cat) || (f.cat === 'sanyukta' && !f.valid)) return;
+      svg += `<polygon data-fi="${h(bgKey(f))}" class="f ${f.sure ? 'sure' : 'poss'} ${G.hl === bgKey(f) ? 'hl' : ''}" style="--c:${BG_COLORS[f.cat]}" points="${f.area.map(p => p.join(',')).join(' ')}"><title>${h(LAB[f.cat] + ': ' + (f.head || f.deva) + (f.hi ? ' — ' + f.hi : '') + (f.sure ? '' : ' (possible)'))}</title></polygon>`;
+    });
+    return `<svg class="bg-ov" viewBox="0 0 1 1" preserveAspectRatio="none">${svg}</svg>`;
+  };
+  const layerChips = rep => rep ? `<div class="lo-row" style="margin-top:6px">${['akshar', 'sanyukta', 'dhatu', 'sangya', 'sarvanaam', 'sankhya', 'jyamiti', 'antariksh', 'anya'].map(c => {
+      const n = c === 'akshar' ? rep.letters.total : rep.finds.filter(f => f.cat === c && (c !== 'sanyukta' || f.valid)).length;
+      return `<button class="lo-chip bg-layer" data-layer="${c}" aria-pressed="${G.layers.has(c)}" style="--c:${BG_COLORS[c]}"><i></i>${h(LAB[c])} · ${n}</button>`; }).join('')}</div>` : '<p class="lo-note">Detected areas are loading…</p>';
+  const findsList = rep => {
+    if (!rep) return '';
+    const groups = ['dhatu', 'sangya', 'sarvanaam', 'sankhya', 'jyamiti', 'antariksh', 'anya', 'sanyukta'].map(c => {
+      const m = new Map();
+      for (const f of rep.finds) if (f.cat === c && (c !== 'sanyukta' || f.valid)) {
+        const k = bgKey(f), g = m.get(k) || { f, n: 0, sure: false, k };
+        g.n++; g.sure = g.sure || f.sure; m.set(k, g);
+      }
+      return [c, [...m.values()]];
+    }).filter(([, l]) => l.length);
+    const lt = rep.letters;
+    return `<div class="bg-ocr"><div class="cap-section-label">इस चित्र में मिला · Found in this picture</div>
+      <p class="lo-note">अक्षर ${lt.total} · स्वर ${Object.values(lt.vowels).reduce((a, b) => a + b, 0)} · सबसे अधिक व्यंजन ${Object.entries(lt.consonants).slice(0, 6).map(([k, v]) => h(k) + ' ' + v).join(', ')}${lt.anusvara ? ' · अनुस्वार ' + lt.anusvara : ''}</p>
+      ${groups.length ? groups.map(([c, l]) => `<div class="bg-fg"><span class="bg-fh" style="--c:${BG_COLORS[c]}"><i></i>${h(LAB[c])}</span>${l.map(({ f, n, sure, k }) => `<button class="bg-find ${sure ? 'sure' : ''} ${G.hl === k ? 'on' : ''}" data-hl="${h(k)}" title="${sure ? 'Sure: exact spelling in a clearly read line' : 'Possible: check against a published reading'}">${h(f.read || f.deva)}${f.head && f.head !== f.read ? ` <span class="lo-note">→ ${h(f.head)}</span>` : ''}${f.hi ? ` <span class="lo-note">${h(f.hi)}</span>` : ''}${f.dhatu ? ` <span class="lo-note">√${h(f.dhatu.deva)}${f.dhatu.code ? ' (धातुपाठ ' + h(f.dhatu.code) + ', ' + h(f.dhatu.artha || '') + ')' : ''}</span>` : ''}${n > 1 ? ' <b>×' + n + '</b>' : ''}${sure ? '' : ' <span class="lo-note">?</span>'}</button>`).join('')}</div>`).join('') : '<p class="lo-note">No known words found in the lines read here.</p>'}
+      <p class="lo-note">Solid outline: sure (exact spelling, line read with at least ${Math.round(((G.rep && G.rep.sureConfidence) || 0.8) * 100)}% confidence). Dashed: possible. Words are matched against a list of Ashokan Prakrit vocabulary; OCR mistakes can make false finds.</p></div>`;
+  };
   const reading = (r, label) => {
     if (!r) return '<p class="lo-note">No machine reading yet.</p>';
     const pct = Math.round((r.confidence || 0) * 100);
@@ -336,11 +434,16 @@ async function gallery(el, deps, rerender) {
       <div class="lo-row" style="justify-content:space-between">
         <div class="lo-row"><button class="lo-chip" aria-pressed="${!G.variant}" data-gv="">All · ${d.total}</button>${Object.entries(d.variants).map(([k, l]) => `<button class="lo-chip" aria-pressed="${G.variant === k}" data-gv="${k}">${h(l)} · ${d.counts[k]}</button>`).join('')}</div>
         <div class="lo-row"><input id="bgQ" placeholder="Search place, language, ruler…" value="${h(G.q)}" style="${deps.FIELD};width:220px">
-          <select id="bgSort" style="${deps.FIELD}"><option value="date" ${G.sort === 'date' ? 'selected' : ''}>Oldest first</option><option value="place" ${G.sort === 'place' ? 'selected' : ''}>By place</option></select></div>
+          <select id="bgSort" style="${deps.FIELD}"><option value="date" ${G.sort === 'date' ? 'selected' : ''}>Oldest first</option><option value="place" ${G.sort === 'place' ? 'selected' : ''}>By place</option></select>
+          <button class="lo-chip" data-gview="grid" aria-pressed="${G.view === 'grid'}">Pictures</button><button class="lo-chip" data-gview="report" aria-pressed="${G.view === 'report'}">Brahmi report</button></div>
       </div>
+      ${G.view === 'report' ? bgReport(G.rep, d, h) : ''}
       ${cur ? `<div class="panel" style="padding:12px;margin-top:10px" id="bgDetail">
         <div class="bg-detail">
-          <div><img src="${h(cur.image)}" alt="${h(cur.title)}"><p class="lo-note" style="margin-top:6px">${credit(cur)}</p></div>
+          <div><div class="bg-imgwrap" style="max-width:${Math.round(560 * (cur.thumbW || 4) / (cur.thumbH || 3))}px"><img src="${h(cur.image)}" alt="${h(cur.title)}">${overlay(repFor(cur.id))}</div>
+            ${layerChips(repFor(cur.id))}
+            <p class="lo-note" style="margin-top:6px">${credit(cur)}</p>
+            ${findsList(repFor(cur.id))}</div>
           <div>
             <div class="lo-row" style="justify-content:space-between"><strong style="font-size:16px">${h(cur.title)}</strong><button class="btn btn-line" id="bgClose">Close</button></div>
             <p style="margin:8px 0">${h(cur.note)}</p>
@@ -362,7 +465,7 @@ async function gallery(el, deps, rerender) {
       <div class="lo-row" style="margin-top:10px"><label class="btn btn-line" style="cursor:pointer">Read Brahmi in your own image<input type="file" id="bgOwn" accept="image/png,image/jpeg,image/webp" hidden></label>
         <span class="lo-note">${G.ocr.python ? 'Runs on this computer with the Lipi OCR model.' : 'Needs the OCR tools once: double-click “Lipi - Install OCR.command” in brahmini/launchers.'}${G.ocr.evaluation && G.ocr.evaluation.lumbini ? ' Tested on the Lumbini inscription: ' + Math.round((1 - G.ocr.evaluation.lumbini.CER) * 100) + '% of characters right.' : ''}</span>
         ${G.busy === 'own' ? '<span class="lo-note">Reading…</span>' : ''}</div>
-      ${G.own ? `<div class="panel" style="padding:12px;margin-top:10px"><div class="bg-detail"><div><img src="${G.own.url}" alt="Your image"></div><div>${reading(G.own.result, 'Your image')}<button class="btn btn-line" id="bgOwnClose">Close</button></div></div></div>` : ''}
+      ${G.own ? `<div class="panel" style="padding:12px;margin-top:10px"><div class="bg-detail"><div><div class="bg-imgwrap"><img src="${G.own.url}" alt="Your image">${G.own.result && G.own.result.analysis ? overlay({ ...G.own.result.analysis, lines: G.own.result.lines }) : ''}</div>${G.own.result && G.own.result.analysis ? layerChips(G.own.result.analysis) + findsList(G.own.result.analysis) : ''}</div><div>${reading(G.own.result, 'Your image')}<button class="btn btn-line" id="bgOwnClose">Close</button></div></div></div>` : ''}
       <div class="bg-grid">${items.map(i => `<button class="bg-tile" data-gi="${i.id}" aria-pressed="${i.id === G.open}"><img loading="lazy" src="${h(i.image)}" alt=""><span class="t">${h(i.title)}<br><span class="d">${h(i.dateLabel)} · ${h(i.country === '—' ? i.site : i.country)}</span></span></button>`).join('') || '<p class="empty-hint">Nothing matches.</p>'}</div>
     </div>
     <div class="lo-grid2" style="margin-top:10px">
@@ -371,8 +474,13 @@ async function gallery(el, deps, rerender) {
       <div class="panel" style="padding:12px"><div class="cap-section-label">About these images</div><p class="lo-note" style="margin-top:6px">${h(d.notes)}</p><p class="lo-note">${h(d.source)}. Full credits: public/lipi-brahmi/CREDITS.md. Links open on the web; the images themselves are stored in Maataa and work offline.</p></div>
     </div>`;
   el.querySelectorAll('[data-gv]').forEach(b => b.onclick = () => { G.variant = b.dataset.gv; rerender(); });
-  el.querySelectorAll('[data-gi]').forEach(b => b.onclick = () => { G.open = G.open === b.dataset.gi ? '' : b.dataset.gi; rerender(); setTimeout(() => { const x = el.querySelector('#bgDetail'); if (x) x.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0); });
+  el.querySelectorAll('[data-gi]').forEach(b => b.onclick = () => { G.open = G.open === b.dataset.gi ? '' : b.dataset.gi; G.hl = -1; rerender(); setTimeout(() => { const x = el.querySelector('#bgDetail'); if (x) x.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0); });
   const close = el.querySelector('#bgClose'); if (close) close.onclick = () => { G.open = ''; G.ocrMsg = ''; rerender(); };
+  el.querySelectorAll('[data-gview]').forEach(b => b.onclick = () => { G.view = b.dataset.gview; rerender(); });
+  el.querySelectorAll('[data-layer]').forEach(b => b.onclick = () => { const c = b.dataset.layer; if (G.layers.has(c)) G.layers.delete(c); else G.layers.add(c); rerender(); });
+  el.querySelectorAll('[data-hl]').forEach(b => b.onclick = () => { const k = b.dataset.hl; G.hl = G.hl === k ? -1 : k; rerender(); });
+  el.querySelectorAll('.bg-ov [data-fi]').forEach(p => p.addEventListener('click', () => { const k = p.dataset.fi; G.hl = G.hl === k ? -1 : k; rerender(); }));
+  el.querySelectorAll('[data-rgo]').forEach(b => b.onclick = () => { G.open = b.dataset.rgo; G.view = 'grid'; G.hl = -1; rerender(); setTimeout(() => { const x = el.querySelector('#bgDetail'); if (x) x.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 0); });
   const again = el.querySelector('#bgReadAgain');
   if (again) again.onclick = async () => {
     G.busy = cur.id; G.ocrMsg = ''; rerender();
