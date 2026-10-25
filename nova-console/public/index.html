@@ -970,6 +970,11 @@ a.nav-item { color: inherit; text-decoration: none; }
       <button class="nav-item" data-view="lipi"><span data-lucide="languages"></span><span class="rail-text">Lipi</span></button>
       <button class="nav-item" data-view="brahmipad"><span data-lucide="notebook-pen"></span><span class="rail-text">Brahmi Notepad</span></button>
       <button class="nav-item" data-view="hkdm"><span data-lucide="box"></span><span class="rail-text">Lipi Tensor</span></button>
+      <button class="nav-item" data-view="lipios"><span data-lucide="globe"></span><span class="rail-text">Lipi OS</span></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label rail-text">Heritage</div>
+      <button class="nav-item" data-view="rakhigarhi"><span data-lucide="landmark"></span><span class="rail-text">Rakhigarhi</span></button>
     </div>
     <div class="nav-group">
       <div class="nav-label rail-text">Operations</div>
@@ -1120,6 +1125,8 @@ a.nav-item { color: inherit; text-decoration: none; }
       <section id="lipiView" class="view"><div class="view-pad"><!-- VIEW:lipi --></div></section>
       <section id="brahmipadView" class="view"><div class="view-pad"><!-- VIEW:brahmipad --></div></section>
       <section id="hkdmView" class="view"><div class="view-pad"><!-- VIEW:hkdm --></div></section>
+      <section id="lipiosView" class="view"><div class="view-pad"><!-- VIEW:lipios --></div></section>
+      <section id="rakhigarhiView" class="view"><div class="view-pad"><!-- VIEW:rakhigarhi --></div></section>
       <section id="radheyaView" class="view"><div class="view-pad"><!-- VIEW:radheya --></div></section>
       <!-- ===================== RETRIEVAL LAB ===================== -->
       <section id="mediaView" class="view"><div class="view-pad"><!-- VIEW:media --></div></section>
@@ -1324,8 +1331,8 @@ function getPrefs(){ return DB.preferences[0] || DEFAULT_PREFS; }
 function setPrefs(patch){ const p = {...getPrefs(), ...patch}; idbPut('preferences', p); return p; }
 
 const LANGUAGE_LABELS = {
-  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',radheya:'Radheya',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',charstudio:'Character Studio',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',install:'Install',settings:'Settings',help:'Help & Support'},
-  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',radheya:'राधेय',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',charstudio:'कैरेक्टर स्टूडियो',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',install:'इंस्टॉल',settings:'सेटिंग्स',help:'सहायता'},
+  en:{console:'Console',sessions:'Sessions',workspace:'Local Workspace',codingstudio:'Coding Studio',radheya:'Radheya',models:'Models',knowledge:'Knowledge',panini:'Ashtadhyayi',aai:'Maataa AAI',derivation:'Derivation',lipi:'Lipi',brahmipad:'Brahmi Notepad',hkdm:'Lipi Tensor',lipios:'Lipi OS',rakhigarhi:'Rakhigarhi',retrieval:'Retrieval Lab',automations:'Automations',evaluations:'Evaluations',skills:'Skills',mcp:'MCP Registry',agents:'Agents',workflows:'Workflows',neurons:'Neuron Factory',agentbrowser:'Agent Browser',charstudio:'Character Studio',voicestudio:'Voice Studio',collector:'Collector',graph:'Capability Graph',browser:'Provider Browser',runtime:'Runtime',trace:'Trace',git:'Git Updates',history:'Execution History',diagnostics:'Diagnostics',install:'Install',settings:'Settings',help:'Help & Support'},
+  hi:{console:'कंसोल',sessions:'सत्र',workspace:'स्थानीय कार्यक्षेत्र',codingstudio:'कोडिंग स्टूडियो',radheya:'राधेय',models:'मॉडल',knowledge:'ज्ञान',panini:'अष्टाध्यायी',aai:'माता AAI',derivation:'प्रक्रिया',lipi:'लिपि',brahmipad:'ब्राह्मी नोटपैड',hkdm:'लिपि टेंसर',lipios:'लिपि OS',rakhigarhi:'राखीगढ़ी',retrieval:'रिट्रीवल लैब',automations:'स्वचालन',evaluations:'मूल्यांकन',skills:'कौशल',mcp:'MCP रजिस्ट्री',agents:'एजेंट',workflows:'वर्कफ़्लो',neurons:'न्यूरॉन फ़ैक्टरी',agentbrowser:'एजेंट ब्राउज़र',charstudio:'कैरेक्टर स्टूडियो',voicestudio:'वॉइस स्टूडियो',collector:'कलेक्टर',graph:'क्षमता ग्राफ़',browser:'प्रदाता ब्राउज़र',runtime:'रनटाइम',trace:'ट्रेस',git:'गिट अपडेट',history:'निष्पादन इतिहास',diagnostics:'निदान',install:'इंस्टॉल',settings:'सेटिंग्स',help:'सहायता'},
 };
 const CREATE_LABELS = { en:{image:'Image', video:'Video', audio:'Audio', library:'Library'}, hi:{image:'छवि', video:'वीडियो', audio:'ऑडियो', library:'लाइब्रेरी'} };
 function applyAppearance(){
@@ -1735,7 +1742,7 @@ const PIPELINE = {
   cancelRequested:false, pauseRequested:false, paused:false, timer:null, abortController:null,
 };
 
-const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', codingstudio:'Coding Studio', radheya:'Radheya', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', media:'Media', boards:'Boards', timeline:'Timeline',
+const VIEW_LABELS = {console:'Console', sessions:'Sessions', workspace:'Local Workspace', codingstudio:'Coding Studio', radheya:'Radheya', models:'Models', knowledge:'Knowledge', panini:'Ashtadhyayi', aai:'Maataa AAI', derivation:'Derivation', lipi:'Lipi', brahmipad:'Brahmi Notepad', hkdm:'Lipi Tensor', lipios:'Lipi OS', rakhigarhi:'Rakhigarhi', media:'Media', boards:'Boards', timeline:'Timeline',
   retrieval:'Retrieval Lab', automations:'Automations', evaluations:'Evaluations',
   skills:'Skills', mcp:'MCP Registry', agents:'Agents', workflows:'Workflows', neurons:'Neuron Factory', agentbrowser:'Agent Browser', charstudio:'Character Studio', voicestudio:'Voice Studio', collector:'Collector', graph:'Capability Graph', browser:'Provider Browser', git:'Git Updates',
   runtime:'Runtime', trace:'Trace', history:'Execution History', diagnostics:'Diagnostics', install:'Install', settings:'Settings', help:'Help & Support'};
@@ -1798,7 +1805,7 @@ function showView(name){
   $('topbarViewLabel').textContent = (LANGUAGE_LABELS[getPrefs().language] || LANGUAGE_LABELS.en)[name] || VIEW_LABELS[name] || name;
   $('rail').classList.remove('open');
   const renderers = {
-    sessions:renderSessionsView, workspace:renderWorkspaceView, codingstudio:renderCodingStudioView, radheya:renderRadheyaView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
+    sessions:renderSessionsView, workspace:renderWorkspaceView, codingstudio:renderCodingStudioView, radheya:renderRadheyaView, models:renderModelsView, knowledge:renderKnowledgeView, panini:renderPaniniView, aai:renderAaiView, derivation:renderDerivationView, lipi:renderLipiView, lipios:renderLipiOsView, rakhigarhi:renderRakhigarhiView, brahmipad:renderBrahmiPadView, hkdm:renderHkdmView, media:renderMediaView, boards:renderBoardsView, timeline:renderTimelineView,
     retrieval:renderRetrievalView, automations:renderAutomationsView, evaluations:renderEvaluationsView,
     skills:renderSkillsView, mcp:renderMcpView, agents:renderAgentsView, workflows:renderWorkflowsView, neurons:renderNeuronFactoryView, agentbrowser:renderAgentBrowserView, charstudio:renderCharacterStudioView, voicestudio:renderVoiceStudioView, collector:renderCollectorView, graph:renderGraphView, browser:renderBrowserView,
     runtime:renderRuntimeView, trace:renderTraceView, git:renderGitView, history:renderHistoryView, diagnostics:renderDiagnosticsView, install:renderInstallView, settings:renderSettingsView, help:renderHelpView,
@@ -6021,12 +6028,25 @@ async function renderHkdmView(){
   $$('#hkdmView .hk-cell:not([disabled])').forEach(b=>b.onclick=async()=>{try{HK.sel={r:b.dataset.r,c:b.dataset.c};HK.recs=await paniniFetch('/api/hkdm/cell?'+hkQuery({...HK.filter,[HK.rows]:b.dataset.r,[HK.cols]:b.dataset.c}));renderHkdmView();setTimeout(()=>$('hkRecs')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}catch(e){toast(e.message);}});
 }
 
+let lipiOsMod = null, heritageMod = null;
+const loDeps = () => ({ apiGet, apiPost, toast, escapeHtml, FIELD: FIELD_STYLE, web: !!getPrefs().webAccess });
+async function renderLipiOsView(tab){
+  const pad=$('lipiosView').querySelector('.view-pad');
+  try { if (!lipiOsMod) lipiOsMod = await import(apiUrl('/lipi-os.js')); await lipiOsMod.renderLipiOS(pad, loDeps(), typeof tab === 'string' ? tab : undefined); }
+  catch (e) { pad.innerHTML = `<p class="empty-hint" style="color:var(--red)">Lipi OS could not load: ${escapeHtml(e.message)}</p>`; }
+}
+async function renderRakhigarhiView(tab){
+  const pad=$('rakhigarhiView').querySelector('.view-pad');
+  try { if (!heritageMod) heritageMod = await import(apiUrl('/heritage.js')); await heritageMod.renderRakhigarhi(pad, loDeps(), typeof tab === 'string' ? tab : undefined); }
+  catch (e) { pad.innerHTML = `<p class="empty-hint" style="color:var(--red)">The Rakhigarhi platform could not load: ${escapeHtml(e.message)}</p>`; }
+}
 async function renderLipiView(){
   const pad=$('lipiView').querySelector('.view-pad');
   const out=AAI.lipiOut, rows=[['devanagari','Devanagari',''],['iast','IAST',''],['slp1','SLP1','mono'],['brahmi','Brahmi',"font-family:'Noto Sans Brahmi',var(--font-sans)"],['kharoshthi','Kharoshthi (right to left)',"font-family:'Noto Sans Kharoshthi',var(--font-sans);direction:rtl"],['siddham','Siddham',"font-family:'Noto Sans Siddham',var(--font-sans)"]];
-  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · Lipi</span><h1 class="view-title">Lipi</h1><p class="view-desc">Type Devanagari, Brahmi or Siddham (Latin letters are read as SLP1) and see it in every script at once. The same conversion Guru uses, checked on all 3,983 sutras.</p></div></div>
+  pad.innerHTML=`<div class="view-head"><div><span class="eyebrow">AAI · Lipi</span><h1 class="view-title">Lipi</h1><p class="view-desc">Type Devanagari, Brahmi or Siddham (Latin letters are read as SLP1) and see it in every script at once. The same conversion Guru uses, checked on all 3,983 sutras.</p></div><button class="btn btn-line" type="button" id="lipiToOs">Twenty-five scripts in Lipi OS</button></div>
   <div class="panel" style="padding:14px"><textarea id="lipiText" aria-label="Text to convert" style="width:100%;min-height:80px;font-size:18px">${escapeHtml(AAI.lipi)}</textarea><button class="btn btn-amber" id="lipiGo" style="margin-top:8px">Convert</button></div>
   ${out?`<div style="margin-top:10px">${rows.map(([k,l,style])=>`<div class="panel panini-sutra"><span class="mono panini-sub" style="min-width:150px">${l}</span><div class="panini-text ${style==='mono'?'mono':''}" style="flex:1;${style==='mono'?'':style}">${escapeHtml(out[k])}</div><button class="btn btn-line lipi-copy" data-k="${k}">Copy</button></div>`).join('')}<p class="panini-sub" style="margin-top:8px">Kharoshthi has no ai/au: they are written as e/o plus the length mark (Guru convention), and its digits stay in Devanagari. If letters show as boxes, install the free Noto Sans Brahmi, Kharoshthi or Siddham font.</p></div>`:''}`;
+  $('lipiToOs').onclick=()=>{showView('lipios');renderLipiOsView('convert');};
   $('lipiGo').onclick=async()=>{AAI.lipi=$('lipiText').value;try{AAI.lipiOut=await aaiPost('/api/aai/lipi',{text:AAI.lipi});}catch(e){toast(e.message);}renderLipiView();};
   $$('.lipi-copy').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(out[b.dataset.k]);toast('Copied.');});
   if(!out){ try{AAI.lipiOut=await aaiPost('/api/aai/lipi',{text:AAI.lipi});renderLipiView();}catch(_){} }
@@ -8607,6 +8627,8 @@ const VIEW_HELP = {
   agentbrowser:'The separate, locked-down browser Maataa\'s agents use. Agents can only reach websites on the allowed list (example.com also covers www.example.com), every action is recorded, and halting Maataa closes every page. Opening internet pages needs Settings > Privacy > Allow network access. Try it opens a page yourself under the same rules.',
   aai:'Maataa AAI (Advanced Ancient Intelligence): rules derive and check, models propose, and nothing is called correct unless Panini\'s rules confirm it. Install the derivation engine here, ask questions whose sutra citations are checked, and open the Ashtadhyayi, Derivation and Lipi tools.',
   derivation:'Derive Sanskrit words step by step with Panini\'s rules: choose a root, tense or mood (lakara) and voice for verbs, or a stem and gender for nouns. Every step names the sutra that made it. Check a form to see whether the rules derive it.',
+  lipios:'Lipi OS, a language layer by Maataa: a Hindi welcome in twelve historic scripts, a converter for twenty-five scripts, the 69-record script registry, language courses and source catalogues, your reading desk, workshop plans, a multi-script newsroom, the Ashokan text atlas and a sourced chronology. A script is a writing system, not a language.',
+  rakhigarhi:'Rakhigarhi heritage platform (a concept): cited source notes, the seven mounds and twelve India sites as points (no boundaries), proposed activities and packages, a seven-day program, the two-day field visit with its call sheet and budgets, a provider registry with auto-matching, and synthetic 3D models. Drafts stay on this computer; nothing is booked or sent.',
   lipi:'Convert text between Devanagari, IAST, SLP1, Brahmi, Kharoshthi and Siddham. Type Devanagari, Brahmi, Siddham, or Latin letters read as SLP1.',
   panini:'Panini\'s Ashtadhyayi: all 3,983 sutras and the Dhatupatha\'s 2,229 roots. Type a number (6.1.77), a range (6.1.77-6.1.80), a pada (6.1) or words in any script, and choose the script to read in. Sutra numbers in Neuron Factory link here.',
   neurons:'Train very small, single-purpose models on this Mac: a tiny neural network from your examples, or a simulated quantum circuit. Create a blueprint, queue training, evaluate the result, then approve it. Your Ollama models are not changed.',

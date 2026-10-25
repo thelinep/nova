@@ -1,0 +1,2813 @@
+{
+ "format": "maataa.lipi-os.v1",
+ "provenance": {
+  "source": "Rakhigarhi Research Platform concept prototype · Lipi OS (Maataa)",
+  "url": "https://rrf-digital-heritage.hkfaduio.chatgpt.site/",
+  "captured": "2026-10-25",
+  "note": "Copied from the owner’s prototype. Concept and demo material stays labelled as such."
+ },
+ "tiers": {
+  "FLAGSHIP": "Flagship",
+  "PILOT": "Pilot",
+  "RESEARCH": "Research",
+  "EXHIBITION_ONLY": "Exhibition only"
+ },
+ "registry": [
+  {
+   "code": "Brah",
+   "name": "Brahmi",
+   "region": "South Asia",
+   "tier": "FLAGSHIP",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Khar",
+   "name": "Kharoshthi",
+   "region": "Northwest South Asia",
+   "tier": "FLAGSHIP",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Bhks",
+   "name": "Bhaiksuki",
+   "region": "South Asia",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Shrd",
+   "name": "Sharada",
+   "region": "Kashmir / Himalayan",
+   "tier": "FLAGSHIP",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Sidd",
+   "name": "Siddham",
+   "region": "South Asia / East Asia",
+   "tier": "FLAGSHIP",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Gran",
+   "name": "Grantha",
+   "region": "South India",
+   "tier": "FLAGSHIP",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Nand",
+   "name": "Nandinagari",
+   "region": "South India",
+   "tier": "FLAGSHIP",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Newa",
+   "name": "Newa",
+   "region": "Nepal",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Tirh",
+   "name": "Tirhuta / Mithilakshar",
+   "region": "Eastern India",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Takr",
+   "name": "Takri",
+   "region": "Western Himalayan",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Modi",
+   "name": "Modi",
+   "region": "Western India",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Kthi",
+   "name": "Kaithi",
+   "region": "North India",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Dogr",
+   "name": "Dogra",
+   "region": "Jammu / Western Himalayan",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Mahj",
+   "name": "Mahajani",
+   "region": "Northwest India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Khoj",
+   "name": "Khojki",
+   "region": "South Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Sind",
+   "name": "Khudawadi",
+   "region": "Sindh",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Mult",
+   "name": "Multani",
+   "region": "Punjab / Sindh",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Ahom",
+   "name": "Ahom",
+   "region": "Assam",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Tutg",
+   "name": "Tulu-Tigalari",
+   "region": "Southwest India",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Kawi",
+   "name": "Kawi",
+   "region": "Maritime Southeast Asia",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Tibt",
+   "name": "Tibetan",
+   "region": "Himalayan",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Marc",
+   "name": "Marchen",
+   "region": "Himalayan",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Phag",
+   "name": "Phags-pa",
+   "region": "Central / East Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Soyo",
+   "name": "Soyombo",
+   "region": "Mongolia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Zanb",
+   "name": "Zanabazar Square",
+   "region": "Mongolia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Diak",
+   "name": "Dives Akuru",
+   "region": "Maldives",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Cakm",
+   "name": "Chakma",
+   "region": "Eastern South Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Mtei",
+   "name": "Meetei Mayek",
+   "region": "Manipur",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Lepc",
+   "name": "Lepcha",
+   "region": "Himalayan",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Limb",
+   "name": "Limbu",
+   "region": "Himalayan",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Tglg",
+   "name": "Tagalog / Baybayin",
+   "region": "Philippines",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Hano",
+   "name": "Hanunoo",
+   "region": "Philippines",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Buhd",
+   "name": "Buhid",
+   "region": "Philippines",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Tagb",
+   "name": "Tagbanwa",
+   "region": "Philippines",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Khmr",
+   "name": "Khmer",
+   "region": "Southeast Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Mymr",
+   "name": "Myanmar",
+   "region": "Southeast Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Thai",
+   "name": "Thai",
+   "region": "Southeast Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Laoo",
+   "name": "Lao",
+   "region": "Southeast Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Bali",
+   "name": "Balinese",
+   "region": "Indonesia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Java",
+   "name": "Javanese",
+   "region": "Indonesia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Sund",
+   "name": "Sundanese",
+   "region": "Indonesia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Batk",
+   "name": "Batak",
+   "region": "Indonesia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Bugi",
+   "name": "Buginese",
+   "region": "Indonesia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Rjng",
+   "name": "Rejang",
+   "region": "Indonesia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Cham",
+   "name": "Cham",
+   "region": "Southeast Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Sinh",
+   "name": "Sinhala",
+   "region": "Sri Lanka",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Asok",
+   "name": "Ashokan Brahmi",
+   "region": "South Asia",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "TamlB",
+   "name": "Tamil-Brahmi",
+   "region": "South India / Sri Lanka",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Bhat",
+   "name": "Bhattiprolu Brahmi",
+   "region": "South India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "SlnB",
+   "name": "Sri Lankan Brahmi",
+   "region": "Sri Lanka",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Gupt",
+   "name": "Gupta",
+   "region": "North India",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Kutil",
+   "name": "Kutila",
+   "region": "North India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "PrNg",
+   "name": "Proto-Nagari",
+   "region": "North India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Pall",
+   "name": "Pallava",
+   "region": "South India / Southeast Asia",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Kadm",
+   "name": "Kadamba",
+   "region": "South India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Chlk",
+   "name": "Chalukya",
+   "region": "South India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Kali",
+   "name": "Kalinga",
+   "region": "Eastern India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Gaud",
+   "name": "Gaudi",
+   "region": "Eastern India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Ranj",
+   "name": "Ranjana",
+   "region": "Nepal / Himalayan",
+   "tier": "PILOT",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "PrcN",
+   "name": "Prachalit Nepal",
+   "region": "Nepal",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Vatt",
+   "name": "Vatteluttu",
+   "region": "South India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Kole",
+   "name": "Kolezhuthu",
+   "region": "South India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "OKnd",
+   "name": "Old Kannada",
+   "region": "South India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "OTel",
+   "name": "Old Telugu",
+   "region": "South India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "BoxB",
+   "name": "Box-headed Brahmi",
+   "region": "Central / South Asia",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "JNag",
+   "name": "Jain Nagari",
+   "region": "Western / North India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "JDev",
+   "name": "Jain Devanagari manuscript style",
+   "region": "Western / North India",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Land",
+   "name": "Landa tradition",
+   "region": "Punjab / Sindh",
+   "tier": "RESEARCH",
+   "exhibitionOnly": false
+  },
+  {
+   "code": "Inds",
+   "name": "Indus / Harappan symbols",
+   "region": "Indus region",
+   "tier": "EXHIBITION_ONLY",
+   "exhibitionOnly": true
+  }
+ ],
+ "studyLanguages": [
+  {
+   "id": "Hindi",
+   "name": "Hindi",
+   "native": "हिन्दी",
+   "lang": "hi"
+  },
+  {
+   "id": "Sanskrit",
+   "name": "Sanskrit",
+   "native": "संस्कृतम्",
+   "lang": "sa"
+  },
+  {
+   "id": "Pali",
+   "name": "Pāli",
+   "native": "पालि",
+   "lang": "pi"
+  },
+  {
+   "id": "Prakrit",
+   "name": "Prakrit",
+   "native": "प्राकृतम्",
+   "lang": "pra"
+  },
+  {
+   "id": "Classical Tamil",
+   "name": "Classical Tamil",
+   "native": "தமிழ்",
+   "lang": "ta"
+  },
+  {
+   "id": "Gandhari",
+   "name": "Gāndhārī",
+   "native": "Gāndhārī",
+   "lang": "en"
+  },
+  {
+   "id": "Classical Tibetan",
+   "name": "Classical Tibetan",
+   "native": "བོད་སྐད",
+   "lang": "bo"
+  }
+ ],
+ "welcomeReference": [
+  {
+   "id": "Brah",
+   "label": "Brahmi",
+   "direction": "Left to right",
+   "rendering": "𑀆𑀧𑁆𑀓𑀸 𑀲𑁆𑀯𑀸𑀕𑀢 𑀳𑁃"
+  },
+  {
+   "id": "Khar",
+   "label": "Kharoshthi",
+   "direction": "Right to left",
+   "rendering": "𐨀𐨌𐨤𐨿𐨐𐨌 𐨯𐨿𐨬𐨌𐨒𐨟 𐨱𐨅"
+  },
+  {
+   "id": "Bhks",
+   "label": "Bhaiksuki",
+   "direction": "Left to right",
+   "rendering": "𑰁𑰢𑰿𑰎𑰯 𑰭𑰿𑰪𑰯𑰐𑰝 𑰮𑰹"
+  },
+  {
+   "id": "Shrd",
+   "label": "Sharada",
+   "direction": "Left to right",
+   "rendering": "𑆄𑆥𑇀𑆑𑆳 𑆱𑇀𑆮𑆳𑆓𑆠 𑆲𑆽"
+  },
+  {
+   "id": "Sidd",
+   "label": "Siddham",
+   "direction": "Left to right",
+   "rendering": "𑖁𑖢𑖿𑖎𑖯 𑖭𑖿𑖪𑖯𑖐𑖝 𑖮𑖹"
+  },
+  {
+   "id": "Gran",
+   "label": "Grantha",
+   "direction": "Left to right",
+   "rendering": "𑌆𑌪𑍍𑌕𑌾 𑌸𑍍𑌵𑌾𑌗𑌤 𑌹𑍈"
+  },
+  {
+   "id": "Nand",
+   "label": "Nandinagari",
+   "direction": "Left to right",
+   "rendering": "𑦡𑧂𑧠𑦮𑧑 𑧍𑧠𑧊𑧑𑦰𑦽 𑧎𑧛"
+  },
+  {
+   "id": "Newa",
+   "label": "Newa",
+   "direction": "Left to right",
+   "rendering": "𑐁𑐥𑑂𑐎𑐵 𑐳𑑂𑐰𑐵𑐐𑐟 𑐴𑐿"
+  },
+  {
+   "id": "Tirh",
+   "label": "Tirhuta / Mithilakshar",
+   "direction": "Left to right",
+   "rendering": "𑒂𑒣𑓂𑒏𑒰 𑒮𑓂𑒫𑒰𑒑𑒞 𑒯𑒻"
+  },
+  {
+   "id": "Takr",
+   "label": "Takri",
+   "direction": "Left to right",
+   "rendering": "𑚁𑚞𑚶𑚊𑚭 𑚨𑚶𑚦𑚭𑚌𑚙 𑚩𑚳"
+  },
+  {
+   "id": "Modi",
+   "label": "Modi",
+   "direction": "Left to right",
+   "rendering": "𑘁𑘢𑘿𑘎𑘰 𑘭𑘿𑘪𑘰𑘐𑘝 𑘮𑘺"
+  },
+  {
+   "id": "Kthi",
+   "label": "Kaithi",
+   "direction": "Left to right",
+   "rendering": "𑂄𑂣𑂹𑂍𑂰 𑂮𑂹𑂫𑂰𑂏𑂞 𑂯𑂶"
+  }
+ ],
+ "newsroom": {
+  "languages": [
+   {
+    "id": "Sanskrit",
+    "label": "Sanskrit",
+    "scripts": [
+     {
+      "id": "Brah",
+      "name": "Brahmi"
+     },
+     {
+      "id": "Deva",
+      "name": "Devanagari"
+     },
+     {
+      "id": "Latn",
+      "name": "Roman"
+     }
+    ]
+   },
+   {
+    "id": "Hindi",
+    "label": "Hindi",
+    "scripts": [
+     {
+      "id": "Brah",
+      "name": "Brahmi"
+     },
+     {
+      "id": "Deva",
+      "name": "Devanagari"
+     },
+     {
+      "id": "Latn",
+      "name": "Roman"
+     }
+    ]
+   },
+   {
+    "id": "Prakrit",
+    "label": "Prakrit",
+    "scripts": [
+     {
+      "id": "Brah",
+      "name": "Brahmi"
+     },
+     {
+      "id": "Deva",
+      "name": "Devanagari"
+     },
+     {
+      "id": "Latn",
+      "name": "Roman"
+     }
+    ]
+   },
+   {
+    "id": "Pali",
+    "label": "Pāli",
+    "scripts": [
+     {
+      "id": "Brah",
+      "name": "Brahmi"
+     },
+     {
+      "id": "Khar",
+      "name": "Kharoshthi"
+     },
+     {
+      "id": "Deva",
+      "name": "Devanagari"
+     },
+     {
+      "id": "Latn",
+      "name": "Roman"
+     }
+    ]
+   }
+  ],
+  "stories": [
+   {
+    "id": "script-records",
+    "theme": "Scripts & languages",
+    "title": "Keep language and script records distinct",
+    "body": "Editorial demo copy: a newspaper edition can hold language, writing-system, source, and review metadata as separate fields."
+   },
+   {
+    "id": "field-notes",
+    "theme": "Field research",
+    "title": "A field note needs its evidence trail",
+    "body": "Editorial demo copy: record the source, observer, date, and uncertainty for each note before it enters a reviewed edition."
+   },
+   {
+    "id": "water-research",
+    "theme": "Water & climate",
+    "title": "Compare historical records with current measurements",
+    "body": "Editorial demo copy: present historical interpretation and modern measurement as separate evidence, then explain their limits."
+   },
+   {
+    "id": "digital-preservation",
+    "theme": "Digital preservation",
+    "title": "Preserve the source beside the transcription",
+    "body": "Editorial demo copy: keep a stable source reference, transcription status, script profile, and review notes with each digital text."
+   }
+  ],
+  "themes": [
+   {
+    "id": "heritage",
+    "name": "Heritage Ledger",
+    "accent": "#d9a86c",
+    "surface": "#29241c",
+    "texture": "ledger"
+   },
+   {
+    "id": "field",
+    "name": "Field Notebook",
+    "accent": "#9dbb82",
+    "surface": "#202921",
+    "texture": "field"
+   },
+   {
+    "id": "research",
+    "name": "Research Bulletin",
+    "accent": "#8dbad2",
+    "surface": "#1d2932",
+    "texture": "research"
+   },
+   {
+    "id": "modern",
+    "name": "Modern Rural",
+    "accent": "#d78f66",
+    "surface": "#30231f",
+    "texture": "modern"
+   }
+  ],
+  "views": [
+   {
+    "id": "multi",
+    "label": "Multilingual"
+   },
+   {
+    "id": "debug",
+    "label": "Debugged view"
+   },
+   {
+    "id": "glue",
+    "label": "Glue view"
+   },
+   {
+    "id": "vector",
+    "label": "3D vector view"
+   }
+  ]
+ },
+ "courses": [
+  {
+   "id": "sanskrit-nalanda",
+   "language": "Sanskrit",
+   "title": "Certificate of Proficiency in Sanskrit Language",
+   "provider": "Nalanda University",
+   "format": "Online university course · one semester",
+   "status": "Provider listing; check the next intake before applying.",
+   "url": "https://nalandauniv.edu.in/short-term-courses/certificate/sanskrit/",
+   "sourceLabel": "Nalanda University course page",
+   "focus": "Foundational grammar, simple sentences, reading, writing, and speaking."
+  },
+  {
+   "id": "pali-ocbs",
+   "language": "Pali",
+   "title": "Online Pali Courses · Levels 1–3",
+   "provider": "Oxford Centre for Buddhist Studies",
+   "format": "Self-paced online course",
+   "status": "Provider page says Levels 1–3 are available; check the course portal for current access.",
+   "url": "https://ocbs.org/online-pali-course-levels-1-3/",
+   "sourceLabel": "OCBS course page",
+   "focus": "Recorded teaching, exercises, vocabulary, and guided Pali study."
+  },
+  {
+   "id": "pali-nalanda",
+   "language": "Pali",
+   "title": "Certificate of Proficiency in Pali",
+   "provider": "Nalanda University",
+   "format": "Online university course · one semester",
+   "status": "Provider listing; check the next intake before applying.",
+   "url": "https://nalandauniv.edu.in/short-term-courses/certificate/pali/",
+   "sourceLabel": "Nalanda University course page",
+   "focus": "Grammar, sentence reading, translation, pronunciation, and short text practice."
+  },
+  {
+   "id": "prakrit-isjs",
+   "language": "Prakrit",
+   "title": "Fundamentals of Prakrit Language and Grammar",
+   "provider": "International School for Jain Studies",
+   "format": "Online certificate course · one month",
+   "status": "The provider page lists dates as TBA; verify schedule and prerequisites.",
+   "url": "https://isjs.in/courses/prakrit-language/",
+   "sourceLabel": "ISJS course page",
+   "focus": "Middle Indo-Aryan language and grammar with assignments; the provider notes Devanagari familiarity as a prerequisite."
+  },
+  {
+   "id": "tamil-cict",
+   "language": "Classical Tamil",
+   "title": "Classical Tamil Online",
+   "provider": "Central Institute of Classical Tamil",
+   "format": "Web-based course · 120 instructional hours",
+   "status": "Official course description; confirm current enrollment availability with CICT.",
+   "url": "https://cict.in/cictinneww/major-projects/",
+   "sourceLabel": "CICT course description",
+   "focus": "Ancient Tamil literature: Akam, Puṟam, epics, and Aṟam, organized into modules and lessons."
+  },
+  {
+   "id": "tibetan-soas",
+   "language": "Classical Tibetan",
+   "title": "Tibetan (Classical) Beginners · Online",
+   "provider": "SOAS University of London",
+   "format": "Online short course · term-based",
+   "status": "Course dates are published through the provider timetable and change by term.",
+   "url": "https://www.soas.ac.uk/tibetan-language-courses",
+   "sourceLabel": "SOAS course page",
+   "focus": "Beginner instruction in Classical Tibetan; follow the current timetable for dates."
+  }
+ ],
+ "catalogs": [
+  {
+   "id": "gretil",
+   "name": "GRETIL · Göttingen Register of Electronic Texts in Indian Languages",
+   "kind": "Electronic text collection",
+   "kindKey": "catalogElectronicTextCollection",
+   "description": "Search and browse electronic texts. The collection notes that source and text quality vary between contributions.",
+   "url": "https://gretil.sub.uni-goettingen.de/",
+   "sourceLabel": "GRETIL collection"
+  },
+  {
+   "id": "dsal",
+   "name": "Digital South Asia Library · University of Chicago",
+   "kind": "Digital research library",
+   "kindKey": "catalogDigitalResearchLibrary",
+   "description": "Digital materials for reference and research on South Asia.",
+   "url": "https://dsal.uchicago.edu/",
+   "sourceLabel": "DSAL library"
+  },
+  {
+   "id": "bdrc",
+   "name": "Buddhist Digital Resource Center · BUDA",
+   "kind": "Digital text archive",
+   "kindKey": "catalogDigitalTextArchive",
+   "description": "A digital archive for Buddhist texts, with searchable catalog and text resources.",
+   "url": "https://library.bdrc.io/",
+   "sourceLabel": "BDRC library"
+  },
+  {
+   "id": "tamil-digital-library",
+   "name": "Tamil Digital Library · Tamil Virtual Academy",
+   "kind": "Digital library",
+   "kindKey": "catalogDigitalLibrary",
+   "description": "Tamil books, periodicals, manuscripts, photographs, and audiovisual materials.",
+   "url": "https://tamildigitallibrary.in/",
+   "sourceLabel": "Tamil Digital Library"
+  }
+ ],
+ "workshops": [
+  {
+   "id": "lipi-orientation",
+   "track": "Orientation · 01",
+   "title": "Lipi OS Orientation",
+   "subtitle": "Find your way around language, script, and study tools.",
+   "runtimeMinutes": 90,
+   "format": "Guided introduction",
+   "audience": "New learners and facilitators",
+   "objective": "Introduce the Lipi OS learning areas and help participants set a study focus without conflating a language with its writing system.",
+   "sessions": [
+    {
+     "title": "Welcome and learning goals",
+     "minutes": 10,
+     "activity": "Set expectations and identify what participants want to learn."
+    },
+    {
+     "title": "Navigate the Lipi OS concept",
+     "minutes": 15,
+     "activity": "Tour the language selector, script registry, course links, and reference areas."
+    },
+    {
+     "title": "Choose a study focus",
+     "minutes": 20,
+     "activity": "Select a language and a script record; note where the two differ."
+    },
+    {
+     "title": "Read a study outline",
+     "minutes": 20,
+     "activity": "Examine context, writing conventions, cited examples, and review status."
+    },
+    {
+     "title": "Try a guided learning task",
+     "minutes": 15,
+     "activity": "Complete a short observation and reflection exercise using reviewed material."
+    },
+    {
+     "title": "Review and next steps",
+     "minutes": 10,
+     "activity": "Record open questions and a personal follow-up goal."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Language and script are clearly distinguished in labels and examples.",
+     "Navigation, selected-language state, and learning links work with keyboard and assistive technology.",
+     "All cited examples show source and review status."
+    ],
+    "evidence": "A learner study goal and one source-linked observation."
+   }
+  },
+  {
+   "id": "language-versus-script",
+   "track": "Foundations · 02",
+   "title": "Language vs. Script",
+   "subtitle": "Separate speech, language identity, and writing systems.",
+   "runtimeMinutes": 90,
+   "format": "Concept session + sorting exercise",
+   "audience": "Learners, educators, and content editors",
+   "objective": "Build a shared vocabulary for languages, scripts, transliteration, transcription, and historical writing styles.",
+   "sessions": [
+    {
+     "title": "Opening examples",
+     "minutes": 10,
+     "activity": "Compare several ways a language or phrase can be represented."
+    },
+    {
+     "title": "Language concepts",
+     "minutes": 20,
+     "activity": "Discuss spoken and written forms, language varieties, and naming choices."
+    },
+    {
+     "title": "Script concepts",
+     "minutes": 20,
+     "activity": "Identify writing systems, script families, direction, and historical styles."
+    },
+    {
+     "title": "Representation terms",
+     "minutes": 20,
+     "activity": "Distinguish translation, transcription, transliteration, and rendering."
+    },
+    {
+     "title": "Classify sample records",
+     "minutes": 15,
+     "activity": "Sort reviewed examples into language, script, style, and encoding fields."
+    },
+    {
+     "title": "Recap and questions",
+     "minutes": 5,
+     "activity": "Capture terms that need clarification or specialist review."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Language, script, style, direction, and encoding fields are not conflated.",
+     "Terms for translation, transcription, transliteration, and rendering are consistently defined.",
+     "Classification examples are reviewed and include an answer key."
+    ],
+    "evidence": "A completed classification exercise with corrections noted."
+   }
+  },
+  {
+   "id": "explore-a-script",
+   "track": "Script study · 03",
+   "title": "Explore a Script",
+   "subtitle": "Read a script record through form, direction, and evidence.",
+   "runtimeMinutes": 120,
+   "format": "Source-led guided lab",
+   "audience": "Beginner learners",
+   "objective": "Practice observing a selected script using cited, reviewed examples while making uncertainty and historical context visible.",
+   "sessions": [
+    {
+     "title": "Scope and source boundary",
+     "minutes": 10,
+     "activity": "Choose an approved script record and identify what the session can and cannot claim."
+    },
+    {
+     "title": "Script profile",
+     "minutes": 20,
+     "activity": "Review region, period labels, script name, and language distinctions."
+    },
+    {
+     "title": "Direction and visual forms",
+     "minutes": 25,
+     "activity": "Observe writing direction and recurring visual features in reviewed samples."
+    },
+    {
+     "title": "Read a cited example",
+     "minutes": 25,
+     "activity": "Work through a short example with references and specialist-approved notes."
+    },
+    {
+     "title": "Compare editions or styles",
+     "minutes": 20,
+     "activity": "Record visible variation without treating it as a universal rule."
+    },
+    {
+     "title": "Reflection and open questions",
+     "minutes": 20,
+     "activity": "Write an observation, a source question, and a next research step."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Script name, region, period, direction, and language relationship cite reliable sources.",
+     "Examples identify edition or object context and receive qualified review.",
+     "Uncertain or disputed readings are marked instead of silently resolved."
+    ],
+    "evidence": "A short annotated observation with citation and an open research question."
+   }
+  },
+  {
+   "id": "reading-writing-practice",
+   "track": "Practice studio · 04",
+   "title": "Reading and Writing Practice",
+   "subtitle": "Build a careful first practice routine for a reviewed script.",
+   "runtimeMinutes": 120,
+   "format": "Instructor-led practice",
+   "audience": "New and returning learners",
+   "objective": "Introduce a repeatable practice sequence using approved fonts, examples, and learning materials for one selected script.",
+   "sessions": [
+    {
+     "title": "Materials and setup",
+     "minutes": 10,
+     "activity": "Check the approved font, keyboard or worksheet, and access needs."
+    },
+    {
+     "title": "Sound and form orientation",
+     "minutes": 20,
+     "activity": "Introduce only the reviewed signs and values included in the lesson pack."
+    },
+    {
+     "title": "Guided form practice",
+     "minutes": 30,
+     "activity": "Practice selected forms with instructor feedback and accessible alternatives."
+    },
+    {
+     "title": "Word or phrase practice",
+     "minutes": 25,
+     "activity": "Read or write a short, sourced example suited to the chosen script."
+    },
+    {
+     "title": "Peer review",
+     "minutes": 20,
+     "activity": "Compare attempts against the approved reference and note ambiguities."
+    },
+    {
+     "title": "Practice plan",
+     "minutes": 15,
+     "activity": "Set a realistic follow-up routine and list support needs."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Fonts, sign forms, sound values, and sample readings are checked by a qualified reviewer.",
+     "Keyboard/input method instructions match the named device and include a non-digital alternative.",
+     "Practice materials support readable contrast, scalable text, and accessible feedback."
+    ],
+    "evidence": "A reviewed practice sheet or equivalent accessible exercise."
+   }
+  },
+  {
+   "id": "manuscripts-book-research",
+   "track": "Research desk · 05",
+   "title": "Manuscripts and Book Research",
+   "subtitle": "Turn a reading question into a source-aware search plan.",
+   "runtimeMinutes": 120,
+   "format": "Research clinic",
+   "audience": "Learners, students, and researchers",
+   "objective": "Practice locating catalogued books and manuscript records while tracking edition, access, rights, and provenance details.",
+   "sessions": [
+    {
+     "title": "Frame a research question",
+     "minutes": 15,
+     "activity": "Define a topic, language, script, period, or text family to investigate."
+    },
+    {
+     "title": "Search catalogues",
+     "minutes": 25,
+     "activity": "Use catalogue fields and external collection links to discover records."
+    },
+    {
+     "title": "Compare editions and metadata",
+     "minutes": 20,
+     "activity": "Record title variants, editors, dates, identifiers, and description gaps."
+    },
+    {
+     "title": "Access and rights check",
+     "minutes": 20,
+     "activity": "Check access conditions, reuse rights, and restrictions at the source."
+    },
+    {
+     "title": "Build a source log",
+     "minutes": 25,
+     "activity": "Create a bibliographic record with retrieval notes and confidence labels."
+    },
+    {
+     "title": "Share findings and gaps",
+     "minutes": 15,
+     "activity": "Present one useful record and one unresolved research question."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Bibliographic fields distinguish title, creator, edition, date, identifier, and catalogue record.",
+     "External links are checked and access or reuse terms are recorded at the source.",
+     "Research notes retain provenance and distinguish verified facts from catalogue gaps."
+    ],
+    "evidence": "A source log with retrieval date, rights/access note, and confidence labels."
+   }
+  },
+  {
+   "id": "inscriptions-epigraphy",
+   "track": "Evidence lab · 06",
+   "title": "Inscriptions and Epigraphy",
+   "subtitle": "Describe an inscription before interpreting it.",
+   "runtimeMinutes": 150,
+   "format": "Image-based research lab",
+   "audience": "Advanced learners and research groups",
+   "objective": "Introduce a disciplined workflow for recording inscription context, visual observations, readings, and uncertainty from authorized sources.",
+   "sessions": [
+    {
+     "title": "Epigraphy and evidence",
+     "minutes": 20,
+     "activity": "Review the difference between object context, visual description, reading, and interpretation."
+    },
+    {
+     "title": "Record provenance and context",
+     "minutes": 25,
+     "activity": "Capture source, collection, catalogue reference, and permission status."
+    },
+    {
+     "title": "Describe visible features",
+     "minutes": 25,
+     "activity": "Write neutral observations using an authorized image or published record."
+    },
+    {
+     "title": "Transcription workflow",
+     "minutes": 30,
+     "activity": "Compare a published reading with the source record and document conventions."
+    },
+    {
+     "title": "Mark ambiguity and damage",
+     "minutes": 20,
+     "activity": "Use explicit uncertainty notes instead of silently filling gaps."
+    },
+    {
+     "title": "Ethics, access, and sensitive data",
+     "minutes": 15,
+     "activity": "Discuss permissions, cultural protocols, and limits on location disclosure."
+    },
+    {
+     "title": "Review and handoff",
+     "minutes": 15,
+     "activity": "Prepare a citation-ready record for specialist review."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Object context, visual description, reading, and interpretation are separate record fields.",
+     "Transcription conventions and published readings are cited and reviewed by an epigraphy specialist.",
+     "Image permissions, cultural protocols, damage, uncertainty, and sensitive location data are checked."
+    ],
+    "evidence": "A citation-ready draft record explicitly listing unresolved readings and permissions."
+   }
+  },
+  {
+   "id": "digital-texts",
+   "track": "Digital practice · 07",
+   "title": "Digital Texts: Unicode, Fonts, and Keyboards",
+   "subtitle": "Understand what digital script text stores and displays.",
+   "runtimeMinutes": 120,
+   "format": "Hands-on digital lab",
+   "audience": "Learners, editors, and developers",
+   "objective": "Introduce basic Unicode and input concepts while distinguishing encoded characters from their rendered glyph shapes.",
+   "sessions": [
+    {
+     "title": "Unicode overview",
+     "minutes": 20,
+     "activity": "Review code points, character names, and script blocks with reliable references."
+    },
+    {
+     "title": "Character and glyph",
+     "minutes": 20,
+     "activity": "Compare encoded text with font-dependent visual rendering."
+    },
+    {
+     "title": "Keyboard and input methods",
+     "minutes": 25,
+     "activity": "Try an appropriate input method and record its limitations."
+    },
+    {
+     "title": "Fonts and rendering",
+     "minutes": 20,
+     "activity": "Check shaping, combining marks, direction, and device differences."
+    },
+    {
+     "title": "Normalize and export",
+     "minutes": 20,
+     "activity": "Practice safe text handling and export without losing source context."
+    },
+    {
+     "title": "Quality check",
+     "minutes": 15,
+     "activity": "Review a digital text for encoding, display, and provenance issues."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Unicode code points and character names are checked against current Unicode references.",
+     "Text content is tested separately from font rendering, shaping, combining marks, and direction.",
+     "Normalization or export steps preserve the original source and provenance."
+    ],
+    "evidence": "A text-quality report covering encoding, rendering, input method, and provenance."
+   }
+  },
+  {
+   "id": "transcription-transliteration",
+   "track": "Text methods · 08",
+   "title": "Transcription and Transliteration",
+   "subtitle": "Make representation choices explicit and reviewable.",
+   "runtimeMinutes": 150,
+   "format": "Comparative text workshop",
+   "audience": "Language learners, editors, and researchers",
+   "objective": "Create a transparent representation workflow that preserves source text, conventions, ambiguity, and reviewer decisions.",
+   "sessions": [
+    {
+     "title": "Define the terms",
+     "minutes": 20,
+     "activity": "Distinguish transcription, transliteration, translation, and editorial normalization."
+    },
+    {
+     "title": "Describe the source text",
+     "minutes": 20,
+     "activity": "Record source edition, script, language label, and relevant limitations."
+    },
+    {
+     "title": "Select a convention",
+     "minutes": 25,
+     "activity": "Choose a documented scheme appropriate to the source and audience."
+    },
+    {
+     "title": "Align text and notes",
+     "minutes": 30,
+     "activity": "Create a small aligned example with clear editorial annotations."
+    },
+    {
+     "title": "Record uncertainty",
+     "minutes": 25,
+     "activity": "Mark damaged, disputed, or unavailable readings without guessing."
+    },
+    {
+     "title": "Review choices",
+     "minutes": 20,
+     "activity": "Compare independent work and log changes with reasons."
+    },
+    {
+     "title": "Prepare handoff",
+     "minutes": 10,
+     "activity": "Package source references, conventions, and unresolved questions."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "The selected convention is named, versioned where applicable, and appropriate to the source.",
+     "Aligned text retains source references and separates editorial normalization from translation.",
+     "Damaged, disputed, or unavailable readings and every revision are documented."
+    ],
+    "evidence": "A small aligned example with convention note, citations, and change log."
+   }
+  },
+  {
+   "id": "language-documentation",
+   "track": "Community practice · 09",
+   "title": "Language Documentation",
+   "subtitle": "Plan consent-led recording and responsible return of materials.",
+   "runtimeMinutes": 150,
+   "format": "Ethics and field-methods workshop",
+   "audience": "Researchers, educators, and community partners",
+   "objective": "Plan a voluntary documentation activity that respects participant choices, privacy, ownership, and agreed access.",
+   "sessions": [
+    {
+     "title": "Consent and participant control",
+     "minutes": 20,
+     "activity": "Discuss informed consent, withdrawal, attribution, and recording choices."
+    },
+    {
+     "title": "Set a research question",
+     "minutes": 15,
+     "activity": "Narrow the purpose and identify who benefits from the work."
+    },
+    {
+     "title": "Prepare an interview plan",
+     "minutes": 25,
+     "activity": "Draft open prompts and an accessible, participant-led session plan."
+    },
+    {
+     "title": "Recording practice",
+     "minutes": 25,
+     "activity": "Practice audio setup, room tone, file naming, and a non-recorded alternative."
+    },
+    {
+     "title": "Transcription and metadata",
+     "minutes": 25,
+     "activity": "Plan language labels, translation notes, review roles, and provenance."
+    },
+    {
+     "title": "Privacy and return of materials",
+     "minutes": 20,
+     "activity": "Set access, storage, sharing, and community return expectations."
+    },
+    {
+     "title": "Reflection and safeguards",
+     "minutes": 20,
+     "activity": "Review risks, referral needs, and conditions to pause or stop."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Consent, withdrawal, attribution, access, retention, and participant review are agreed before recording.",
+     "The session offers a non-recorded alternative and accessible participant-led prompts.",
+     "Files and metadata follow approved privacy, storage, sharing, and community-return plans."
+    ],
+    "evidence": "An approved interview plan and metadata template; recordings are not required."
+   }
+  },
+  {
+   "id": "script-place-atlas",
+   "track": "Geospatial research · 10",
+   "title": "Script and Place Atlas",
+   "subtitle": "Map records with provenance and coordinate uncertainty.",
+   "runtimeMinutes": 150,
+   "format": "Geospatial data lab",
+   "audience": "Researchers, educators, and digital heritage teams",
+   "objective": "Build a sample map record from cited sources while avoiding unsupported site extents or disclosure of sensitive locations.",
+   "sessions": [
+    {
+     "title": "Spatial data orientation",
+     "minutes": 20,
+     "activity": "Review point, boundary, route, and uncertainty as different data types."
+    },
+    {
+     "title": "Choose a cited record",
+     "minutes": 20,
+     "activity": "Select a public, suitable source and document its scope."
+    },
+    {
+     "title": "Assess coordinate quality",
+     "minutes": 20,
+     "activity": "Record precision, datum, source date, and verification status."
+    },
+    {
+     "title": "Create a map record",
+     "minutes": 30,
+     "activity": "Add metadata, citations, and a clear note about what the marker represents."
+    },
+    {
+     "title": "Sensitive data review",
+     "minutes": 20,
+     "activity": "Apply access controls or omit data that could expose protected locations."
+    },
+    {
+     "title": "Quality assurance",
+     "minutes": 20,
+     "activity": "Check attribution, coordinate validity, and interpretation limits."
+    },
+    {
+     "title": "Review and publish decision",
+     "minutes": 20,
+     "activity": "Decide whether the record is ready for a public map or needs review."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Coordinates include source, date, datum/CRS, precision, and verification status.",
+     "The map marker describes the source record and does not imply unsupported site boundaries or certainty.",
+     "Sensitive locations, attribution, keyboard access, and non-map alternatives are reviewed."
+    ],
+    "evidence": "A cited map-record draft with coordinate-quality and sensitivity notes."
+   }
+  },
+  {
+   "id": "build-study-outline",
+   "track": "Curriculum studio · 11",
+   "title": "Build a Script Study Outline",
+   "subtitle": "Co-design a reviewable lesson plan for one script.",
+   "runtimeMinutes": 180,
+   "format": "Collaborative curriculum studio",
+   "audience": "Educators, subject specialists, and learning designers",
+   "objective": "Draft a lesson sequence with sourced material, practice and assessment plans, and named scholarly review needs.",
+   "sessions": [
+    {
+     "title": "Set a learning outcome",
+     "minutes": 20,
+     "activity": "Write one achievable, assessable outcome for a defined learner group."
+    },
+    {
+     "title": "Describe learner context",
+     "minutes": 15,
+     "activity": "Record prior knowledge, language needs, access requirements, and constraints."
+    },
+    {
+     "title": "Select and audit sources",
+     "minutes": 25,
+     "activity": "Choose credible references and identify permissions or content gaps."
+    },
+    {
+     "title": "Sequence the lesson",
+     "minutes": 35,
+     "activity": "Draft an opening, explanation, guided example, practice, and reflection."
+    },
+    {
+     "title": "Design an activity",
+     "minutes": 30,
+     "activity": "Create a low-risk exercise using only reviewed forms and examples."
+    },
+    {
+     "title": "Plan assessment",
+     "minutes": 20,
+     "activity": "Define a feedback method that tests the stated learning outcome."
+    },
+    {
+     "title": "Peer and specialist review",
+     "minutes": 20,
+     "activity": "Collect questions for language, script, accessibility, and rights review."
+    },
+    {
+     "title": "Revise and track gaps",
+     "minutes": 15,
+     "activity": "Publish a draft outline with owner, review status, and next actions."
+    }
+   ],
+   "qa": {
+    "checks": [
+     "Activities and assessment align with a clear learning outcome and learner context.",
+     "Sources, permissions, accessibility needs, and specialist-review gaps are recorded.",
+     "Outline version, reviewer, owner, and next actions are tracked before publication."
+    ],
+    "evidence": "A reviewed lesson outline with assessment plan and unresolved-gap register."
+   }
+  }
+ ],
+ "futurism": {
+  "workshops": [
+   {
+    "title": "Advanced Water Management Solutions by Ancient Sciences",
+    "focus": "Compare documented water systems with modern hydrology, GIS, monitoring and conservation design.",
+    "days": 2,
+    "hours": 12,
+    "price": 10200,
+    "lecturer": "Water systems engineer or hydrologist",
+    "researcher": "Water-heritage researcher; evidence and source-pack lead",
+    "index": [
+     "1 · Reading water in the landscape — catchments, seasonality and settlement patterns (1.5 h)",
+     "2 · Documented systems and their contexts — wells, tanks, channels and storage (2 h)",
+     "3 · Evidence lab — source quality, dating, function and uncertainty (1.5 h)",
+     "4 · Modern hydrology tools — flow, infiltration, water balance and GIS (2 h)",
+     "5 · Monitoring and stewardship — water quality, maintenance and community governance (2 h)",
+     "6 · Design studio — a testable, site-specific water resilience concept (3 h)"
+    ]
+   },
+   {
+    "title": "Symbols, Letters and their Science",
+    "focus": "Study scripts, symbols, writing systems and encoding while separating evidence from interpretation.",
+    "days": 1,
+    "hours": 6,
+    "price": 6100,
+    "lecturer": "Historical linguist, epigrapher or writing-systems specialist",
+    "researcher": "Epigraphy researcher; image permissions and source-pack lead",
+    "index": [
+     "1 · What counts as a sign, script and text? (45 min)",
+     "2 · How writing systems are described — sign lists, direction, variants and context (75 min)",
+     "3 · Reading an inscription image — observation before interpretation (60 min)",
+     "4 · From photograph to dataset — metadata, Unicode and responsible transcription (75 min)",
+     "5 · Open questions and undeciphered corpora — what evidence can and cannot establish (45 min)",
+     "6 · Practical lab — create a cited, uncertainty-aware sign record (60 min)"
+    ]
+   },
+   {
+    "title": "Climate-Resilient Agriculture and Soil Futures",
+    "focus": "Connect documented farming practices with current soil, weather and irrigation research.",
+    "days": 2,
+    "hours": 12,
+    "price": 10200,
+    "lecturer": "Agronomist or soil scientist",
+    "researcher": "Agricultural-history researcher; evidence and source-pack lead",
+    "index": [
+     "1 · Climate, crops and historical evidence — framing questions (1.5 h)",
+     "2 · Reading soils — texture, structure, organic matter and field notes (2 h)",
+     "3 · Farming records and material evidence — limits, dates and context (1.5 h)",
+     "4 · Resilience tools — crop diversity, water efficiency and risk mapping (2 h)",
+     "5 · Field-data practice — sampling plans, consent and safe handling (2 h)",
+     "6 · Design studio — a locally testable adaptation and evaluation plan (3 h)"
+    ]
+   },
+   {
+    "title": "Traditional Materials and Circular Manufacturing",
+    "focus": "Study material histories alongside reuse, repair and low-waste manufacturing.",
+    "days": 2,
+    "hours": 12,
+    "price": 10200,
+    "lecturer": "Materials scientist, conservation specialist or circular-design practitioner",
+    "researcher": "Archaeometry or materials-history researcher",
+    "index": [
+     "1 · Material biographies — source, transformation, use and discard (1.5 h)",
+     "2 · Evidence and methods — visual study, sampling ethics and lab techniques (2 h)",
+     "3 · Claims check — provenance, dating and limits of reconstruction (1.5 h)",
+     "4 · Circularity metrics — repair, reuse, energy and life-cycle thinking (2 h)",
+     "5 · Prototype workshop — material choices and safe, low-waste making (2 h)",
+     "6 · Design review — performance, sourcing and a validation plan (3 h)"
+    ]
+   },
+   {
+    "title": "Architecture, Geometry and Passive Cooling",
+    "focus": "Compare documented building features with present-day thermal comfort and energy analysis.",
+    "days": 2,
+    "hours": 12,
+    "price": 10200,
+    "lecturer": "Architect or building-science / environmental-design specialist",
+    "researcher": "Architectural historian or heritage-science researcher",
+    "index": [
+     "1 · Climate, place and building form — setting the design question (1.5 h)",
+     "2 · Reading plans and fabric — geometry, materials and evidence (2 h)",
+     "3 · Shade, air and heat — passive-design principles and measurement (1.5 h)",
+     "4 · Survey-to-model — scaled drawings, sun paths and simple simulations (2 h)",
+     "5 · Comfort and conservation — accessibility, use and retrofit constraints (2 h)",
+     "6 · Design studio — a measured cooling proposal with assumptions stated (3 h)"
+    ]
+   },
+   {
+    "title": "Calendars, Sky Observation and Data Visualization",
+    "focus": "Explore historical timekeeping records alongside modern astronomy and data visualization.",
+    "days": 1,
+    "hours": 6,
+    "price": 6100,
+    "lecturer": "Astronomer, archaeoastronomy specialist or science educator",
+    "researcher": "History-of-astronomy researcher; data and citation lead",
+    "index": [
+     "1 · Observing the sky — cycles, coordinates and uncertainty (45 min)",
+     "2 · Calendars as systems — evidence, conventions and local variation (75 min)",
+     "3 · Historical records — how to read a date or observation in context (60 min)",
+     "4 · Data lab — compare a historical series with an astronomical dataset (75 min)",
+     "5 · Visual explanation — chart choices, uncertainty and accessible labels (45 min)",
+     "6 · Mini project — a reproducible, cited sky-data visualization (60 min)"
+    ]
+   },
+   {
+    "title": "Ancient Texts, AI and Digital Preservation",
+    "focus": "Introduce digitization, OCR, searchable text and human review for historical materials.",
+    "days": 2,
+    "hours": 12,
+    "price": 10200,
+    "lecturer": "Digital-humanities or archival-computing specialist",
+    "researcher": "Textual scholar or archivist; rights and metadata lead",
+    "index": [
+     "1 · Preservation first — object, image, transcription and rights (1.5 h)",
+     "2 · Preparing a corpus — metadata, script support and quality control (2 h)",
+     "3 · OCR and HTR — what models do, training data and error patterns (1.5 h)",
+     "4 · Human-in-the-loop review — transcription, confidence and correction (2 h)",
+     "5 · Search and publication — encoding, linked data and responsible access (2 h)",
+     "6 · Digital lab — evaluate a small workflow and document its limits (3 h)"
+    ]
+   },
+   {
+    "title": "Knowledge Systems, Evidence and Public Health",
+    "focus": "Examine historical health-related texts as research sources, with modern evidence and safety boundaries.",
+    "days": 2,
+    "hours": 12,
+    "price": 10200,
+    "lecturer": "Public-health researcher or historian of medicine",
+    "researcher": "Medical-history researcher; source appraisal lead",
+    "index": [
+     "1 · Health knowledge in historical context — categories and sources (1.5 h)",
+     "2 · Texts, practice and material evidence — triangulation (2 h)",
+     "3 · Appraising claims — provenance, translation and evidential strength (1.5 h)",
+     "4 · Modern public-health evidence — study designs and causal limits (2 h)",
+     "5 · Ethics and communication — cultural respect, safety and misinformation (2 h)",
+     "6 · Case conference — write a sourced, non-clinical research brief (3 h)"
+    ]
+   },
+   {
+    "title": "Heritage Futures Lab: From Evidence to Prototype",
+    "focus": "Develop a small concept from a documented source with citations, limits and a review plan.",
+    "days": 3,
+    "hours": 18,
+    "price": 14200,
+    "lecturer": "Interdisciplinary design-research facilitator",
+    "researcher": "Heritage researcher; source verification and evidence-review lead",
+    "index": [
+     "1 · Challenge framing and stakeholder map (2 h)",
+     "2 · Source discovery, provenance and evidence matrix (3 h)",
+     "3 · Research synthesis — findings, gaps and uncertainty (3 h)",
+     "4 · Concept generation and selection criteria (2 h)",
+     "5 · Prototype sprint — storyboard, model or service mock-up (4 h)",
+     "6 · Testing plan — users, measures, ethics and iteration (2 h)",
+     "7 · Review panel — critique, citations and claim boundaries (2 h)"
+    ]
+   }
+  ],
+  "priceBasis": {
+   "cohort": 12,
+   "lecturerPerDay": 12000,
+   "researcherPerDay": 10000,
+   "producerPerDay": 8000,
+   "avAssistantPerDay": 5000,
+   "venuePerDay": 6000,
+   "materialsPerParticipantDay": 350,
+   "platformCharge": 0.08,
+   "excluded": "Travel, lodging, specialist travel, taxes where applicable, and custom equipment."
+  }
+ },
+ "atlas": [
+  {
+   "id": "girnar-major-rock-edicts",
+   "title": "Ashokan Major Rock Edicts · Girnar",
+   "place": "Girnar, Junagadh, Gujarat, India",
+   "coordinates": {
+    "latitude": 21.525075,
+    "longitude": 70.479543,
+    "precision": "site pointer"
+   },
+   "period": "Mauryan period · 3rd century BCE",
+   "script": "Brahmi",
+   "language": "Ashokan Prakrit (source terminology varies)",
+   "recordNote": "Site record for an inscription group; no transcription or translation is supplied here.",
+   "siteSourceLabel": "UNESCO Tentative List · site coordinates",
+   "siteSourceUrl": "https://whc.unesco.org/en/tentativelists/6803/",
+   "contextSourceLabel": "Junagadh District · Ashok Shilalekh",
+   "contextSourceUrl": "https://junagadh.nic.in/tourist-place/ashok-shilalekh/",
+   "imageAlt": "Photograph of the rock edicts at Girnar, Junagadh",
+   "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Ashoka%27s_Major_Rock_Edict%2C_Girnar_Gujarat_001.jpg/960px-Ashoka%27s_Major_Rock_Edict%2C_Girnar_Gujarat_001.jpg",
+   "imageSourceLabel": "Wikimedia Commons image record",
+   "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Ashoka%27s_Major_Rock_Edict,_Girnar_Gujarat_001.jpg",
+   "imageCredit": "Snehrashmi · CC BY-SA 4.0"
+  },
+  {
+   "id": "dhauli-major-rock-edicts",
+   "title": "Ashokan Major Rock Edicts · Dhauli",
+   "place": "Dhauli, Khordha, Odisha, India",
+   "coordinates": {
+    "latitude": 20.1891573,
+    "longitude": 85.8425935,
+    "precision": "site pointer"
+   },
+   "period": "Mauryan period · 3rd century BCE",
+   "script": "Brahmi",
+   "language": "Ashokan Prakrit (source terminology varies)",
+   "recordNote": "Site record for an inscription group; no transcription or translation is supplied here.",
+   "siteSourceLabel": "UNESCO Tentative List · site coordinates",
+   "siteSourceUrl": "https://whc.unesco.org/en/tentativelists/6803/",
+   "contextSourceLabel": "ASI · centrally protected monuments list",
+   "contextSourceUrl": "https://asi.nic.in/pdf/CPM_List.pdf",
+   "imageAlt": "Photograph of Ashoka's rock edicts at Dhauli",
+   "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Rock_edicts_of_Ashoka_at_Dhauli.jpg/960px-Rock_edicts_of_Ashoka_at_Dhauli.jpg",
+   "imageSourceLabel": "Wikimedia Commons image record",
+   "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Rock_edicts_of_Ashoka_at_Dhauli.jpg",
+   "imageCredit": "Bhajish Bharathan · CC BY-SA 4.0"
+  },
+  {
+   "id": "jaugada-major-rock-edicts",
+   "title": "Ashokan Major Rock Edicts · Jaugada",
+   "place": "Jaugada, Ganjam, Odisha, India",
+   "coordinates": {
+    "latitude": 19.522602,
+    "longitude": 84.830885,
+    "precision": "site pointer"
+   },
+   "period": "Mauryan period · 3rd century BCE",
+   "script": "Brahmi",
+   "language": "Ashokan Prakrit (source terminology varies)",
+   "recordNote": "Site record for an inscription group; no transcription or translation is supplied here.",
+   "siteSourceLabel": "UNESCO Tentative List · site coordinates",
+   "siteSourceUrl": "https://whc.unesco.org/en/tentativelists/6803/",
+   "contextSourceLabel": "Indoskript · Jaugada inscription records",
+   "contextSourceUrl": "https://www.indoskript.phil.uni-wuerzburg.de/manuscripts/details/423",
+   "imageAlt": "Archival photograph of the Jaugada rock edict site, made in 1895",
+   "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/80/Jaugada_rock_with_Ashoka_Major_Rock_Edict.jpg",
+   "imageSourceLabel": "Wikimedia Commons image record",
+   "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Jaugada_rock_with_Ashoka_Major_Rock_Edict.jpg",
+   "imageCredit": "Alexander E. Caddy, 1895 · Public domain"
+  },
+  {
+   "id": "kalsi-major-rock-edicts",
+   "title": "Ashokan Major Rock Edicts · Kalsi",
+   "place": "Kalsi, Dehradun, Uttarakhand, India",
+   "coordinates": {
+    "latitude": 30.518,
+    "longitude": 77.8482,
+    "precision": "site pointer"
+   },
+   "period": "Mauryan period · 3rd century BCE",
+   "script": "Brahmi",
+   "language": "Ashokan Prakrit (ASI page uses ‘Pali’)",
+   "recordNote": "Site record for an inscription group; no transcription or translation is supplied here.",
+   "siteSourceLabel": "UNESCO Tentative List · site coordinates",
+   "siteSourceUrl": "https://whc.unesco.org/en/tentativelists/6803/",
+   "contextSourceLabel": "Archaeological Survey of India · Dehradun Circle",
+   "contextSourceUrl": "https://asidehraduncircle.in/dehradun.html",
+   "imageAlt": "Photograph of the Ashokan rock edict boulder at Kalsi",
+   "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/0051823_Major_rock_edict_of_Asoka%2C_Kalsi_Uttarakhand_236.jpg/960px-0051823_Major_rock_edict_of_Asoka%2C_Kalsi_Uttarakhand_236.jpg",
+   "imageSourceLabel": "Wikimedia Commons image record",
+   "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:0051823_Major_rock_edict_of_Asoka,_Kalsi_Uttarakhand_236.jpg",
+   "imageCredit": "Sarah Welch · CC0 1.0"
+  }
+ ],
+ "chronology": {
+  "range": {
+   "start": -10000,
+   "end": 2026
+  },
+  "continents": [
+   {
+    "id": "north-america",
+    "name": "North America"
+   },
+   {
+    "id": "south-america",
+    "name": "South America"
+   },
+   {
+    "id": "europe",
+    "name": "Europe"
+   },
+   {
+    "id": "africa",
+    "name": "Africa"
+   },
+   {
+    "id": "asia",
+    "name": "Asia"
+   },
+   {
+    "id": "oceania",
+    "name": "Oceania"
+   },
+   {
+    "id": "antarctica",
+    "name": "Antarctica"
+   }
+  ],
+  "continentShapes": [
+   {
+    "id": "north-america",
+    "name": "North America",
+    "d": "M9 18 17 8 29 5 39 12 43 21 38 28 32 31 29 39 23 43 20 53 15 49 13 39 8 32 5 24Z"
+   },
+   {
+    "id": "south-america",
+    "name": "South America",
+    "d": "M34 4 43 9 45 19 41 26 39 37 34 48 30 60 26 73 22 67 23 55 19 45 22 34 19 25 25 15Z"
+   },
+   {
+    "id": "europe",
+    "name": "Europe",
+    "d": "M8 15 15 8 24 10 29 15 26 23 20 25 16 31 10 27 6 22Z"
+   },
+   {
+    "id": "africa",
+    "name": "Africa",
+    "d": "M21 4 34 8 40 18 37 31 32 42 27 56 20 63 15 52 12 41 8 30 10 18Z"
+   },
+   {
+    "id": "asia",
+    "name": "Asia",
+    "d": "M3 15 12 8 25 7 35 4 49 7 61 8 72 14 79 20 74 26 63 27 58 34 48 32 42 39 32 37 26 31 19 31 13 26 5 24Z"
+   },
+   {
+    "id": "oceania",
+    "name": "Oceania",
+    "d": "M8 22 17 14 27 16 31 23 28 32 22 35 14 31 9 28Z M38 42 47 39 54 43 52 49 45 52 39 49Z"
+   },
+   {
+    "id": "antarctica",
+    "name": "Antarctica",
+    "d": "M4 22 14 16 24 19 34 16 46 20 56 17 67 20 78 17 91 21 96 26 87 29 75 27 64 30 53 27 41 30 28 26 17 29 8 27Z"
+   }
+  ],
+  "events": [
+   {
+    "id": "gobekli-tepe-monumental-place",
+    "dateSort": -8900,
+    "dateStartSort": -9600,
+    "dateEndSort": -8200,
+    "dateLabel": "c. 9600–8200 BCE",
+    "continent": "asia",
+    "region": "Upper Mesopotamia · southeastern Anatolia",
+    "title": "Göbekli Tepe monumental structures",
+    "entityTypes": [
+     "places"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "Göbekli Tepe archaeological site"
+     ]
+    },
+    "summary": "UNESCO dates monumental structures at Göbekli Tepe to the Pre-Pottery Neolithic, built by hunter-gatherer communities. This is a place and architecture record, not a claim about the origin of language or writing.",
+    "evidenceNote": "Range follows the UNESCO property description; no city or writing-system attribution is made.",
+    "sourceLabel": "UNESCO World Heritage Centre · Göbekli Tepe",
+    "sourceUrl": "https://whc.unesco.org/en/list/1572/"
+   },
+   {
+    "id": "uruk-cuneiform",
+    "dateSort": -3200,
+    "dateLabel": "before c. 3200 BCE",
+    "continent": "asia",
+    "region": "Uruk · southern Mesopotamia · present-day Iraq",
+    "title": "Early cuneiform records in Uruk",
+    "entityTypes": [
+     "scripts",
+     "cities",
+     "markets",
+     "trades"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [
+      "Proto-cuneiform / early cuneiform"
+     ],
+     "books": [],
+     "cities": [
+      "Uruk"
+     ],
+     "universities": [],
+     "markets": [],
+     "trades": [
+      "administrative recording and exchange"
+     ],
+     "inventions": [
+      "early writing technology"
+     ],
+     "people": [],
+     "places": [
+      "Uruk"
+     ]
+    },
+    "summary": "The British Museum places the origin of cuneiform in what is now Iraq before 3200 BCE. The earliest proto-cuneiform tablets are primarily administrative; their language should not be assumed from the script alone.",
+    "evidenceNote": "Script and language are kept separate because early tablets do not all establish a spoken-language label.",
+    "sourceLabel": "The British Museum · How to write cuneiform",
+    "sourceUrl": "https://www.britishmuseum.org/blog/how-write-cuneiform"
+   },
+   {
+    "id": "egyptian-hieroglyphic-records",
+    "dateSort": -3200,
+    "dateLabel": "c. late 4th millennium BCE onward",
+    "continent": "africa",
+    "region": "Nile Valley · Egypt",
+    "title": "Ancient Egyptian writing traditions",
+    "entityTypes": [
+     "languages",
+     "scripts"
+    ],
+    "entities": {
+     "languages": [
+      "Ancient Egyptian"
+     ],
+     "scripts": [
+      "Egyptian hieroglyphs",
+      "Hieratic",
+      "Demotic",
+      "Coptic (later)"
+     ],
+     "books": [],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "Nile Valley"
+     ]
+    },
+    "summary": "Egyptian texts were written in multiple scripts over time. Hieratic and Demotic served distinct contexts; Coptic later used a Greek-based alphabet with additional signs.",
+    "evidenceNote": "These are historical script traditions for Egyptian, not simultaneous equivalents or a single unchanging alphabet.",
+    "sourceLabel": "Unicode Standard · Egyptian scripts",
+    "sourceUrl": "https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-11/"
+   },
+   {
+    "id": "indus-urbanism",
+    "dateSort": -2500,
+    "dateStartSort": -2600,
+    "dateEndSort": -1900,
+    "dateLabel": "c. 2600–1900 BCE · Mature urban phase",
+    "continent": "asia",
+    "region": "Indus Valley · South Asia",
+    "title": "Indus cities and undeciphered signs",
+    "entityTypes": [
+     "languages",
+     "scripts",
+     "cities",
+     "trades"
+    ],
+    "entities": {
+     "languages": [
+      "Unknown · not assigned"
+     ],
+     "scripts": [
+      "Indus signs · undeciphered"
+     ],
+     "books": [],
+     "cities": [
+      "Mohenjo-daro",
+      "Harappa"
+     ],
+     "universities": [],
+     "markets": [],
+     "trades": [
+      "regional exchange · details vary by evidence"
+     ],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "Indus Valley"
+     ]
+    },
+    "summary": "Mohenjo-daro is an urban centre of the Indus civilization with planned streets and drainage. The Indus signs remain undeciphered; this timeline assigns them no language.",
+    "evidenceNote": "Urban chronology is approximate. The sign corpus is not treated here as a deciphered text or language record.",
+    "sourceLabel": "UNESCO World Heritage Centre · Moenjodaro",
+    "sourceUrl": "https://whc.unesco.org/en/list/138/"
+   },
+   {
+    "id": "meroitic-language-scripts",
+    "dateSort": 100,
+    "dateStartSort": -200,
+    "dateEndSort": 400,
+    "dateLabel": "c. 2nd century BCE–4th century CE",
+    "continent": "africa",
+    "region": "Nile Valley · Kush / Meroë · present-day Sudan",
+    "title": "Meroitic language in two scripts",
+    "entityTypes": [
+     "languages",
+     "scripts",
+     "cities"
+    ],
+    "entities": {
+     "languages": [
+      "Meroitic"
+     ],
+     "scripts": [
+      "Meroitic hieroglyphs",
+      "Meroitic cursive"
+     ],
+     "books": [],
+     "cities": [
+      "Meroë"
+     ],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "Kingdom of Kush / Meroë"
+     ]
+    },
+    "summary": "Unicode describes Meroitic hieroglyphs and Meroitic cursive as scripts used to write Meroitic in the Nile Valley kingdom of Kush / Meroë.",
+    "evidenceNote": "Date range is approximate and refers to attested use, not the language's origin.",
+    "sourceLabel": "Unicode Standard · Meroitic",
+    "sourceUrl": "https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-11/"
+   },
+   {
+    "id": "gandhari-kharosthi-manuscripts",
+    "dateSort": 50,
+    "dateStartSort": -300,
+    "dateEndSort": 400,
+    "dateLabel": "c. 3rd century BCE–4th century CE",
+    "continent": "asia",
+    "region": "Gandhāra to the Tarim Basin · South/Central Asia",
+    "title": "Gāndhārī manuscripts written in Kharoshthi",
+    "entityTypes": [
+     "languages",
+     "scripts",
+     "books",
+     "trades"
+    ],
+    "entities": {
+     "languages": [
+      "Gāndhārī · a Middle Indo-Aryan language"
+     ],
+     "scripts": [
+      "Kharoshthi"
+     ],
+     "books": [
+      "Buddhist birch-bark manuscript fragments"
+     ],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [
+      "manuscript movement across regional routes"
+     ],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "Gandhāra",
+      "Niya / Xinjiang"
+     ]
+    },
+    "summary": "A British Library collection described by the University of Washington contains birch-bark manuscripts in Gāndhārī written in Kharoshthi.",
+    "evidenceNote": "Regional manuscript context; no precise route or coordinate is asserted by this record.",
+    "sourceLabel": "University of Washington · British Library Kharoṣṭhī Fragments",
+    "sourceUrl": "https://asian.washington.edu/british-library-kharosthi-fragments"
+   },
+   {
+    "id": "maya-san-bartolo-writing",
+    "dateSort": -300,
+    "dateStartSort": -400,
+    "dateEndSort": 200,
+    "dateLabel": "Late Preclassic · c. 400 BCE–200 CE",
+    "continent": "north-america",
+    "region": "San Bartolo · present-day Guatemala · Mesoamerica",
+    "title": "Maya hieroglyphic writing at San Bartolo",
+    "entityTypes": [
+     "languages",
+     "scripts",
+     "places"
+    ],
+    "entities": {
+     "languages": [
+      "Mayan languages · specific reading depends on text"
+     ],
+     "scripts": [
+      "Maya hieroglyphic writing"
+     ],
+     "books": [],
+     "cities": [
+      "San Bartolo"
+     ],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "San Bartolo"
+     ]
+    },
+    "summary": "A peer-reviewed report dates a sample of Maya hieroglyphic writing at San Bartolo to the Late Preclassic period.",
+    "evidenceNote": "Site-period range, not a precise invention date for Maya writing or a one-to-one mapping to a single spoken language.",
+    "sourceLabel": "Science / PubMed · Early Maya Writing at San Bartolo",
+    "sourceUrl": "https://pubmed.ncbi.nlm.nih.gov/16400112/"
+   },
+   {
+    "id": "silk-roads-merchants",
+    "dateSort": -100,
+    "dateStartSort": -100,
+    "dateEndSort": 1500,
+    "dateLabel": "From the 1st century BCE · routes evolved over time",
+    "continent": "asia",
+    "region": "Eurasian land routes and connected regions",
+    "title": "Silk Roads trade and exchange networks",
+    "entityTypes": [
+     "markets",
+     "trades",
+     "cities"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [
+      "Xi’an",
+      "Bukhara",
+      "Venice · among many hubs"
+     ],
+     "universities": [],
+     "markets": [
+      "Interregional markets"
+     ],
+     "trades": [
+      "Long-distance trade and exchange"
+     ],
+     "inventions": [],
+     "people": [
+      "Merchants and travellers · generally not individually identified"
+     ],
+     "places": [
+      "Eurasia"
+     ]
+    },
+    "summary": "UNESCO describes Silk Roads land routes expanding from the 1st century BCE, with merchants moving goods and ideas among connected cities and regions.",
+    "evidenceNote": "A network, not one fixed road, empire, or single start date; this broad range is an interface summary.",
+    "sourceLabel": "UNESCO Silk Roads Programme · Merchants along land routes",
+    "sourceUrl": "https://en.unesco.org/silkroad/content/did-you-know-evolving-role-merchants-along-land-routes-silk-roads"
+   },
+   {
+    "id": "ashokan-edicts",
+    "dateSort": -250,
+    "dateLabel": "3rd century BCE",
+    "continent": "asia",
+    "region": "South Asia",
+    "title": "Aśokan inscriptions and public texts",
+    "entityTypes": [
+     "languages",
+     "scripts",
+     "books",
+     "people",
+     "places"
+    ],
+    "entities": {
+     "languages": [
+      "Prakrit varieties · source terminology varies"
+     ],
+     "scripts": [
+      "Brahmi"
+     ],
+     "books": [
+      "Major Rock Edicts · inscription corpus"
+     ],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [
+      "Aśoka"
+     ],
+     "places": [
+      "Girnar",
+      "Dhauli",
+      "Jaugada",
+      "Kalsi"
+     ]
+    },
+    "summary": "Aśokan inscriptions are a source for ancient South Asian languages and scripts. The four plotted RRF atlas pins are site pointers, not the full distribution of inscriptions.",
+    "evidenceNote": "Language labels vary by source; this entry does not supply a transcription or translation.",
+    "sourceLabel": "UNESCO Tentative List · Rock Edicts of Ashoka",
+    "sourceUrl": "https://whc.unesco.org/en/tentativelists/6803/"
+   },
+   {
+    "id": "sanskrit-brahmi-attestation",
+    "dateSort": 150,
+    "dateStartSort": 100,
+    "dateEndSort": 250,
+    "dateLabel": "from around the 2nd century CE",
+    "continent": "asia",
+    "region": "South Asia",
+    "title": "Sanskrit represented in Brahmi inscriptions",
+    "entityTypes": [
+     "languages",
+     "scripts"
+    ],
+    "entities": {
+     "languages": [
+      "Sanskrit"
+     ],
+     "scripts": [
+      "Brahmi"
+     ],
+     "books": [],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "South Asia"
+     ]
+    },
+    "summary": "A Unicode Brahmi encoding proposal describes Sanskrit being represented in Brahmi inscriptions from around the 2nd century CE, with additions to the script repertoire for Sanskrit use.",
+    "evidenceNote": "Source describes attested inscription use; this is not a claim that Sanskrit or Brahmi originated at this date.",
+    "sourceLabel": "Unicode Consortium · Brahmi proposal",
+    "sourceUrl": "https://www.unicode.org/L2/L2007/07342-brahmi.pdf"
+   },
+   {
+    "id": "tamil-brahmi-attestation",
+    "dateSort": 150,
+    "dateStartSort": -100,
+    "dateEndSort": 250,
+    "dateLabel": "early historic period · dates vary by inscription",
+    "continent": "asia",
+    "region": "Tamil Nadu and Sri Lanka · South Asia",
+    "title": "Tamil-Brahmi inscriptions",
+    "entityTypes": [
+     "languages",
+     "scripts",
+     "places"
+    ],
+    "entities": {
+     "languages": [
+      "Tamil"
+     ],
+     "scripts": [
+      "Tamil-Brahmi · regional Brahmi tradition"
+     ],
+     "books": [],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "South India",
+      "Sri Lanka"
+     ]
+    },
+    "summary": "Unicode’s script history identifies Brahmi as having been used to write Tamil, while epigraphic scholarship discusses regional Tamil-Brahmi forms and their inscriptions.",
+    "evidenceNote": "This is a script-language research link; individual inscriptions require their own dated records.",
+    "sourceLabel": "Unicode Standard · Brahmi",
+    "sourceUrl": "https://unicode.org/versions/Unicode16.0.0/core-spec/chapter-14/"
+   },
+   {
+    "id": "quipu-inka-records",
+    "dateSort": 1500,
+    "dateStartSort": 1400,
+    "dateEndSort": 1600,
+    "dateLabel": "c. 1400–1600 CE",
+    "continent": "south-america",
+    "region": "Andean region · Inka Empire",
+    "title": "Inka khipu record-keeping",
+    "entityTypes": [
+     "trades",
+     "inventions"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [
+      "Recording goods, labour, census data, and administration"
+     ],
+     "inventions": [
+      "Khipu · knotted-cord record system"
+     ],
+     "people": [
+      "Khipucamayuq specialists · names generally not recorded"
+     ],
+     "places": [
+      "Andean region"
+     ]
+    },
+    "summary": "Smithsonian sources describe khipu as knotted-cord systems used by Inka officials to record quantitative information and administer the empire.",
+    "evidenceNote": "Catalogue as a record system, not as a fully deciphered alphabetic script; its full semantic range remains a research question.",
+    "sourceLabel": "Smithsonian National Museum of the American Indian · Inka khipu",
+    "sourceUrl": "https://americanindian.si.edu/exhibitions/infinityofnations/andes/143866.html"
+   },
+   {
+    "id": "nalanda-mahavihara",
+    "dateSort": 850,
+    "dateStartSort": 400,
+    "dateEndSort": 1300,
+    "dateLabel": "c. 5th–13th century CE",
+    "continent": "asia",
+    "region": "Nalanda · Bihar · South Asia",
+    "title": "Nalanda Mahavihara as a scholastic institution",
+    "entityTypes": [
+     "cities",
+     "universities"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [
+      "Nalanda"
+     ],
+     "universities": [
+      "Nalanda Mahavihara"
+     ],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "Bihar"
+     ]
+    },
+    "summary": "UNESCO describes Nalanda as a monastic and scholastic establishment operating from the 5th to 13th centuries CE; the site itself includes remains from earlier periods.",
+    "evidenceNote": "The institutional dates are separated from the site's wider archaeological date range.",
+    "sourceLabel": "UNESCO World Heritage Centre · Nalanda Mahavihara",
+    "sourceUrl": "https://whc.unesco.org/en/list/1502/"
+   },
+   {
+    "id": "siddham-buddhist-texts-east-asia",
+    "dateSort": 650,
+    "dateStartSort": 600,
+    "dateEndSort": 700,
+    "dateLabel": "6th–7th century CE",
+    "continent": "asia",
+    "region": "India to China; later Korea and Japan",
+    "title": "Siddham script in East Asian Buddhist texts",
+    "entityTypes": [
+     "scripts",
+     "books",
+     "languages",
+     "trades"
+    ],
+    "entities": {
+     "languages": [
+      "Sanskrit · in relevant Buddhist text traditions"
+     ],
+     "scripts": [
+      "Siddham"
+     ],
+     "books": [
+      "Buddhist texts and ritual materials"
+     ],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [
+      "Religious and scholarly transmission"
+     ],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "China",
+      "Korea",
+      "Japan"
+     ]
+    },
+    "summary": "The University of Chicago Library describes Siddham reaching China around the 6th–7th centuries for Buddhist texts, with later use in Korea and Japan.",
+    "evidenceNote": "Historical connection only; no precise migration path is drawn.",
+    "sourceLabel": "University of Chicago Library · Lineages and Encounters",
+    "sourceUrl": "https://www.lib.uchicago.edu/collex/exhibits/world-south-asian-scripts/lineages-and-encounters/"
+   },
+   {
+    "id": "timbuktu-manuscripts-markets",
+    "dateSort": 1500,
+    "dateStartSort": 1400,
+    "dateEndSort": 1600,
+    "dateLabel": "Economic and cultural apogee · 15th–16th centuries CE",
+    "continent": "africa",
+    "region": "Timbuktu · Mali · West Africa",
+    "title": "Timbuktu’s manuscript market and Sankore learning centre",
+    "entityTypes": [
+     "languages",
+     "scripts",
+     "books",
+     "cities",
+     "universities",
+     "markets",
+     "trades"
+    ],
+    "entities": {
+     "languages": [
+      "Arabic and regional languages · manuscript-specific review required"
+     ],
+     "scripts": [
+      "Arabic script · for relevant Arabic manuscripts"
+     ],
+     "books": [
+      "Timbuktu manuscript collections"
+     ],
+     "cities": [
+      "Timbuktu"
+     ],
+     "universities": [
+      "Sankore learning centre"
+     ],
+     "markets": [
+      "Manuscript market"
+     ],
+     "trades": [
+      "Gold, salt, livestock, grain, manuscripts"
+     ],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "West Africa"
+     ]
+    },
+    "summary": "UNESCO describes Timbuktu as a trading crossroads and centre of Islamic learning, with Sankore and manuscript commerce prominent during its 15th–16th-century apogee.",
+    "evidenceNote": "Institutional wording is retained at source level; Sankore is not recast here as a modern-style university without qualification.",
+    "sourceLabel": "UNESCO World Heritage Centre · Timbuktu",
+    "sourceUrl": "https://whc.unesco.org/en/list/119/"
+   },
+   {
+    "id": "bologna-studium",
+    "dateSort": 1088,
+    "dateLabel": "c. 1088 CE · traditional foundation date",
+    "continent": "europe",
+    "region": "Bologna · Italy",
+    "title": "Bologna’s Studium and the medieval university",
+    "entityTypes": [
+     "cities",
+     "universities",
+     "people"
+    ],
+    "entities": {
+     "languages": [
+      "Latin · major academic language in the period"
+     ],
+     "scripts": [
+      "Latin alphabet"
+     ],
+     "books": [],
+     "cities": [
+      "Bologna"
+     ],
+     "universities": [
+      "University of Bologna / Studium"
+     ],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [
+      "Students and teachers · institutional record"
+     ],
+     "places": [
+      "Europe"
+     ]
+    },
+    "summary": "The University of Bologna uses 1088 as the conventionally celebrated foundation date of its Studium and notes its development through student associations.",
+    "evidenceNote": "The institution itself labels 1088 as a conventional date, not a precisely documented founding day.",
+    "sourceLabel": "University of Bologna · Our history",
+    "sourceUrl": "https://www.unibo.it/en/university/who-we-are/our-history/our-history"
+   },
+   {
+    "id": "gutenberg-bible",
+    "dateSort": 1455,
+    "dateLabel": "probably late 1455 CE",
+    "continent": "europe",
+    "region": "Mainz · present-day Germany",
+    "title": "Gutenberg Bible printed in Mainz",
+    "entityTypes": [
+     "books",
+     "languages",
+     "cities",
+     "inventions",
+     "people"
+    ],
+    "entities": {
+     "languages": [
+      "Latin"
+     ],
+     "scripts": [
+      "Latin alphabet · blackletter type"
+     ],
+     "books": [
+      "Gutenberg Bible · Latin Vulgate"
+     ],
+     "cities": [
+      "Mainz"
+     ],
+     "universities": [],
+     "markets": [
+      "European book trade"
+     ],
+     "trades": [
+      "Printing and book production"
+     ],
+     "inventions": [
+      "Movable-type printing system in Europe"
+     ],
+     "people": [
+      "Johannes Gutenberg",
+      "Johannes Fust"
+     ],
+     "places": [
+      "Europe"
+     ]
+    },
+    "summary": "The Library of Congress dates the likely completion of the Gutenberg Bible to late 1455 and identifies it as a Latin Vulgate.",
+    "evidenceNote": "The completion date is stated as probable by the source; avoid presenting a precise day or unsupported print-run total.",
+    "sourceLabel": "Library of Congress · The Gutenberg Bible",
+    "sourceUrl": "https://loc.gov/exhibits/bibles/the-gutenberg-bible.html"
+   },
+   {
+    "id": "voc-global-trade-company",
+    "dateSort": 1602,
+    "dateStartSort": 1602,
+    "dateEndSort": 1800,
+    "dateLabel": "1602–1800 CE",
+    "continent": "europe",
+    "region": "Amsterdam-based company with an Asian trading network",
+    "title": "Dutch East India Company and long-distance trade",
+    "entityTypes": [
+     "markets",
+     "trades",
+     "cities",
+     "people"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [
+      "Amsterdam",
+      "Batavia / Jakarta"
+     ],
+     "universities": [],
+     "markets": [
+      "Publicly traded company shares · market structure needs separate entries"
+     ],
+     "trades": [
+      "Intercontinental shipping and commodity trade"
+     ],
+     "inventions": [],
+     "people": [
+      "Company employees and trading communities · many unnamed"
+     ],
+     "places": [
+      "Europe",
+      "South Asia",
+      "Southeast Asia"
+     ]
+    },
+    "summary": "Rijksmuseum describes the VOC as a trading and shipping company operating from 1602 to 1800, with an extensive Asian network and serious colonial violence.",
+    "evidenceNote": "Trade history is not presented as neutral progress: coercion, monopoly, war, and human trafficking are part of the documented record.",
+    "sourceLabel": "Rijksmuseum · Dutch East India Company",
+    "sourceUrl": "https://www.rijksmuseum.nl/en/collection/node/The-Dutch-East-India-Company-VOC--45d4a3daf93e41baae6017768c3d93df"
+   },
+   {
+    "id": "arkwright-water-frame",
+    "dateSort": 1769,
+    "dateLabel": "patented 1769 CE",
+    "continent": "europe",
+    "region": "Derbyshire · England",
+    "title": "Arkwright’s water frame patent",
+    "entityTypes": [
+     "markets",
+     "trades",
+     "inventions",
+     "people"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [
+      "Cromford"
+     ],
+     "universities": [],
+     "markets": [
+      "Textile manufacturing"
+     ],
+     "trades": [
+      "Cotton spinning"
+     ],
+     "inventions": [
+      "Water frame spinning machine"
+     ],
+     "people": [
+      "Richard Arkwright",
+      "John Kay"
+     ],
+     "places": [
+      "England"
+     ]
+    },
+    "summary": "The Science and Industry Museum describes the water frame as patented by Richard Arkwright in 1769, developed with clock-maker John Kay.",
+    "evidenceNote": "Patent and development history are attributed to the museum source; this is not a single-inventor claim for industrialization as a whole.",
+    "sourceLabel": "Science and Industry Museum · Richard Arkwright",
+    "sourceUrl": "https://blog.scienceandindustrymuseum.org.uk/richard-arkwright/"
+   },
+   {
+    "id": "antarctic-treaty",
+    "dateSort": 1959,
+    "dateLabel": "signed 1959 · entered into force 1961",
+    "continent": "antarctica",
+    "region": "Antarctica · international treaty system",
+    "title": "Antarctic Treaty signed",
+    "entityTypes": [
+     "places"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [],
+     "universities": [
+      "International scientific cooperation · research institutions"
+     ],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [
+      "Treaty signatories · states and delegates"
+     ],
+     "places": [
+      "Antarctica"
+     ]
+    },
+    "summary": "The Antarctic Treaty established a framework for peaceful use and scientific cooperation on the continent. It marks modern institutional history, not an ancient settlement record.",
+    "evidenceNote": "Antarctica has no ancient city or indigenous human script record; modern research activity should be catalogued separately.",
+    "sourceLabel": "Antarctic Treaty Secretariat · The Treaty",
+    "sourceUrl": "https://www.ats.aq/e/antarctictreaty.html"
+   },
+   {
+    "id": "transistor-invention",
+    "dateSort": 1947,
+    "dateLabel": "1947 CE",
+    "continent": "north-america",
+    "region": "Bell Labs · United States",
+    "title": "Point-contact transistor demonstrated",
+    "entityTypes": [
+     "inventions",
+     "people",
+     "trades"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [],
+     "cities": [
+      "Murray Hill, New Jersey"
+     ],
+     "universities": [],
+     "markets": [
+      "Electronics industry · later applications"
+     ],
+     "trades": [
+      "Semiconductor research and engineering"
+     ],
+     "inventions": [
+      "Point-contact transistor"
+     ],
+     "people": [
+      "John Bardeen",
+      "Walter Brattain",
+      "William Shockley"
+     ],
+     "places": [
+      "United States"
+     ]
+    },
+    "summary": "Bell Labs dates the first point-contact transistor to 1947 and identifies Bardeen, Brattain, and Shockley in the related research history.",
+    "evidenceNote": "Attribution follows Bell Labs; later commercial development involved many people and organizations.",
+    "sourceLabel": "Nokia Bell Labs · The transistor",
+    "sourceUrl": "https://www.bell-labs.com/institute/blog/the-transistor-75-years-since-the-famed-nokia-bell-labs-invention-changed-the-world/"
+   },
+   {
+    "id": "world-wide-web-proposal",
+    "dateSort": 1989,
+    "dateLabel": "proposal in March 1989",
+    "continent": "europe",
+    "region": "CERN · Geneva, Switzerland",
+    "title": "World Wide Web proposed at CERN",
+    "entityTypes": [
+     "books",
+     "inventions",
+     "people",
+     "trades"
+    ],
+    "entities": {
+     "languages": [],
+     "scripts": [],
+     "books": [
+      "Information Management: A Proposal"
+     ],
+     "cities": [
+      "Geneva"
+     ],
+     "universities": [],
+     "markets": [],
+     "trades": [
+      "Information sharing across research institutions"
+     ],
+     "inventions": [
+      "World Wide Web"
+     ],
+     "people": [
+      "Tim Berners-Lee"
+     ],
+     "places": [
+      "Europe · global network use followed"
+     ]
+    },
+    "summary": "CERN records Tim Berners-Lee’s March 1989 proposal for an internet-based hypertext system to link and access information across computers.",
+    "evidenceNote": "The Web and the Internet are distinct; 1989 is the proposal date, not the date the Internet began.",
+    "sourceLabel": "CERN · The birth of the Web",
+    "sourceUrl": "https://home.cern/science/computing/the-birth-of-the-web"
+   },
+   {
+    "id": "rongorongo-undated",
+    "dateSort": null,
+    "dateLabel": "Date and decipherment unsettled",
+    "continent": "oceania",
+    "region": "Rapa Nui · southeastern Pacific",
+    "title": "Rongorongo inscribed objects",
+    "entityTypes": [
+     "scripts",
+     "languages",
+     "books"
+    ],
+    "entities": {
+     "languages": [
+      "Rapa Nui language relationship not established by this record"
+     ],
+     "scripts": [
+      "Rongorongo · undeciphered"
+     ],
+     "books": [
+      "Inscribed wooden objects"
+     ],
+     "cities": [],
+     "universities": [],
+     "markets": [],
+     "trades": [],
+     "inventions": [],
+     "people": [],
+     "places": [
+      "Rapa Nui"
+     ]
+    },
+    "summary": "Rongorongo is recorded as a writing-system tradition associated with Rapa Nui, but its texts remain undeciphered and their chronology is not confidently fixed here.",
+    "evidenceNote": "Kept in an undated research lane so the interface does not imply a settled date or reading.",
+    "sourceLabel": "Smithsonian Institution · Rongorongo inscribed objects",
+    "sourceUrl": "https://www.si.edu/object/rongorongo-inscribed-objects-rapa-nui-paul-horley:siris_sil_1158019"
+   }
+  ],
+  "scriptEvents": [
+   {
+    "id": "ashokan-brahmi-records",
+    "dateSort": -250,
+    "dateLabel": "3rd century BCE",
+    "title": "Ashokan Major Rock Edict site records",
+    "region": "South Asia",
+    "continent": "asia",
+    "scripts": [
+     "Brahmi"
+    ],
+    "summary": "The current atlas records four Major Rock Edict locations—Girnar, Dhauli, Jaugada and Kalsi—as Mauryan-period, 3rd-century BCE site pointers. These points indicate named site records, not a full distribution map.",
+    "sourceLabel": "UNESCO Tentative List · inscription sites",
+    "sourceUrl": "https://whc.unesco.org/en/tentativelists/6803/",
+    "evidenceNote": "Site-level date and coordinates are retained per record; no inscription transcription or translation is supplied."
+   },
+   {
+    "id": "kharosthi-ashokan-attestation",
+    "dateSort": -250,
+    "dateLabel": "c. 250 BCE",
+    "title": "Kharoshthi in Aśokan inscriptions",
+    "region": "Northwest South Asia",
+    "continent": "asia",
+    "scripts": [
+     "Kharoshthi"
+    ],
+    "summary": "Unicode’s script history says Kharoshthi first appears in a fully developed form in the Aśokan inscriptions at Shahbazgarhi and Mansehra, dated to around 250 BCE.",
+    "sourceLabel": "Unicode Standard · Chapter 14",
+    "sourceUrl": "https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-14/",
+    "evidenceNote": "This is a source-reported attestation, not a claim about the script’s invention date."
+   },
+   {
+    "id": "kharosthi-niya-documents",
+    "dateSort": 350,
+    "dateLabel": "3rd–4th century CE",
+    "title": "Kharoshthi documents in the Tarim Basin",
+    "region": "Niya / Xinjiang · Central Asia",
+    "continent": "asia",
+    "scripts": [
+     "Kharoshthi",
+     "Gāndhārī"
+    ],
+    "summary": "The British Library and University of Washington project describes birch-bark manuscripts in Gāndhārī written in Kharoshthi and places their language and script in the Gandhāra tradition, current from about the 3rd century BCE to the 4th century CE.",
+    "sourceLabel": "University of Washington · British Library Kharoṣṭhī Fragments",
+    "sourceUrl": "https://asian.washington.edu/british-library-kharosthi-fragments",
+    "evidenceNote": "The event is region-level context; no point coordinate is asserted by this timeline record."
+   },
+   {
+    "id": "siddham-east-asia",
+    "dateSort": 650,
+    "dateLabel": "6th–7th century CE",
+    "title": "Siddham Buddhist texts reach East Asia",
+    "region": "India → China; later Korea and Japan",
+    "continent": "asia",
+    "scripts": [
+     "Siddham"
+    ],
+    "summary": "The University of Chicago Library describes Siddham reaching China as a script for Buddhist texts around the 6th–7th centuries CE, with later use in Korea and Japan.",
+    "sourceLabel": "University of Chicago Library · Lineages and Encounters",
+    "sourceUrl": "https://www.lib.uchicago.edu/collex/exhibits/world-south-asian-scripts/lineages-and-encounters/",
+    "evidenceNote": "The timeline shows a reported historical connection, not a route line or a precise migration path."
+   },
+   {
+    "id": "south-brahmic-lineage",
+    "dateSort": null,
+    "dateLabel": "Long-term lineage · date range varies",
+    "title": "Southern Brahmic traditions and Southeast Asia",
+    "region": "South Asia ↔ Southeast Asia",
+    "continent": "asia",
+    "scripts": [
+     "Pallava and related script traditions"
+    ],
+    "summary": "The University of Chicago Library describes southern Brahmic scripts as influential on Southeast Asian writing systems. The cited page does not assign one date range to this wider lineage, so this record is not placed on the dated axis.",
+    "sourceLabel": "University of Chicago Library · Lineages and Encounters",
+    "sourceUrl": "https://www.lib.uchicago.edu/collex/exhibits/world-south-asian-scripts/lineages-and-encounters/",
+    "evidenceNote": "Lineage summary only. Individual script histories need their own sourced records and dates."
+   }
+  ]
+ }
+}

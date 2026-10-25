@@ -43,6 +43,8 @@ const sutraNeurons = require('./lib/sutra-neurons');
 const aai = require('./lib/aai');
 const aaiEvidence = require('./lib/aai-evidence');
 const hkdm = require('./lib/hkdm-tensor');
+const lipiScripts = require('./lib/lipi-scripts');
+const heritage = require('./lib/heritage');
 const brahmiNotes = require('./lib/brahmi-notes');
 const BRAHMI_PAD_JS = path.join(__dirname, 'lib', 'brahmi-pad.js');
 const backgroundJobs = require('./lib/background-jobs');
@@ -353,7 +355,7 @@ function readJsonBody(req) {
   });
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm', '.woff2': 'font/woff2', '.woff': 'font/woff', '.txt': 'text/plain; charset=utf-8' };
 function serveStatic(req, res, pathname) {
   let rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const filePath = path.resolve(PUBLIC_DIR, rel);
@@ -1064,6 +1066,37 @@ const routes = [
   { method: 'GET', pattern: /^\/api\/brahmi\/notes\/([^/]+)\/export$/, handler: async (req,res,[id])=>{const q=new URL(req.url,'http://x').searchParams;const both=q.get('format')==='both';res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':`attachment; filename="brahmi-note${both?'-with-reading':''}.txt"`});res.end(brahmiNotes.exportText(store,decodeURIComponent(id),both?'both':'brahmi'));} },
   { method: 'POST', pattern: /^\/api\/brahmi\/notes\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,brahmiNotes.update(store,decodeURIComponent(id),await readJsonBody(req))) },
   { method: 'DELETE', pattern: /^\/api\/brahmi\/notes\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,brahmiNotes.remove(store,decodeURIComponent(id))) },
+  // Lipi OS (lib/lipi-scripts.js, lib/heritage.js): many-script converter, script registry, learning library,
+  // chronology and atlas, newsroom editions and the reading desk. Absorbed from the Rakhigarhi / Lipi OS prototype.
+  { method: 'GET', pattern: /^\/api\/lipi\/scripts$/, handler: async (_req,res)=>sendJson(res,200,lipiScripts.list()) },
+  { method: 'POST', pattern: /^\/api\/lipi\/convert$/, handler: async (req,res)=>{const b=await readJsonBody(req);sendJson(res,200,lipiScripts.convert(b.text,{scripts:b.scripts,hindi:!!b.hindi}));} },
+  { method: 'GET', pattern: /^\/api\/lipi\/os$/, handler: async (_req,res)=>sendJson(res,200,heritage.overview()) },
+  { method: 'GET', pattern: /^\/api\/lipi\/registry$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.registry({q:q.get('q')||'',tier:q.get('tier')||''}));} },
+  { method: 'GET', pattern: /^\/api\/lipi\/learning$/, handler: async (_req,res)=>sendJson(res,200,heritage.learning()) },
+  { method: 'GET', pattern: /^\/api\/lipi\/chronology$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.chronology({continent:q.get('continent')||'',category:q.get('category')||'',from:q.get('from'),to:q.get('to')}));} },
+  { method: 'GET', pattern: /^\/api\/lipi\/newsroom$/, handler: async (_req,res)=>sendJson(res,200,heritage.newsroom()) },
+  { method: 'POST', pattern: /^\/api\/lipi\/inspect$/, handler: async (req,res)=>sendJson(res,200,heritage.inspectText((await readJsonBody(req)).text)) },
+  { method: 'GET', pattern: /^\/api\/lipi\/readings$/, handler: async (_req,res)=>sendJson(res,200,heritage.readings(store)) },
+  { method: 'POST', pattern: /^\/api\/lipi\/readings$/, handler: async (req,res)=>sendJson(res,201,heritage.saveReading(store,await readJsonBody(req))) },
+  { method: 'PUT', pattern: /^\/api\/lipi\/readings\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,heritage.saveReading(store,await readJsonBody(req),decodeURIComponent(id))) },
+  { method: 'DELETE', pattern: /^\/api\/lipi\/readings\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,heritage.removeReading(store,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/lipi\/editions$/, handler: async (_req,res)=>sendJson(res,200,heritage.editions(store)) },
+  { method: 'POST', pattern: /^\/api\/lipi\/editions$/, handler: async (req,res)=>sendJson(res,201,heritage.saveEdition(store,await readJsonBody(req))) },
+  { method: 'PUT', pattern: /^\/api\/lipi\/editions\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,heritage.saveEdition(store,await readJsonBody(req),decodeURIComponent(id))) },
+  { method: 'DELETE', pattern: /^\/api\/lipi\/editions\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,heritage.removeEdition(store,decodeURIComponent(id))) },
+  // Rakhigarhi heritage platform (lib/heritage.js): source notes, maps, activities, itinerary drafts, budgets, providers.
+  { method: 'GET', pattern: /^\/api\/heritage\/rakhigarhi$/, handler: async (_req,res)=>sendJson(res,200,heritage.rakhigarhi()) },
+  { method: 'GET', pattern: /^\/api\/heritage\/budget$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.budgetModel({adults:q.get('adults'),mealsPerDay:q.get('mealsPerDay'),vehiclePerDay:q.get('vehiclePerDay'),learningPerPerson:q.get('learningPerPerson')}));} },
+  { method: 'GET', pattern: /^\/api\/heritage\/estimate$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;const h=(q.get('headcounts')||'').split(',').map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=20);sendJson(res,200,heritage.fieldVisitEstimate(h.length?{headcounts:h}:{}));} },
+  { method: 'GET', pattern: /^\/api\/heritage\/providers\/match$/, handler: async (_req,res)=>sendJson(res,200,heritage.matchProviders(store)) },
+  { method: 'GET', pattern: /^\/api\/heritage\/itineraries$/, handler: async (_req,res)=>sendJson(res,200,heritage.itineraries(store)) },
+  { method: 'POST', pattern: /^\/api\/heritage\/itineraries$/, handler: async (req,res)=>sendJson(res,201,heritage.saveItinerary(store,await readJsonBody(req))) },
+  { method: 'PUT', pattern: /^\/api\/heritage\/itineraries\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,heritage.saveItinerary(store,await readJsonBody(req),decodeURIComponent(id))) },
+  { method: 'DELETE', pattern: /^\/api\/heritage\/itineraries\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,heritage.removeItinerary(store,decodeURIComponent(id))) },
+  { method: 'GET', pattern: /^\/api\/heritage\/providers$/, handler: async (_req,res)=>sendJson(res,200,heritage.providers(store)) },
+  { method: 'POST', pattern: /^\/api\/heritage\/providers$/, handler: async (req,res)=>sendJson(res,201,heritage.saveProvider(store,await readJsonBody(req))) },
+  { method: 'PUT', pattern: /^\/api\/heritage\/providers\/([^/]+)$/, handler: async (req,res,[id])=>sendJson(res,200,heritage.saveProvider(store,await readJsonBody(req),decodeURIComponent(id))) },
+  { method: 'DELETE', pattern: /^\/api\/heritage\/providers\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,heritage.removeProvider(store,decodeURIComponent(id))) },
   // HKDM script tensor T(α, β, γ, δ) (lib/hkdm-tensor.js): read-only views of the sourced records.
   { method: 'GET', pattern: /^\/api\/hkdm$/, handler: async (req,res)=>sendJson(res,200,hkdm.summary(hkdmOpts(req))) },
   { method: 'GET', pattern: /^\/api\/hkdm\/projection$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,hkdm.project({rows:q.get('rows')||'alpha',cols:q.get('cols')||'beta',filter:hkdmFilter(q),...hkdmOpts(req)}));} },

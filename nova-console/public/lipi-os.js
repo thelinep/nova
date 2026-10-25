@@ -1,0 +1,415 @@
+/* ===========================================================================
+ * Lipi OS — a language layer by Maataa
+ *
+ * Welcome in twelve scripts, a many-script converter, the script registry,
+ * the learning library (courses, catalogues, reading desk), workshop plans,
+ * the multi-script newsroom, the Ashokan text atlas and a sourced chronology.
+ * Absorbed from the owner's Rakhigarhi / Lipi OS prototype; the data and its
+ * caveats live in lib/heritage-data/lipi-os.json and are served by
+ * lib/heritage.js. Everything people make here is saved in Maataa.
+ * ========================================================================= */
+
+export const FONTS = {
+  Brah: ['brahmi', 'Noto Sans Brahmi'], Khar: ['kharoshthi', 'Noto Sans Kharoshthi'], Bhks: ['bhaiksuki', 'Noto Sans Bhaiksuki'],
+  Shrd: ['sharada', 'Noto Sans Sharada'], Sidd: ['siddham', 'Noto Sans Siddham'], Gran: ['grantha', 'Noto Sans Grantha'],
+  Nand: ['nandinagari', 'Noto Sans Nandinagari'], Newa: ['newa', 'Noto Sans Newa'], Tirh: ['tirhuta', 'Noto Sans Tirhuta'],
+  Takr: ['takri', 'Noto Sans Takri'], Modi: ['modi', 'Noto Sans Modi'], Kthi: ['kaithi', 'Noto Sans Kaithi'],
+  Dogr: ['dogra', 'Noto Serif Dogra'], Sind: ['khudawadi', 'Noto Sans Khudawadi'], Diak: ['dives-akuru', 'Noto Serif Dives Akuru'], Kawi: ['kawi', 'Noto Sans Kawi'],
+};
+const FONT_FILE = { Dogr: 'noto-serif-dogra-dogra', Diak: 'noto-serif-dives-akuru-dives-akuru' };
+export const fontStyle = code => FONTS[code] ? `font-family:'Lipi ${code}','${FONTS[code][1]}',var(--font-ui);` : '';
+export const dirOf = code => (code === 'Khar' ? 'rtl' : 'ltr');
+const INDIC = /[\u{0900}-\u{0dff}\u{11000}-\u{11fff}]/u;
+
+const CSS = `
+${Object.entries(FONTS).map(([c, [slug]]) => `@font-face{font-family:'Lipi ${c}';src:url('/fonts/lipi/${FONT_FILE[c] || 'noto-sans-' + slug + '-' + slug}-400-normal.woff2') format('woff2');font-display:swap}`).join('\n')}
+.lo-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px;align-items:start}
+@media(max-width:1000px){.lo-hero{grid-template-columns:1fr}}
+.lo-big{font-size:46px;line-height:1.1;margin:6px 0}
+.lo-roman{color:var(--muted);font-size:15px;margin-bottom:10px}
+.lo-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.lo-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;text-align:left;color:var(--ink);min-width:0}
+.lo-card[aria-pressed="true"]{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-line)}
+.lo-card .n{font:11px var(--font-mono);color:var(--muted)}
+.lo-card .r{font-size:22px;margin:6px 0;overflow-wrap:anywhere}
+.lo-card .l{font-size:13px}
+.lo-card .t{font:10px var(--font-mono);color:var(--muted);letter-spacing:.05em}
+.lo-focus{font-size:34px;padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;margin:8px 0;overflow-wrap:anywhere}
+.lo-note{font-size:12px;color:var(--muted);line-height:1.5}
+.lo-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lo-grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+@media(max-width:900px){.lo-grid2{grid-template-columns:1fr}}
+.lo-res{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
+.lo-res .s{font-size:22px;overflow-wrap:anywhere}
+.lo-res .m{font-size:11px;color:var(--amber)}
+.lo-chip{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:3px 9px;font-size:12px;cursor:pointer}
+.lo-chip[aria-pressed="true"]{background:var(--amber-soft);border-color:var(--amber-line);color:var(--ink)}
+.lo-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.lo-table th,.lo-table td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.lo-table th{font:10.5px var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.lo-table tr.sel td{background:var(--amber-soft)}
+.lo-tier{font:10px var(--font-mono);padding:2px 6px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.lo-tier.FLAGSHIP{color:var(--amber);border-color:var(--amber-line)}
+.lo-tier.PILOT{color:var(--blue)}
+.lo-tier.EXHIBITION_ONLY{color:var(--rose)}
+.lo-ok{color:var(--green);font-size:11px}
+.lo-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.lo-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.lo-item h4{margin:2px 0 6px;font-size:14px}
+.lo-item .k{font:10.5px var(--font-mono);color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.lo-item a{color:var(--amber)}
+.lo-cover{padding:14px;min-height:118px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.lo-cover .k{color:#ffffffcc}
+.lo-cover h4{font-size:16px;margin:4px 0}
+details.lo-det summary{cursor:pointer;color:var(--amber);font-size:12.5px;margin-top:8px}
+.lo-ed{display:grid;grid-template-columns:220px minmax(0,1fr);gap:12px}
+@media(max-width:1000px){.lo-ed{grid-template-columns:1fr}}
+.lo-lane{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--panel2)}
+.lo-lane textarea,.lo-lane input,.lo-lane select,.lo-form input,.lo-form select,.lo-form textarea{width:100%;box-sizing:border-box}
+.lo-form{display:grid;gap:6px;align-content:start}
+.lo-paper{border-radius:6px;padding:22px;color:#211d17;background:#f4ecdb;font-family:Georgia,serif;box-shadow:0 6px 30px #0006}
+.lo-paper .mast{text-align:center;border-bottom:3px double var(--acc);padding-bottom:8px;margin-bottom:12px}
+.lo-paper .mast h2{font-size:38px;margin:0;letter-spacing:.04em}
+.lo-paper .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.lo-paper .col{border-top:2px solid var(--acc);padding-top:6px;min-width:0}
+.lo-paper .col h3{font-size:20px;margin:4px 0;overflow-wrap:anywhere}
+.lo-paper .col p{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.lo-paper .tag{font:10px var(--font-mono);color:#74634e;letter-spacing:.08em}
+.lo-vec{perspective:1100px;display:flex;justify-content:center;padding:10px}
+.lo-vec>div{transform-style:preserve-3d;transition:transform .2s}
+.lo-map{background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.lo-map text{fill:var(--muted);font:10px var(--font-mono)}
+.lo-pin{cursor:pointer}
+.lo-tl text{fill:var(--muted);font:10px var(--font-mono)}
+`;
+
+function ensureCss() {
+  if (document.getElementById('lipi-os-css')) return;
+  const s = document.createElement('style'); s.id = 'lipi-os-css'; s.textContent = CSS; document.head.appendChild(s);
+}
+
+const S = {
+  tab: 'welcome', os: null, focus: 'Brah', study: 'Hindi',
+  conv: { text: 'आपका स्वागत है', hindi: true, sel: null, out: null },
+  reg: { q: '', tier: '', data: null, focus: null, sample: null },
+  learn: null, readings: null,
+  news: null, editions: null, edId: null, view: 'multi', debugLane: 0, rotate: -14,
+  chrono: { continent: '', category: '', from: -10000, to: 2026, data: null, sel: null },
+  atlasSel: 0,
+};
+try { const p = JSON.parse(localStorage.getItem('maataa.lipi') || '{}'); if (p.focus) S.focus = p.focus; if (p.study) S.study = p.study; } catch (_) { /* per-browser convenience only */ }
+const remember = () => { try { localStorage.setItem('maataa.lipi', JSON.stringify({ focus: S.focus, study: S.study })); } catch (_) { /* ignore */ } };
+
+const TABS = [['welcome', 'Welcome'], ['convert', 'Convert'], ['scripts', 'Scripts'], ['learn', 'Learn'], ['workshops', 'Workshops'], ['newsroom', 'Newsroom'], ['atlas', 'Text atlas'], ['chronology', 'Chronology']];
+const ALPHABET = 'अ आ इ ई उ ऊ ऋ ए ऐ ओ औ · क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह · ० १ २ ३ ४ ५ ६ ७ ८ ९';
+
+/** Renders Lipi OS into root. deps: { apiGet, apiPost, toast, escapeHtml, FIELD, web } */
+export async function renderLipiOS(root, deps, tab) {
+  ensureCss();
+  if (tab) S.tab = tab;
+  const h = deps.escapeHtml;
+  try { if (!S.os) S.os = await deps.apiGet('/api/lipi/os'); } catch (e) { root.innerHTML = `<p class="empty-hint" style="color:var(--red)">Lipi OS could not load: ${h(e.message)}</p>`; return; }
+  root.innerHTML = `<div class="view-head"><div><span class="eyebrow">Maataa operating layer · Lipi OS</span><h1 class="view-title">Lipi OS</h1>
+    <p class="view-desc">A language layer by Maataa: read and write in twenty-five scripts, browse the script registry, plan study and workshops, and compose multi-script editions. A script is a writing system, not a language.</p></div></div>
+    <div class="cs-tabs" role="tablist">${TABS.map(([id, l]) => `<button role="tab" class="cs-tab ${S.tab === id ? 'active' : ''}" aria-selected="${S.tab === id}" data-lo-tab="${id}">${l}</button>`).join('')}</div>
+    <div id="loBody" data-no-list-tools></div>`;
+  root.querySelectorAll('[data-lo-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.loTab; renderLipiOS(root, deps); });
+  const body = root.querySelector('#loBody');
+  const fn = { welcome, convert, scripts, learn, workshops, newsroom, atlas, chronology }[S.tab] || welcome;
+  try { await fn(body, deps, () => renderLipiOS(root, deps)); } catch (e) { body.innerHTML = `<p class="empty-hint" style="color:var(--red)">${h(e.message)}</p>`; }
+}
+
+// --- welcome ---------------------------------------------------------------------------------------
+async function welcome(el, deps, rerender) {
+  const h = deps.escapeHtml, w = S.os.welcome, ref = Object.fromEntries((S.os.welcomeReference || []).map(r => [r.id, r.rendering]));
+  const cur = w.results.find(r => r.code === S.focus) || w.results[0];
+  el.innerHTML = `<div class="lo-hero">
+    <div class="panel" style="padding:16px">
+      <div class="eyebrow">Maataa operating layer / Lipi OS</div>
+      <div class="lo-big" lang="hi">${h(w.hindi)}</div>
+      <div class="lo-roman">${h(w.roman)} · ${h(w.english)}</div>
+      <p class="lo-note">A modern Hindi welcome, carried across twelve historic scripts. Choose a script to focus it; your choice stays on this computer.</p>
+      <div class="lo-row" style="margin-top:10px">
+        <label class="lo-note">Study language <select id="loStudy" style="${deps.FIELD}">${S.os.studyLanguages.map(l => `<option value="${h(l.id)}" ${l.id === S.study ? 'selected' : ''}>${h(l.name)} · ${h(l.native)}</option>`).join('')}</select></label>
+      </div>
+      <div class="lo-focus" dir="${dirOf(cur.code)}" style="${fontStyle(cur.code)}" aria-label="${h(cur.label)} rendering">${h(cur.text)}</div>
+      <div class="lo-note">${h(cur.label)} · ${cur.direction === 'rtl' ? 'Right to left' : 'Left to right'} · study language ${h((S.os.studyLanguages.find(l => l.id === S.study) || {}).name || S.study)}${ref[cur.code] && ref[cur.code] !== cur.text ? ' · the prototype wrote <span style="' + fontStyle(cur.code) + '">' + h(ref[cur.code]) + '</span>; Maataa keeps Guru’s length mark for ai in Kharoshthi' : ''}</div>
+      <p class="lo-note" style="margin-top:10px">${h(w.note)} Spelled as pronounced: <span lang="hi">${h(w.spelled)}</span>.</p>
+      <div class="lo-row" style="margin-top:8px"><button class="btn btn-amber" data-go="convert">Convert your own text</button><button class="btn btn-line" data-go="scripts">Browse ${S.os.registry.total} script records</button><button class="btn btn-line" data-go="learn">Courses and reading desk</button><button class="btn btn-line" data-go="workshops">${S.os.counts.workshops + S.os.counts.futurism} workshop plans</button><button class="btn btn-line" data-go="newsroom">Open the newsroom</button></div>
+    </div>
+    <div><div class="cap-section-label">A welcome in twelve scripts · बारह लिपियों में स्वागत</div>
+      <div class="lo-cards">${w.results.map((r, i) => `<button class="lo-card" aria-pressed="${r.code === cur.code}" data-code="${r.code}"><div class="n">${String(i + 1).padStart(2, '0')}</div><div class="r" dir="${dirOf(r.code)}" style="${fontStyle(r.code)}">${h(r.text)}</div><div class="l">${h(r.label)}</div><div class="t">${r.code.toUpperCase()} · DRAFT RENDERING${r.missing.length ? ' · ' + r.missing.length + ' KEPT' : ''}</div></button>`).join('')}</div>
+      <p class="lo-note" style="margin-top:6px">If a card shows boxes, its font did not load; Maataa ships Noto fonts for these scripts.</p></div>
+  </div>`;
+  el.querySelectorAll('.lo-card').forEach(b => b.onclick = () => { S.focus = b.dataset.code; remember(); rerender(); });
+  el.querySelector('#loStudy').onchange = e => { S.study = e.target.value; remember(); rerender(); };
+  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { S.tab = b.dataset.go; rerender(); });
+}
+
+// --- convert ---------------------------------------------------------------------------------------
+async function convert(el, deps, rerender) {
+  const h = deps.escapeHtml, all = S.os.scripts;
+  if (!S.conv.sel) S.conv.sel = new Set(all.map(s => s.code));
+  const run = async () => { try { S.conv.out = await deps.apiPost('/api/lipi/convert', { text: S.conv.text, hindi: S.conv.hindi, scripts: [...S.conv.sel] }); } catch (e) { deps.toast(e.message); S.conv.out = null; } };
+  if (!S.conv.out && S.conv.text.trim() && S.conv.sel.size) await run();
+  const o = S.conv.out;
+  el.innerHTML = `<div class="panel" style="padding:14px">
+      <textarea id="loText" aria-label="Text to convert" style="${deps.FIELD};width:100%;min-height:80px;font-size:18px">${h(S.conv.text)}</textarea>
+      <div class="lo-row" style="margin-top:8px"><button class="btn btn-amber" id="loGo">Convert</button>
+        <label class="lo-note"><input type="checkbox" id="loHindi" ${S.conv.hindi ? 'checked' : ''}> Hindi: spell as pronounced (drops silent inherent vowels; a heuristic)</label>
+        <button class="lo-chip" id="loAll">All scripts</button><button class="lo-chip" id="loNone">None</button></div>
+      <div class="lo-row" style="margin-top:8px">${all.map(s => `<button class="lo-chip" aria-pressed="${S.conv.sel.has(s.code)}" data-code="${s.code}" title="${h(s.note || '')}">${h(s.label)}${s.coverage != null && s.coverage < 1 ? ' · ' + Math.round(s.coverage * 100) + '%' : ''}</button>`).join('')}</div>
+      <p class="lo-note" style="margin-top:6px">Type Devanagari, any script listed here, or SLP1 in Latin letters. Letters a script has no form for stay in Devanagari and are flagged; nothing is guessed or translated.</p>
+    </div>
+    ${o ? `<div class="panel" style="margin-top:10px;padding:0">
+      <div class="lo-res"><span class="lo-note">Read as Devanagari</span><span class="s" lang="hi">${h(o.devanagari)}</span><span></span></div>
+      ${o.spelling === 'hindi-pronunciation' ? `<div class="lo-res"><span class="lo-note">Spelled as pronounced</span><span class="s" lang="hi">${h(o.spelled)}</span><span></span></div>` : ''}
+      ${o.iast ? `<div class="lo-res"><span class="lo-note">IAST</span><span class="s" style="font-size:16px">${h(o.iast)}</span><button class="btn btn-line lo-copy" data-t="${h(o.iast)}">Copy</button></div>` : ''}
+      ${o.results.map(r => `<div class="lo-res"><span><strong style="font-size:13px">${h(r.label)}</strong><br><span class="lo-note">${h(r.hi || '')}</span></span><span><span class="s" dir="${r.direction}" style="${fontStyle(r.code)}">${h(r.text)}</span>${r.missing.length ? `<br><span class="m">Kept in Devanagari (no form in ${h(r.label)}): ${h(r.missing.join(' '))}</span>` : ''}</span><button class="btn btn-line lo-copy" data-t="${h(r.text)}">Copy</button></div>`).join('')}
+    </div>` : ''}`;
+  const readText = () => { S.conv.text = el.querySelector('#loText').value; };
+  el.querySelector('#loGo').onclick = async () => { readText(); await run(); rerender(); };
+  el.querySelector('#loHindi').onchange = async e => { S.conv.hindi = e.target.checked; readText(); await run(); rerender(); };
+  el.querySelector('#loAll').onclick = async () => { readText(); S.conv.sel = new Set(all.map(s => s.code)); await run(); rerender(); };
+  el.querySelector('#loNone').onclick = () => { readText(); S.conv.sel = new Set(); S.conv.out = null; rerender(); };
+  el.querySelectorAll('.lo-chip[data-code]').forEach(b => b.onclick = async () => { const c = b.dataset.code; S.conv.sel.has(c) ? S.conv.sel.delete(c) : S.conv.sel.add(c); readText(); if (S.conv.sel.size) await run(); else S.conv.out = null; rerender(); });
+  el.querySelectorAll('.lo-copy').forEach(b => b.onclick = () => { navigator.clipboard?.writeText(b.dataset.t).then(() => deps.toast('Copied.'), () => deps.toast('Copy was blocked; select the text instead.')); });
+}
+
+// --- scripts registry --------------------------------------------------------------------------------
+async function scripts(el, deps, rerender) {
+  const h = deps.escapeHtml;
+  S.reg.data = await deps.apiGet(`/api/lipi/registry?q=${encodeURIComponent(S.reg.q)}&tier=${encodeURIComponent(S.reg.tier)}`);
+  const d = S.reg.data, f = S.reg.focus && d.records.find(r => r.code === S.reg.focus);
+  if (f && f.convertible && (!S.reg.sample || S.reg.sample.code !== f.code)) {
+    try { const out = await deps.apiPost('/api/lipi/convert', { text: ALPHABET, scripts: [f.code] }); S.reg.sample = { ...out.results[0] }; } catch (_) { S.reg.sample = null; }
+  }
+  const meta = f ? S.os.scripts.find(s => s.code === f.code) : null;
+  el.innerHTML = `<div class="lo-row" style="margin-bottom:8px"><input id="loQ" placeholder="Search script records" value="${h(S.reg.q)}" style="${deps.FIELD};min-width:240px">
+      <select id="loTier" style="${deps.FIELD}"><option value="">All tiers</option>${d.tiers.map(t => `<option value="${t.id}" ${S.reg.tier === t.id ? 'selected' : ''}>${h(t.label)} (${t.count})</option>`).join('')}</select>
+      <span class="lo-note">${d.shown} of ${d.total} records · Lipi can write ${d.convertible}</span></div>
+    <div class="lo-grid2"><div class="panel" style="padding:0;overflow:auto;max-height:640px"><table class="lo-table"><thead><tr><th>Code</th><th>Script</th><th>Region</th><th>Tier</th><th>Lipi</th></tr></thead><tbody>
+      ${d.records.map(r => `<tr class="${r.code === S.reg.focus ? 'sel' : ''}" data-code="${r.code}" style="cursor:pointer"><td class="mono">${r.code}</td><td>${h(r.name)}</td><td>${h(r.region)}</td><td><span class="lo-tier ${r.tier}">${h(r.tierLabel)}</span></td><td>${r.convertible ? '<span class="lo-ok">writes</span>' : ''}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div>${f ? `<div class="panel" style="padding:14px"><div class="eyebrow">${f.code} · ${h(f.tierLabel)}</div><h3 style="margin:4px 0">${h(f.name)}</h3><div class="lo-note">${h(f.region)}</div>
+      ${f.exhibitionOnly ? `<p class="lo-note" style="color:var(--rose)">Exhibition only. The Indus / Harappan signs are undeciphered; Lipi makes no decipherment or transliteration claim for them.</p>` : ''}
+      ${f.convertible && S.reg.sample ? `<div class="lo-focus" style="font-size:26px;${fontStyle(f.code)}" dir="${dirOf(f.code)}">${h(S.reg.sample.text)}</div>
+        <div class="lo-note">${meta?.note ? h(meta.note) + ' ' : ''}${meta?.coverage != null ? 'Covers ' + Math.round(meta.coverage * 100) + '% of the letters Sanskrit and Hindi need.' : ''} ${meta?.missing?.length ? 'No form for: <span lang="hi">' + h(meta.missing.join(' ')) + '</span> (kept in Devanagari).' : ''}</div>
+        <div class="lo-row" style="margin-top:8px"><button class="btn btn-line" id="loUse">Convert text into ${h(f.name)}</button></div>`
+        : !f.exhibitionOnly ? `<p class="lo-note">Lipi cannot write ${h(f.name)} yet: it is a historical style without its own Unicode block, or its structure differs from Devanagari's. It stays a study record.</p>` : ''}
+      </div>` : `<div class="panel" style="padding:14px"><p class="lo-note">Choose a record to see it written out.</p></div>`}
+      <p class="lo-note" style="margin-top:8px">${h(d.boundary)} Registry reference: Unicode Technical Standard #24 (Script Property).</p></div></div>`;
+  let t; el.querySelector('#loQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { S.reg.q = e.target.value; rerender(); }, 250); };
+  el.querySelector('#loTier').onchange = e => { S.reg.tier = e.target.value; rerender(); };
+  el.querySelectorAll('tr[data-code]').forEach(r => r.onclick = () => { S.reg.focus = r.dataset.code; rerender(); });
+  const use = el.querySelector('#loUse'); if (use) use.onclick = () => { S.conv.sel = new Set(['Deva', f.code]); S.conv.out = null; S.tab = 'convert'; rerender(); };
+}
+
+// --- learning library --------------------------------------------------------------------------------
+async function learn(el, deps, rerender) {
+  const h = deps.escapeHtml;
+  if (!S.learn) S.learn = await deps.apiGet('/api/lipi/learning');
+  S.readings = await deps.apiGet('/api/lipi/readings');
+  const L = S.learn, lang = S.study;
+  const courses = L.courses.filter(c => lang === 'Hindi' || c.language === lang);
+  const names = S.os.scripts.map(s => s.label);
+  el.innerHTML = `<div class="lo-row" style="margin-bottom:8px"><label class="lo-note">Study language <select id="loStudy2" style="${deps.FIELD}">${L.studyLanguages.map(l => `<option value="${h(l.id)}" ${l.id === lang ? 'selected' : ''}>${h(l.name)} · ${h(l.native)}</option>`).join('')}</select></label><span class="lo-note">Hindi shows every course.</span></div>
+    <div class="cap-section-label">Language courses · external provider listings (${courses.length})</div>
+    <div class="lo-list">${courses.map(c => `<div class="lo-item"><div class="k">${h(c.language)} · ${h(c.provider)}</div><h4>${h(c.title)}</h4><div class="lo-note">${h(c.format)}</div><p style="font-size:13px">${h(c.focus)}</p><div class="lo-note">${h(c.status)}</div><a href="${h(c.url)}" target="_blank" rel="noopener">${h(c.sourceLabel)} ↗</a></div>`).join('') || '<p class="lo-note">No listed course for this language yet.</p>'}</div>
+    <p class="lo-note">${h(L.notes.courses)}</p>
+    <div class="cap-section-label" style="margin-top:14px">Source catalogues</div>
+    <div class="lo-list">${L.catalogs.map(c => `<div class="lo-item"><div class="k">${h(c.kind)}</div><h4>${h(c.name)}</h4><p style="font-size:13px">${h(c.description)}</p><a href="${h(c.url)}" target="_blank" rel="noopener">${h(c.sourceLabel)} ↗</a></div>`).join('')}</div>
+    <p class="lo-note">These open external collections. Availability, editions, access and rights vary; Maataa has not imported or verified individual books.</p>
+    <div class="cap-section-label" style="margin-top:14px">My reading desk · saved in Maataa (${S.readings.length})</div>
+    <div class="lo-grid2"><form class="panel lo-form" id="loReadForm" style="padding:12px">
+      <input name="title" required placeholder="Book or text title (required)" style="${deps.FIELD}">
+      <input name="author" placeholder="Author, editor or translator" style="${deps.FIELD}">
+      <div class="lo-row"><select name="language" style="${deps.FIELD};flex:1">${L.studyLanguages.map(l => `<option ${l.id === lang ? 'selected' : ''}>${h(l.name)}</option>`).join('')}</select>
+      <select name="script" style="${deps.FIELD};flex:1"><option value="">Script or edition: not entered</option>${names.map(n => `<option>${h(n)}</option>`).join('')}</select></div>
+      <input name="url" placeholder="Source link (optional, https://…)" style="${deps.FIELD}">
+      <textarea name="notes" placeholder="Notes: edition, access, rights, what to check" style="${deps.FIELD};min-height:60px"></textarea>
+      <button class="btn btn-amber" type="submit">Save reference</button>
+      <p class="lo-note">References and rights are not verified by Maataa.</p></form>
+      <div>${S.readings.map(r => `<div class="lo-item" style="margin-bottom:8px"><div class="k">${h(r.language || '')}${r.script ? ' · ' + h(r.script) : ''} · ${h(r.status)}</div><h4>${h(r.title)}</h4>${r.author ? `<div class="lo-note">${h(r.author)}</div>` : ''}${r.notes ? `<p style="font-size:12.5px;white-space:pre-wrap">${h(r.notes)}</p>` : ''}${r.url ? `<a href="${h(r.url)}" target="_blank" rel="noopener">Source ↗</a>` : ''}
+        <div class="lo-row" style="margin-top:6px">${['to-read', 'reading', 'done'].map(s => `<button class="lo-chip" aria-pressed="${r.status === s}" data-read="${r.id}" data-status="${s}">${s.replace('-', ' ')}</button>`).join('')}<button class="lo-chip" data-del="${r.id}">Delete</button></div></div>`).join('') || '<p class="lo-note">No saved references yet. Add a title to start your reading desk.</p>'}</div></div>`;
+  el.querySelector('#loStudy2').onchange = e => { S.study = e.target.value; remember(); rerender(); };
+  el.querySelector('#loReadForm').onsubmit = async e => { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); try { await deps.apiPost('/api/lipi/readings', f); deps.toast('Saved to your reading desk.'); rerender(); } catch (err) { deps.toast(err.message); } };
+  el.querySelectorAll('[data-read]').forEach(b => b.onclick = async () => { const r = S.readings.find(x => x.id === b.dataset.read); await deps.apiPost('/api/lipi/readings/' + r.id, { ...r, status: b.dataset.status }, 'PUT'); rerender(); });
+  el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await deps.apiPost('/api/lipi/readings/' + b.dataset.del, {}, 'DELETE'); deps.toast('Removed.'); rerender(); });
+}
+
+// --- workshops --------------------------------------------------------------------------------------
+const COVERS = [['#8a4b1f', '#c98a3c'], ['#2f5d50', '#6aa38c'], ['#3b3f78', '#7d84c9'], ['#6b2f4a', '#b86a8c'], ['#4a5a23', '#93a650'], ['#244a6b', '#5f97c4'], ['#5c3b1e', '#a8743f'], ['#334d4d', '#6f9c9c'], ['#5a2e2e', '#a35d5d'], ['#2e4a2e', '#6c9a6c'], ['#40305c', '#8670b0']];
+const hm = m => `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`;
+const inr = n => '₹' + Number(n).toLocaleString('en-IN');
+async function workshops(el, deps) {
+  const h = deps.escapeHtml;
+  if (!S.learn) S.learn = await deps.apiGet('/api/lipi/learning');
+  const L = S.learn, b = L.futurism.priceBasis;
+  el.innerHTML = `<div class="cap-section-label">Maataa · Lipi OS workshops · ${L.workshops.length} draft manuals</div>
+    <div class="lo-list">${L.workshops.map((w, i) => `<div class="lo-item" style="padding:0;overflow:hidden"><div class="lo-cover" style="--c1:${COVERS[i % 11][0]};--c2:${COVERS[i % 11][1]}"><div class="k">MAATAA · LIPI OS · ${String(i + 1).padStart(2, '0')} / ${L.workshops.length}</div><div><h4>${h(w.title)}</h4><div style="font-size:12.5px">${h(w.subtitle)}</div></div></div>
+      <div style="padding:12px"><div class="k">${h(w.track)} · ${hm(w.plannedMinutes)} · ${h(w.format)}</div><p style="font-size:12.5px">${h(w.objective)}</p><div class="lo-note">Audience: ${h(w.audience)} · Study language: ${h(S.study)}</div>
+      <details class="lo-det"><summary>Timed itinerary · ${hm(w.plannedMinutes)} total</summary><table class="lo-table">${w.sessions.map((s, j) => `<tr><td class="mono">${String(j + 1).padStart(2, '0')}</td><td class="mono">+${hm(s.start)}</td><td><strong>${h(s.title)}</strong><br><span class="lo-note">${h(s.activity)}</span></td><td class="mono">${s.minutes} min</td></tr>`).join('')}</table><p class="lo-note">Scheduled time: ${hm(w.plannedMinutes)}. Breaks are not included.</p></details>
+      ${w.qa ? `<details class="lo-det"><summary>QA checkpoints & completion evidence</summary><ul style="font-size:12.5px;padding-left:18px">${w.qa.checks.map(c => `<li>${h(c)}</li>`).join('')}</ul><p class="lo-note"><strong>Evidence to review:</strong> ${h(w.qa.evidence)}</p></details>` : ''}
+      <p class="lo-note" style="margin-top:6px">Proposed outline. Price, instructor, venue, materials, enrollment and delivery are unconfirmed.</p></div></div>`).join('')}</div>
+    <p class="lo-note">${h(L.notes.workshops)} No accredited or externally recognised certification is confirmed; a non-credit completion record is only a proposal.</p>
+    <div class="cap-section-label" style="margin-top:16px">Maataa · Futurism workshop series · researching the future through evidence</div>
+    <div class="lo-list">${L.futurism.workshops.map((w, i) => { const c = w.computed; return `<div class="lo-item" style="padding:0;overflow:hidden"><div class="lo-cover" style="--c1:${COVERS[(i + 4) % 11][0]};--c2:${COVERS[(i + 4) % 11][1]}"><div class="k">MAATAA · FUTURISM · ${String(i + 1).padStart(2, '0')} / 09</div><h4>${h(w.title)}</h4></div>
+      <div style="padding:12px"><p style="font-size:12.5px">${h(w.focus)}</p><table class="lo-table"><tr><td>Duration</td><td>${w.days} ${w.days === 1 ? 'day' : 'days'} · ${w.hours} contact hours</td></tr><tr><td>Draft price</td><td>${inr(w.price)} per participant ${c.perParticipant === w.price ? '<span class="lo-ok">recomputed ✓</span>' : `<span style="color:var(--amber)">model gives ${inr(c.perParticipant)}</span>`}</td></tr></table>
+      <details class="lo-det"><summary>Full index, staffing and price basis</summary><ol style="font-size:12.5px;padding-left:18px">${w.index.map(x => `<li>${h(x.replace(/^\d+ · /, ''))}</li>`).join('')}</ol>
+        <div class="lo-note"><strong>Lead lecturer:</strong> ${h(w.lecturer)}; one lead for preparation and delivery.<br><strong>Researcher:</strong> ${h(w.researcher)}; source checking and one preparation day.</div>
+        <table class="lo-table" style="margin-top:6px"><tr><td>Lecturer + researcher (${w.days} delivery + 1 prep day each)</td><td class="mono">${inr(c.people)}</td></tr><tr><td>Producer, AV assistant, venue × ${w.days} day(s)</td><td class="mono">${inr(c.production)}</td></tr><tr><td>Materials · ${b.cohort} people × ${w.days} day(s)</td><td class="mono">${inr(c.materials)}</td></tr><tr><td>Platform management ${Math.round(b.platformCharge * 100)}%</td><td class="mono">${inr(c.platform)}</td></tr><tr><td><strong>Total for a cohort of ${b.cohort}</strong></td><td class="mono"><strong>${inr(c.total)}</strong></td></tr></table>
+        <p class="lo-note">Rounded up to the next ₹100 per participant. Excluded: ${h(b.excluded)}</p></details></div></div>`; }).join('')}</div>
+    <p class="lo-note">${h(L.notes.futurism)} Historical or scientific claims need source review; the series does not imply that ancient methods are automatically equivalent or superior to modern engineering.</p>`;
+}
+
+// --- newsroom -----------------------------------------------------------------------------------------
+async function newsroom(el, deps, rerender) {
+  const h = deps.escapeHtml;
+  if (!S.news) S.news = await deps.apiGet('/api/lipi/newsroom');
+  S.editions = await deps.apiGet('/api/lipi/editions');
+  const N = S.news;
+  if (!S.editions.some(e => e.id === S.edId)) S.edId = S.editions[0]?.id || null;
+  const ed = S.editions.find(e => e.id === S.edId);
+  const theme = ed ? N.themes.find(t => t.id === ed.theme) || N.themes[0] : N.themes[0];
+  const langOpts = cur => N.studyLanguages.map(l => `<option value="${h(l.id)}" ${l.id === cur ? 'selected' : ''}>${h(l.native)} · ${h(l.name)}</option>`).join('');
+  const scriptOpts = cur => [...N.scripts, { code: 'Latn', label: 'Roman' }].map(s => `<option value="${s.code}" ${s.code === cur ? 'selected' : ''}>${h(s.label)}</option>`).join('');
+  const views = [...N.views, { id: 'print', label: 'Print preview' }];
+  el.innerHTML = `<div class="lo-ed"><div><button class="btn btn-amber" id="loNewEd" style="width:100%">New edition</button><div class="cap-section-label">Editions</div>
+      ${S.editions.map(e => `<button class="lo-card" style="width:100%;margin-bottom:6px" aria-pressed="${e.id === S.edId}" data-ed="${e.id}"><div class="l">${h(e.masthead)}</div><div class="t">${e.lanes.length} LANES · ${h(new Date(e.updatedAt).toLocaleDateString())}</div></button>`).join('') || '<p class="lo-note">No editions yet.</p>'}
+      <p class="lo-note">Workspace controls are in English; language content is yours. Nothing is translated, transliterated or published automatically.</p></div>
+    <div style="min-width:0">${!ed ? `<div class="panel" style="padding:16px"><h3>Multi-script, multilingual newspaper</h3><p class="lo-note">Compose an edition: choose language lanes and script records independently, write each headline in its intended script, and inspect the text at each stage. ${N.languages.length} newsroom language profiles, ${N.scripts.length} writable scripts.</p></div>` : `
+      <div class="panel lo-form" style="padding:12px">
+        <div class="lo-row"><input id="loMast" value="${h(ed.masthead)}" style="${deps.FIELD};flex:2" aria-label="Masthead"><select id="loTheme" style="${deps.FIELD};flex:1" aria-label="Theme">${N.themes.map(t => `<option value="${t.id}" ${t.id === ed.theme ? 'selected' : ''}>${h(t.name)}</option>`).join('')}</select>
+          <select id="loStory" style="${deps.FIELD};flex:2" aria-label="Sample story"><option value="">Sample story…</option>${N.stories.map(s => `<option value="${s.id}">${h(s.theme)} · ${h(s.title)}</option>`).join('')}</select></div>
+        <input id="loSrcH" value="${h(ed.source.headline)}" placeholder="Source headline" style="${deps.FIELD}">
+        <textarea id="loSrcB" placeholder="Source text" style="${deps.FIELD};min-height:50px">${h(ed.source.body)}</textarea>
+        <div class="lo-row"><button class="btn btn-amber" id="loSave">Save edition</button><button class="btn btn-line" id="loAddLane">Add language lane</button><button class="btn btn-line" id="loDelEd">Delete edition</button></div>
+      </div>
+      <div class="cs-tabs" style="margin-top:10px">${views.map(v => `<button class="cs-tab ${S.view === v.id ? 'active' : ''}" data-view-id="${v.id}">${h(v.label)}</button>`).join('')}</div>
+      <div id="loView"></div>`}
+    </div></div>`;
+  el.querySelector('#loNewEd').onclick = async () => { const e = await deps.apiPost('/api/lipi/editions', { masthead: 'Vaigyaaniq Times', lanes: [{ language: 'Hindi', script: 'Deva' }, { language: 'Sanskrit', script: 'Brah' }] }); S.edId = e.id; rerender(); };
+  el.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { S.edId = b.dataset.ed; rerender(); });
+  if (!ed) return;
+  const collect = () => {
+    ed.masthead = el.querySelector('#loMast').value; ed.theme = el.querySelector('#loTheme').value;
+    ed.source = { headline: el.querySelector('#loSrcH').value, body: el.querySelector('#loSrcB').value };
+    el.querySelectorAll('[data-lane]').forEach(div => { const l = ed.lanes[+div.dataset.lane]; if (!l) return; l.language = div.querySelector('[name=language]').value; l.script = div.querySelector('[name=script]').value; l.headline = div.querySelector('[name=headline]').value; l.body = div.querySelector('[name=body]').value; });
+  };
+  const save = async (msg, fresh = true) => { if (fresh) collect(); Object.assign(ed, await deps.apiPost('/api/lipi/editions/' + ed.id, ed, 'PUT')); if (msg) deps.toast(msg); };
+  el.querySelector('#loSave').onclick = async () => { await save('Edition saved.'); rerender(); };
+  el.querySelector('#loAddLane').onclick = async () => { collect(); ed.lanes.push({ language: 'Pali', script: 'Brah', headline: '', body: '' }); await save(null, false); rerender(); };
+  el.querySelector('#loDelEd').onclick = async () => { await deps.apiPost('/api/lipi/editions/' + ed.id, {}, 'DELETE'); S.edId = null; deps.toast('Edition deleted.'); rerender(); };
+  el.querySelector('#loStory').onchange = e => { const s = N.stories.find(x => x.id === e.target.value); if (!s) return; el.querySelector('#loSrcH').value = s.title; el.querySelector('#loSrcB').value = s.body; };
+  el.querySelectorAll('[data-view-id]').forEach(b => b.onclick = () => { if (S.view === 'multi') collect(); S.view = b.dataset.viewId; rerender(); });
+  const v = el.querySelector('#loView');
+  const laneBox = (l, i) => `<div class="lo-lane" data-lane="${i}"><div class="lo-row"><select name="language" style="${deps.FIELD};flex:1" aria-label="Language">${langOpts(l.language)}</select><select name="script" style="${deps.FIELD};flex:1" aria-label="Script">${scriptOpts(l.script)}</select>
+      <button class="btn btn-line" data-tl="${i}" title="Write the source text in this script">Write from source</button><button class="lo-chip" data-rm="${i}">Remove</button></div>
+      <input name="headline" value="${h(l.headline)}" placeholder="Edition headline in this script" dir="${dirOf(l.script)}" style="${deps.FIELD};margin-top:6px;font-size:17px;${fontStyle(l.script)}">
+      <textarea name="body" placeholder="Edition text" dir="${dirOf(l.script)}" style="${deps.FIELD};margin-top:6px;min-height:50px;${fontStyle(l.script)}">${h(l.body)}</textarea>
+      <div class="lo-note">${l.method === 'transliterated' ? 'Machine transliteration from the source; review before use.' : l.headline ? 'Typed by you.' : 'No text yet.'}</div></div>`;
+  if (S.view === 'multi') {
+    v.innerHTML = ed.lanes.map(laneBox).join('') || '<p class="lo-note">Add a language lane to start.</p>';
+    v.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { collect(); ed.lanes.splice(+b.dataset.rm, 1); await save(null, false); rerender(); });
+    v.querySelectorAll('[data-tl]').forEach(b => b.onclick = async () => {
+      collect(); const l = ed.lanes[+b.dataset.tl];
+      if (!INDIC.test(ed.source.headline + ed.source.body)) { deps.toast('The source is not in an Indic script, so there is nothing to transliterate. Type this lane yourself.'); return; }
+      if (l.script === 'Latn') { deps.toast('Roman: use the Convert tab for IAST, then paste it here.'); return; }
+      try {
+        const one = async t => t.trim() ? (await deps.apiPost('/api/lipi/convert', { text: t, scripts: [l.script] })).results[0].text : '';
+        Object.assign(l, { headline: await one(ed.source.headline), body: await one(ed.source.body), method: 'transliterated' });
+        await save('Written from the source; check it before use.', false); rerender();
+      } catch (e) { deps.toast(e.message); }
+    });
+  } else if (S.view === 'debug') {
+    const lane = ed.lanes[S.debugLane] || ed.lanes[0];
+    const text = lane ? lane.headline : ed.source.headline;
+    let ins = null; try { ins = await deps.apiPost('/api/lipi/inspect', { text }); } catch (_) { ins = null; }
+    v.innerHTML = `<div class="panel" style="padding:12px"><label class="lo-note">Inspect lane <select id="loDbgLane" style="${deps.FIELD}">${ed.lanes.map((l, i) => `<option value="${i}" ${i === S.debugLane ? 'selected' : ''}>${h(l.language)} · ${h(l.script)}</option>`).join('')}</select></label>
+      <div class="lo-focus" style="font-size:22px;${fontStyle(lane?.script)}" dir="auto">${h(text || 'Empty headline')}</div>
+      ${ins ? `<table class="lo-table"><tr><td>Code points</td><td>${ins.codePoints}</td></tr><tr><td>Grapheme clusters</td><td>${ins.graphemes}</td></tr><tr><td>NFC</td><td>${ins.nfc ? 'Already normalized' : 'Not NFC'}</td></tr><tr><td>Unicode blocks</td><td>${ins.scripts.map(s => h(s.name) + ' ×' + s.count).join(', ') || '—'}</td></tr></table>
+      <div class="mono lo-note" style="margin-top:6px;overflow-wrap:anywhere">${[...(text || '')].slice(0, 80).map(c => 'U+' + c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')).join(' ')}</div><p class="lo-note">${h(ins.note)}</p>` : ''}</div>`;
+    const s = v.querySelector('#loDbgLane'); if (s) s.onchange = e => { S.debugLane = +e.target.value; rerender(); };
+  } else if (S.view === 'glue') {
+    const split = t => String(t || '').split(/(?<=[.!?।॥])\s+/).map(x => x.trim()).filter(Boolean);
+    const src = [ed.source.headline, ...split(ed.source.body)];
+    v.innerHTML = `<p class="lo-note">Glue view pairs source segments with each lane's text. It is alignment only: it does not translate or transliterate.</p>${ed.lanes.map(l => { const tgt = [l.headline, ...split(l.body)]; const n = Math.max(src.length, tgt.length); return `<div class="panel" style="padding:10px;margin-bottom:8px"><div class="eyebrow">${h(l.language)} · ${h(l.script)} · ${src.length === tgt.length ? 'segments align' : `${src.length} source vs ${tgt.length} target segments`}</div><table class="lo-table">${Array.from({ length: n }, (_, i) => `<tr><td class="mono">${String(i + 1).padStart(2, '0')}</td><td>${h(src[i] || '—')}</td><td dir="${dirOf(l.script)}" style="${fontStyle(l.script)}">${h(tgt[i] || '—')}</td></tr>`).join('')}</table></div>`; }).join('')}`;
+  } else if (S.view === 'vector') {
+    const first = ed.lanes[0] || { headline: ed.source.headline, script: 'Deva' };
+    v.innerHTML = `<p class="lo-note">A 3D page-layout preview made from vector shapes and browser text. It does not make glyph outlines or check font shaping.</p>
+      <input type="range" id="loRot" min="-40" max="40" value="${S.rotate}" aria-label="Rotate" style="width:240px">
+      <div class="lo-vec"><div style="transform:rotateX(6deg) rotateY(${S.rotate}deg) rotateZ(-2deg)"><svg viewBox="0 0 720 500" width="620" role="img" aria-label="Vector newspaper layout preview">
+        <rect x="8" y="8" width="704" height="484" rx="4" fill="#f4ecdb"/><path d="M32 55H688M32 101H688" stroke="${theme.accent}" stroke-width="3"/>
+        <text x="36" y="42" fill="#74634e" font-size="12" letter-spacing="4">LIPI OS · ${h(ed.masthead.toUpperCase())}</text>
+        <text x="36" y="88" fill="#211d17" font-size="${(first.headline || '').length > 38 ? 20 : 30}" font-family="Georgia,serif" style="${fontStyle(first.script)}">${h((first.headline || 'Your headline will appear here').slice(0, 60))}</text>
+        ${[0, 1, 2].map(c => `<rect x="${36 + c * 220}" y="125" width="200" height="120" fill="${theme.accent}" opacity=".18"/>${[0, 1, 2, 3, 4, 5, 6, 7].map(r => `<rect x="${36 + c * 220}" y="${262 + r * 24}" width="${200 - (r % 3) * 26}" height="8" fill="#211d17" opacity=".22"/>`).join('')}`).join('')}
+      </svg></div></div>`;
+    v.querySelector('#loRot').oninput = e => { S.rotate = +e.target.value; v.querySelector('.lo-vec>div').style.transform = `rotateX(6deg) rotateY(${S.rotate}deg) rotateZ(-2deg)`; };
+  } else {
+    v.innerHTML = `<div class="lo-paper" style="--acc:${theme.accent}"><div class="mast"><div class="tag">LIPI OS · EDITION · ${h(theme.name.toUpperCase())}</div><h2>${h(ed.masthead)}</h2><div class="tag">${h(new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }))} · MULTI-LANGUAGE · MULTI-SCRIPT</div></div>
+      <div class="cols">${ed.lanes.map(l => `<div class="col"><div class="tag">${h(l.language.toUpperCase())} · ${h((N.scripts.find(s => s.code === l.script) || { label: 'Roman' }).label.toUpperCase())}</div><h3 dir="${dirOf(l.script)}" style="${fontStyle(l.script)}">${h(l.headline || '—')}</h3><p dir="${dirOf(l.script)}" style="${fontStyle(l.script)}">${h(l.body)}</p></div>`).join('')}</div>
+      <p class="tag" style="margin-top:14px">Manually authored draft · review text and font coverage before use</p></div>`;
+  }
+}
+
+// --- atlas --------------------------------------------------------------------------------------------
+const INDIA = { lon0: 66, lon1: 98, lat0: 6, lat1: 37.5, w: 420, h: 440 };
+export function project(lat, lon, box = INDIA) { return [((lon - box.lon0) / (box.lon1 - box.lon0)) * box.w, ((box.lat1 - lat) / (box.lat1 - box.lat0)) * box.h]; }
+export function graticule(box = INDIA, step = 5) {
+  let s = '';
+  for (let lon = Math.ceil(box.lon0 / step) * step; lon <= box.lon1; lon += step) { const [x] = project(box.lat0, lon, box); s += `<line x1="${x}" y1="0" x2="${x}" y2="${box.h}" stroke="var(--line-soft)"/><text x="${x + 2}" y="${box.h - 4}">${lon}°E</text>`; }
+  for (let lat = Math.ceil(box.lat0 / step) * step; lat <= box.lat1; lat += step) { const [, y] = project(lat, box.lon0, box); s += `<line x1="0" y1="${y}" x2="${box.w}" y2="${y}" stroke="var(--line-soft)"/><text x="2" y="${y - 2}">${lat}°N</text>`; }
+  return s;
+}
+async function atlas(el, deps, rerender) {
+  const h = deps.escapeHtml, sites = S.os.atlas, s = sites[S.atlasSel] || sites[0];
+  const short = x => x.title.split('· ')[1] || x.title;
+  el.innerHTML = `<div class="lo-grid2"><div><svg class="lo-map" viewBox="0 0 ${INDIA.w} ${INDIA.h}" width="100%" role="img" aria-label="Inscription site pointers">${graticule()}
+      ${sites.map((x, i) => { const [px, py] = project(x.coordinates.latitude, x.coordinates.longitude); return `<g class="lo-pin" data-i="${i}"><circle cx="${px}" cy="${py}" r="${i === S.atlasSel ? 8 : 6}" fill="${i === S.atlasSel ? 'var(--amber)' : 'var(--blue)'}" stroke="var(--panel)" stroke-width="2"/><text x="${px + 10}" y="${py + 4}" style="fill:var(--ink)">${h(short(x))}</text></g>`; }).join('')}</svg>
+      <p class="lo-note">Points show inscription sites, not historical borders or the spread of a text. Coordinates come from the cited site list; no transcription or translation is given. Drawn offline; no map tiles are loaded.</p>
+      <div class="lo-row">${sites.map((x, i) => `<button class="lo-chip" aria-pressed="${i === S.atlasSel}" data-i="${i}">◉ ${h(short(x))} · ${x.coordinates.latitude.toFixed(4)}°N ${x.coordinates.longitude.toFixed(4)}°E</button>`).join('')}</div></div>
+    <div class="panel" style="padding:14px"><div class="eyebrow">${h(s.period)}</div><h3 style="margin:4px 0">${h(s.title)}</h3><div class="lo-note">${h(s.place)}</div>
+      <table class="lo-table" style="margin-top:8px"><tr><td>Script · लिपि</td><td>${h(s.script)}</td></tr><tr><td>Language · भाषा</td><td>${h(s.language)}</td></tr><tr><td>Coordinates</td><td class="mono">${s.coordinates.latitude}, ${s.coordinates.longitude} · WGS84 · ${h(s.coordinates.precision)}</td></tr></table>
+      <p class="lo-note">${h(s.recordNote)}</p>
+      ${deps.web ? `<figure style="margin:8px 0"><img src="${h(s.imageUrl)}" alt="${h(s.imageAlt)}" style="max-width:100%;border-radius:8px" loading="lazy" onerror="this.closest('figure').remove()"><figcaption class="lo-note">${h(s.imageCredit)} · <a href="${h(s.imageSourceUrl)}" target="_blank" rel="noopener">${h(s.imageSourceLabel)} ↗</a></figcaption></figure>` : `<p class="lo-note">Photograph: ${h(s.imageCredit)} — <a href="${h(s.imageSourceUrl)}" target="_blank" rel="noopener">${h(s.imageSourceLabel)} ↗</a>. Turn on network access in Settings to show it here.</p>`}
+      <div class="lo-row"><a class="btn btn-line" href="${h(s.siteSourceUrl)}" target="_blank" rel="noopener">${h(s.siteSourceLabel)} ↗</a><a class="btn btn-line" href="${h(s.contextSourceUrl)}" target="_blank" rel="noopener">${h(s.contextSourceLabel)} ↗</a></div></div></div>`;
+  el.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { S.atlasSel = +b.dataset.i; rerender(); });
+}
+
+// --- chronology -----------------------------------------------------------------------------------------
+const TICKS = [-10000, -5000, -3000, -1000, 0, 500, 1000, 1500, 1800, 2000, 2026];
+export function timeX(year, width) {
+  const seg = width / (TICKS.length - 1), y = Math.max(TICKS[0], Math.min(TICKS[TICKS.length - 1], year));
+  for (let i = 0; i < TICKS.length - 1; i++) if (y <= TICKS[i + 1]) return seg * (i + (y - TICKS[i]) / (TICKS[i + 1] - TICKS[i]));
+  return width;
+}
+const CAT_COLOR = { languages: 'var(--blue)', scripts: 'var(--amber)', books: 'var(--violet)', cities: 'var(--cyan)', universities: 'var(--green)', markets: 'var(--rose)', trades: 'var(--rose)', inventions: 'var(--red)', people: 'var(--ink-dim)', places: 'var(--muted)' };
+async function chronology(el, deps, rerender) {
+  const h = deps.escapeHtml, c = S.chrono;
+  c.data = await deps.apiGet(`/api/lipi/chronology?continent=${c.continent}&category=${c.category}&from=${c.from}&to=${c.to}`);
+  const d = c.data, W = 880, H = 170, O = 52;
+  const lanes = d.categories.map((k, i) => [k, 18 + i * 13]);
+  const cap = k => k[0].toUpperCase() + k.slice(1);
+  el.innerHTML = `<div class="lo-row" style="margin-bottom:8px"><select id="loCont" style="${deps.FIELD}" aria-label="Continent"><option value="">All continents (${d.total})</option>${d.continents.map(x => `<option value="${x.id}" ${x.id === c.continent ? 'selected' : ''}>${h(x.name)} (${x.count})</option>`).join('')}</select>
+      <select id="loCat" style="${deps.FIELD}" aria-label="Category"><option value="">All categories</option>${d.categories.map(k => `<option value="${k}" ${k === c.category ? 'selected' : ''}>${cap(k)}</option>`).join('')}</select>
+      <label class="lo-note">From <input id="loFrom" type="number" value="${c.from}" min="-10000" max="2026" step="100" style="${deps.FIELD};width:90px"></label><label class="lo-note">to <input id="loTo" type="number" value="${c.to}" min="-10000" max="2026" step="100" style="${deps.FIELD};width:90px"></label>
+      <span class="lo-note">${d.shown} matching records · negative years are BCE</span></div>
+    <div class="panel" style="padding:8px;overflow-x:auto"><svg class="lo-tl" viewBox="0 0 ${W + O + 24} ${H + 30}" width="100%" style="min-width:700px" role="img" aria-label="Timeline of dated records">
+      ${TICKS.map(t => `<line x1="${O + timeX(t, W)}" y1="10" x2="${O + timeX(t, W)}" y2="${H}" stroke="var(--line-soft)"/><text x="${O + timeX(t, W)}" y="${H + 14}" text-anchor="middle">${t === 0 ? '1 CE' : t < 0 ? (-t) + ' BCE' : t}</text>`).join('')}
+      ${d.dated.map(e => { const cat = (e.entityTypes || [])[0] || 'places', y = (lanes.find(l => l[0] === cat) || lanes[9])[1], x0 = e.dateStartSort != null ? timeX(e.dateStartSort, W) : null, x1 = e.dateEndSort != null ? timeX(e.dateEndSort, W) : null, x = timeX(e.dateSort, W);
+        return `<g class="lo-pin" data-ev="${e.id}">${x0 != null && x1 != null ? `<line x1="${O + x0}" y1="${y}" x2="${O + x1}" y2="${y}" stroke="${CAT_COLOR[cat]}" stroke-width="3" opacity=".4"/>` : ''}<circle cx="${O + x}" cy="${y}" r="${e.id === c.sel ? 6 : 4}" fill="${CAT_COLOR[cat]}"><title>${h(e.dateLabel)} · ${h(e.title)}</title></circle></g>`; }).join('')}
+      ${lanes.map(([k, y]) => `<text x="2" y="${y + 3}" font-size="8">${cap(k)}</text>`).join('')}
+    </svg><p class="lo-note">Horizontal positions use sortable years on a stretched scale; ranges show as bars and dates stay on each card. ${h(d.note)}</p></div>
+    <div class="lo-list" style="margin-top:10px">${[...d.dated, ...d.undated].map(e => `<div class="lo-item" id="ev-${e.id}" style="${e.id === c.sel ? 'border-color:var(--amber)' : ''}"><div class="k">${h(e.dateLabel)}</div><h4>${h(e.title)}</h4><div class="lo-note">${h(e.region)}</div><p style="font-size:12.5px">${h(e.summary)}</p>
+      <div class="lo-row">${(e.entityTypes || []).map(t => `<span class="lo-tier" style="color:${CAT_COLOR[t]}">${t.toUpperCase()}</span>`).join('')}</div>
+      <table class="lo-table">${d.categories.filter(k => (e.entities?.[k] || []).length).map(k => `<tr><td>${cap(k)}</td><td>${h(e.entities[k].join(' · '))}</td></tr>`).join('')}</table>
+      <p class="lo-note">${h(e.evidenceNote)}</p><a href="${h(e.sourceUrl)}" target="_blank" rel="noopener" style="color:var(--amber);font-size:12.5px">${h(e.sourceLabel)} ↗</a>${e.dateSort == null ? '<div class="lo-note" style="color:var(--rose)">Undated or unplaced · review before chronological claims</div>' : ''}</div>`).join('')}</div>`;
+  el.querySelector('#loCont').onchange = e => { c.continent = e.target.value; rerender(); };
+  el.querySelector('#loCat').onchange = e => { c.category = e.target.value; rerender(); };
+  el.querySelector('#loFrom').onchange = e => { c.from = +e.target.value; rerender(); };
+  el.querySelector('#loTo').onchange = e => { c.to = +e.target.value; rerender(); };
+  el.querySelectorAll('[data-ev]').forEach(g => g.onclick = () => { c.sel = g.dataset.ev; rerender(); setTimeout(() => document.getElementById('ev-' + c.sel)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60); });
+}
+
+export const _test = { timeX, project };

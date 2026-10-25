@@ -1,0 +1,1470 @@
+{
+ "format": "maataa.rakhigarhi.v1",
+ "provenance": {
+  "source": "Rakhigarhi Research Platform concept prototype · Lipi OS (Maataa)",
+  "url": "https://rrf-digital-heritage.hkfaduio.chatgpt.site/",
+  "captured": "2026-10-25",
+  "note": "Copied from the owner’s prototype. Concept and demo material stays labelled as such."
+ },
+ "status": "Independent concept prototype. It does not represent an established foundation, official service, active research program, approved site access, or verified collection.",
+ "homeCards": [
+  {
+   "title": "Research and sources",
+   "text": "Review source notes and evidence boundaries.",
+   "route": "literature",
+   "tag": "Source-led"
+  },
+  {
+   "title": "Experience concepts",
+   "text": "Review proposed activities and concept visuals.",
+   "route": "activities",
+   "tag": "Draft concepts"
+  },
+  {
+   "title": "Itinerary planner",
+   "text": "Arrange a private planning draft in this browser.",
+   "route": "itinerary",
+   "tag": "Local draft"
+  },
+  {
+   "title": "Site map",
+   "text": "Inspect illustrative markers with their caveats.",
+   "route": "site",
+   "tag": "Illustrative"
+  },
+  {
+   "title": "Provider registry & auto itinerary",
+   "text": "Review people, vendors, services and certifications; match verified services into itinerary proposals.",
+   "route": "providers",
+   "tag": "Restricted operations"
+  }
+ ],
+ "news": [
+  {
+   "id": "news-1",
+   "title": "Demonstration announcement",
+   "date": "Example date",
+   "category": "DEMO CONTENT",
+   "summary": "This sample card shows how a sourced announcement could appear. Replace it with a dated, verifiable notice before publication.",
+   "author": "No real author — sample content"
+  },
+  {
+   "id": "news-2",
+   "title": "Demonstration excavation update",
+   "date": "Example date",
+   "category": "DEMO CONTENT",
+   "summary": "No excavation result is asserted here. Add an official report or a clearly attributed publication before publishing an update.",
+   "author": "No real author — sample content"
+  },
+  {
+   "id": "news-3",
+   "title": "Demonstration institutional notice",
+   "date": "Example date",
+   "category": "DEMO CONTENT",
+   "summary": "This card is a layout placeholder. It does not represent a grant, transfer, foundation activity, or government announcement.",
+   "author": "No real author — sample content"
+  }
+ ],
+ "blogs": [
+  {
+   "id": "blog-1",
+   "title": "What the 2019 Rakhigarhi genome study reports",
+   "date": "Reference summary",
+   "readTime": "Source note",
+   "category": "Genetics",
+   "excerpt": "The published analysis reports genome-wide data from one individual, I6113, excavated at Rakhigarhi. See reference [1].",
+   "content": "The study reports one ancient genome from Rakhigarhi and discusses ancestry using its stated comparative framework. A single ancient individual cannot by itself establish linguistic continuity or represent every Harappan population. Read the original paper for methods, limitations, and conclusions."
+  },
+  {
+   "id": "blog-2",
+   "title": "Rakhigarhi site overview: use source-specific measurements",
+   "date": "Reference summary",
+   "readTime": "Source note",
+   "category": "Archaeology",
+   "excerpt": "Official and scholarly sources describe the site’s mounds and extent using different figures; cite the specific source and definition used.",
+   "content": "The Archaeological Survey of India describes seven mounds. Government and scholarly sources report different area estimates depending on what is counted. This prototype therefore avoids presenting one area figure as a settled measurement. See references [2] and [3]."
+  },
+  {
+   "id": "blog-3",
+   "title": "How to publish digital heritage models responsibly",
+   "date": "Editorial guidance",
+   "readTime": "Source note",
+   "category": "Digital Heritage",
+   "excerpt": "A synthetic model should never be mistaken for a measured artifact or excavation record.",
+   "content": "This prototype uses procedural geometry solely to demonstrate a viewer. It contains no scans, museum objects, excavation models, or verified mound coordinates. Replace the models only with assets that have documented provenance, permissions, and descriptive metadata."
+  }
+ ],
+ "mounds": [
+  {
+   "code": "RGR-1",
+   "lat": 29.29372,
+   "lon": 76.11503,
+   "summary": "Illustrative marker only. Confirm the location and mound description with an authorized survey dataset."
+  },
+  {
+   "code": "RGR-2",
+   "lat": 29.29189,
+   "lon": 76.11183,
+   "summary": "Illustrative marker only. Confirm the location and mound description with an authorized survey dataset."
+  },
+  {
+   "code": "RGR-3",
+   "lat": 29.29158,
+   "lon": 76.11358,
+   "summary": "Illustrative marker only. No reservoir or excavation claim is made by this marker."
+  },
+  {
+   "code": "RGR-4",
+   "lat": 29.28928,
+   "lon": 76.11331,
+   "summary": "Illustrative marker only. Confirm the location and mound description with an authorized survey dataset."
+  },
+  {
+   "code": "RGR-5",
+   "lat": 29.2875,
+   "lon": 76.116,
+   "summary": "Illustrative marker only. Confirm the location and mound description with an authorized survey dataset."
+  },
+  {
+   "code": "RGR-6",
+   "lat": 29.2942,
+   "lon": 76.1105,
+   "summary": "Illustrative marker only. Confirm the location and mound description with an authorized survey dataset."
+  },
+  {
+   "code": "RGR-7",
+   "lat": 29.2861,
+   "lon": 76.1124,
+   "summary": "Illustrative marker only. Do not treat this as an excavation or cemetery boundary."
+  }
+ ],
+ "indiaSites": [
+  {
+   "id": "rakhigarhi",
+   "name": "Rakhigarhi",
+   "state": "Haryana",
+   "lat": 29.293733,
+   "lon": 76.114683,
+   "period": "Indus / Harappan",
+   "era": "c. 3rd millennium BCE",
+   "source": "Coordinate record · Wikidata",
+   "url": "https://www.wikidata.org/wiki/Q59633503",
+   "note": "Coordinates are a point reference, not a site boundary."
+  },
+  {
+   "id": "dholavira",
+   "name": "Dholavira",
+   "state": "Gujarat",
+   "lat": 23.888408,
+   "lon": 70.213303,
+   "period": "Indus / Harappan",
+   "era": "3rd–2nd millennium BCE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/1645/maps/",
+   "note": "UNESCO map location; not a site boundary."
+  },
+  {
+   "id": "sarnath",
+   "name": "Sarnath",
+   "state": "Uttar Pradesh",
+   "lat": 25.380833,
+   "lon": 83.024444,
+   "period": "Buddhist",
+   "era": "from 3rd century BCE",
+   "source": "UNESCO Tentative List",
+   "url": "https://whc.unesco.org/en/tentativelists/927/",
+   "note": "Tentative List location; not a UNESCO-inscribed World Heritage property."
+  },
+  {
+   "id": "nalanda",
+   "name": "Nalanda Mahavihara",
+   "state": "Bihar",
+   "lat": 25.136667,
+   "lon": 85.443889,
+   "period": "Buddhist",
+   "era": "5th–13th century CE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/1502/maps/",
+   "note": "Point represents the listed heritage location."
+  },
+  {
+   "id": "bodh-gaya",
+   "name": "Mahabodhi Temple, Bodh Gaya",
+   "state": "Bihar",
+   "lat": 24.69528,
+   "lon": 84.99389,
+   "period": "Buddhist",
+   "era": "ancient; present complex includes later phases",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/1056/maps/",
+   "note": "Point represents the listed heritage location."
+  },
+  {
+   "id": "sanchi",
+   "name": "Sanchi",
+   "state": "Madhya Pradesh",
+   "lat": 23.47944,
+   "lon": 77.73972,
+   "period": "Buddhist",
+   "era": "from 3rd century BCE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/524/maps/",
+   "note": "Point represents the listed heritage location."
+  },
+  {
+   "id": "bhimbetka",
+   "name": "Bhimbetka Rock Shelters",
+   "state": "Madhya Pradesh",
+   "lat": 22.938889,
+   "lon": 77.603333,
+   "period": "Prehistoric rock art",
+   "era": "Palaeolithic to historic periods",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/925/maps/",
+   "note": "General listed location; individual shelters are not mapped."
+  },
+  {
+   "id": "ajanta",
+   "name": "Ajanta Caves",
+   "state": "Maharashtra",
+   "lat": 20.553111,
+   "lon": 75.70025,
+   "period": "Buddhist",
+   "era": "2nd century BCE–6th century CE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/242/maps/",
+   "note": "Point represents the listed heritage location."
+  },
+  {
+   "id": "ellora",
+   "name": "Ellora Caves",
+   "state": "Maharashtra",
+   "lat": 20.02639,
+   "lon": 75.17917,
+   "period": "Rock-cut heritage",
+   "era": "6th–10th century CE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/243/maps/",
+   "note": "Point represents the listed heritage location."
+  },
+  {
+   "id": "khajuraho",
+   "name": "Khajuraho Group of Monuments",
+   "state": "Madhya Pradesh",
+   "lat": 24.8525,
+   "lon": 79.920833,
+   "period": "Temple architecture",
+   "era": "10th–11th century CE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/240/maps/",
+   "note": "Point represents the listed heritage location."
+  },
+  {
+   "id": "hampi",
+   "name": "Hampi",
+   "state": "Karnataka",
+   "lat": 15.31444,
+   "lon": 76.47167,
+   "period": "Historic city",
+   "era": "14th–16th century CE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/241/maps/",
+   "note": "Point represents the listed heritage location."
+  },
+  {
+   "id": "mahabalipuram",
+   "name": "Group of Monuments at Mahabalipuram",
+   "state": "Tamil Nadu",
+   "lat": 12.6175,
+   "lon": 80.198889,
+   "period": "Temple architecture",
+   "era": "7th–8th century CE",
+   "source": "UNESCO World Heritage Centre",
+   "url": "https://whc.unesco.org/en/list/249/maps/",
+   "note": "Point represents the listed heritage location."
+  }
+ ],
+ "research": [
+  {
+   "title": "Archaeology and material culture",
+   "desc": "A proposed topic area for documented archaeological research; no excavation program is represented here."
+  },
+  {
+   "title": "Bioarchaeology and archaeogenetics",
+   "desc": "A proposed topic area. Human remains and genetic data require appropriate permissions, ethics, and careful interpretation."
+  },
+  {
+   "title": "Landscape and settlement archaeology",
+   "desc": "A proposed topic area for work grounded in published surveys and authorized geospatial data."
+  },
+  {
+   "title": "Digital heritage methods",
+   "desc": "A proposed topic area for clearly labelled visualizations with traceable data provenance."
+  }
+ ],
+ "services": [
+  {
+   "id": "CAP-01",
+   "title": "Research collaboration",
+   "pillar": "PROPOSED",
+   "desc": "Example capability area. No service, capacity, price, or availability is being offered."
+  },
+  {
+   "id": "CAP-02",
+   "title": "Digital documentation",
+   "pillar": "PROPOSED",
+   "desc": "Example capability area. Scope and standards would require an authorized institutional partner."
+  },
+  {
+   "id": "CAP-03",
+   "title": "Heritage interpretation",
+   "pillar": "PROPOSED",
+   "desc": "Example capability area. Any public interpretation must cite reviewed research and respect site permissions."
+  },
+  {
+   "id": "CAP-04",
+   "title": "Research data access",
+   "pillar": "PROPOSED",
+   "desc": "Example capability area. No archive or API is represented as existing in this prototype."
+  }
+ ],
+ "gallery": [
+  {
+   "id": "demo-seal",
+   "title": "Synthetic seal-like form",
+   "category": "Illustrative model",
+   "desc": "Procedural geometry made for viewer testing; not a Rakhigarhi object or documented seal.",
+   "icon": "seal",
+   "modelType": "cylinder",
+   "color": 13943731,
+   "source": "Synthetic demo"
+  },
+  {
+   "id": "demo-vessel",
+   "title": "Synthetic vessel form",
+   "category": "Illustrative model",
+   "desc": "Procedural geometry made for viewer testing; not a photographed or measured artifact.",
+   "icon": "pottery",
+   "modelType": "lathe",
+   "color": 9190686,
+   "source": "Synthetic demo"
+  },
+  {
+   "id": "demo-bead",
+   "title": "Synthetic bead-like form",
+   "category": "Illustrative model",
+   "desc": "Procedural geometry made for viewer testing; not an excavated object or verified replica.",
+   "icon": "bead",
+   "modelType": "sphere",
+   "color": 11674146,
+   "source": "Synthetic demo"
+  },
+  {
+   "id": "demo-ring",
+   "title": "Synthetic ring form",
+   "category": "Illustrative model",
+   "desc": "Procedural geometry made for viewer testing; not an excavated object or verified replica.",
+   "icon": "bead",
+   "modelType": "torus",
+   "color": 16119260,
+   "source": "Synthetic demo"
+  }
+ ],
+ "activities": [
+  {
+   "id": "local-welcome",
+   "family": "Native / local",
+   "category": "Community concept",
+   "title": "Community welcome",
+   "duration": 30,
+   "image": "/experience-banners/local-welcome.webp",
+   "imageAlt": "Local hosts welcoming visitors in a village courtyard",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible welcome hosted with local residents, centered on consent, hospitality, and community priorities.",
+   "requirements": "Would require willing local hosts, agreed visitor conduct, accessibility planning, and a confirmed date."
+  },
+  {
+   "id": "village-homestay",
+   "family": "Native / local",
+   "category": "Stay concept",
+   "title": "Village homestay",
+   "duration": null,
+   "image": "/experience-banners/village-homestay.webp",
+   "imageAlt": "A simple guest room opening onto a village courtyard",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible overnight stay with a participating household in or near a village.",
+   "requirements": "No homestay is confirmed. Hosts, accommodation standards, safeguarding, accessibility, transport, and dates would need confirmation."
+  },
+  {
+   "id": "shared-meal",
+   "family": "Native / local",
+   "category": "Food concept",
+   "title": "Share a local meal",
+   "duration": 60,
+   "image": "/experience-banners/shared-meal.webp",
+   "imageAlt": "A family sharing a meal in a village courtyard",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible shared meal shaped by participating hosts. The image does not document a specific traditional recipe.",
+   "requirements": "Menu, dietary needs, food safety, host participation, and date would need confirmation."
+  },
+  {
+   "id": "folk-music",
+   "family": "Native / local",
+   "category": "Culture concept",
+   "title": "Folk music gathering",
+   "duration": 60,
+   "image": "/experience-banners/folk-music.webp",
+   "imageAlt": "Musicians playing for listeners in a village courtyard",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible present-day music gathering led by local performers, with formats agreed by the performers themselves.",
+   "requirements": "Performers, repertoire, consent, compensation, venue, and date are not confirmed."
+  },
+  {
+   "id": "place-stories",
+   "family": "Native / local",
+   "category": "Oral history concept",
+   "title": "Stories of place",
+   "duration": 45,
+   "image": "/experience-banners/place-stories.webp",
+   "imageAlt": "An older resident sharing a story with a younger listener",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible listening session for community stories about place and everyday life.",
+   "requirements": "Would require voluntary participation, informed consent, agreed recording and attribution choices, and a confirmed host."
+  },
+  {
+   "id": "craft-session",
+   "family": "Native / local",
+   "category": "Craft concept",
+   "title": "Local craft session",
+   "duration": 60,
+   "image": "/experience-banners/local-craft.webp",
+   "imageAlt": "A craftsperson demonstrating handwork to a visitor",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible hands-on session with a present-day local craftsperson. No ancient continuity is implied.",
+   "requirements": "Would require a participating craftsperson, agreed content and compensation, materials, accessibility, and a confirmed date."
+  },
+  {
+   "id": "indus-settlement",
+   "family": "Ancestral / Indus interpretation",
+   "category": "Interpretation concept",
+   "title": "Imagine a settlement",
+   "duration": 45,
+   "image": "/experience-banners/indus-settlement.webp",
+   "imageAlt": "Illustrative view of a generic ancient settlement in the northwestern South Asian plains",
+   "imageNote": "Speculative illustration · not a verified reconstruction",
+   "description": "A discussion of settlement life using reviewed archaeological sources alongside explicitly marked visual interpretation.",
+   "requirements": "Any interpretation would need specialist review and citations. This generated image is not evidence or a reconstruction of Rakhigarhi."
+  },
+  {
+   "id": "indus-homes",
+   "family": "Ancestral / Indus interpretation",
+   "category": "Interpretation concept",
+   "title": "Homes and daily spaces",
+   "duration": 45,
+   "image": "/experience-banners/indus-homes.webp",
+   "imageAlt": "Speculative illustration of a generic ancient courtyard home",
+   "imageNote": "Speculative illustration · not a verified reconstruction",
+   "description": "Explore what published evidence can and cannot tell us about homes and daily spaces.",
+   "requirements": "Specific claims need source review. The generated scene is speculative and does not reproduce an excavated structure."
+  },
+  {
+   "id": "indus-foodways",
+   "family": "Ancestral / Indus interpretation",
+   "category": "Interpretation concept",
+   "title": "Foodways and preparation",
+   "duration": 45,
+   "image": "/experience-banners/indus-foodways.webp",
+   "imageAlt": "Speculative illustration of food preparation in an ancient settlement",
+   "imageNote": "Speculative illustration · no specific recipe claimed",
+   "description": "A source-led conversation about food remains, preparation evidence, and the limits of inference.",
+   "requirements": "No particular dish or ingredient is asserted by this image. Claims would need published evidence and specialist review."
+  },
+  {
+   "id": "indus-dress",
+   "family": "Ancestral / Indus interpretation",
+   "category": "Interpretation concept",
+   "title": "Dress and materials",
+   "duration": 45,
+   "image": "/experience-banners/indus-dress.webp",
+   "imageAlt": "Speculative illustration of people in generic ancient garments",
+   "imageNote": "Speculative illustration · not a verified reconstruction",
+   "description": "Discuss the material evidence and uncertainty around clothing, adornment, and textiles.",
+   "requirements": "The depicted clothing is invented visual interpretation, not a verified account of Harappan or Rakhigarhi dress."
+  },
+  {
+   "id": "indus-making",
+   "family": "Ancestral / Indus interpretation",
+   "category": "Interpretation concept",
+   "title": "Making and material culture",
+   "duration": 45,
+   "image": "/experience-banners/indus-making.webp",
+   "imageAlt": "Speculative illustration of a craftsperson shaping a plain clay vessel",
+   "imageNote": "Speculative illustration · not an artifact reproduction",
+   "description": "A learning session about craft processes and material evidence, using clearly identified published sources.",
+   "requirements": "This generated vessel is not an excavated object, verified replica, or documented Rakhigarhi artifact."
+  },
+  {
+   "id": "indus-waterways",
+   "family": "Ancestral / Indus interpretation",
+   "category": "Interpretation concept",
+   "title": "Streets and water systems",
+   "duration": 45,
+   "image": "/experience-banners/indus-waterways.webp",
+   "imageAlt": "Speculative illustration of a lane and water channel in a generic ancient settlement",
+   "imageNote": "Speculative illustration · not a verified reconstruction",
+   "description": "Consider settlement layout and water management through published archaeological evidence.",
+   "requirements": "The pictured street and channel are generic visual concepts and are not claimed as a Rakhigarhi plan or reconstruction."
+  },
+  {
+   "id": "heritage-walk",
+   "family": "Modern rural",
+   "category": "Walk concept",
+   "title": "Village walk",
+   "duration": 90,
+   "image": "/experience-banners/rural-walk.webp",
+   "imageAlt": "A local guide walking with visitors along a village lane",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible guide-led walk through an agreed public village route, focused on present-day life and place.",
+   "requirements": "No route or guide is confirmed. Would require community agreement, permissions, safety, access, and accessibility planning."
+  },
+  {
+   "id": "farm-season",
+   "family": "Modern rural",
+   "category": "Farm-life concept",
+   "title": "Seasonal farm life",
+   "duration": 60,
+   "image": "/experience-banners/farm-season.webp",
+   "imageAlt": "Farmers inspecting a crop in a present-day field",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible farm visit explaining seasonal work, subject to the farm host’s priorities and timing.",
+   "requirements": "Would require a participating farm, safe access, crop-season coordination, and a confirmed host and date."
+  },
+  {
+   "id": "tractor-ride",
+   "family": "Modern rural",
+   "category": "Ride concept",
+   "title": "Tractor ride",
+   "duration": 30,
+   "image": "/experience-banners/tractor-ride.webp",
+   "imageAlt": "A tractor with an enclosed passenger trailer on a farm track",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible short ride on a host-approved rural track, subject to vehicle and passenger safety.",
+   "requirements": "No ride is offered or confirmed. Would require a suitable vehicle and operator, approved route, passenger limits, insurance, and safety review."
+  },
+  {
+   "id": "field-table",
+   "family": "Modern rural",
+   "category": "Food and farm concept",
+   "title": "Field to table",
+   "duration": 60,
+   "image": "/experience-banners/field-table.webp",
+   "imageAlt": "Visitors and a host arranging fresh produce beside a field",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible seasonal activity connecting produce, farm work, and a shared meal.",
+   "requirements": "Would require a participating host, food-safety and dietary planning, seasonal availability, and agreed compensation."
+  },
+  {
+   "id": "village-market",
+   "family": "Modern rural",
+   "category": "Market walk concept",
+   "title": "Village market",
+   "duration": 45,
+   "image": "/experience-banners/village-market.webp",
+   "imageAlt": "Shoppers and vendors at a contemporary village market",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible self-guided or hosted visit to a public local market, with attention to respectful photography and purchasing.",
+   "requirements": "Market days, permissions, transport, and community guidance would need confirmation."
+  },
+  {
+   "id": "landscape-session",
+   "family": "Modern rural",
+   "category": "Landscape concept",
+   "title": "Landscape viewpoint",
+   "duration": 45,
+   "image": "/experience-banners/landscape-view.webp",
+   "imageAlt": "Visitors viewing fields and distant village buildings from a roadside viewpoint",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible landscape interpretation stop at a permitted public viewpoint.",
+   "requirements": "No viewpoint or access is confirmed. Would require verified location information, landowner or authority approval, and safety planning."
+  },
+  {
+   "id": "research-guide",
+   "family": "Research",
+   "category": "Research concept",
+   "title": "Specialist research guide",
+   "duration": 90,
+   "image": "/experience-banners/research-guide.webp",
+   "imageAlt": "A guide discussing heritage interpretation with visitors indoors",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible specialist-led orientation that explains the evidence base and open research questions.",
+   "requirements": "No guide or institution is confirmed. Would require a qualified, participating host and reviewed learning material."
+  },
+  {
+   "id": "research-demo",
+   "family": "Research",
+   "category": "Learning concept",
+   "title": "Archaeology demonstration",
+   "duration": 60,
+   "image": "/experience-banners/research-demo.webp",
+   "imageAlt": "An instructor demonstrating a layered soil model at a table",
+   "imageNote": "AI-generated concept visual · no excavation",
+   "description": "A classroom-style demonstration using a replica soil model, with no excavation or site intervention.",
+   "requirements": "Would require an educator, appropriate equipment, safeguarding, and a confirmed venue. No excavation is offered."
+  },
+  {
+   "id": "research-evidence",
+   "family": "Research",
+   "category": "Research concept",
+   "title": "Reading the evidence",
+   "duration": 60,
+   "image": "/experience-banners/research-evidence.webp",
+   "imageAlt": "Researchers comparing papers and archival-style photographs in a library",
+   "imageNote": "AI-generated concept visual",
+   "description": "A facilitated reading session comparing published research and discussing how interpretations are built.",
+   "requirements": "Would require selected, rights-cleared sources and a facilitator. No archive or collection access is implied."
+  },
+  {
+   "id": "research-map",
+   "family": "Research",
+   "category": "Mapping concept",
+   "title": "Source-led landscape map",
+   "duration": 60,
+   "image": "/experience-banners/research-map.webp",
+   "imageAlt": "Researchers examining a generic landscape map with overlays",
+   "imageNote": "AI-generated concept visual · map is not data",
+   "description": "A map-based activity showing how landscape questions can be framed from documented, permitted data.",
+   "requirements": "The pictured map is generic and contains no verified Rakhigarhi data. Any real map would need traceable sources and permissions."
+  },
+  {
+   "id": "learning-visit",
+   "family": "Research",
+   "category": "Research conversation concept",
+   "title": "Research conversation",
+   "duration": 60,
+   "image": "/experience-banners/research-discussion.webp",
+   "imageAlt": "Researchers and heritage practitioners in a discussion around a table",
+   "imageNote": "AI-generated concept visual",
+   "description": "A possible conversation bringing researchers and heritage practitioners together around questions of evidence and interpretation.",
+   "requirements": "No event, participant, or institutional program is confirmed. Would require willing participants and an agreed format."
+  },
+  {
+   "id": "film-visit",
+   "family": "Research",
+   "category": "Filming concept",
+   "title": "Permission-first filming",
+   "duration": 120,
+   "image": "/experience-banners/research-filming.webp",
+   "imageAlt": "A camera operator filming an interview with a consenting adult",
+   "imageNote": "AI-generated concept visual",
+   "description": "A planning concept for an interview or educational film in an approved setting, with consent at each stage.",
+   "requirements": "No filming permission is granted. Written permissions, location terms, equipment limits, consent, and applicable fees would need confirmation."
+  },
+  {
+   "id": "day2-production-logistics",
+   "family": "Research",
+   "category": "Day 2 itinerary object",
+   "title": "Day 2 · Rakhigarhi field production plan",
+   "duration": 480,
+   "image": "/experience-banners/research-filming.webp",
+   "imageAlt": "A camera operator preparing an interview with a consenting adult",
+   "imageNote": "Planning object · not a confirmed booking",
+   "description": "A draft eight-hour field-production call sheet for source-led landscape work, an ancient-language expert interview, permitted filming, local transport, crew handoff, and go/no-go checks.",
+   "requirements": "Planning rates and tentative timings; pickup base, services, supplier scope, exact location, access, filming permissions, coverage, and availability remain unconfirmed."
+  }
+ ],
+ "activityFamilies": [
+  {
+   "name": "Native / local",
+   "intro": "Present-day community ideas. Each depends on voluntary local partners and agreed terms."
+  },
+  {
+   "name": "Ancestral / Indus interpretation",
+   "intro": "Evidence-led learning concepts. Generated ancient scenes are speculative illustrations, not historical evidence."
+  },
+  {
+   "name": "Modern rural",
+   "intro": "Present-day village, farm, market, and landscape concepts; no route or operator is confirmed."
+  },
+  {
+   "name": "Research",
+   "intro": "Learning and research formats only. No excavation, institutional access, or filming permission is implied."
+  }
+ ],
+ "packages": [
+  {
+   "id": "workshop-evidence-explorer",
+   "kind": "Workshop",
+   "title": "Evidence Explorer: Chapter Rakhi Garhi",
+   "duration": "2.5–3 hours",
+   "group": "6–20 design target; facilitator capacity to confirm",
+   "summary": "A source-led introduction using discussion, object interpretation, and a closing question round.",
+   "blocks": [
+    "Welcome and evidence boundaries · 45 min",
+    "Museum or collection interpretation · 60 min",
+    "Seal/script evidence discussion · 45 min"
+   ],
+   "includes": [
+    "Facilitator run sheet",
+    "Source and uncertainty prompts",
+    "Group reflection"
+   ],
+   "required": [
+    "Museum or collection access and a qualified facilitator are unconfirmed.",
+    "No artifact handling, access permission, or archaeological interpretation is included."
+   ],
+   "price": "Facilitator, access, materials, transport, and taxes: quote required."
+  },
+  {
+   "id": "workshop-living-landscape",
+   "kind": "Workshop",
+   "title": "Living Landscape & Oral History",
+   "duration": "2–3 hours",
+   "group": "6–20 design target; host capacity to confirm",
+   "summary": "A present-day listening workshop built around voluntary community participation and participant-controlled recording.",
+   "blocks": [
+    "Place and listening orientation · 30 min",
+    "Community story session · 45–60 min",
+    "Consent-led reflection · 30–45 min"
+   ],
+   "includes": [
+    "Consent and recording-choice checklist",
+    "Facilitator prompts",
+    "Compensation and attribution line items in the quote"
+   ],
+   "required": [
+    "No host, participant, story, language, or recording permission is confirmed.",
+    "Compensation and travel must be agreed with participants before the session."
+   ],
+   "price": "Host, facilitator, interpretation, compensation, and transport: quote required."
+  },
+  {
+   "id": "workshop-craft-materials",
+   "kind": "Workshop",
+   "title": "Contemporary Craft & Materials",
+   "duration": "2–2.5 hours",
+   "group": "6–20 design target; craftsperson capacity to confirm",
+   "summary": "A hands-on session with a present-day craftsperson, separated from claims about ancient continuity.",
+   "blocks": [
+    "Materials and process introduction · 30 min",
+    "Demonstration and participant practice · 60 min",
+    "Reflection and clean-up · 30 min"
+   ],
+   "includes": [
+    "Demonstration outline",
+    "Participant materials checklist",
+    "Craftsperson fee and materials as explicit quote lines"
+   ],
+   "required": [
+    "No craftsperson or specific tradition is represented as confirmed.",
+    "Materials, safety, venue, accessibility, and compensation require confirmation."
+   ],
+   "price": "Craftsperson, materials, venue, and transport: quote required."
+  },
+  {
+   "id": "workshop-gis-3d-lab",
+   "kind": "Workshop",
+   "title": "GIS & 3D Heritage Lab",
+   "duration": "2–2.5 hours",
+   "group": "6–20 design target; device/facilitator ratio to confirm",
+   "summary": "A digital mapping and 3D interpretation workshop that distinguishes measured data from illustrative models.",
+   "blocks": [
+    "Map orientation and coordinate caveats · 30 min",
+    "GIS / 3D guided lab · 60 min",
+    "Source, scale, and uncertainty review · 30 min"
+   ],
+   "includes": [
+    "Facilitator plan",
+    "Device and connectivity checklist",
+    "Data provenance and uncertainty worksheet"
+   ],
+   "required": [
+    "No access to restricted or sensitive coordinates is implied.",
+    "Devices, software, connectivity, source datasets, and facilitator are not included."
+   ],
+   "price": "Facilitator, devices, venue, and connectivity: quote required."
+  },
+  {
+   "id": "workshop-student-family-lab",
+   "kind": "Workshop",
+   "title": "Student & Family Discovery Lab",
+   "duration": "1.5–2 hours",
+   "group": "Group limit and adult-to-child safeguarding ratio to confirm",
+   "summary": "An age-adaptable, discussion-based activity with a clear safeguarding and access plan.",
+   "blocks": [
+    "Welcome and shared expectations · 20 min",
+    "Facilitated discovery activity · 50 min",
+    "Questions and close · 20 min"
+   ],
+   "includes": [
+    "Age-band and accessibility planning fields",
+    "Safeguarding checklist",
+    "Materials list for supplier quote"
+   ],
+   "required": [
+    "No child-facing session runs without named safeguarding leads and confirmed supervision.",
+    "Age suitability, venue, and facilitator checks require confirmation."
+   ],
+   "price": "Facilitator, materials, venue, and safeguarding provisions: quote required."
+  },
+  {
+   "id": "documentary-development",
+   "kind": "Documentary",
+   "title": "Research-to-Documentary Development",
+   "duration": "Pre-production · scope by brief",
+   "group": "For an individual filmmaker or production team",
+   "summary": "A source-led development package to turn a documentary question into a reviewable production brief.",
+   "blocks": [
+    "Research question and source ledger",
+    "Interview / community consent plan",
+    "Location, access, schedule, and risk checklist"
+   ],
+   "includes": [
+    "Treatment outline and evidence boundaries",
+    "Interview wish-list template (no participant is confirmed)",
+    "Quote-ready production breakdown"
+   ],
+   "required": [
+    "Research, interviewees, access, filming, and rights remain unconfirmed until separately approved."
+   ],
+   "price": "Research and development scope: quote required."
+  },
+  {
+   "id": "documentary-field-day",
+   "kind": "Documentary",
+   "title": "Rakhigarhi Field Production Day",
+   "duration": "1 day · proposed 08:00–16:00 window",
+   "group": "Planning basis: 2–4 vehicle passengers; larger crew transport to quote",
+   "summary": "A draft eight-hour field-production day with local coordination, a runner, and the Hisar 8-hour / 80-km vehicle package.",
+   "blocks": [
+    "Pre-call permissions and safety check",
+    "Source-led interviews / landscape coverage as approved",
+    "Media log, wrap, and return transport check"
+   ],
+   "includes": [
+    "Local line producer · ₹15,000/day (user-provided planning rate)",
+    "Production runner · ₹2,000/day (user-provided planning rate)",
+    "Hisar vehicle package · ₹3,045 (8h/80km; capacity and Rakhigarhi coverage to reconfirm)"
+   ],
+   "required": [
+    "Vehicle is listed for four passenger seats; extra crew or participants require additional transport.",
+    "Optional Delhi IGI → Rakhigarhi transfer is ₹4,200 one-way (user-provided planning rate) and is excluded from this package subtotal.",
+    "Camera, audio, crew beyond the listed roles, site access, filming / drone permissions, insurance, meals, and location charges are excluded."
+   ],
+   "price": "Known priced heads ₹20,045 + 8% platform management ₹1,603.60 = ₹21,648.60; not a complete production quote."
+  },
+  {
+   "id": "documentary-field-residency",
+   "kind": "Documentary",
+   "title": "Two-Day Field Story Residency",
+   "duration": "2 days / 1 night · adaptable call sheet",
+   "group": "Group 6–20 is a planning target; each supplier capacity must be confirmed",
+   "summary": "A research and field-coverage format with one participant-facing engagement per production day and a separate arrival / departure plan.",
+   "blocks": [
+    "Day 1: source briefing and one short engagement",
+    "Day 2: production call sheet and one participant-facing engagement",
+    "Close: consent, media log, and next-step review"
+   ],
+   "includes": [
+    "Run-of-show template",
+    "Arrival / overnight / crew transport cost heads",
+    "Research, consent, and fallback-location checklist"
+   ],
+   "required": [
+    "Homestay, rooms, meals, arrivals, guide/interpreter, access, permissions, insurance, participant compensation, camera/audio, and safety are unpriced until quoted.",
+    "A two-day itinerary remains a proposal and does not grant site access."
+   ],
+   "price": "Full two-day production budget: quote required."
+  },
+  {
+   "id": "documentary-sanaatana-vaigyaaniq-vol-1900-bce",
+   "kind": "Documentary",
+   "interface": true,
+   "title": "The Line Producer: Documentary Series",
+   "duration": "Series package · Vol. 1900 · BCE stream",
+   "group": "Chapter Rakhi Garhi",
+   "summary": "A Time Traveller Interface shell for the Sanaatana Vaigyaaniq documentary series. Volume and stream are project metadata; episode research and scene content are not authored here.",
+   "series": {
+    "name": "Sanaatana Vaigyaaniq",
+    "volume": "1900",
+    "stream": "BCE",
+    "chapter": "Rakhi Garhi"
+   },
+   "blocks": [
+    "Chapter workspace: Rakhi Garhi",
+    "Volume label: 1900",
+    "Time stream: BCE"
+   ],
+   "includes": [
+    "Series and chapter metadata",
+    "Evidence-led and interpretive storyboard viewing modes",
+    "Research, production, permissions, and source-review checklist"
+   ],
+   "required": [
+    "“BCE” identifies the selected series stream; it does not represent literal time travel or a verified reconstruction.",
+    "No episode, scene, interview, excavation access, location permission, or historical claim is supplied by this interface."
+   ],
+   "price": "Series development and production: quote required."
+  }
+ ],
+ "packageRoles": [
+  {
+   "id": "language",
+   "label": "Ancient-language expert",
+   "low": 499,
+   "high": 499,
+   "unit": "per day",
+   "userProvided": true
+  },
+  {
+   "id": "line-producer",
+   "label": "Line producer",
+   "low": 299,
+   "high": 299,
+   "unit": "per day assumed",
+   "userProvided": true
+  },
+  {
+   "id": "production-manager",
+   "label": "Production manager",
+   "low": 199,
+   "high": 199,
+   "unit": "per day assumed",
+   "userProvided": true
+  },
+  {
+   "id": "runner",
+   "label": "Production runner",
+   "low": 99,
+   "high": 99,
+   "unit": "per day assumed",
+   "userProvided": true
+  },
+  {
+   "id": "bts",
+   "label": "Behind-the-scenes services",
+   "low": 299,
+   "high": 999,
+   "unit": "service range",
+   "userProvided": true
+  },
+  {
+   "id": "cameraman",
+   "label": "Cameraman",
+   "low": 49,
+   "high": 9999,
+   "unit": "service range",
+   "userProvided": true
+  },
+  {
+   "id": "drone",
+   "label": "Drone service",
+   "low": 119,
+   "high": 9999,
+   "unit": "service range",
+   "userProvided": true
+  }
+ ],
+ "itinerary": {
+  "program": {
+   "title": "Sanaatana Vaigyaaniq Foundation · Rakhigarhi Chapter",
+   "summary": "Working title for a seven-day, six-night learning itinerary interpreting Rakhigarhi and the Harappan period. The program is designed for present-day research and learning; it does not recreate life in the BCE period. The Foundation or Chapter’s legal, institutional, and operational status is not verified here.",
+   "access": "No excavation access, restricted-area visit, filming, site guide, museum opening, or local host is included as confirmed. Obtain written permission and check current operations before fixing dates. The district listing for Rakhigarhi Tourist Complex says guests under 18 are not permitted; verify this directly before planning."
+  },
+  "days": [
+   {
+    "day": 1,
+    "title": "Arrival and orientation",
+    "focus": "Arrive in Rakhigarhi or Hisar; confirm local arrangements, participant needs, consent, and site rules. Evening source-reading session.",
+    "format": "Arrival transfers and any visit are subject to confirmation."
+   },
+   {
+    "day": 2,
+    "title": "Landscape and evidence",
+    "focus": "Read published maps and site records; compare what point coordinates, mound descriptions, and survey boundaries can each support.",
+    "format": "Indoor session; no unsourced boundary map."
+   },
+   {
+    "day": 3,
+    "title": "Harappan material worlds",
+    "focus": "Facilitated discussion of published archaeology, craft, settlement, and water evidence, with uncertainty kept visible.",
+    "format": "Source-led workshop; no artifact handling."
+   },
+   {
+    "day": 4,
+    "title": "Public heritage interpretation",
+    "focus": "If open and expressly permitted, visit public visitor facilities with an authorized guide. Otherwise use an off-site interpretation session.",
+    "format": "Access, opening, guide, and filming permissions must be confirmed."
+   },
+   {
+    "day": 5,
+    "title": "Contemporary rural life",
+    "focus": "Optional, host-led conversation about present-day village life, landscape, food, and livelihoods. No ancient continuity is presumed.",
+    "format": "Only with willing hosts, consent, accessibility planning, and agreed payment."
+   },
+   {
+    "day": 6,
+    "title": "Digital mapping and reflection",
+    "focus": "Build a small source-cited map or timeline from permitted data; separate present-day observations from archaeological evidence.",
+    "format": "Indoor lab; no collection of sensitive coordinates."
+   },
+   {
+    "day": 7,
+    "title": "Synthesis and departure",
+    "focus": "Share participant reflections, review source notes, close the program, and depart.",
+    "format": "Departure transport is excluded from the planning allowance."
+   }
+  ],
+  "fieldVisit": {
+   "title": "Two-day field visit · 2–3 November 2026",
+   "arrival": "Flight IX 1258 lands at Delhi International Airport Terminal 2 at 3:45 a.m., Monday, 2 November 2026.",
+   "pickup": "Delhi International Airport Terminal 2",
+   "destination": "Rakhi Garhi Museum and Interpretation Centre",
+   "routeNote": "Approximate points from the supplied ride screenshot; confirm the actual entrance, pickup bay, meeting location, road conditions and visitor access with the operator before departure.",
+   "faresNote": "Airport fares were displayed in a supplied screenshot on 24 October 2026; they are time-sensitive estimates, not held bookings or confirmed quotes.",
+   "contingency": 0.1,
+   "scenario": {
+    "perVehicle": 3,
+    "perRoom": 2,
+    "mealsPerPerson": 740,
+    "day2Fixed": 20045
+   },
+   "coverage": [
+    "Participant travel and medical cover",
+    "Production equipment and third-party liability cover",
+    "On-site safety, first aid, and emergency plan",
+    "Filming, drone, site access, and location permissions",
+    "Consent and release forms for filmed participants"
+   ],
+   "quoteRequired": [
+    "Craft and catering service",
+    "Production containers / mobile units",
+    "Heaters and climate control",
+    "Coolers and refrigeration",
+    "Power generator and distribution",
+    "Portable sanitation and waste handling",
+    "Security and safety cover",
+    "Connectivity, media backup, and data wrangling",
+    "Insurance, permits, and location fees",
+    "Crew accommodation and transport",
+    "Other services (specify in supplier quote)"
+   ]
+  },
+  "callSheet": {
+   "title": "Day 2 field production schedule",
+   "date": "Tuesday, 3 November 2026 · proposed 08:00–16:00 working window (480 minutes)",
+   "note": "The 45-minute travel block is a placeholder; set final call times after the pickup base, drive time, access, and permissions are confirmed. Move or replace any location activity if access is not authorized.",
+   "blocks": [
+    {
+     "time": "08:00–08:30",
+     "block": "Crew call, kit check, and safety briefing",
+     "lead": "Line producer + production manager",
+     "gate": "Confirm contact list, weather, first aid, consent process, and transport pickup."
+    },
+    {
+     "time": "08:30–09:15",
+     "block": "Local transit and arrival buffer",
+     "lead": "Runner + driver",
+     "gate": "Pickup base and actual travel time are unconfirmed; revise this block before issuing the call sheet."
+    },
+    {
+     "time": "09:15–09:45",
+     "block": "Access check, orientation, and consent",
+     "lead": "Line producer",
+     "gate": "Proceed only within written permissions and publicly accessible agreed areas."
+    },
+    {
+     "time": "09:45–10:30",
+     "block": "Establishing shots and landscape context",
+     "lead": "Camera team",
+     "gate": "Use permitted viewpoints; do not enter restricted or excavation areas."
+    },
+    {
+     "time": "10:30–11:30",
+     "block": "Source-led expert interview",
+     "lead": "Language expert + interviewer",
+     "gate": "Log claims against cited published sources; identify uncertainty in the recording notes."
+    },
+    {
+     "time": "11:30–12:00",
+     "block": "Interview pickups, sound, and detail shots",
+     "lead": "Camera team + runner",
+     "gate": "Film people, objects, or signage only with applicable consent and permission."
+    },
+    {
+     "time": "12:00–12:45",
+     "block": "Meal, hydration, and rest break",
+     "lead": "Production manager + runner",
+     "gate": "Confirm catered portions, allergies, drinking water, and crew meals in advance."
+    },
+    {
+     "time": "12:45–13:30",
+     "block": "Interview pickup and source notes",
+     "lead": "Language expert + production manager",
+     "gate": "Record names, approved attribution, release status, and pronunciation notes."
+    },
+    {
+     "time": "13:30–14:15",
+     "block": "Permitted landscape B-roll",
+     "lead": "Camera team",
+     "gate": "No collection, touching, drone flight, or sensitive-coordinate publication."
+    },
+    {
+     "time": "14:15–14:45",
+     "block": "Optional aerial coverage or ground alternative",
+     "lead": "Approved drone operator + line producer",
+     "gate": "Drone work is skipped unless the operator, airspace, site, and written permissions are confirmed."
+    },
+    {
+     "time": "14:45–15:15",
+     "block": "Present-day context or indoor fallback",
+     "lead": "Line producer + interviewer",
+     "gate": "Community filming requires prior consent, agreed compensation, and an easy refusal option."
+    },
+    {
+     "time": "15:15–15:45",
+     "block": "Pickups, release log, and location wrap",
+     "lead": "Production manager + runner",
+     "gate": "Check all releases, shot log, borrowed items, waste, and location sign-out."
+    },
+    {
+     "time": "15:45–16:00",
+     "block": "Media verification and departure",
+     "lead": "Camera team + production manager",
+     "gate": "Verify two copies of captured media before transport departs; confirm return trip and overtime."
+    }
+   ],
+   "capture": [
+    "Permitted wide context and landscape shots from agreed public viewpoints.",
+    "Source-led interview with an ancient-language expert; record citations, pronunciation, transliteration choices, and uncertainty.",
+    "Clean interview audio, room tone, slate, shot log, and consented behind-the-scenes coverage.",
+    "Optional present-day community context only with informed consent and agreed compensation; provide an indoor, non-filmed alternative.",
+    "Drone coverage is optional and removed from the shot list unless every permission and safety check is complete."
+   ],
+   "handoff": [
+    [
+     "Production manager",
+     "final call sheet, movement log, safety contacts, consent/release register, and cost approvals."
+    ],
+    [
+     "Runner",
+     "water and meals, pickup coordination, equipment register, receipts, waste check, and location wrap."
+    ],
+    [
+     "Camera team",
+     "camera and sound checks, media labels, shot log, and two verified media copies before departure."
+    ],
+    [
+     "Language expert",
+     "review interview prompts and provide a recorded or written language check with cited references."
+    ],
+    [
+     "Line producer",
+     "confirm local partners, access boundaries, transport window, overtime terms, and emergency escalation contact."
+    ]
+   ],
+   "kit": [
+    "Camera body, agreed lenses, tripod, slate, and backup camera battery.",
+    "Separate interview audio recorder, lavalier and boom microphones, headphones, and spare batteries.",
+    "Labelled media cards, card reader, laptop, and two separate storage copies; verify files before wrapping.",
+    "Call sheet, shot log, consent/release forms, emergency contact sheet, first aid kit, drinking water, and weather protection.",
+    "List serial numbers and assigned custodian for each item; do not photograph or publish sensitive archaeological details without approval."
+   ],
+   "goNoGo": "Before crew call: obtain written filming and visitor permissions for exact areas; confirm entrance and pickup point, vehicle capacity, 8-hour/80-km inclusions and overages, meals and allergies, participant releases, insurance and emergency arrangements, and supplier call times. If approval or access is missing, move the research session indoors and do not film on-site."
+  },
+  "costs": [
+   {
+    "id": "airport-transfer",
+    "name": "IGI → Rakhigarhi airport transfer",
+    "basis": "1 vehicle · one-way planning rate",
+    "qty": 1,
+    "unit": "vehicle",
+    "rate": 4200,
+    "status": "User-provided planning rate; confirm provider, capacity, exact route, availability, and date."
+   },
+   {
+    "id": "accommodation",
+    "name": "Standard room accommodation",
+    "basis": "2 rooms × 1 night",
+    "qty": 2,
+    "unit": "room-night",
+    "rate": 1999,
+    "status": "Published district tariff, excluding tax; availability and occupancy unconfirmed."
+   },
+   {
+    "id": "day1-tea",
+    "name": "Day 1 tea / coffee",
+    "basis": "3 people",
+    "qty": 3,
+    "unit": "person",
+    "rate": 80,
+    "status": "Planning allowance; no catering quote."
+   },
+   {
+    "id": "day1-snacks",
+    "name": "Day 1 field-visit snacks",
+    "basis": "3 people",
+    "qty": 3,
+    "unit": "person",
+    "rate": 150,
+    "status": "Planning allowance; no catering quote."
+   },
+   {
+    "id": "day1-dinner",
+    "name": "Day 1 dinner",
+    "basis": "2 people",
+    "qty": 2,
+    "unit": "person",
+    "rate": 400,
+    "status": "Planning allowance; confirm dietary needs."
+   },
+   {
+    "id": "fruit",
+    "name": "Fresh fruit for Nidhi",
+    "basis": "1 person-day",
+    "qty": 1,
+    "unit": "person-day",
+    "rate": 250,
+    "status": "Planning allowance reflecting the schedule note."
+   },
+   {
+    "id": "day2-breakfast",
+    "name": "Day 2 breakfast",
+    "basis": "2 people",
+    "qty": 2,
+    "unit": "person",
+    "rate": 200,
+    "status": "Planning allowance; no catering quote."
+   },
+   {
+    "id": "day2-tea",
+    "name": "Day 2 tea and black coffee",
+    "basis": "2 arriving guests",
+    "qty": 2,
+    "unit": "person",
+    "rate": 80,
+    "status": "Planning allowance; no catering quote."
+   },
+   {
+    "id": "day2-lunch",
+    "name": "Day 2 lunch",
+    "basis": "4 portions",
+    "qty": 4,
+    "unit": "person",
+    "rate": 350,
+    "status": "Planning allowance; verify Nidhi’s portion and dietary needs."
+   },
+   {
+    "id": "line-producer",
+    "name": "Day 2 local line producer",
+    "basis": "1 day",
+    "qty": 1,
+    "unit": "day",
+    "rate": 15000,
+    "status": "User-provided planning rate; confirm scope, hours, and overtime."
+   },
+   {
+    "id": "runner",
+    "name": "Day 2 production runner",
+    "basis": "1 day",
+    "qty": 1,
+    "unit": "day",
+    "rate": 2000,
+    "status": "User-provided planning rate; confirm scope, hours, and inclusions."
+   },
+   {
+    "id": "local-vehicle",
+    "name": "Day 2 local vehicle",
+    "basis": "Hisar 8-hour / 80-km package",
+    "qty": 1,
+    "unit": "vehicle-day",
+    "rate": 3045,
+    "status": "Published package incl. GST; confirm Rakhigarhi service area and availability. Tolls, parking, and overages extra."
+   },
+   {
+    "id": "materials",
+    "name": "Field-session materials / hosting",
+    "basis": "Price not supplied",
+    "qty": 1,
+    "unit": "allowance",
+    "rate": null,
+    "status": "Unpriced; excluded until a quote is entered."
+   },
+   {
+    "id": "day2-arrivals",
+    "name": "Day 2 guests’ inbound transport",
+    "basis": "Mode and price not supplied",
+    "qty": 1,
+    "unit": "allowance",
+    "rate": null,
+    "status": "Unpriced; excluded until a quote is entered."
+   },
+   {
+    "id": "airfare",
+    "name": "Airfare",
+    "basis": "Flight named; origin and fare not supplied",
+    "qty": 1,
+    "unit": "ticket",
+    "rate": null,
+    "status": "Unpriced; excluded until ticket origin and fare are known."
+   }
+  ],
+  "roles": [
+   {
+    "id": "language-expert",
+    "name": "Ancient language expert",
+    "low": 499,
+    "high": 499,
+    "basis": "Per day",
+    "daily": true,
+    "status": "User-provided rate; confirm language, preparation, and working hours."
+   },
+   {
+    "id": "line-producer-usd",
+    "name": "Line producer",
+    "low": 299,
+    "high": 299,
+    "basis": "Per day assumed",
+    "daily": true,
+    "status": "User-provided USD rate; daily billing is assumed for planning. Separate from the INR local line-producer rate."
+   },
+   {
+    "id": "production-manager",
+    "name": "Production manager",
+    "low": 199,
+    "high": 199,
+    "basis": "Per day assumed",
+    "daily": true,
+    "status": "User-provided USD rate; daily billing is assumed for planning."
+   },
+   {
+    "id": "production-runner-usd",
+    "name": "Production runner",
+    "low": 99,
+    "high": 99,
+    "basis": "Per day assumed",
+    "daily": true,
+    "status": "User-provided USD rate; daily billing is assumed for planning. Separate from the INR local runner rate."
+   },
+   {
+    "id": "behind-scenes",
+    "name": "Behind-the-scenes services",
+    "low": 299,
+    "high": 999,
+    "basis": "Service range",
+    "daily": false,
+    "status": "User-provided range; scope, duration, deliverables, and billing unit need confirmation."
+   },
+   {
+    "id": "cameraman",
+    "name": "Cameraman",
+    "low": 49,
+    "high": 9999,
+    "basis": "Service range",
+    "daily": false,
+    "status": "User-provided range; crew level, kit, hours, usage rights, and billing unit need confirmation."
+   },
+   {
+    "id": "drone",
+    "name": "Drone service",
+    "low": 119,
+    "high": 9999,
+    "basis": "Service range",
+    "daily": false,
+    "status": "User-provided range; operator, flight permissions, insurance, deliverables, and billing unit need confirmation."
+   }
+  ],
+  "cabFares": [
+   {
+    "name": "Go Intercity",
+    "fare": "₹3,317.72",
+    "capacity": "4 passengers",
+    "selected": true
+   },
+   {
+    "name": "Sedan Intercity",
+    "fare": "₹3,743.27",
+    "capacity": "capacity and luggage allowance not shown"
+   },
+   {
+    "name": "XL Intercity",
+    "fare": "₹4,146.01",
+    "capacity": "capacity and luggage allowance not shown"
+   }
+  ],
+  "budgetModel": {
+   "title": "Individual and group budgets · 7 days / 6 nights",
+   "nights": 6,
+   "days": 7,
+   "roomRate": 1999,
+   "perRoom": 2,
+   "defaults": {
+    "mealsPerDay": 1200,
+    "vehiclePerDay": 8000,
+    "learningPerPerson": 4500
+   },
+   "accommodationSource": "District Hisar, Government of Haryana lists 10 standard rooms at ₹1,999 per room per night, excluding tax (page last updated 11 March 2025). Double occupancy is a calculation assumption only. The property’s listed under-18 restriction also applies.",
+   "excluded": "Tax, travel to/from Rakhigarhi, extra rooms if double occupancy is unavailable, entry or guide charges, insurance, filming, accessibility-specific arrangements, host payments, contingencies, or any permissions."
+  }
+ },
+ "literature": {
+  "title": "Rakhigarhi: evidence and limits",
+  "intro": "This page summarizes cited public sources. The proposed Rakhigarhi Research Foundation is a concept in this prototype; this site does not claim it is an established institution.",
+  "sections": [
+   {
+    "heading": "Site and mounds",
+    "text": "Government sources describe Rakhigarhi in Haryana as a major Harappan site and identify seven mounds. Published area figures vary by source and by what boundary is being measured, so this prototype does not present a single total area as definitive.",
+    "refs": [
+     2,
+     3
+    ]
+   },
+   {
+    "heading": "The 2019 genome paper",
+    "text": "The paper reports genome-wide data from one individual, I6113, from Rakhigarhi. Its findings are specific to that sample and the authors’ analysis; they do not establish linguistic continuity or stand for every person in the Indus Civilization. Read the study’s methods and limitations before drawing broader conclusions.",
+    "refs": [
+     1
+    ]
+   },
+   {
+    "heading": "Reservoir reporting",
+    "text": "A December 2024 news report describes evidence of a water-storage area between Mounds 1 and 2 and quotes an ASI official on an estimated depth of 3.5–4 feet. This prototype does not call it a monumental reservoir at RGR-3; consult the primary excavation report for definitive interpretation.",
+    "refs": [
+     4
+    ]
+   }
+  ],
+  "references": [
+   {
+    "n": 1,
+    "text": "Shinde et al. (2019), “An Ancient Harappan Genome Lacks Ancestry from Steppe Pastoralists or Iranian Farmers,” Cell 179(3):729–735.e10.",
+    "linkLabel": "DOI: 10.1016/j.cell.2019.08.048",
+    "url": "https://doi.org/10.1016/j.cell.2019.08.048"
+   },
+   {
+    "n": 2,
+    "text": "Archaeology & Museums, Government of Haryana, “Ancient Site at Rakhigarhi (ASI).”",
+    "linkLabel": "Heritage Monuments and Sites of Haryana (PDF)",
+    "url": "https://www.archaeology.haryana.gov.in/sites/default/files/site-docs/Heritage-Monuments-and-Sites-of-Haryana.pdf"
+   },
+   {
+    "n": 3,
+    "text": "Press Information Bureau, Government of India, “Rakhi Garhi Is Being Developed as One of The Five Identified Iconic Archaeological Sites.”",
+    "linkLabel": "official release",
+    "url": "https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=1704888&lang=2&reg=48"
+   },
+   {
+    "n": 4,
+    "text": "The Tribune (21 December 2024), “5,000-year-old water management techniques unearthed at Rakhigarhi.” Secondary reporting; verify interpretation against excavation documentation.",
+    "linkLabel": "report",
+    "url": "https://www.tribuneindia.com/news/haryana/5000-year-old-water-management-techniques-unearthed-at-rakhigarhi/"
+   },
+   {
+    "n": 5,
+    "text": "Press Information Bureau, Government of India, “Press Release: Rakhigarhi,” reporting eight burials at Mound 7 in the 2025–26 field season.",
+    "linkLabel": "official release",
+    "url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2276489&lang=2&reg=48"
+   }
+  ],
+  "reviewed": "Source review date: 23 October 2026. New findings should be added with their own publication date and source."
+ }
+}
