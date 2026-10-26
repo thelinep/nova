@@ -42,3 +42,12 @@ users should consider applicable teacher-model terms.
 
 The adjacent `.gitignore` keeps the 128 MiB JSONL artifact local. The tracked
 card snapshot and this note do not make it an approved corpus.
+
+## Other candidate reviews
+
+- [`JBLITZAR_GITHUB_PYTHON_RIGHTS_REVIEW.md`](JBLITZAR_GITHUB_PYTHON_RIGHTS_REVIEW.md)
+  records a preliminary review of the proposed GitHub-Python Licensed Subset.
+  A hash-only comparison snapshot is pinned in
+  [`jblitzar-snapshot-freeze.json`](jblitzar-snapshot-freeze.json); source bytes
+  were removed after comparison. The candidate is not rights-approved or
+  admitted, and per-file provenance remains open.

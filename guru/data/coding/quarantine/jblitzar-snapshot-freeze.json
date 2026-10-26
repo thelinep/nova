@@ -1,0 +1,84 @@
+{
+  "schema_version": "guru-code-candidate-comparison-freeze-v1",
+  "candidate_id": "corpus-cand-jblitzar-001",
+  "reviewed_on": "2026-10-13",
+  "status": "CANDIDATE_QUARANTINED",
+  "rights_approved": false,
+  "provenance_complete": false,
+  "source": "https://huggingface.co/datasets/jblitzar/github-python",
+  "upstream_ref": "a99387cb1d86b6c73a71f359f9d85a4e966e32ba",
+  "fetch_date": "2026-10-13 (time not recorded)",
+  "fetch_method": "Python urllib.request; temporary comparison only",
+  "hash_algorithm": "sha256",
+  "canonical_artifact": {
+    "path": "mega_licensed_corpus_redacted.txt",
+    "bytes": 767255913,
+    "sha256": "25872f695fefeb4106ddd7006c798767be925a67abadf5d22da240541cad6717"
+  },
+  "file_list": {
+    "path": "python_files.txt",
+    "bytes": 4307290,
+    "sha256": "575bdf59fa452706cf4ad981bd2e501d82494bfc9c0c70491aa5b8cb9f791deb",
+    "line_count": 53017
+  },
+  "source_metadata": {
+    "source": "https://huggingface.co/datasets/jblitzar/github-python-metadata",
+    "upstream_ref": "f29eaec68cd69797a9c13d6a734057a1a2a5159c",
+    "path": "data/train-00000-of-00001.parquet",
+    "bytes": 2781996,
+    "sha256": "1b473937ed796c937c4e567178ccc9d96877ee75c36cf55429e558766b4956d7",
+    "row_count": 53017,
+    "columns": ["repo_owner", "repo_name", "file_path", "file_url", "repo_url"],
+    "unique_repositories": 16447,
+    "file_url_matches_file_list_exactly_in_order": true,
+    "contains_license_field": false,
+    "contains_source_commit": false
+  },
+  "license_probe": {
+    "method": "GitHub current repository license endpoint",
+    "scope": "20 most represented repositories by file count",
+    "spdx_identifier_returned": 5,
+    "noassertion": 3,
+    "http_404": 12,
+    "historical_or_immutable_evidence": false,
+    "permission_approved": false,
+    "note": "Exploratory current-state results only; 404 is not proof that a source is unlicensed."
+  },
+  "equivalent_representation": {
+    "source": "https://huggingface.co/datasets/jblitzar/github-python-corpus",
+    "upstream_ref": "a405767d68588f2bda01dff14339e09ecbdc68f6",
+    "row_schema": ["text"],
+    "row_count": 19999849,
+    "reconstructed_bytes": 767255913,
+    "reconstructed_sha256": "25872f695fefeb4106ddd7006c798767be925a67abadf5d22da240541cad6717",
+    "byte_exact_match": true,
+    "shards": [
+      {
+        "path": "data/train-00000-of-00002.parquet",
+        "bytes": 178961370,
+        "sha256": "f24274e1bc31eb5d4158b5937b2c92a6f2dd3897107b6351227399d84d6f7626",
+        "rows": 9999925
+      },
+      {
+        "path": "data/train-00001-of-00002.parquet",
+        "bytes": 178308377,
+        "sha256": "45f1eaca33414cb6d9e726ff17e7f39549d57cc28a7168a0c7affbafa91f1f6b",
+        "rows": 9999924
+      }
+    ]
+  },
+  "file_mapping_check": {
+    "separator": "# <FILESEP>",
+    "separator_line_count": 86616,
+    "url_list_line_count": 53017,
+    "mapping_validated": false,
+    "blocker": "separator count differs from file-list count; do not split and join by index"
+  },
+  "source_bytes_retained": false,
+  "notes": [
+    "The Parquet text rows concatenate to exactly the pinned raw text artifact; do not count or use them as a second independent corpus.",
+    "The raw artifact and Parquet representation are not rights-approved by this integrity comparison.",
+    "Per-file source/license mapping, source-level permissions, evaluation rights, and I7 runtime gates remain open.",
+    "This record contains comparison hashes and counts only; candidate code was removed after comparison."
+  ]
+}
