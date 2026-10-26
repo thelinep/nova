@@ -4,6 +4,8 @@ This roadmap records the agreed first-release scope and current evidence. It is
 not a claim that Guru-Code or autonomous agent execution is production-ready.
 The Guru-Code execution path is decomposed into atomic work units, dependencies
 and exit checks in [`guru/GURU_CODE_ATOMIC_PLAN.md`](guru/GURU_CODE_ATOMIC_PLAN.md).
+The proposed Hindi/Sanskrit-input-to-Python experiment adds four gated work
+units documented in [`guru/MULTILINGUAL_CODING_ROADMAP.md`](guru/MULTILINGUAL_CODING_ROADMAP.md).
 
 ## Product decisions
 
@@ -116,6 +118,11 @@ integrity work.
 | 5. Guru-Code capability release | Train, export and qualify a dedicated code model against representative held-out tasks | **Open; not reached is the expected state given the gates below, not a separate failure.** No release-capable or exportable Guru-Code checkpoint exists. The tiny CPU training-path smoke run is not a coding checkpoint: its temporary byte tokenizer and 512-position context make it non-exportable and non-qualifying. One teacher entry is approved; the external synthetic shard remains quarantined with dataset/source rights and quality unresolved. The host has no usable MPS/CUDA training runtime; the 7B trainer still needs a tested memory strategy. A real-container evaluator prequalification passed on October 5, but full qualification on a disposable Linux worker/VM remains open, so executable correctness is still unmeasurable. GPU spend remains research/preparation only unless explicitly approved. See [`guru/CODING_PHASE5_EXECUTION_PACKET.md`](guru/CODING_PHASE5_EXECUTION_PACKET.md). |
 
 ## Standalone Guru-Code training and qualification sequence
+
+Native-language coding is an additive experiment track, not a change to the
+first-release Python-code scope. Its four work units, tokenizer boundary,
+rights limits, and evaluator dependencies are in
+[`guru/MULTILINGUAL_CODING_ROADMAP.md`](guru/MULTILINGUAL_CODING_ROADMAP.md).
 
 This T1–T14 work sequence supports Product Phase 5; it is not a renumbering
 of Product Phase 5 or a claim that every step belongs to the product-phase

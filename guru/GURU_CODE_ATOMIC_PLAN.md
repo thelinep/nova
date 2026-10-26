@@ -4,6 +4,11 @@
 
 **Product outcome:** a qualified, local Guru-Code checkpoint for one operator and one approved project. Initial capability scope is Python code with Brahmi comments and explanations; Python syntax remains conventional. This plan does not claim the checkpoint exists.
 
+The later proposal for Hindi and Sanskrit task input is additive and remains
+experimental. It adds four work units without removing any existing gate; see
+[`MULTILINGUAL_CODING_ROADMAP.md`](MULTILINGUAL_CODING_ROADMAP.md). It does not
+imply multilingual capability or authorize persistent transformed data.
+
 ## 1. Current baseline
 
 | Area | State | Consequence |
@@ -384,6 +389,7 @@ This lane follows the response-SFT baseline; it is not a prerequisite for the fi
 | Decision | Current record | Required action |
 | --- | --- | --- |
 | Runtime model D1 | Selected `qwen2.5:7b`, exact digest above; 18/18 current Maataa workflow trials passed. | Closed for the initial local runtime scope. Requalify if model digest or relevant Maataa qualification code changes. This is not code-correctness or Guru-checkpoint qualification. |
+| Corpus owner | Hemant Kumar Dixit was named on 2026-10-14. | Ownership is recorded; authorized rights-review authority and source-specific use decisions remain open. No corpus is admitted by naming an owner. |
 | TinyPython D2 | No use is approved; exact shard remains quarantined. Its pinned card declares Apache-2.0, but the pinned file listing has no separate license file and rows identify Qwen-generated outputs. | Keep training, evaluation, transformed-copy retention, provider transmission and derived-weight use disabled unless an authorized reviewer approves the exact artifact and each use. No alternative corpus is admitted. |
 | Student base D3 | **Candidate and method selected on 2026-10-13.** `Qwen/Qwen2.5-Coder-1.5B` base model (not Instruct) at revision `ccb64f03a691be46ba6b4e4c91f396c247aa66c7` with LoRA/SFT. The pinned revision resolves to the base-model repository. | Before any download or training, record exact file/tokenizer digests and rights review, admit the model intake, and implement/resource-qualify a compatible Transformers/PEFT path. Selection does not admit data or approve weight distribution. |
 | GPU ceiling D4 | **Research and preparation only; no launch or spend authorized.** The packet's four-hour H100 pilot and US$25 all-in cap are planning constraints, not approval to provision. No account or regional availability has been verified. | D4 remains open in `guru/decisions/README.md`. Do not launch unless the owner explicitly approves an existing account, current price/tax fits the cap, and rights/evaluator/trainer gates have passed. |

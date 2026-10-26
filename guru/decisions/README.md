@@ -9,6 +9,13 @@ The evidence behind each decision is in
 
 Mark one box per line, then add your name and the date.
 
+## Corpus ownership
+
+Corpus owner named on 2026-10-14: **Hemant Kumar Dixit**. This records
+ownership only. It does not establish authorized rights-review authority or
+approve any source or use. TinyPython and JBLITZAR remain quarantined pending
+source-specific rights decisions.
+
 ## D1 · Runtime coding model for Maataa (needed now)
 
 The registry contains an approved teacher entry for the exact local

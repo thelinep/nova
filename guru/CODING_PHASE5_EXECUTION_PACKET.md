@@ -502,8 +502,10 @@ they do not qualify a real model.
 
 ## Requested external decisions
 
-1. Name the data-rights reviewer/owner and return the completed TinyPython
-   review, or reject it and supply an approved replacement.
+1. Corpus owner named on 2026-10-14: **Hemant Kumar Dixit**. This is ownership
+   attribution only. Name or confirm the authorized data-rights reviewer and
+   return the completed TinyPython review, or reject it and supply an approved
+   replacement.
 2. The owner has selected no weight distribution: Guru-Code checkpoints and
    exports remain private local artifacts under I7.
 3. Choose an approved disposable Linux evaluator host/runtime. The local Docker
