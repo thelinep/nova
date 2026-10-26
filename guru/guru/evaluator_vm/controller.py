@@ -201,6 +201,7 @@ def _prepare_in_root(config: VmConfig, root: Path, selected_id: str, command_run
         "run_id": selected_id,
         "state": "preparing",
         "base_image_sha256": base_digest,
+        "base_image_path": str(base),
         "worker_profile_digest": hashlib.sha256(_canonical_json(profile)).hexdigest(),
         "reset_policy_digest": hashlib.sha256(_canonical_json(reset_policy)).hexdigest(),
         "profile": profile,
