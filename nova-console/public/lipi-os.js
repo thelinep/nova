@@ -18,7 +18,7 @@ export const FONTS = {
 };
 const FONT_FILE = { Dogr: 'noto-serif-dogra-dogra', Diak: 'noto-serif-dives-akuru-dives-akuru' };
 // Maataa's own builds (tools/build-lipi-conjunct-fonts.py): Noto plus the stacked conjuncts its fonts lack.
-const MAATAA_FONT = { 'Brah+': 'maataa-lipi-brahmi', Shrd: 'maataa-lipi-sharada', Diak: 'maataa-lipi-dives-akuru' };
+const MAATAA_FONT = { 'Brah+': 'maataa-lipi-brahmi', Shrd: 'maataa-lipi-sharada', Diak: 'maataa-lipi-dives-akuru', Khar: 'maataa-lipi-kharoshthi' };
 let FONT_V = 0; // bumped after the conjunct editor rebuilds the fonts, so the browser loads the new files
 const fontUrl = (c, slug) => MAATAA_FONT[c] ? `/fonts/lipi/${MAATAA_FONT[c]}.woff2${FONT_V ? '?v=' + FONT_V : ''}` : `/fonts/lipi/${FONT_FILE[c] || 'noto-sans-' + slug + '-' + slug}-400-normal.woff2`;
 const fontFaces = () => Object.entries(FONTS).map(([c, [slug]]) => `@font-face{font-family:'Lipi ${c}';src:url('${fontUrl(c, slug)}') format('woff2');font-display:swap}`).join('\n');

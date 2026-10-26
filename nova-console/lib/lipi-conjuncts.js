@@ -101,7 +101,7 @@ function rebuild(store) {
   fs.mkdirSync(outDir(), { recursive: true });
   const ovFile = path.join(os.tmpdir(), `lipi-conjuncts-${process.pid}-${Date.now()}.json`);
   fs.writeFileSync(ovFile, JSON.stringify(overrides(store)));
-  const args = [TOOL, '--src', SRC, '--out', outDir(), '--overrides', ovFile, '--glyphs', path.join(outDir(), 'lipi-conjunct-glyphs.json')];
+  const args = [TOOL, '--src', SRC, '--out', outDir(), '--overrides', ovFile, '--glyphs', path.join(outDir(), 'lipi-conjunct-glyphs.json'), ...Object.keys(CODES)];
   return new Promise((resolve, reject) => {
     let log = '';
     const child = spawn(py.python, args, { cwd: ROOT });

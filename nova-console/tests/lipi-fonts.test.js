@@ -10,7 +10,7 @@ const lipi = require('../lib/lipi-scripts');
 const ZWNJ = '‌';
 
 test('the Maataa conjunct fonts are present, WOFF2 and renamed', () => {
-  for (const slug of ['brahmi', 'sharada', 'dives-akuru']) {
+  for (const slug of ['brahmi', 'sharada', 'dives-akuru', 'kharoshthi']) {
     const buf = fs.readFileSync(path.join(__dirname, '..', 'public', 'fonts', 'lipi', `maataa-lipi-${slug}.woff2`));
     assert.equal(buf.subarray(0, 4).toString('latin1'), 'wOF2', slug + ' is WOFF2');
     assert.ok(buf.length > 10000 && buf.length < 400000, slug + ' size');
@@ -46,6 +46,6 @@ test('every script reports how its halant shows', () => {
   const list = lipi.list();
   for (const s of list) assert.ok(['stacked', 'partial', 'visible'].includes(s.halant), s.code);
   const by = Object.fromEntries(list.map(s => [s.code, s.halant]));
-  assert.equal(by.Brah, 'visible'); assert.equal(by['Brah+'], 'stacked'); assert.equal(by.Takr, 'visible'); assert.equal(by.Khar, 'partial');
+  assert.equal(by.Brah, 'visible'); assert.equal(by['Brah+'], 'stacked'); assert.equal(by.Takr, 'visible'); assert.equal(by.Khar, 'stacked');
   assert.equal(lipi.viramaOf('Brah'), '\u{11046}');
 });

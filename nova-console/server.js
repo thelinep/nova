@@ -1105,7 +1105,7 @@ const routes = [
   { method: 'DELETE', pattern: /^\/api\/lipi\/editions\/([^/]+)$/, handler: async (_req,res,[id])=>sendJson(res,200,heritage.removeEdition(store,decodeURIComponent(id))) },
   // Rakhigarhi heritage platform (lib/heritage.js): source notes, maps, activities, itinerary drafts, budgets, providers.
   { method: 'GET', pattern: /^\/api\/heritage\/rakhigarhi$/, handler: async (_req,res)=>sendJson(res,200,heritage.rakhigarhi()) },
-  { method: 'GET', pattern: /^\/api\/heritage\/budget$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.budgetModel({adults:q.get('adults'),mealsPerDay:q.get('mealsPerDay'),vehiclePerDay:q.get('vehiclePerDay'),learningPerPerson:q.get('learningPerPerson')}));} },
+  { method: 'GET', pattern: /^\/api\/heritage\/budget$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;sendJson(res,200,heritage.budgetModel({adults:q.get('adults'),mealsPerDay:q.get('mealsPerDay'),vehiclePerDay:q.get('vehiclePerDay'),learningPerPerson:q.get('learningPerPerson'),seatsPerVehicle:q.get('seatsPerVehicle')}));} },
   { method: 'GET', pattern: /^\/api\/heritage\/estimate$/, handler: async (req,res)=>{const q=new URL(req.url,'http://x').searchParams;const h=(q.get('headcounts')||'').split(',').map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=20);sendJson(res,200,heritage.fieldVisitEstimate(h.length?{headcounts:h}:{}));} },
   { method: 'GET', pattern: /^\/api\/heritage\/providers\/match$/, handler: async (_req,res)=>sendJson(res,200,heritage.matchProviders(store)) },
   { method: 'GET', pattern: /^\/api\/heritage\/itineraries$/, handler: async (_req,res)=>sendJson(res,200,heritage.itineraries(store)) },

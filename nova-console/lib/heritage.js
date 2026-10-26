@@ -182,17 +182,19 @@ function fieldVisitEstimate({ headcounts = [1, 3, 5, 6, 10, 15, 20] } = {}) {
 }
 
 /** The editable 7-day / 6-night planning model. */
-function budgetModel({ adults = 1, mealsPerDay, vehiclePerDay, learningPerPerson } = {}) {
+function budgetModel({ adults = 1, mealsPerDay, vehiclePerDay, learningPerPerson, seatsPerVehicle } = {}) {
   const m = rakhiData().itinerary.budgetModel;
   const n = Math.round(num(adults, 1, 20, 1));
   const meals = num(mealsPerDay, 0, 100000, m.defaults.mealsPerDay), vehicle = num(vehiclePerDay, 0, 1000000, m.defaults.vehiclePerDay), learn = num(learningPerPerson, 0, 1000000, m.defaults.learningPerPerson);
+  const seats = Math.round(num(seatsPerVehicle, 1, 60, m.defaults.seatsPerVehicle || 6));
   const per = k => {
-    const rooms = Math.ceil(k / m.perRoom);
-    const lines = { accommodation: rooms * m.roomRate * m.nights / k, meals: meals * m.days, vehicle: vehicle * m.days / k, learning: learn };
+    // A group needs enough rooms and enough vehicles: one vehicle per `seats` adults (F8: one vehicle for 20 people understated the cost).
+    const rooms = Math.ceil(k / m.perRoom), vehicles = Math.ceil(k / seats);
+    const lines = { accommodation: rooms * m.roomRate * m.nights / k, meals: meals * m.days, vehicle: vehicles * vehicle * m.days / k, learning: learn };
     const total = Object.values(lines).reduce((a, b) => a + b, 0);
-    return { adults: k, rooms, lines: Object.fromEntries(Object.entries(lines).map(([a, b]) => [a, Math.round(b)])), perPerson: Math.round(total), total: Math.round(total * k) };
+    return { adults: k, rooms, vehicles, lines: Object.fromEntries(Object.entries(lines).map(([a, b]) => [a, Math.round(b)])), perPerson: Math.round(total), total: Math.round(total * k) };
   };
-  return { inputs: { adults: n, mealsPerDay: meals, vehiclePerDay: vehicle, learningPerPerson: learn }, selected: per(n), samples: [6, 10, 15, 20].map(per), title: m.title, accommodationSource: m.accommodationSource, excluded: m.excluded };
+  return { inputs: { adults: n, mealsPerDay: meals, vehiclePerDay: vehicle, learningPerPerson: learn, seatsPerVehicle: seats }, selected: per(n), samples: [1, 6, 7, 10, 12, 15, 20].map(per), title: m.title, accommodationSource: m.accommodationSource, seatsNote: m.seatsNote, excluded: m.excluded };
 }
 
 // --- itinerary drafts --------------------------------------------------------------------------------

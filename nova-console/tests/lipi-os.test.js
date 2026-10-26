@@ -118,7 +118,11 @@ test('field-visit estimate and the 7-day budget reproduce the prototype figures'
   const by = Object.fromEntries(e.scenarios.map(s => [s.attendees, [s.total, s.perAttendee]]));
   assert.deepEqual(by, { 1: [29682, 29682], 3: [33509, 11170], 5: [41956, 8391], 6: [42770, 7128], 10: [59664, 5966], 15: [74951, 4997], 20: [92659, 4633] });
   const b = heritage.budgetModel({ adults: 1 });
-  assert.equal(b.selected.perPerson, 80894); assert.deepEqual(b.samples.map(s => s.perPerson), [28230, 24497, 23030, 21697]);
+  assert.equal(b.selected.perPerson, 80894); assert.deepEqual(b.samples.map(s => s.adults), [1, 6, 7, 10, 12, 15, 20]);
+  assert.deepEqual(b.samples.map(s => s.vehicles), [1, 1, 2, 2, 2, 3, 4], 'one vehicle per 6 adults (F8)');
+  assert.deepEqual(b.samples.map(s => s.perPerson), [80894, 28230, 35754, 30097, 28230, 30497, 30097]);
+  assert.equal(heritage.budgetModel({ adults: 20, seatsPerVehicle: 20 }).selected.vehicles, 1, 'a bus seats the whole group');
+  assert.equal(heritage.budgetModel({ adults: 20, seatsPerVehicle: 20 }).selected.perPerson, 21697);
   const custom = heritage.budgetModel({ adults: 4, mealsPerDay: 1000, vehiclePerDay: 6000, learningPerPerson: 0 });
   assert.equal(custom.selected.rooms, 2); assert.equal(custom.selected.perPerson, Math.round(2 * 1999 * 6 / 4 + 7000 + 6000 * 7 / 4));
   assert.equal(heritage.budgetModel({ adults: 99 }).inputs.adults, 20, 'group size is clamped to 20');
@@ -187,4 +191,17 @@ test('HTTP routes on a temporary data folder', { timeout: 30000 }, async () => {
     const font = await req('/fonts/lipi/noto-sans-brahmi-brahmi-400-normal.woff2'); assert.equal(font.status, 200); assert.equal(font.type, 'font/woff2');
     for (const f of ['/lipi-os.js', '/heritage.js']) assert.equal((await req(f)).status, 200);
   } finally { child.kill('SIGTERM'); }
+});
+
+test('Kharoshthi reports the letters it keeps in Devanagari (F7)', () => {
+  const r = lipi.fromDeva('झङ्कार ळ सोऽहम् चँद १२३', 'Khar');
+  for (const ch of ['झ', 'ङ', 'ळ', 'ऽ', 'ँ', '१']) assert.ok(r.missing.includes(ch), `${ch} is reported`);
+  for (const ch of r.missing) assert.ok(r.text.includes(ch), `${ch} really is left in the output`);
+  assert.deepEqual(lipi.fromDeva('धर्म', 'Khar').missing, [], 'a fully written word reports nothing');
+  // Cross-check: every Devanagari letter left in the output is in the loss report.
+  const left = [...new Set([...lipi.fromDeva('अष्टाध्यायी झषस्तथोर्धोऽधः ङमो ह्रस्वादचि ङमुण्नित्यम्', 'Khar').text].filter(c => /[ऀ-ॿ]/.test(c)))];
+  assert.deepEqual(left.sort(), lipi.fromDeva('अष्टाध्यायी झषस्तथोर्धोऽधः ङमो ह्रस्वादचि ङमुण्नित्यम्', 'Khar').missing.sort());
+  const k = lipi.list().find(s => s.code === 'Khar');
+  assert.ok(k.coverage > 0 && k.coverage < 1, 'Kharoshthi coverage is measured, not left blank');
+  assert.ok(k.missing.includes('झ'));
 });

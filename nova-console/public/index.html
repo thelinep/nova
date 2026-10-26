@@ -509,6 +509,7 @@
 .bp-notes button{width:100%;text-align:left;border:0;background:none;color:inherit;padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:2px;font:inherit}
 .bp-notes button[aria-current="true"]{background:var(--amber-soft,rgba(255,170,60,.12))}
 @font-face{font-family:'Maataa Lipi Brahmi';src:url('/fonts/lipi/maataa-lipi-brahmi.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Maataa Lipi Kharoshthi';src:url('/fonts/lipi/maataa-lipi-kharoshthi.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'Noto Sans Kharoshthi';src:local('Noto Sans Kharoshthi'),url('/fonts/lipi/noto-sans-kharoshthi-kharoshthi-400-normal.woff2') format('woff2');font-display:swap}
 @font-face{font-family:'Noto Sans Siddham';src:local('Noto Sans Siddham'),url('/fonts/lipi/noto-sans-siddham-siddham-400-normal.woff2') format('woff2');font-display:swap}
 .bp-notes .t{font-family:'Maataa Lipi Brahmi','Noto Sans Brahmi',var(--font-sans);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -5589,7 +5590,7 @@ async function renderCollectorView(){
 // ── Ashtadhyayi ────────────────────────────────────────────────────────────────────
 // All 3,983 sutras and the Dhatupatha (lib/panini.js; Vidyut by ambuda.org, MIT licence).
 const PANINI = { tab:'sutras', q:'1.1', script:'devanagari', root:'', info:null };
-const PANINI_FONTS = { brahmi:"'Maataa Lipi Brahmi','Noto Sans Brahmi'", kharoshthi:"'Noto Sans Kharoshthi'", siddham:"'Noto Sans Siddham'" };
+const PANINI_FONTS = { brahmi:"'Maataa Lipi Brahmi','Noto Sans Brahmi'", kharoshthi:"'Maataa Lipi Kharoshthi','Noto Sans Kharoshthi'", siddham:"'Noto Sans Siddham'" };
 function openSutra(id){ PANINI.tab='sutras'; PANINI.q=String(id); showView('panini'); }
 async function paniniFetch(path){ const r=await fetch(apiUrl(path)); const d=await r.json(); if(!r.ok) throw new Error(d.error||'Request failed'); return d; }
 async function renderPaniniView(){

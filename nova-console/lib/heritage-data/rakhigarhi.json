@@ -1397,9 +1397,11 @@
    "days": 7,
    "roomRate": 1999,
    "perRoom": 2,
+   "seatsNote": "Assumption: one hired SUV seats 6 adults, so every further 6 adults need another vehicle. Change the seats for a tempo traveller or bus.",
    "defaults": {
     "mealsPerDay": 1200,
     "vehiclePerDay": 8000,
+    "seatsPerVehicle": 6,
     "learningPerPerson": 4500
    },
    "accommodationSource": "District Hisar, Government of Haryana lists 10 standard rooms at ₹1,999 per room per night, excluding tax (page last updated 11 March 2025). Double occupancy is a calculation assumption only. The property’s listed under-18 restriction also applies.",

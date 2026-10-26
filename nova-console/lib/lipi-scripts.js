@@ -43,7 +43,7 @@ const HALANT = {
   'Brah+': ['stacked', 'Maataa Lipi Brahmi: the same Brahmi text, with the stacked conjuncts Noto Sans Brahmi lacks.'],
   Shrd: ['stacked', 'Maataa Lipi Sharada stacks the conjuncts Noto Sans Sharada leaves open.'],
   Diak: ['stacked', 'Maataa Lipi Dives Akuru stacks the conjuncts Noto Serif Dives Akuru leaves open.'],
-  Khar: ['partial', 'Noto Sans Kharoshthi forms some conjuncts; others show the virama.'],
+  Khar: ['stacked', 'Maataa Lipi Kharoshthi keeps the clusters Noto Sans Kharoshthi draws and stacks the rest (F9).'],
   Takr: ['visible', 'Takri is usually written with a visible halant.'],
   Dogr: ['visible', 'Noto Serif Dogra forms no conjuncts; the halant is shown.'],
   Sind: ['visible', 'Khudawadi does not form conjuncts; the halant is shown.'],
@@ -52,11 +52,20 @@ const halantOf = code => (HALANT[code] || ['stacked', ''])[0];
 /** The virama a script writes, from its table. */
 const viramaOf = code => code === 'Brah+' ? viramaOf('Brah') : code === 'Khar' ? '\u{10A3F}' : code === 'Deva' ? VIRAMA : (load().scripts[code] || { map: {} }).map[VIRAMA];
 
+/** Kharoshthi has no generated table: measure it against the same core letters as the other scripts. */
+let kharCov = null;
+function kharCoverage() {
+  if (kharCov) return kharCov;
+  const core = [...load().core], missing = core.filter(ch => fromDevaJoined(ch, 'Khar').missing.length);
+  return (kharCov = { coverage: Math.round((core.length - missing.length) / core.length * 1000) / 1000, missing });
+}
+
 /** Every script Lipi can write, in display order. */
 function list() {
   const d = load();
   const out = [{ code: 'Deva', label: 'Devanagari', hi: 'देवनागरी', direction: 'ltr', coverage: 1, missing: [], note: 'The source script for conversion.', halant: 'stacked', halantNote: '' }];
-  out.push({ code: 'Khar', label: 'Kharoshthi', hi: 'खरोष्ठी', direction: 'rtl', coverage: null, missing: [], note: 'Right to left. ai and au are written as e and o with the length mark (Guru convention).', halant: halantOf('Khar'), halantNote: HALANT.Khar[1] });
+  const kh = kharCoverage();
+  out.push({ code: 'Khar', label: 'Kharoshthi', hi: 'खरोष्ठी', direction: 'rtl', coverage: kh.coverage, missing: kh.missing, note: 'Right to left. ai and au are written as e and o with the length mark (Guru convention).', halant: halantOf('Khar'), halantNote: HALANT.Khar[1] });
   for (const s of Object.values(d.scripts).sort((a, b) => a.order - b.order)) {
     out.push({ code: s.code, label: s.label, hi: s.hi, direction: s.direction, coverage: s.coverage, missing: s.missing, note: s.note, halant: halantOf(s.code), halantNote: (HALANT[s.code] || [])[1] || '' });
     // Brahmi+ is a second view of the same Brahmi text: identical characters, drawn with stacked conjuncts.
@@ -97,7 +106,11 @@ function fromDevaJoined(text, code) {
   if (code === 'Brah+') code = 'Brah'; // same characters; only the font differs
   const src = String(text).normalize('NFD');
   if (code === 'Deva') return { text: src.normalize('NFC'), missing: [] };
-  if (code === 'Khar') return { text: panini.fromDeva(src, 'kharoshthi'), missing: [] };
+  if (code === 'Khar') {
+    // Guru's Kharoshthi writer keeps any letter it has no form for in Devanagari; report those (F7).
+    const text = panini.fromDeva(src, 'kharoshthi');
+    return { text, missing: [...new Set([...text].filter(ch => DEVA.test(ch) && ch !== NUKTA))] };
+  }
   const s = load().scripts[code];
   if (!s) throw error(`Lipi does not know the script ${code}.`);
   const chars = [...src], out = [], missing = new Set();

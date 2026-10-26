@@ -50,7 +50,54 @@ CONFIG = {  # code: (Noto source file, family name, output slug)
     'Brah': ('NotoSansBrahmi-Regular.ttf', 'Maataa Lipi Brahmi', 'brahmi'),
     'Shrd': ('NotoSansSharada-Regular.ttf', 'Maataa Lipi Sharada', 'sharada'),
     'Diak': ('NotoSerifDivesAkuru-Regular.ttf', 'Maataa Lipi Dives Akuru', 'dives-akuru'),
+    # Kharoshthi stacks the second letter below the first. Noto Sans Kharoshthi draws a few clusters
+    # (क्त, स्त, क्ष, subjoined र, म, व, य) and leaves the rest with a visible virama (F9); its own forms are kept.
+    'Khar': ('NotoSansKharoshthi-Regular.ttf', 'Maataa Lipi Kharoshthi', 'kharoshthi'),
 }
+
+
+def script_map(code):
+    """Devanagari -> script table. Kharoshthi is not in lipi-scripts.json (Lipi writes it with Guru's
+    converter), so its letters are matched by Unicode name here, the same way the tables are built."""
+    if code in SCRIPTS:
+        return SCRIPTS[code]['map']
+    import unicodedata
+    prefix = {'Khar': 'KHAROSHTHI'}[code]
+    out = {}
+    for cp in range(0x0900, 0x0980):
+        try:
+            name = unicodedata.name(chr(cp))
+        except ValueError:
+            continue
+        if not name.startswith('DEVANAGARI '):
+            continue
+        for rest in (name[len('DEVANAGARI'):], name[len('DEVANAGARI'):].replace(' SIGN VIRAMA', ' VIRAMA')):
+            try:
+                out[chr(cp)] = unicodedata.lookup(prefix + rest)
+                break
+            except KeyError:
+                pass
+    return out
+
+
+def font_subjoins(src, smap, cmap):
+    """Second letters the source font already writes below another letter: our rule must not take them."""
+    try:
+        import uharfbuzz as hb
+    except ImportError:
+        sys.exit('Building this font needs uharfbuzz (pip install uharfbuzz) to keep the font\'s own conjuncts.')
+    face = hb.Face(open(src, 'rb').read()); font = hb.Font(face)
+    vir = cmap[ord(smap['्'])]
+    letters = [smap[d] for d in DEVA_CONSONANTS if len(smap.get(d, '')) == 1 and ord(smap[d]) in cmap]
+    keep = set()
+    for c2 in letters:
+        for c1 in letters:
+            buf = hb.Buffer(); buf.add_str(c1 + smap['्'] + c2); buf.guess_segment_properties(); hb.shape(font, buf, {})
+            names = [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
+            if vir not in names and len(names) == 2:  # the font drew c2 as its own subjoined form
+                keep.add(cmap[ord(c2)])
+                break
+    return keep
 DEVA_CONSONANTS = [chr(c) for c in range(0x0915, 0x093A)] + ['ळ']
 
 
@@ -106,14 +153,14 @@ def build(code, src, out, family, overrides=None, glyph_out=None):
     overrides = overrides or {}
     scale_of = {}
     for d, v in (overrides.get('scale') or {}).items():
-        t = SCRIPTS[code]['map'].get(d)
+        t = script_map(code).get(d)
         if t and len(t) == 1:
             scale_of[t] = max(0.4, min(1.0, float(v)))
     f = TTFont(src)
     cmap = f.getBestCmap()
     gs = f.getGlyphSet()
     glyf, hmtx = f['glyf'], f['hmtx']
-    smap = SCRIPTS[code]['map']
+    smap = script_map(code)
     virama = cmap[ord(smap['्'])]
     consonants = []
     for d in DEVA_CONSONANTS:
@@ -218,7 +265,10 @@ def build(code, src, out, family, overrides=None, glyph_out=None):
     for s in subs.values():
         classdefs[s] = 3
 
-    lig = '\n'.join(f'    sub {virama} {g} by {s};' for g, s in subs.items())
+    own = font_subjoins(src, smap, cmap) if code not in SCRIPTS else set()
+    if own:
+        print(f'  {code}: the font already subjoins', len(own), 'letters; their own forms are kept')
+    lig = '\n'.join(f'    sub {virama} {g} by {s};' for g, s in subs.items() if g not in own)
     bases = '\n'.join(f"    pos base {g} <anchor {round(geo[g]['fx'])} {round(geo[g]['foot_y'])}> mark @SUBJ;" for g in subs)
     def mark1(s):  # a third letter hangs from the second by the same edge rule
         extra = f' <anchor {round(sub_foot[s][0])} {round(sub_foot[s][1])}> mark @BELOWV' if s in sub_foot and below_marks else ''
