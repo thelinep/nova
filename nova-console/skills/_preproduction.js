@@ -50,7 +50,7 @@ function makeSkill(spec) {
     const hint = typeof spec.hint === 'function' ? asText(spec.hint(source)) : '';
     const prompt = `${spec.instruction}${hint ? `\n${hint}` : ''}\n${extras ? `\nDetails supplied by the user (these override the source):\n${extras}\n` : ''}\nSource:\n"""\n${source}\n"""`;
     const ask = async text => host.generate({ system, prompt: text, modelId: inputs.modelId || null, maxTokens: spec.maxTokens || 2048, format: 'json' });
-    const judge = text => { try { const d = extractJson(String(text || '')); let p = spec.validate(d); if (!p.length && typeof spec.check === 'function') p = spec.check(d, source); return { data: d, problems: p }; } catch (e) { return { data: undefined, problems: [e.message] }; } };
+    const judge = text => { try { const d = extractJson(String(text || '')); let p = spec.validate(d); if (!p.length && typeof spec.check === 'function') p = spec.check(d, source, inputs); return { data: d, problems: p }; } catch (e) { return { data: undefined, problems: [e.message] }; } };
     const maxRepairs = Math.max(1, Math.min(3, Number(spec.repairs) || 1));
     let reply = await ask(prompt), model = reply.model || null, repairs = 0;
     let { data, problems } = judge(reply.text);

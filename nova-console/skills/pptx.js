@@ -24,6 +24,12 @@ module.exports = makeSkill({
     });
     return p;
   },
+  // A deck far shorter than asked for (small models sometimes return one slide) is sent back once.
+  check(d, _source, inputs) {
+    const asked = Math.round(Number(inputs && inputs.slideCount)), want = asked >= 1 && asked <= 40 ? asked : 6;
+    const least = Math.min(want, Math.max(2, Math.ceil(want * 0.6))), got = Array.isArray(d.slides) ? d.slides.length : 0;
+    return got < least ? [`"slides" has ${got} slide(s) but about ${want} were asked for; return at least ${least}, each with its own title and bullets`] : [];
+  },
   toMarkdown(d) {
     const out = ['---', 'marp: true', 'paginate: true', `title: ${JSON.stringify(clean(d.title))}`, '---', '', `# ${clean(d.title)}`];
     if (asText(d.subtitle)) out.push('', clean(d.subtitle));

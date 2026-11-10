@@ -194,6 +194,19 @@ test('shot list allows two repairs, rejects empty or template descriptions, and 
   assert.deepEqual(r2.data.scenes.map(x => x.shots.map(y => y.shot)), [['1A', '1B', '1C', '1D', '1E', '1F'], ['2A', '2B', '2C']]);
 });
 
+test('slide deck far shorter than asked for is sent back once; a deck near the asked size passes', async () => {
+  const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
+  const { UPGRADES, record } = require('../lib/first-party-skills');
+  const skill = record(UPGRADES.find(u => u.id === 'skl_pptx')), calls = []; db.put('skills', skill);
+  const deck = n => JSON.stringify({ title: 'Monsoon', slides: Array.from({ length: n }, (_, i) => ({ title: 'Slide ' + (i + 1), bullets: ['a'], notes: 'n' })) });
+  const r = await runSkillSandboxed(skill, { text: 'brief', slideCount: 5 }, null, buildSkillHost(db, fakeOllama([deck(1), deck(4)], calls), skill));
+  assert.equal(calls.length, 2);
+  assert.match(calls[1].messages[1].content, /"slides" has 1 slide\(s\) but about 5 were asked for; return at least 3/);
+  assert.equal(r.data.slides.length, 4);
+  const calls2 = []; await runSkillSandboxed(skill, { text: 'brief', slideCount: 1 }, null, buildSkillHost(db, fakeOllama([deck(1)], calls2), skill));
+  assert.equal(calls2.length, 1, 'one slide is fine when one was asked for');
+});
+
 test('treatment and call sheet skills render Markdown; a second invalid reply fails clearly', async () => {
   const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
   const treatment = skillFor('skl_treatment', db);
