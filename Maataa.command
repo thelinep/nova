@@ -33,6 +33,7 @@ while true; do
   C=$(choose "What would you like to do?" \
     "Open Maataa" \
     "Start coding (model and coding checks)" \
+    "Test with real models" \
     "Install components (opens the Install page)" \
     "Build and install the Maataa app" \
     "Build the Maataa app only" \
@@ -49,6 +50,7 @@ while true; do
     "") break ;;
     "Open Maataa") start_maataa && open "http://127.0.0.1:8787/" ;;
     "Start coding (model and coding checks)") run "Maataa - Start coding" ;;
+    "Test with real models") run "Maataa - Test with real models" ;;
     "Install components (opens the Install page)") start_maataa && open "http://127.0.0.1:8787/#install" ;;
     "Build and install the Maataa app") MAATAA_CHAIN=1 run "Build NOVA app" && run "Install Maataa app" ;;
     "Build the Maataa app only") run "Build NOVA app" ;;
@@ -66,7 +68,7 @@ while true; do
     "Maataa AAI engine (set up)") run "AAI - Set up" ;;
     "Compare song engines") run "Compare song engines" ;;
     "Rename local model to guru-maataa") run "Rename local model to guru-maataa" ;;
-    "Push to GitHub") run "Push to GitHub" ;;
+    "Push to GitHub") run "Push to GitHub as thelinep" ;;
   esac
 done
 echo "Bye."
