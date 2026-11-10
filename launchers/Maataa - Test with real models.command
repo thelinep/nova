@@ -23,8 +23,9 @@ while IFS= read -r M; do
   [ -n "$M" ] || continue
   SAFE=$(printf '%s' "$M" | tr '/:' '__')
   echo; echo "════ Testing $M (this can take several minutes)"
-  if node --no-warnings scripts/validate-real-models.js "$M" --out "data/checks/real-models-$SAFE.json" 2>&1 | tee -a "$HOME/Maataa-real-models.log"; then
-    SUMMARY="$SUMMARY\n  PASS  $M"; else SUMMARY="$SUMMARY\n  FAIL  $M"; fi
+  node --no-warnings scripts/validate-real-models.js "$M" --out "data/checks/real-models-$SAFE.json" 2>&1 | tee -a "$HOME/Maataa-real-models.log"
+  RES=$(grep -F "passed for $M." "$HOME/Maataa-real-models.log" | tail -1)
+  SUMMARY="$SUMMARY\n  ${RES:-unknown result for $M}"
 done <<< "$PICK"
 echo; echo "════ Summary"; printf "$SUMMARY\n"
 echo; echo "Details: nova-console/data/checks/ and ~/Maataa-real-models.log. You can close this window."
