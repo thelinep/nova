@@ -8,7 +8,7 @@
  *
  *   npm run test:real-models                 # uses llama3:latest, or the first model
  *   npm run test:real-models -- qwen2.5-coder:14b --out report.json
- *   npm run test:real-models -- --only loop  # loop | summarize | translate | slides | shotlist
+ *   npm run test:real-models -- --only loop  # loop | summarize | translate | slides | shotlist | shotlist-hindi
  *
  * Nothing touches your projects or data: each check works in a temporary
  * folder and an in-memory store. Exit code 1 if any check fails.
@@ -62,6 +62,10 @@ Scene 1: EXT. MARINE DRIVE - DUSK. Asha watches the sea as the city lights come 
 Scene 2: INT. LIFEGUARD HUT - NIGHT. Rain hammers the tin roof. Asha checks the rescue ropes. The radio warns of a high tide at 11:40 pm.
 We shoot Day 3 at Juhu beach, general call 06:30, sunset around 18:45. Budget and insurance are still open.`;
 
+const BRIEF_HI = `मानसून आशा की कहानी है, जो मुंबई में लाइफगार्ड है।
+दृश्य १: बाहरी. मरीन ड्राइव - शाम। आशा समुद्र को देखती है जब शहर की बत्तियाँ जलती हैं। उसका भाई रवि फ़ोन करता है; वह बांद्रा में फँसा है।
+दृश्य २: आंतरिक. लाइफगार्ड की झोपड़ी - रात। बारिश टिन की छत पर गिरती है। आशा बचाव की रस्सियाँ जाँचती है।`;
+
 function skillRow(id) {
   if (id === 'skl_summarize') return { id, name: 'Session Summarizer', enabled: true, permissions: [{ scope: 'session:read', granted: true }], manifest: { entrypoint: 'summarize.run(context)', inputs: ['sessionId', 'text', 'maxWords'], outputs: ['summary', 'citations'], requiredTools: [], requiredHost: ['readSession', 'generate'] } };
   const def = [...firstParty.SKILLS, ...firstParty.UPGRADES].find(s => s.id === id);
@@ -79,6 +83,7 @@ const SKILL_CHECKS = [
   { name: 'translate', run: async (o, m) => { const r = await runSkill(o, m, 'skl_translate', { text: 'EXT. MARINE DRIVE - DUSK\n\nAsha watches the sea as the city lights come on.', targetLang: 'Hindi' }); const got = ` — model wrote: ${JSON.stringify(String(r.text || '').slice(0, 160))}`; ok(/[ऀ-ॿ]/.test(r.text), 'no Devanagari in the Hindi translation' + got); ok(/Asha|आशा/.test(String(r.text || '').normalize('NFC')), 'the name Asha was lost' + got); return r.text.split('\n').pop().slice(0, 80); } },
   { name: 'slides', run: async (o, m) => { const r = await runSkill(o, m, 'skl_pptx', { text: BRIEF, slideCount: 5, audience: 'investors' }); const n = (r.markdown.match(/\n## /g) || []).length; ok(n >= 3, `only ${n} slides`); return `${n} slides`; } },
   { name: 'shotlist', run: async (o, m) => { const r = await runSkill(o, m, 'skl_shotlist', { text: BRIEF }); const shots = r.data.scenes.reduce((n, s) => n + s.shots.length, 0); const thin = r.data.scenes.filter(sc => sc.shots.length < 3).map(sc => `${sc.heading}: ${sc.shots.length}`); ok(!thin.length, `scenes with fewer than 3 shots: ${thin.join('; ')}`); ok(r.data.scenes.length >= 2, `expected both scenes, got ${r.data.scenes.length}: ${JSON.stringify(r.data.scenes.map(x => x.heading || x.title || x.slug || '?')).slice(0, 160)}`); return `${r.data.scenes.length} scenes, ${shots} shots${r.repaired ? ' (after one repair)' : ''}`; } },
+  { name: 'shotlist-hindi', run: async (o, m) => { const r = await runSkill(o, m, 'skl_shotlist', { text: BRIEF_HI }); const thin = r.data.scenes.filter(sc => sc.shots.length < 3).map(sc => `${sc.heading}: ${sc.shots.length}`); ok(r.data.scenes.length === 2, `expected 2 scenes from the Hindi script, got ${r.data.scenes.length}`); ok(!thin.length, `scenes with fewer than 3 shots: ${thin.join('; ')}`); return `${r.data.scenes.length} scenes, ${r.data.scenes.reduce((n, s) => n + s.shots.length, 0)} shots${r.repaired ? ' (after repair)' : ''}`; } },
 ];
 
 async function main() {

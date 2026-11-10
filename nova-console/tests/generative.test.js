@@ -163,6 +163,16 @@ test('shot list rejects a scene with fewer than three shots and repairs once', a
   assert.equal(result.data.scenes[0].shots.length, 3);
 });
 
+test('shot list reads Hindi and Hinglish scene headings, and ignores ordinary Hindi sentences', () => {
+  const { sceneHeadings, splitScenes } = require('../skills/shotlist');
+  const hindi = 'मानसून आशा की कहानी है।\nदृश्य १: बाहरी. मरीन ड्राइव - शाम। आशा समुद्र को देखती है।\nदृश्य २: आंतरिक. लाइफगार्ड की झोपड़ी - रात। बारिश टिन की छत पर गिरती है।';
+  assert.deepEqual(sceneHeadings(hindi), ['बाहरी. मरीन ड्राइव - शाम', 'आंतरिक. लाइफगार्ड की झोपड़ी - रात']);
+  assert.equal(splitScenes(hindi).preamble, 'मानसून आशा की कहानी है।');
+  assert.deepEqual(sceneHeadings('सीन 1: EXT. MARINE DRIVE - SHAAM. Asha samundar dekhti hai.\nसीन 2: INT. JHOPDI - RAAT. Baarish ho rahi hai.'), ['EXT. MARINE DRIVE - SHAAM', 'INT. JHOPDI - RAAT']);
+  assert.deepEqual(sceneHeadings('INT - GHAR - DIN\nMaa chai banati hai.\n\nEXT - GALI - RAAT\nRavi bhaagta hai.'), ['INT - GHAR - DIN', 'EXT - GALI - RAAT']);
+  assert.deepEqual(sceneHeadings('बाहर बहुत बारिश हो रही थी और आशा अंदर बैठी थी।\nInternal affairs are complex.'), []);
+});
+
 test('treatment and call sheet skills render Markdown; a second invalid reply fails clearly', async () => {
   const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
   const treatment = skillFor('skl_treatment', db);

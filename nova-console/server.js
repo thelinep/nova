@@ -754,6 +754,14 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/library\/backfill$/, handler: async (_req, res) => sendJson(res, 200, library.backfill(store, DATA_DIR)) },
   { method: 'GET', pattern: /^\/api\/skills\/([^/]+)\/outputs$/, handler: async (_req, res, [id]) => sendJson(res, 200, library.listSkillOutputs(store, decodeURIComponent(id))) },
   { method: 'GET', pattern: /^\/api\/skill-outputs$/, handler: async (_req, res) => sendJson(res, 200, library.listSkillOutputs(store, null, 200)) },
+  { method: 'GET', pattern: /^\/api\/skill-outputs\/([^/]+)\/print$/, handler: async (_req, res, [id]) => {
+      const out = store.get('skillOutputs', decodeURIComponent(id));
+      if (!out) return sendJson(res, 404, { error: 'Saved output not found' });
+      const printView = require('./lib/print-view'), nonce = crypto.randomBytes(16).toString('base64');
+      const body = Buffer.from(printView.printPage(out, nonce), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': body.length, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': printView.cspFor(nonce) });
+      res.end(body);
+    } },
   { method: 'GET', pattern: /^\/api\/video\/status$/, handler: async (_req, res) => sendJson(res, 200, await videoGen.status(DATA_DIR)) },
   { method: 'POST', pattern: /^\/api\/video\/camera-moves$/, handler: async (req, res) => {
       const { job } = videoGen.startMotion(store, DATA_DIR, await readJsonBody(req));

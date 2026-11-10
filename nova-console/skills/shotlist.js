@@ -4,11 +4,17 @@ const { makeSkill, need, esc, asText, sourceText } = require('./_preproduction')
 
 const MIN_SHOTS = 3;
 
-// Screenplay scene headings (INT./EXT./INT/EXT./I/E), optionally after "Scene 3:".
-const HEADING = /^\s*(?:scene\s+\d+[a-z]?\s*[:.\-]\s*)?((?:INT\.?\/EXT|EXT\.?\/INT|INT|EXT|I\/E)\.?\s+[^\n]+)$/gim;
+// Screenplay scene headings, optionally after "Scene 3:" / "सीन 3:" / "दृश्य ३:".
+// English markers (INT./EXT./INT/EXT./I/E) are what most Hindi and Hinglish
+// scripts use too; the Devanagari ones (आंतरिक/बाह्य/बाहरी, अंदर/बाहर, इंट./एक्स.) are also read.
+const LATIN = '(?:INT\\.?\\/EXT|EXT\\.?\\/INT|INT|EXT|I\\/E)(?:\\.\\s*|\\s*[-–—:]\\s*|\\s+)';
+// The Devanagari words are also everyday words, so they need a "." "-" or ":" after them to count.
+const DEVA = '(?:आंतरिक|आन्तरिक|बाह्य|बाहरी|अंदर|अन्दर|बाहर|इंट|एक्स)\\s*[.\\-–—:]\\s*';
+const HEADING = new RegExp('^\\s*(?:(?:scene|सीन|दृश्य)\\s+[\\d०-९]+[a-z]?\\s*[:.\\-–—]\\s*)?((?:' + LATIN + '|' + DEVA + ')[^\\n]+)$', 'gimu');
 function sceneHeadings(source) {
   const out = []; let m; HEADING.lastIndex = 0;
-  while ((m = HEADING.exec(String(source || '')))) out.push(m[1].replace(/\.\s*$/, '').trim().split(/\.\s+(?=[A-Z][a-z])/)[0]);
+  // Keep the heading only: stop at a danda, or at a full stop that starts a new sentence.
+  while ((m = HEADING.exec(String(source || '')))) out.push(m[1].split(/\s*।|\.\s+(?=[A-Z][a-z])/u)[0].replace(/\.\s*$/, '').trim());
   return out;
 }
 
