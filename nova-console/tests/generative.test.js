@@ -131,7 +131,7 @@ test('shot list skill returns validated JSON, a Markdown table, and repairs once
   assert.match(result.markdown, /\*\*2 shots\*\*, about 0.2 minutes/);
 });
 
-test('shot list finds every screenplay scene heading and repairs a reply that drops a scene', async () => {
+test('shot list plans each screenplay scene separately and joins them in order', async () => {
   const { sceneHeadings } = require('../skills/shotlist');
   const brief = 'Monsoon is a feature about Asha.\nScene 1: EXT. MARINE DRIVE - DUSK. Asha watches the sea.\nScene 2: INT. LIFEGUARD HUT - NIGHT. Rain hammers the roof.';
   assert.deepEqual(sceneHeadings(brief), ['EXT. MARINE DRIVE - DUSK', 'INT. LIFEGUARD HUT - NIGHT']);
@@ -139,13 +139,15 @@ test('shot list finds every screenplay scene heading and repairs a reply that dr
   const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
   const skill = skillFor('skl_shotlist', db), calls = [];
   const shot = { shot: '1A', size: 'WS', angle: 'eye level', movement: 'static', description: 'x', durationSec: 4 };
-  const one = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [shot] }] };
-  const two = { title: 'Monsoon', scenes: [...one.scenes, { scene: '2', heading: 'INT. LIFEGUARD HUT - NIGHT', shots: [{ ...shot, shot: '2A' }] }] };
-  const result = await runSkillSandboxed(skill, { text: brief }, async () => { throw new Error('no tools'); }, buildSkillHost(db, fakeOllama([JSON.stringify(one), JSON.stringify(two)], calls), skill));
-  assert.match(calls[0].messages[1].content, /The source has 2 scenes: 1\) EXT\. MARINE DRIVE - DUSK; 2\) INT\. LIFEGUARD HUT - NIGHT/);
-  assert.match(calls[1].messages[1].content, /previous reply was rejected: the source has 2 scenes .* only 1/);
-  assert.equal(result.repaired, true);
-  assert.equal(result.data.scenes.length, 2);
+  const a = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [shot, { ...shot, shot: '1B' }] }] };
+  const b = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'INT. LIFEGUARD HUT - NIGHT', shots: [shot] }] };
+  const result = await runSkillSandboxed(skill, { text: brief }, async () => { throw new Error('no tools'); }, buildSkillHost(db, fakeOllama([JSON.stringify(a), JSON.stringify(b)], calls), skill));
+  assert.equal(calls.length, 2, 'one model call per scene');
+  assert.match(calls[0].messages[1].content, /Context \(not a scene of its own\): Monsoon is a feature about Asha\.[\s\S]*EXT\. MARINE DRIVE/);
+  assert.doesNotMatch(calls[0].messages[1].content, /LIFEGUARD HUT/);
+  assert.match(calls[1].messages[1].content, /INT\. LIFEGUARD HUT/);
+  assert.deepEqual(result.data.scenes.map(sc => [sc.scene, sc.heading, sc.shots.map(x => x.shot)]), [['1', 'EXT. MARINE DRIVE - DUSK', ['1A', '1B']], ['2', 'INT. LIFEGUARD HUT - NIGHT', ['2A']]]);
+  assert.match(result.markdown, /## Scene 2: INT\. LIFEGUARD HUT - NIGHT/);
 });
 
 test('treatment and call sheet skills render Markdown; a second invalid reply fails clearly', async () => {
