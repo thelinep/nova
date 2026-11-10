@@ -3,6 +3,7 @@
 const { makeSkill, need, esc, asText, sourceText } = require('./_preproduction');
 
 const MIN_SHOTS = 3;
+const DESCRIBE = 'one sentence: what the camera sees in this shot';
 
 // Screenplay scene headings, optionally after "Scene 3:" / "सीन 3:" / "दृश्य ३:".
 // English markers (INT./EXT./INT/EXT./I/E) are what most Hindi and Hinglish
@@ -29,10 +30,11 @@ function splitScenes(source) {
 
 const SPEC = {
   kind: 'shotlist', name: 'shot list', maxTokens: 3072,
-  instruction: 'Break this material into scenes and a numbered shot list. For every shot give the shot size (e.g. WS, MS, CU, ECU, OTS, INSERT), camera angle, camera movement, a short description of the action, and an estimated duration in seconds. Give every scene at least ' + MIN_SHOTS + ' shots, for example a wide shot that sets the place, a medium shot of the action and a close-up of the key moment.',
-  fields: ['title', 'style', 'cameraKit'],
+  instruction: 'Break this material into scenes and a numbered shot list. For every shot give the shot size (e.g. WS, MS, CU, ECU, OTS, INSERT), camera angle, camera movement, a short description of the action, and an estimated duration in seconds. Give every scene at least ' + MIN_SHOTS + ' shots, for example a wide shot that sets the place, a medium shot of the action and a close-up of the key moment. Never leave a description empty: write what happens in that shot, using the action in the source, in the language of the source.',
+  fields: ['title', 'style', 'cameraKit'], repairs: 2,
   hint(source) {
     const h = sceneHeadings(source);
+    if (h.length === 1) return `The source is one scene (${h[0]}). Return exactly one entry in "scenes", with all of its shots inside it.`;
     return h.length > 1 ? `The source has ${h.length} scenes: ${h.map((x, i) => `${i + 1}) ${x}`).join('; ')}. Return one entry in "scenes" for each of them, in this order.` : '';
   },
   check(d, source) {
@@ -41,7 +43,7 @@ const SPEC = {
     scenes.forEach((sc, i) => { const n = Array.isArray(sc.shots) ? sc.shots.length : 0; if (n < MIN_SHOTS) problems.push(`scenes[${i}] has ${n} shot(s); give at least ${MIN_SHOTS} (wide, medium, close-up)`); });
     return problems;
   },
-  shape: '{"title":"","scenes":[{"scene":"1","heading":"INT. LOCATION - DAY","shots":[{"shot":"1A","size":"WS","angle":"eye level","movement":"static","description":"","lens":"TBC","durationSec":5,"notes":""}]}]}',
+  shape: '{"title":"","scenes":[{"scene":"1","heading":"INT. LOCATION - DAY","shots":[{"shot":"1A","size":"WS","angle":"eye level","movement":"static","description":"' + DESCRIBE + '","lens":"TBC","durationSec":5,"notes":""}]}]}',
   validate(d) {
     const p = [];
     need(d, 'title', 'string', p, '');
@@ -49,6 +51,7 @@ const SPEC = {
       need(s, 'scene', 'string', p, `scenes[${i}].`); need(s, 'heading', 'string', p, `scenes[${i}].`);
       (need(s, 'shots', 'array', p, `scenes[${i}].`) || []).forEach((shot, j) => {
         for (const k of ['shot', 'size', 'angle', 'movement', 'description']) need(shot, k, 'string', p, `scenes[${i}].shots[${j}].`);
+        if (shot && asText(shot.description).toLowerCase() === DESCRIBE) p.push(`scenes[${i}].shots[${j}].description repeats the template; describe the action from the source`);
         if (shot && shot.durationSec != null && !(Number(shot.durationSec) > 0)) p.push(`scenes[${i}].shots[${j}].durationSec must be a positive number`);
       });
     });
@@ -82,7 +85,10 @@ async function run(inputs, tools, host) {
     const text = split.preamble ? `Context (not a scene of its own): ${split.preamble}\n\n${part}` : part;
     const r = await base.run({ ...inputs, text, sessionId: undefined }, tools, host);
     title = title || asText(r.data.title); model = r.model || model; repaired = repaired || r.repaired; chars += r.sourceCharacters;
-    for (const sc of r.data.scenes) scenes.push(sc);
+    // One part is one scene: if the model split it, fold the extra entries' shots back into the first.
+    const [head, ...extra] = r.data.scenes;
+    for (const sc of extra) head.shots.push(...(sc.shots || []));
+    scenes.push(head);
   }
   scenes.forEach((sc, i) => { sc.scene = String(i + 1); sc.shots.forEach((shot, j) => { shot.shot = shotId(i + 1, j); }); });
   const data = { title: title || 'Untitled', scenes };

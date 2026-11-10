@@ -173,6 +173,27 @@ test('shot list reads Hindi and Hinglish scene headings, and ignores ordinary Hi
   assert.deepEqual(sceneHeadings('बाहर बहुत बारिश हो रही थी और आशा अंदर बैठी थी।\nInternal affairs are complex.'), []);
 });
 
+test('shot list allows two repairs, rejects empty or template descriptions, and folds a split scene back into one', async () => {
+  const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
+  const skill = skillFor('skl_shotlist', db), calls = [];
+  const shot = d => ({ shot: '1A', size: 'WS', angle: 'eye level', movement: 'static', description: d, durationSec: 4 });
+  const sc = (...d) => ({ title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: d.map(shot) }] });
+  const result = await runSkillSandboxed(skill, { text: 'Asha watches the sea at dusk.' }, async () => { throw new Error('no tools'); },
+    buildSkillHost(db, fakeOllama([JSON.stringify(sc('', 'b', 'c')), JSON.stringify(sc('one sentence: what the camera sees in this shot', 'b', 'c')), JSON.stringify(sc('Asha at the sea wall', 'b', 'c'))], calls), skill));
+  assert.equal(calls.length, 3);
+  assert.match(calls[0].messages[0].content, /one sentence: what the camera sees in this shot/);
+  assert.match(calls[1].messages[1].content, /shots\[0\]\.description must be a non-empty string/);
+  assert.match(calls[2].messages[1].content, /repeats the template/);
+  assert.equal(result.data.scenes[0].shots[0].description, 'Asha at the sea wall');
+  await assert.rejects(() => runSkillSandboxed(skill, { text: 'x' }, null, buildSkillHost(db, fakeOllama([JSON.stringify(sc('', 'b', 'c')), JSON.stringify(sc('', 'b', 'c')), JSON.stringify(sc('', 'b', 'c'))], []), skill)), /still invalid after 2 repairs/);
+
+  const brief = 'Scene 1: EXT. MARINE DRIVE - DUSK. Asha watches the sea.\nScene 2: INT. LIFEGUARD HUT - NIGHT. Rain hammers the roof.';
+  const split = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [shot('a'), shot('b'), shot('c')] }, { scene: '2', heading: 'Asha', shots: [shot('d'), shot('e'), shot('f')] }] };
+  const calls2 = [], r2 = await runSkillSandboxed(skill, { text: brief }, null, buildSkillHost(db, fakeOllama([JSON.stringify(split), JSON.stringify(sc('g', 'h', 'i'))], calls2), skill));
+  assert.match(calls2[0].messages[1].content, /The source is one scene \(EXT\. MARINE DRIVE - DUSK\)\. Return exactly one entry/);
+  assert.deepEqual(r2.data.scenes.map(x => x.shots.map(y => y.shot)), [['1A', '1B', '1C', '1D', '1E', '1F'], ['2A', '2B', '2C']]);
+});
+
 test('treatment and call sheet skills render Markdown; a second invalid reply fails clearly', async () => {
   const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
   const treatment = skillFor('skl_treatment', db);

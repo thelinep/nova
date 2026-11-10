@@ -49,18 +49,18 @@ function makeSkill(spec) {
     ].join(' ');
     const hint = typeof spec.hint === 'function' ? asText(spec.hint(source)) : '';
     const prompt = `${spec.instruction}${hint ? `\n${hint}` : ''}\n${extras ? `\nDetails supplied by the user (these override the source):\n${extras}\n` : ''}\nSource:\n"""\n${source}\n"""`;
-    const first = await host.generate({ system, prompt, modelId: inputs.modelId || null, maxTokens: spec.maxTokens || 2048, format: 'json' });
-    let data, problems, repaired = false, model = first.model || null;
-    try { data = extractJson(String(first.text || '')); problems = spec.validate(data); if (!problems.length && typeof spec.check === 'function') problems = spec.check(data, source); }
-    catch (e) { problems = [e.message]; }
-    if (problems.length) {
-      const second = await host.generate({ system, prompt: `${prompt}\n\nYour previous reply was rejected: ${problems.slice(0, 8).join('; ')}.\nReturn the corrected JSON object only.\nPrevious reply:\n${String(first.text || '').slice(0, 6000)}`, modelId: inputs.modelId || null, maxTokens: spec.maxTokens || 2048, format: 'json' });
-      model = second.model || model;
-      repaired = true;
-      try { data = extractJson(String(second.text || '')); problems = spec.validate(data); if (!problems.length && typeof spec.check === 'function') problems = spec.check(data, source); }
-      catch (e) { problems = [e.message]; }
-      if (problems.length) throw new Error(`The model's ${spec.name} was still invalid after one repair: ${problems.slice(0, 5).join('; ')}`);
+    const ask = async text => host.generate({ system, prompt: text, modelId: inputs.modelId || null, maxTokens: spec.maxTokens || 2048, format: 'json' });
+    const judge = text => { try { const d = extractJson(String(text || '')); let p = spec.validate(d); if (!p.length && typeof spec.check === 'function') p = spec.check(d, source); return { data: d, problems: p }; } catch (e) { return { data: undefined, problems: [e.message] }; } };
+    const maxRepairs = Math.max(1, Math.min(3, Number(spec.repairs) || 1));
+    let reply = await ask(prompt), model = reply.model || null, repairs = 0;
+    let { data, problems } = judge(reply.text);
+    while (problems.length && repairs < maxRepairs) {
+      reply = await ask(`${prompt}\n\nYour previous reply was rejected: ${problems.slice(0, 8).join('; ')}.\nReturn the corrected JSON object only.\nPrevious reply:\n${String(reply.text || '').slice(0, 6000)}`);
+      model = reply.model || model; repairs++;
+      ({ data, problems } = judge(reply.text));
     }
+    if (problems.length) throw new Error(`The model's ${spec.name} was still invalid after ${repairs === 1 ? 'one repair' : repairs + ' repairs'}: ${problems.slice(0, 5).join('; ')}`);
+    const repaired = repairs > 0;
     return { kind: spec.kind, data, markdown: spec.toMarkdown(data), model, repaired, sourceCharacters: source.length, sourceTruncated: truncated };
   }
   return { run };
