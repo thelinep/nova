@@ -120,7 +120,7 @@ function skillFor(id, db){ const def = SKILLS.find(s => s.id === id); const rec 
 test('shot list skill returns validated JSON, a Markdown table, and repairs once', async () => {
   const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
   const skill = skillFor('skl_shotlist', db), calls = [];
-  const good = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [{ shot: '1A', size: 'WS', angle: 'high', movement: 'drone push-in', description: 'City lights flicker on', durationSec: 6 }, { shot: '1B', size: 'CU', angle: 'eye level', movement: 'handheld', description: 'Asha looks at the sea', durationSec: 4 }] }] };
+  const good = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [{ shot: '1A', size: 'WS', angle: 'high', movement: 'drone push-in', description: 'City lights flicker on', durationSec: 6 }, { shot: '1B', size: 'CU', angle: 'eye level', movement: 'handheld', description: 'Asha looks at the sea', durationSec: 4 }, { shot: '1C', size: 'MS', angle: 'eye level', movement: 'static', description: 'Asha turns to the hut', durationSec: 5 }] }] };
   const ollama = fakeOllama(['{"title":"Monsoon","scenes":[{"scene":"1","shots":[]}]}', JSON.stringify(good)], calls);
   const result = await runSkillSandboxed(skill, { text: 'Scene 1. Marine Drive at dusk. Asha watches the sea as the city lights come on.' }, async () => { throw new Error('no tools'); }, buildSkillHost(db, ollama, skill));
   assert.equal(result.repaired, true);
@@ -128,7 +128,7 @@ test('shot list skill returns validated JSON, a Markdown table, and repairs once
   assert.equal(calls[0].opts.format, 'json');
   assert.match(calls[1].messages[1].content, /previous reply was rejected: .*heading/);
   assert.match(result.markdown, /\| 1A \| WS \| high \| drone push-in \| TBC \| City lights flicker on \| 6 \|/);
-  assert.match(result.markdown, /\*\*2 shots\*\*, about 0.2 minutes/);
+  assert.match(result.markdown, /\*\*3 shots\*\*, about 0.3 minutes/);
 });
 
 test('shot list plans each screenplay scene separately and joins them in order', async () => {
@@ -139,15 +139,28 @@ test('shot list plans each screenplay scene separately and joins them in order',
   const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
   const skill = skillFor('skl_shotlist', db), calls = [];
   const shot = { shot: '1A', size: 'WS', angle: 'eye level', movement: 'static', description: 'x', durationSec: 4 };
-  const a = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [shot, { ...shot, shot: '1B' }] }] };
-  const b = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'INT. LIFEGUARD HUT - NIGHT', shots: [shot] }] };
+  const a = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [shot, { ...shot, shot: '1B' }, { ...shot, shot: '1C' }] }] };
+  const b = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'INT. LIFEGUARD HUT - NIGHT', shots: [shot, shot, shot] }] };
   const result = await runSkillSandboxed(skill, { text: brief }, async () => { throw new Error('no tools'); }, buildSkillHost(db, fakeOllama([JSON.stringify(a), JSON.stringify(b)], calls), skill));
   assert.equal(calls.length, 2, 'one model call per scene');
   assert.match(calls[0].messages[1].content, /Context \(not a scene of its own\): Monsoon is a feature about Asha\.[\s\S]*EXT\. MARINE DRIVE/);
   assert.doesNotMatch(calls[0].messages[1].content, /LIFEGUARD HUT/);
   assert.match(calls[1].messages[1].content, /INT\. LIFEGUARD HUT/);
-  assert.deepEqual(result.data.scenes.map(sc => [sc.scene, sc.heading, sc.shots.map(x => x.shot)]), [['1', 'EXT. MARINE DRIVE - DUSK', ['1A', '1B']], ['2', 'INT. LIFEGUARD HUT - NIGHT', ['2A']]]);
+  assert.deepEqual(result.data.scenes.map(sc => [sc.scene, sc.heading, sc.shots.map(x => x.shot)]), [['1', 'EXT. MARINE DRIVE - DUSK', ['1A', '1B', '1C']], ['2', 'INT. LIFEGUARD HUT - NIGHT', ['2A', '2B', '2C']]]);
   assert.match(result.markdown, /## Scene 2: INT\. LIFEGUARD HUT - NIGHT/);
+});
+
+test('shot list rejects a scene with fewer than three shots and repairs once', async () => {
+  const db = store(); db.put('models', { id: 'llama3:latest', runtime: 'ollama' });
+  const skill = skillFor('skl_shotlist', db), calls = [];
+  const shot = { shot: '1A', size: 'WS', angle: 'eye level', movement: 'static', description: 'x', durationSec: 4 };
+  const thin = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [shot] }] };
+  const full = { title: 'Monsoon', scenes: [{ scene: '1', heading: 'EXT. MARINE DRIVE - DUSK', shots: [shot, shot, shot] }] };
+  const result = await runSkillSandboxed(skill, { text: 'Asha watches the sea at dusk.' }, async () => { throw new Error('no tools'); }, buildSkillHost(db, fakeOllama([JSON.stringify(thin), JSON.stringify(full)], calls), skill));
+  assert.match(calls[0].messages[1].content, /at least 3 shots/);
+  assert.match(calls[1].messages[1].content, /scenes\[0\] has 1 shot\(s\); give at least 3/);
+  assert.equal(result.repaired, true);
+  assert.equal(result.data.scenes[0].shots.length, 3);
 });
 
 test('treatment and call sheet skills render Markdown; a second invalid reply fails clearly', async () => {

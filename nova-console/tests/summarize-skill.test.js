@@ -126,3 +126,20 @@ test('a workflow skill node summarizes the previous node output for real', async
   assert.equal(done.status, 'completed', done.error);
   assert.equal(done.lastOutput, 'Release notes are ready [S1].');
 });
+
+test('a summary with no valid citations is asked for once more, with the allowed ids', async () => {
+  const host = fakeHost(['Asha guards the beach.', 'Asha guards the beach [S1].']);
+  const result = await summarize.run({ text: 'Asha is a lifeguard on Marine Drive.' }, null, host);
+  assert.equal(host.prompts.length, 2);
+  assert.match(host.prompts[1], /no valid source ids[\s\S]*Use only these ids: S1/);
+  assert.equal(result.citationRepair, true);
+  assert.equal(result.citations.length, 1);
+  assert.match(result.summary, /\[S1\]/);
+});
+
+test('citations stay empty, not invented, when the repair also has none', async () => {
+  const host = fakeHost(['Asha guards the beach.', 'Asha still guards the beach.']);
+  const result = await summarize.run({ text: 'Asha is a lifeguard on Marine Drive.' }, null, host);
+  assert.equal(result.citations.length, 0);
+  assert.equal(result.summary, 'Asha guards the beach.');
+});

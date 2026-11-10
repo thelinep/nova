@@ -2,6 +2,8 @@
 /* NOVA Runtime — Shot List skill: scenes or a script into numbered shots. */
 const { makeSkill, need, esc, asText, sourceText } = require('./_preproduction');
 
+const MIN_SHOTS = 3;
+
 // Screenplay scene headings (INT./EXT./INT/EXT./I/E), optionally after "Scene 3:".
 const HEADING = /^\s*(?:scene\s+\d+[a-z]?\s*[:.\-]\s*)?((?:INT\.?\/EXT|EXT\.?\/INT|INT|EXT|I\/E)\.?\s+[^\n]+)$/gim;
 function sceneHeadings(source) {
@@ -21,15 +23,17 @@ function splitScenes(source) {
 
 const SPEC = {
   kind: 'shotlist', name: 'shot list', maxTokens: 3072,
-  instruction: 'Break this material into scenes and a numbered shot list. For every shot give the shot size (e.g. WS, MS, CU, ECU, OTS, INSERT), camera angle, camera movement, a short description of the action, and an estimated duration in seconds.',
+  instruction: 'Break this material into scenes and a numbered shot list. For every shot give the shot size (e.g. WS, MS, CU, ECU, OTS, INSERT), camera angle, camera movement, a short description of the action, and an estimated duration in seconds. Give every scene at least ' + MIN_SHOTS + ' shots, for example a wide shot that sets the place, a medium shot of the action and a close-up of the key moment.',
   fields: ['title', 'style', 'cameraKit'],
   hint(source) {
     const h = sceneHeadings(source);
     return h.length > 1 ? `The source has ${h.length} scenes: ${h.map((x, i) => `${i + 1}) ${x}`).join('; ')}. Return one entry in "scenes" for each of them, in this order.` : '';
   },
   check(d, source) {
-    const h = sceneHeadings(source), got = Array.isArray(d.scenes) ? d.scenes.length : 0;
-    return h.length > 1 && got < h.length ? [`the source has ${h.length} scenes (${h.join('; ')}) but "scenes" has only ${got}; include every scene`] : [];
+    const h = sceneHeadings(source), scenes = Array.isArray(d.scenes) ? d.scenes : [], problems = [];
+    if (h.length > 1 && scenes.length < h.length) problems.push(`the source has ${h.length} scenes (${h.join('; ')}) but "scenes" has only ${scenes.length}; include every scene`);
+    scenes.forEach((sc, i) => { const n = Array.isArray(sc.shots) ? sc.shots.length : 0; if (n < MIN_SHOTS) problems.push(`scenes[${i}] has ${n} shot(s); give at least ${MIN_SHOTS} (wide, medium, close-up)`); });
+    return problems;
   },
   shape: '{"title":"","scenes":[{"scene":"1","heading":"INT. LOCATION - DAY","shots":[{"shot":"1A","size":"WS","angle":"eye level","movement":"static","description":"","lens":"TBC","durationSec":5,"notes":""}]}]}',
   validate(d) {
@@ -79,4 +83,4 @@ async function run(inputs, tools, host) {
   return { kind: SPEC.kind, data, markdown: SPEC.toMarkdown(data), model, repaired, sourceCharacters: chars, sourceTruncated: false, scenesPlannedSeparately: split.parts.length };
 }
 
-module.exports = { run, sceneHeadings, splitScenes };
+module.exports = { run, sceneHeadings, splitScenes, MIN_SHOTS };

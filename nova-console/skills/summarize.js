@@ -215,7 +215,15 @@ async function run(inputs, tools, host) {
     calls += 1; model = reply.model || model; draft = reply.text;
   }
 
-  const cleaned = cleanCitations(draft, knownIds);
+  let cleaned = cleanCitations(draft, knownIds), citationRepair = false;
+  if (!/\[S\d+\]/.test(cleaned.text)) {
+    // No valid [S#] at all: ask once more, so every summary can be checked against its sources.
+    const fix = instruction(maxWords, inputs.focus) + '\n\nYour previous summary had no valid source ids. Rewrite it with the same facts and put the ids of the supporting sources, such as [S1], after every sentence. Use only these ids: ' + [...knownIds].join(', ') + '.\n\nPrevious summary:\n' + draft + (batches.length === 1 ? '\n\nSources:\n' + sourceBlock(batches[0]) : '');
+    const reply = await generate(host, fix, inputs, maxWords);
+    calls += 1; model = reply.model || model; citationRepair = true;
+    const second = cleanCitations(reply.text, knownIds);
+    if (/\[S\d+\]/.test(second.text)) cleaned = second;
+  }
   const limited = enforceLength(cleaned.text, maxWords);
   const byId = new Map(segments.map(s => [s.id, s]));
   const citedIds = [...new Set((limited.text.match(/\[S\d+\]/g) || []).map(m => m.slice(1, -1)))];
@@ -237,6 +245,7 @@ async function run(inputs, tools, host) {
     truncated: limited.truncated,
     droppedCitations: cleaned.dropped,
     uncitedSentences: sentences.filter(s => !/\[S\d+\]/.test(s)).length,
+    citationRepair,
   };
 }
 
