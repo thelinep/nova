@@ -146,13 +146,26 @@ class OllamaClient {
     if (opts.options) body.options = opts.options;
     if (opts.format) body.format = opts.format;
     if (opts.think !== undefined) body.think = opts.think; // reasoning models only: true/false or 'low' | 'medium' | 'high'
-    const res = await fetchOllama(this.url('/api/chat'), {
+    const post = payload => fetchOllama(this.url('/api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
       signal: opts.signal,
     });
-    if (!res.ok) throw new Error(`Ollama chat failed: ${res.status} ${await res.text().catch(() => '')}`);
+    let res = await post(body);
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      // Some runners (Ollama's MLX builds) refuse format:'json' with 501. Ask again as plain text:
+      // every caller that asks for JSON also says so in its prompt and validates what comes back.
+      if (res.status === 501 && body.format && /structured output is unavailable/i.test(detail)) {
+        const plain = { ...body }; delete plain.format;
+        res = await post(plain);
+        if (!res.ok) throw new Error(`Ollama chat failed: ${res.status} ${await res.text().catch(() => '')}`);
+        const json = await res.json(); json.structuredOutputUnavailable = true;
+        return json;
+      }
+      throw new Error(`Ollama chat failed: ${res.status} ${detail}`);
+    }
     return res.json();
   }
 
