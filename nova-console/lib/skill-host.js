@@ -93,8 +93,12 @@ function buildSkillHost(store, ollama, skill, options = {}) {
       const said = r => String((r && r.message && r.message.content) || '').trim();
       if (!said(response) && response && response.message && String(response.message.thinking || '').trim()) {
         const roomy = Math.min(MAX_OUTPUT_TOKENS, Math.max(numPredict * 4, numPredict + 1024));
-        try { response = await call(roomy, 'low'); }
-        catch (_) { response = await call(roomy); } // a model that rejects the level still gets the larger budget
+        // Models differ in what they accept: a level (gpt-oss), only on/off (others), or nothing at all.
+        let next = null;
+        try { next = await call(roomy, 'low'); } catch (_) {}
+        if (!said(next)) { try { next = await ollama.chatFull(model, messages, { options: { temperature: 0.2, num_predict: roomy }, ...(format === 'json' ? { format: 'json' } : {}), think: false }); } catch (_) {} }
+        if (!said(next)) { try { next = await call(roomy); } catch (_) {} }
+        if (next) response = next;
       }
       return { text: String((response && response.message && response.message.content) || ''), model, doneReason: (response && response.done_reason) || null };
     };

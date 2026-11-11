@@ -160,3 +160,12 @@ test('a reasoning model that only thought is asked again with light reasoning an
   await assert.rejects(() => summarize.run({ text: 'x y z.' }, null, buildSkillHost(db, quiet, skillRow())), /empty summary/);
   assert.equal(plain.length, 1, 'an empty reply without thinking is not retried here');
 });
+
+test('a reasoning model that ignores the level is asked with thinking off', async () => {
+  const db = store(); db.put('models', { id: 'gemma4:12b', runtime: 'ollama' });
+  const calls = [];
+  const ollama = { chatFull: async (model, messages, opts) => { calls.push(opts.think); if (opts.think === 'low') throw new Error('invalid think value'); return opts.think === false ? { message: { content: 'Asha guards the beach [S1].' } } : { message: { content: '', thinking: 'hmm' } }; } };
+  const result = await summarize.run({ text: 'Asha is a lifeguard on Marine Drive.' }, null, buildSkillHost(db, ollama, skillRow()));
+  assert.deepEqual(calls, [undefined, 'low', false]);
+  assert.match(result.summary, /\[S1\]/);
+});

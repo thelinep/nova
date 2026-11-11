@@ -50,8 +50,8 @@ async function checkLoop(ollama, model, fixture) {
     const { loop, done } = devLoop.startLoop(store, { scanner, changes, runner, planner: realPlanner, ollama, dataDir }, { rootId: root.id, modelId: model, request: fixture.request, maxAttempts: 3 });
     await done;
     const result = store.get('workspaceLoops', loop.id);
-    const detail = `${result.attempts.length} attempt(s): ${result.attempts.map(a => a.status + (a.applyError ? ' (' + a.applyError.slice(0, 80) + ')' : '')).join(', ')}`;
-    ok(result.status === 'ready', `loop ${result.status}: ${result.error || detail}`);
+    const detail = `${result.attempts.length} attempt(s): ${result.attempts.map(a => a.status + (a.applyError || a.planError || a.error ? ' (' + String(a.applyError || a.planError || a.error).slice(0, 120) + ')' : '')).join(', ')}`;
+    ok(result.status === 'ready', `loop ${result.status}: ${result.error || ''} [${detail.slice(0, 400)}]`);
     for (const [rel, content] of Object.entries(fixture.files)) ok(fs.readFileSync(path.join(dir, rel), 'utf8') === content, 'the project must be unchanged until you approve');
     return detail + '; batch ' + result.batchId;
   } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(dataDir, { recursive: true, force: true }); }
