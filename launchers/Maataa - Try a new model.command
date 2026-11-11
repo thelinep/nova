@@ -10,15 +10,24 @@ command -v node >/dev/null || { echo "Node is not installed (Maataa needs Node 2
 command -v ollama >/dev/null || { echo "Ollama is not installed. Get it from https://ollama.com"; exit 1; }
 # Updates Ollama: Homebrew when it was installed that way, otherwise the official Mac download.
 # Your downloaded models stay where they are (~/.ollama/models).
-wait_up(){ for i in $(seq 1 40); do up http://127.0.0.1:11434/api/tags && return 0; sleep 1; done; return 1; }
+wait_up(){ for i in $(seq 1 "${1:-40}"); do up http://127.0.0.1:11434/api/tags && return 0; sleep 1; done; return 1; }
+# Makes sure an Ollama server is answering: the app, the Homebrew service, or a plain "ollama serve".
+start_server(){
+  up http://127.0.0.1:11434/api/tags && return 0
+  echo "Starting Ollama…"
+  if [ -d /Applications/Ollama.app ]; then open -a Ollama; wait_up 20 && return 0; fi
+  if command -v brew >/dev/null && brew list --formula ollama >/dev/null 2>&1; then brew services restart ollama >/dev/null 2>&1; wait_up 15 && return 0; fi
+  nohup ollama serve > "$HOME/ollama.log" 2>&1 &
+  wait_up 30
+}
 update_ollama(){
-  local before; before=$(ollama --version 2>/dev/null | tail -1)
+  local before; before=$(ollama --version 2>/dev/null | head -1)
   osascript -e 'quit app "Ollama"' 2>/dev/null; pkill -x ollama 2>/dev/null; sleep 2
   if command -v brew >/dev/null && brew list --cask ollama >/dev/null 2>&1; then
     echo "Updating with Homebrew (cask)…"; brew upgrade --cask ollama || return 1; open -a Ollama
   elif command -v brew >/dev/null && brew list --formula ollama >/dev/null 2>&1; then
     echo "Updating with Homebrew…"; brew upgrade ollama || return 1
-    (brew services restart ollama >/dev/null 2>&1 || nohup ollama serve > "$HOME/ollama.log" 2>&1 &)
+    brew services stop ollama >/dev/null 2>&1; pkill -x ollama 2>/dev/null; sleep 2   # the old server must not answer for the new one
   else
     local dmg="$HOME/Downloads/Ollama-latest.dmg"
     echo "Downloading the newest Ollama for Mac…"
@@ -28,8 +37,8 @@ update_ollama(){
     read -r -p "When that is done, press Return here to continue… " _
     open -a Ollama
   fi
-  wait_up || { echo "Ollama did not start. Open the Ollama app, then try again."; return 1; }
-  [ "$(ollama --version 2>/dev/null | tail -1)" != "$before" ] || { echo "Ollama still reports the old version ($before)."; return 1; }
+  start_server || { echo "Ollama did not start (log: ~/ollama.log). Start it, then try again."; return 1; }
+  [ "$(ollama --version 2>/dev/null | head -1)" != "$before" ] || { echo "Ollama still reports the old version ($before)."; return 1; }
 }
 M="$1"
 [ -n "$M" ] || M=$(osascript -e 'text returned of (display dialog "Which Ollama model should be tried? (exact name from ollama.com/library)" default answer "gpt-oss:20b" with title "Maataa")' 2>/dev/null)
@@ -39,10 +48,7 @@ case "$M" in *[!A-Za-z0-9._:/-]*) echo "That does not look like a model name: $M
 RAM_GB=$(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1073741824 ))
 FREE_GB=$(df -g "$HOME" | awk 'NR==2 {print $4}')
 echo "This Mac: ${RAM_GB} GB memory, ${FREE_GB} GB free disk."
-if ! up http://127.0.0.1:11434/api/tags; then
-  echo "Starting Ollama…"; (open -a Ollama 2>/dev/null || nohup ollama serve > "$HOME/ollama.log" 2>&1 &)
-  for i in $(seq 1 20); do up http://127.0.0.1:11434/api/tags && break; sleep 1; done
-fi
+start_server || { echo "Ollama did not start (log: ~/ollama.log). Open a Terminal, run:  ollama serve   and double-click this again."; exit 1; }
 HAD=0; ollama list | awk 'NR>1 {print $1}' | grep -qx "$M" && HAD=1
 if [ "$HAD" = 0 ]; then
   if [ "${FREE_GB:-0}" -lt 20 ]; then
@@ -52,10 +58,10 @@ if [ "$HAD" = 0 ]; then
   echo; echo "════ Downloading $M (this can take a long time)"
   if ! ollama pull "$M" 2>&1 | tee "$HOME/Maataa-pull.log"; then :; fi
   if grep -q "requires a newer version of Ollama" "$HOME/Maataa-pull.log"; then
-    echo; echo "════ Ollama on this Mac is too old for $M (now: $(ollama --version 2>/dev/null | tail -1)). Updating Ollama."
+    echo; echo "════ Ollama on this Mac is too old for $M (now: $(ollama --version 2>/dev/null | head -1)). Updating Ollama."
     OLLAMA_UPDATED=1; update_ollama || { echo "Ollama was not updated. Update it from https://ollama.com/download and double-click this again."; exit 1; }
-    echo "Ollama is now: $(ollama --version 2>/dev/null | tail -1)"; echo; echo "════ Downloading $M"
-    ollama pull "$M" 2>&1 | tee "$HOME/Maataa-pull.log"
+    echo "Ollama is now: $(ollama --version 2>/dev/null | head -1)"; echo; echo "════ Downloading $M"
+    start_server; ollama pull "$M" 2>&1 | tee "$HOME/Maataa-pull.log"
   fi
   ollama list | awk 'NR>1 {print $1}' | grep -qx "$M" || { echo "The download did not finish (see the message above). If the name is wrong, check it on ollama.com/library."; exit 1; }
 fi
