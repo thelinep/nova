@@ -8,7 +8,7 @@
  *
  *   npm run test:real-models                 # uses llama3:latest, or the first model
  *   npm run test:real-models -- qwen2.5-coder:14b --out report.json
- *   npm run test:real-models -- --only loop  # loop | summarize | translate | slides | shotlist | shotlist-hindi | vision
+ *   npm run test:real-models -- --only loop  # loop | summarize | translate | slides | shotlist | shotlist-hindi | vision | indic
  *
  * Nothing touches your projects or data: each check works in a temporary
  * folder and an in-memory store. Exit code 1 if any check fails.
@@ -85,6 +85,31 @@ async function checkVision(ollama, model) {
   return text.replace(/\s+/g, ' ').trim().slice(0, 60);
 }
 
+// One plain question in eleven Indian languages. The model must answer in the same language's script;
+// naming the colour shows it understood the question and did not just echo the script.
+const INDIC = [
+  ['hi', 'आसमान का रंग क्या है? एक वाक्य में उत्तर दें।', /नील/u], ['bn', 'আকাশের রং কী? এক বাক্যে উত্তর দিন।', /নীল/u],
+  ['mr', 'आकाशाचा रंग कोणता आहे? एका वाक्यात उत्तर द्या.', /निळ/u], ['ta', 'வானத்தின் நிறம் என்ன? ஒரு வாக்கியத்தில் பதில் சொல்லுங்கள்.', /நீல/u],
+  ['te', 'ఆకాశం రంగు ఏమిటి? ఒక వాక్యంలో సమాధానం చెప్పండి.', /నీల/u], ['kn', 'ಆಕಾಶದ ಬಣ್ಣ ಯಾವುದು? ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ.', /ನೀಲಿ/u],
+  ['ml', 'ആകാശത്തിന്റെ നിറം എന്താണ്? ഒരു വാക്യത്തിൽ ഉത്തരം നൽകുക.', /നീല/u], ['gu', 'આકાશનો રંગ કયો છે? એક વાક્યમાં જવાબ આપો.', /વાદળી|ભૂરો|નીલ/u],
+  ['pa', 'ਅਸਮਾਨ ਦਾ ਰੰਗ ਕੀ ਹੈ? ਇੱਕ ਵਾਕ ਵਿੱਚ ਜਵਾਬ ਦਿਓ।', /ਨੀਲ/u], ['or', 'ଆକାଶର ରଙ୍ଗ କ\'ଣ? ଗୋଟିଏ ବାକ୍ୟରେ ଉତ୍ତର ଦିଅ।', /ନୀଳ/u],
+  ['ur', 'آسمان کا رنگ کیا ہے؟ ایک جملے میں جواب دیں۔', /نیل/u],
+];
+async function checkIndic(ollama, model) {
+  const indic = require('../lib/indic-lang');
+  const ask = async (q, tokens) => { const r = await ollama.chatFull(model, [{ role: 'user', content: q }], { options: { temperature: 0, num_predict: tokens } }); return String(r && r.message && r.message.content || '').trim(); };
+  const marks = []; let sameScript = 0, understood = 0;
+  for (const [lang, q, colour] of INDIC) {
+    let a = ''; try { a = await ask(q, 160); if (!a) a = await ask(q, 1500); } catch (e) { a = ''; }
+    const script = a && indic.detect(a).script === indic.scriptOf(lang), right = script && colour.test(a);
+    if (script) sameScript++; if (right) understood++;
+    marks.push(`${lang}${right ? '✓✓' : script ? '✓' : '✗'}`);
+  }
+  const detail = `${understood}/${INDIC.length} understood, ${sameScript}/${INDIC.length} answered in the same script: ${marks.join(' ')}`;
+  ok(marks[0] === 'hi✓✓' && sameScript >= 8, detail);
+  return detail;
+}
+
 function skillRow(id) {
   if (id === 'skl_summarize') return { id, name: 'Session Summarizer', enabled: true, permissions: [{ scope: 'session:read', granted: true }], manifest: { entrypoint: 'summarize.run(context)', inputs: ['sessionId', 'text', 'maxWords'], outputs: ['summary', 'citations'], requiredTools: [], requiredHost: ['readSession', 'generate'] } };
   const def = [...firstParty.SKILLS, ...firstParty.UPGRADES].find(s => s.id === id);
@@ -122,6 +147,7 @@ async function main() {
   let sees = false;
   try { const info = await ollama.show(model); sees = Array.isArray(info && info.capabilities) && info.capabilities.includes('vision'); } catch (_) {}
   if (sees && (!only || only === 'vision')) checks.push({ name: 'vision: two colours', group: 'vision', run: checkVision });
+  if (!only || only === 'indic') checks.push({ name: 'indic: 11 languages', group: 'indic', run: checkIndic });
   const results = [];
   for (const check of checks) {
     const started = Date.now();

@@ -13,6 +13,7 @@ const path = require('node:path');
 const { execFile } = require('node:child_process');
 const transcriber = require('./transcribe');
 const audioGen = require('./audio-gen');
+const indic = require('./indic-lang');
 
 function error(message, statusCode = 400) { return Object.assign(new Error(message), { statusCode }); }
 function run(file, args, timeout = 120000) {
@@ -43,7 +44,8 @@ async function transcribeClip(dataDir, buffer, mime = 'audio/webm', language = '
     const result = transcriber.parseWhisperJson(JSON.parse(fs.readFileSync(path.join(work, 'out.json'), 'utf8')));
     const text = result.segments.map(s => s.text).join(' ').replace(/\s+/g, ' ').replace(/\[(BLANK_AUDIO|MUSIC|NOISE)\]/gi, '').trim();
     if (!text) throw error('I did not catch any words. Try again a little closer to the mic.', 422);
-    return { text, language: result.language || (multi ? language : 'en') };
+    const seen = indic.detect(text);
+    return { text, language: result.language || (multi ? language : 'en'), detected: { lang: seen.lang, name: seen.name, script: seen.script, candidates: seen.candidates, romanized: seen.romanized } };
   } finally { fs.rmSync(work, { recursive: true, force: true }); }
 }
 
@@ -61,7 +63,10 @@ async function speakText(dataDir, text, { voice = null, rate = 185 } = {}) {
   const words = speakable(text);
   if (!words) throw error('Nothing to read aloud.');
   const k = audioGen.kokoroStatus();
-  const chosen = voice || (k.ready ? audioGen.voiceFor('en') : null);
+  // Read the reply in the language it is written in (Hindi text with a Hindi voice), when a voice for it exists.
+  const spoken = indic.detect(words), wanted = spoken.romanized ? 'en' : spoken.lang;
+  const inLanguage = wanted === 'en' ? null : audioGen.voiceFor(wanted);
+  const chosen = voice || inLanguage || (k.ready ? audioGen.voiceFor('en') : null);
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nova-say-'));
   const out = await audioGen.synthesize(work, words, { voice: chosen, rate, name: 'reply' });
   // Chromium cannot play AIFF: hand back WAV.
@@ -72,7 +77,7 @@ async function speakText(dataDir, text, { voice = null, rate = 185 } = {}) {
   }
   const data = fs.readFileSync(file);
   fs.rmSync(work, { recursive: true, force: true });
-  return { data, type, voice: chosen || 'macOS default' };
+  return { data, type, voice: chosen || 'macOS default', language: spoken.lang, languageName: spoken.name, voiceMatchesLanguage: Boolean(voice) || wanted === 'en' || Boolean(inLanguage) };
 }
 
 module.exports = { transcribeClip, speakText, speakable };

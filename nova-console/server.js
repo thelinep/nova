@@ -1039,7 +1039,7 @@ const routes = [
     const charId = b.characterId || (!b.voice && (store.get('preferences', 'default') || {}).replyCharacter) || null;
     let character = null; if (charId) { try { character = characters.get(store, charId); } catch (_) {} }
     const out = character ? await characters.speak(character, voiceChat.speakable(b.text), { director: voiceDirector() }) : await voiceChat.speakText(DATA_DIR, b.text, { voice: b.voice || null, rate: b.rate });
-    res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice) });
+    res.writeHead(200, { 'Content-Type': out.type, 'Content-Length': out.data.length, 'Cache-Control': 'no-store', 'X-Nova-Voice': encodeURIComponent(out.voice), ...(out.language ? { 'X-Nova-Language': out.language, 'X-Nova-Voice-Matches-Language': out.voiceMatchesLanguage ? '1' : '0' } : {}) });
     res.end(out.data);
   } },
 
