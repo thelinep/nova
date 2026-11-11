@@ -86,7 +86,16 @@ function buildSkillHost(store, ollama, skill, options = {}) {
       if (system) messages.push({ role: 'system', content: String(system).slice(0, 4000) });
       messages.push({ role: 'user', content: String(prompt) });
       const numPredict = Math.max(32, Math.min(MAX_OUTPUT_TOKENS, Number(maxTokens) || 512));
-      const response = await ollama.chatFull(model, messages, { options: { temperature: 0.2, num_predict: numPredict }, ...(format === 'json' ? { format: 'json' } : {}) });
+      const call = (tokens, think) => ollama.chatFull(model, messages, { options: { temperature: 0.2, num_predict: tokens }, ...(format === 'json' ? { format: 'json' } : {}), ...(think ? { think } : {}) });
+      let response = await call(numPredict);
+      // A reasoning model (gpt-oss, deepseek-r1, qwen3 ...) can spend the whole budget thinking and
+      // answer nothing. Ask once more with light reasoning and room for both the thinking and the answer.
+      const said = r => String((r && r.message && r.message.content) || '').trim();
+      if (!said(response) && response && response.message && String(response.message.thinking || '').trim()) {
+        const roomy = Math.min(MAX_OUTPUT_TOKENS, Math.max(numPredict * 4, numPredict + 1024));
+        try { response = await call(roomy, 'low'); }
+        catch (_) { response = await call(roomy); } // a model that rejects the level still gets the larger budget
+      }
       return { text: String((response && response.message && response.message.content) || ''), model, doneReason: (response && response.done_reason) || null };
     };
   }

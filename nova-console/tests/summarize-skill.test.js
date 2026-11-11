@@ -143,3 +143,20 @@ test('citations stay empty, not invented, when the repair also has none', async 
   assert.equal(result.citations.length, 0);
   assert.equal(result.summary, 'Asha guards the beach.');
 });
+
+test('a reasoning model that only thought is asked again with light reasoning and a larger budget', async () => {
+  const db = store(); db.put('models', { id: 'gpt-oss:20b', runtime: 'ollama' });
+  const calls = [];
+  const ollama = { chatFull: async (model, messages, opts) => { calls.push(opts); return calls.length === 1 ? { message: { content: '', thinking: 'Let me plan the summary...' }, done_reason: 'length' } : { message: { content: 'Asha guards the beach [S1].' } }; } };
+  const host = buildSkillHost(db, ollama, skillRow());
+  const result = await summarize.run({ text: 'Asha is a lifeguard on Marine Drive.', maxWords: 80 }, null, host);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].think, undefined, 'ordinary models are never sent a think option');
+  assert.equal(calls[1].think, 'low');
+  assert.ok(calls[1].options.num_predict >= calls[0].options.num_predict + 1024);
+  assert.match(result.summary, /Asha guards the beach \[S1\]/);
+
+  const plain = []; const quiet = { chatFull: async (m, msgs, opts) => { plain.push(opts); return { message: { content: '' } }; } };
+  await assert.rejects(() => summarize.run({ text: 'x y z.' }, null, buildSkillHost(db, quiet, skillRow())), /empty summary/);
+  assert.equal(plain.length, 1, 'an empty reply without thinking is not retried here');
+});

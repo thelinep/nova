@@ -145,6 +145,7 @@ class OllamaClient {
     if (opts.tools && opts.tools.length) body.tools = opts.tools;
     if (opts.options) body.options = opts.options;
     if (opts.format) body.format = opts.format;
+    if (opts.think !== undefined) body.think = opts.think; // reasoning models only: true/false or 'low' | 'medium' | 'high'
     const res = await fetchOllama(this.url('/api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
