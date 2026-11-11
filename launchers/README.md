@@ -6,6 +6,7 @@ Double-click **Maataa.command** in the brahmini folder for a menu of everything 
 | --- | --- |
 | Maataa - Start coding | Starts Ollama and Maataa, makes sure a coding model is installed, approves ~/Maataa Projects, offers the coding checks |
 | Maataa - Test with real models | Runs the coding loop and text skills against the local Ollama models you pick, and saves a pass/fail report per model in nova-console/data/checks |
+| Maataa - Try a new model | Downloads one Ollama model you name, runs the same checks on it, shows the memory it uses, then asks whether to keep or remove it |
 | Build NOVA app | Runs the tests and packs Maataa Workstation.app, the .dmg and the portable folder into nova-console/packaging/dist |
 | Install Maataa app | Puts the newest built app into /Applications. An older copy goes to the Trash after you agree |
 | Check NOVA on this Mac | Runs every media feature once and writes a report |
