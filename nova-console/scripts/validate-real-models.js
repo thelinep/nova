@@ -91,7 +91,9 @@ async function main() {
   const outIdx = args.indexOf('--out'), out = outIdx >= 0 ? args[outIdx + 1] : null;
   const onlyIdx = args.indexOf('--only'), only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
   const ollama = new OllamaClient();
-  const status = await ollama.status();
+  // Right after a large model has run, Ollama can be slow to answer while it frees memory: wait up to ~40 s.
+  let status = await ollama.status();
+  for (let i = 0; i < 8 && !status.reachable; i++) { await new Promise(r => setTimeout(r, 5000)); status = await ollama.status(); }
   if (!status.reachable) throw new Error('Ollama is not running: ' + status.error);
   const named = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--out' && args[i - 1] !== '--only');
   const model = named || (status.models.find(m => m.name === 'llama3:latest') || status.models[0] || {}).name;
