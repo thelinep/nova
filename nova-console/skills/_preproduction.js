@@ -50,14 +50,14 @@ function makeSkill(spec) {
     const hint = typeof spec.hint === 'function' ? asText(spec.hint(source)) : '';
     const prompt = `${spec.instruction}${hint ? `\n${hint}` : ''}\n${extras ? `\nDetails supplied by the user (these override the source):\n${extras}\n` : ''}\nSource:\n"""\n${source}\n"""`;
     const ask = async text => host.generate({ system, prompt: text, modelId: inputs.modelId || null, maxTokens: spec.maxTokens || 2048, format: 'json' });
-    const judge = text => { try { const d = extractJson(String(text || '')); let p = spec.validate(d); if (!p.length && typeof spec.check === 'function') p = spec.check(d, source, inputs); return { data: d, problems: p }; } catch (e) { return { data: undefined, problems: [e.message] }; } };
+    const judge = (text, why) => { if (!String(text || '').trim()) return { data: undefined, problems: [`The model returned an empty reply${why ? ` (stopped: ${why})` : ''}`] }; try { const d = extractJson(String(text || '')); let p = spec.validate(d); if (!p.length && typeof spec.check === 'function') p = spec.check(d, source, inputs); return { data: d, problems: p }; } catch (e) { return { data: undefined, problems: [e.message] }; } };
     const maxRepairs = Math.max(1, Math.min(3, Number(spec.repairs) || 1));
     let reply = await ask(prompt), model = reply.model || null, repairs = 0;
-    let { data, problems } = judge(reply.text);
+    let { data, problems } = judge(reply.text, reply.doneReason);
     while (problems.length && repairs < maxRepairs) {
       reply = await ask(`${prompt}\n\nYour previous reply was rejected: ${problems.slice(0, 8).join('; ')}.\nReturn the corrected JSON object only.\nPrevious reply:\n${String(reply.text || '').slice(0, 6000)}`);
       model = reply.model || model; repairs++;
-      ({ data, problems } = judge(reply.text));
+      ({ data, problems } = judge(reply.text, reply.doneReason));
     }
     if (problems.length) throw new Error(`The model's ${spec.name} was still invalid after ${repairs === 1 ? 'one repair' : repairs + ' repairs'}: ${problems.slice(0, 5).join('; ')}`);
     const repaired = repairs > 0;

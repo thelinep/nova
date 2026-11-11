@@ -98,16 +98,21 @@ const INDIC = [
 async function checkIndic(ollama, model) {
   const indic = require('../lib/indic-lang');
   const ask = async (q, tokens) => { const r = await ollama.chatFull(model, [{ role: 'user', content: q }], { options: { temperature: 0, num_predict: tokens } }); return String(r && r.message && r.message.content || '').trim(); };
-  const marks = []; let sameScript = 0, understood = 0;
+  const marks = [], languages = {}; let sameScript = 0, understood = 0, errors = 0, firstError = '';
   for (const [lang, q, colour] of INDIC) {
-    let a = ''; try { a = await ask(q, 160); if (!a) a = await ask(q, 1500); } catch (e) { a = ''; }
-    const script = a && indic.detect(a).script === indic.scriptOf(lang), right = script && colour.test(a);
+    let a = '', failed = '';
+    try { a = await ask(q, 160); if (!a) a = await ask(q, 1500); } catch (e) { failed = String(e.message || e).slice(0, 160); errors++; firstError = firstError || failed; }
+    const script = Boolean(a) && indic.detect(a).script === indic.scriptOf(lang), right = script && colour.test(a);
     if (script) sameScript++; if (right) understood++;
     marks.push(`${lang}${right ? '✓✓' : script ? '✓' : '✗'}`);
+    languages[lang] = { understood: right, sameScript: script, answer: a.replace(/\s+/g, ' ').slice(0, 200), ...(failed ? { error: failed } : {}) };
   }
   const detail = `${understood}/${INDIC.length} understood, ${sameScript}/${INDIC.length} answered in the same script: ${marks.join(' ')}`;
-  ok(marks[0] === 'hi✓✓' && sameScript >= 8, detail);
-  return detail;
+  // Ollama refusing to answer is a failed run, not evidence about the model's languages: say so.
+  if (errors) { const e = new Error(`could not run: Ollama failed on ${errors}/${INDIC.length} questions (${firstError})`); e.data = { languages }; throw e; }
+  const hi = languages.hi;
+  if (!(hi.understood && sameScript >= 8)) { const e = new Error(`${detail}${hi.understood ? '' : ` — Hindi answer was: ${JSON.stringify(hi.answer.slice(0, 100))}`}`); e.data = { languages }; throw e; }
+  return { detail, data: { languages } };
 }
 
 function skillRow(id) {
@@ -152,8 +157,8 @@ async function main() {
   for (const check of checks) {
     const started = Date.now();
     let outcome;
-    try { outcome = { status: 'passed', detail: await check.run(ollama, model) }; }
-    catch (e) { outcome = { status: 'failed', detail: e.message }; }
+    try { const r = await check.run(ollama, model); outcome = r && typeof r === 'object' ? { status: 'passed', detail: r.detail, data: r.data } : { status: 'passed', detail: r }; }
+    catch (e) { outcome = { status: 'failed', detail: e.message, ...(e.data ? { data: e.data } : {}) }; }
     const seconds = Math.round((Date.now() - started) / 100) / 10;
     results.push({ check: check.name, seconds, ...outcome });
     console.error(`${outcome.status === 'passed' ? 'PASS' : 'FAIL'}  ${check.name}  (${seconds}s)  ${outcome.detail}`);
