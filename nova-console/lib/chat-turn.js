@@ -202,7 +202,7 @@ async function runTurn(deps, body, emit, clientSignal) {
         sys.push('Text recognised in the attached image' + (parts.length > 1 ? 's' : '') + ' by text recognition on this Mac. These are the exact characters with the layout kept; use them for exact text and code, and the picture (if you can see it) for layout and meaning. When asked to extract code, reproduce it exactly from here, fixing only obvious recognition slips, in a code block.\n' + parts.map(p => `--- ${p.name}\n\`\`\`${p.code ? '' : 'text'}\n${p.text.slice(0, 12000)}\n\`\`\``).join('\n'));
       }
       if (caps.length && !canSee) {
-        job.note(`${record.name || model} cannot see pictures`, ocrText ? 'It gets the recognised text instead. For layout and visual details pick a vision model (llama3.2-vision, qwen2.5-vl).' : 'Pick a vision model (llama3.2-vision, qwen2.5-vl) to work with pictures.');
+        job.note(`${record.name || model} cannot see pictures`, ocrText ? 'It gets the recognised text instead. For layout and visual details pick a vision model (for example gemma4 or qwen3-vl).' : 'Pick a vision model (llama3.2-vision, qwen2.5-vl) to work with pictures.');
         sys.push('The model you are running cannot see images; you only have the recognised text above. Say so if the person asks about visual details.');
       }
       if (imageFiles.length && imageToCode.wantsBuild(last.content)) {

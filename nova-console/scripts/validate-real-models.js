@@ -8,7 +8,7 @@
  *
  *   npm run test:real-models                 # uses llama3:latest, or the first model
  *   npm run test:real-models -- qwen2.5-coder:14b --out report.json
- *   npm run test:real-models -- --only loop  # loop | summarize | translate | slides | shotlist | shotlist-hindi
+ *   npm run test:real-models -- --only loop  # loop | summarize | translate | slides | shotlist | shotlist-hindi | vision
  *
  * Nothing touches your projects or data: each check works in a temporary
  * folder and an in-memory store. Exit code 1 if any check fails.
@@ -66,6 +66,25 @@ const BRIEF_HI = `मानसून आशा की कहानी है, �
 दृश्य १: बाहरी. मरीन ड्राइव - शाम। आशा समुद्र को देखती है जब शहर की बत्तियाँ जलती हैं। उसका भाई रवि फ़ोन करता है; वह बांद्रा में फँसा है।
 दृश्य २: आंतरिक. लाइफगार्ड की झोपड़ी - रात। बारिश टिन की छत पर गिरती है। आशा बचाव की रस्सियाँ जाँचती है।`;
 
+// A 96x96 picture, left half red and right half blue, built here so the check needs no image file.
+function twoColourPng() {
+  const zlib = require('node:zlib'), W = 96, H = 96, raw = Buffer.alloc(H * (1 + W * 3));
+  for (let y = 0; y < H; y++) { const row = y * (1 + W * 3); for (let x = 0; x < W; x++) { const p = row + 1 + x * 3; if (x < W / 2) raw[p] = 220; else raw[p + 2] = 220; } }
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = buf => { let c = 0xffffffff; for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const body = Buffer.concat([Buffer.from(type), data]); const sum = Buffer.alloc(4); sum.writeUInt32BE(crc(body)); return Buffer.concat([len, body, sum]); };
+  const head = Buffer.alloc(13); head.writeUInt32BE(W, 0); head.writeUInt32BE(H, 4); head[8] = 8; head[9] = 2;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', head), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+
+// Only for models Ollama reports as able to see pictures; others are not marked down for it.
+async function checkVision(ollama, model) {
+  const r = await ollama.chatFull(model, [{ role: 'user', content: 'This picture has two halves. Which two colours do you see? Answer with the two colour names only.', images: [twoColourPng().toString('base64')] }], { options: { temperature: 0, num_predict: 400 } });
+  const text = String(r && r.message && r.message.content || '').toLowerCase();
+  ok(/red|लाल/.test(text) && /blue|नील/.test(text), `expected red and blue, model wrote: ${JSON.stringify(text.slice(0, 120))}`);
+  return text.replace(/\s+/g, ' ').trim().slice(0, 60);
+}
+
 function skillRow(id) {
   if (id === 'skl_summarize') return { id, name: 'Session Summarizer', enabled: true, permissions: [{ scope: 'session:read', granted: true }], manifest: { entrypoint: 'summarize.run(context)', inputs: ['sessionId', 'text', 'maxWords'], outputs: ['summary', 'citations'], requiredTools: [], requiredHost: ['readSession', 'generate'] } };
   const def = [...firstParty.SKILLS, ...firstParty.UPGRADES].find(s => s.id === id);
@@ -100,6 +119,9 @@ async function main() {
   if (!model || !status.models.some(m => m.name === model)) throw new Error(`Model "${model}" is not in Ollama. Pull it first: ollama pull ${model}`);
   console.error(`Checking ${model}${only ? ' (' + only + ' only)' : ''}. Each check can take a few minutes.\n`);
   const checks = [...LOOP_FIXTURES.map(f => ({ name: f.name, group: 'loop', run: (o, m) => checkLoop(o, m, f) })), ...SKILL_CHECKS.map(c => ({ ...c, group: c.name }))].filter(c => !only || c.group === only);
+  let sees = false;
+  try { const info = await ollama.show(model); sees = Array.isArray(info && info.capabilities) && info.capabilities.includes('vision'); } catch (_) {}
+  if (sees && (!only || only === 'vision')) checks.push({ name: 'vision: two colours', group: 'vision', run: checkVision });
   const results = [];
   for (const check of checks) {
     const started = Date.now();
