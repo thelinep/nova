@@ -28,7 +28,7 @@ const SKILLS = [
 const UPGRADES = [
   { id: 'skl_translate', name: 'Translate', version: '2.0.0', category: 'Text',
     description: 'Translates pasted text or the open chat into another language on a local model, keeping formatting, names and screenplay layout.',
-    manifest: { entrypoint: 'translate.run(context)', inputs: ['text', 'sessionId', 'targetLang', 'sourceLang', 'tone'], outputs: ['text', 'markdown'], requiredTools: [], requiredHost: ['readSession', 'generate'] } },
+    manifest: { entrypoint: 'translate.run(context)', inputs: ['text', 'sessionId', 'targetLang', 'sourceLang', 'tone', 'glossary'], outputs: ['text', 'markdown'], requiredTools: [], requiredHost: ['readSession', 'generate'] } },
   { id: 'skl_pptx', name: 'Export to Slides', version: '2.0.0', category: 'Export',
     description: 'Turns notes, a brief or the open chat into a slide deck with speaker notes, as Marp Markdown you can open in Marp and export to PowerPoint or PDF. Local model only.',
     manifest: { entrypoint: 'pptx.run(context)', inputs: ['text', 'sessionId', 'title', 'audience', 'slideCount'], outputs: ['data', 'markdown'], requiredTools: [], requiredHost: ['readSession', 'generate'] } },
