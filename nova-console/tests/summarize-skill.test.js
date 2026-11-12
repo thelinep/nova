@@ -169,3 +169,16 @@ test('a reasoning model that ignores the level is asked with thinking off', asyn
   assert.deepEqual(calls, [undefined, 'low', false]);
   assert.match(result.summary, /\[S1\]/);
 });
+
+test('a model Ollama marks as thinking is asked not to think on the first call', async () => {
+  const db = store(); db.put('models', { id: 'qwen3.5:9b-q4_K_M', runtime: 'ollama' });
+  const calls = [];
+  const ollama = { show: async () => ({ capabilities: ['completion', 'thinking', 'vision'] }),
+    chatFull: async (model, messages, opts) => { calls.push(opts.think); return { message: { content: 'Asha guards the beach [S1].' } }; } };
+  await summarize.run({ text: 'Asha is a lifeguard on Marine Drive.' }, null, buildSkillHost(db, ollama, skillRow()));
+  assert.deepEqual(calls, [false]);
+  db.put('models', { id: 'gpt-oss:20b', runtime: 'ollama' }); const calls2 = [];
+  const oss = { show: async () => ({ capabilities: ['completion', 'thinking'] }), chatFull: async (m, msgs, opts) => { calls2.push(opts.think); return { message: { content: 'Asha guards the beach [S1].' } }; } };
+  await summarize.run({ text: 'Asha is a lifeguard on Marine Drive.', modelId: 'gpt-oss:20b' }, null, buildSkillHost(db, oss, skillRow()));
+  assert.deepEqual(calls2, ['low']);
+});

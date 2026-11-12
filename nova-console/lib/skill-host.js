@@ -86,8 +86,15 @@ function buildSkillHost(store, ollama, skill, options = {}) {
       if (system) messages.push({ role: 'system', content: String(system).slice(0, 4000) });
       messages.push({ role: 'user', content: String(prompt) });
       const numPredict = Math.max(32, Math.min(MAX_OUTPUT_TOKENS, Number(maxTokens) || 512));
-      const call = (tokens, think) => ollama.chatFull(model, messages, { options: { temperature: 0.2, num_predict: tokens }, ...(format === 'json' ? { format: 'json' } : {}), ...(think ? { think } : {}) });
-      let response = await call(numPredict);
+      const call = (tokens, think) => ollama.chatFull(model, messages, { options: { temperature: 0.2, num_predict: tokens }, ...(format === 'json' ? { format: 'json' } : {}), ...(think !== undefined ? { think } : {}) });
+      // Skills are structured writing, not puzzles. A model that thinks by default (qwen3.5, deepseek-r1 ...)
+      // can spend minutes reasoning before a one-line translation, so ask it not to; gpt-oss only takes a level.
+      const thinks = await modelThinks(ollama, model);
+      let response;
+      if (thinks) {
+        try { response = await call(numPredict, /gpt-oss/i.test(model) ? 'low' : false); }
+        catch (_) { response = await call(numPredict); }
+      } else response = await call(numPredict);
       // A reasoning model (gpt-oss, deepseek-r1, qwen3 ...) can spend the whole budget thinking and
       // answer nothing. Ask once more with light reasoning and room for both the thinking and the answer.
       const said = r => String((r && r.message && r.message.content) || '').trim();
@@ -107,4 +114,16 @@ function buildSkillHost(store, ollama, skill, options = {}) {
   return host;
 }
 
-module.exports = { buildSkillHost, hostMethodsFor, resolveLocalModel, FIRST_PARTY_HOST };
+// Whether Ollama reports the "thinking" capability for a model; asked once per model and remembered.
+// Kept per Ollama client; a failed lookup is not remembered, so the next call asks again.
+const THINKS = new WeakMap();
+async function modelThinks(ollama, model) {
+  if (!ollama || typeof ollama.show !== 'function') return false;
+  if (!THINKS.has(ollama)) THINKS.set(ollama, new Map());
+  const known = THINKS.get(ollama);
+  if (known.has(model)) return known.get(model);
+  try { const info = await ollama.show(model); const yes = Array.isArray(info && info.capabilities) && info.capabilities.includes('thinking'); known.set(model, yes); return yes; }
+  catch (_) { return false; }
+}
+
+module.exports = { buildSkillHost, modelThinks, hostMethodsFor, resolveLocalModel, FIRST_PARTY_HOST };
