@@ -28,6 +28,7 @@ const memory = require('./user-memory');
 const workspaceScanner = require('./workspace-scanner');
 const ocr = require('./ocr');
 const imageToCode = require('./image-to-code');
+const { modelThinks } = require('./skill-host');
 
 const SCAN_INTENT = /\b(scan|audit|review|report|analy[sz]e|analysis|health|inspect|check ?up|assess|overview)\b/i;
 
@@ -252,11 +253,23 @@ async function runTurn(deps, body, emit, clientSignal) {
     });
     let messages = [{ role: 'system', content: system }, ...convo];
     const options = body.options && typeof body.options === 'object' ? Object.fromEntries(Object.entries(body.options).filter(([, v]) => v != null)) : {};
+    // Thinking models (qwen3.5, deepseek-r1, gpt-oss ...) can reason for minutes before a short reply.
+    // The chat's Think button decides: off (the default) asks them not to; on lets them. gpt-oss only takes a level.
+    const thinkingModel = caps.includes('thinking') || await modelThinks(ollama, model);
+    const wantThink = body.think === true;
+    const thinkMode = thinkingModel ? (/gpt-oss/i.test(model) ? (wantThink ? 'medium' : 'low') : wantThink) : undefined;
+    if (wantThink && !thinkingModel) job.note(`${record.name || model} does not think step by step`, 'Think only changes models that reason before answering, such as qwen3.5 or deepseek-r1.');
+    const withThink = async (fn) => {
+      if (thinkMode === undefined) return fn(undefined);
+      try { return await fn(thinkMode); }
+      catch (e) { if (signal.aborted || !/think/i.test(String(e && e.message))) throw e; return fn(undefined); } // a build that refuses the option still answers
+    };
+    let thoughtChars = 0;
 
     if (!computerOn) {
       /* 5a · plain streaming reply */
       const think = job.step('Thinking');
-      const res = await ollama.chatStream(model, messages, options, signal);
+      const res = await withThink(t => ollama.chatStream(model, messages, options, signal, t === undefined ? undefined : { think: t }));
       let buf = '';
       for await (const chunk of res.body) {
         buf += Buffer.from(chunk).toString('utf8');
@@ -266,9 +279,10 @@ async function runTurn(deps, body, emit, clientSignal) {
           if (!line.trim()) continue;
           let evt; try { evt = JSON.parse(line); } catch (_) { continue; }
           if (evt.error) throw new Error(evt.error);
+          thoughtChars += String((evt.message && evt.message.thinking) || '').length;
           const piece = (evt.message && evt.message.content) || '';
           if (piece) {
-            if (firstTokenAt === null) { firstTokenAt = Date.now(); think.done(`${((firstTokenAt - started) / 1000).toFixed(1)} s`); job.step('Writing the reply'); }
+            if (firstTokenAt === null) { firstTokenAt = Date.now(); think.done(`${((firstTokenAt - started) / 1000).toFixed(1)} s${thoughtChars ? ` · reasoned about ${Math.max(1, Math.round(thoughtChars / 5))} words` : ''}`); job.step('Writing the reply'); }
             content += piece; emit({ type: 'token', text: piece });
           }
           if (evt.done) { evalCount = evt.eval_count || 0; evalDuration = evt.eval_duration || 0; }
@@ -280,7 +294,7 @@ async function runTurn(deps, body, emit, clientSignal) {
       for (let round = 0; round < MAX_ROUNDS; round++) {
         if (signal.aborted) throw Object.assign(new Error('Cancelled'), { name: 'AbortError' });
         const think = job.step(round === 0 ? 'Thinking' : 'Working out the next step');
-        const res = await ollama.chatFull(model, messages, { tools, options, signal });
+        const res = await withThink(t => ollama.chatFull(model, messages, { tools, options, signal, ...(t === undefined ? {} : { think: t }) }));
         evalCount += res.eval_count || 0; evalDuration += res.eval_duration || 0;
         const msg = res.message || { role: 'assistant', content: '' };
         const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];

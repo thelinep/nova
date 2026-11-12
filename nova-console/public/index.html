@@ -1089,6 +1089,7 @@ a.nav-item { color: inherit; text-decoration: none; }
                     <button id="retrievalToggleBtn" class="chip-toggle on" title="Toggle retrieval"><span data-lucide="search" style="width:11px;height:11px"></span>Retrieval</button>
                     <button id="profileBtn" class="chip-toggle mono" title="Inference profile">Balanced</button>
                     <button id="computerToggleBtn" class="chip-toggle" title="Let Maataa use this Mac in this chat (asks before every action)"><span data-lucide="mouse-pointer-click" style="width:11px;height:11px"></span>Computer</button>
+                    <button id="thinkToggleBtn" class="chip-toggle" title="Let thinking models (qwen3.5, deepseek-r1, gpt-oss) reason before answering: better on hard questions, much slower. Off by default."><span data-lucide="brain" style="width:11px;height:11px"></span>Think</button>
                     <button id="speakToggleBtn" class="chip-toggle" title="Read replies aloud"><span data-lucide="volume-2" style="width:11px;height:11px"></span>Voice</button>
                   </div>
                   <div class="composer-right">
@@ -2161,6 +2162,7 @@ function renderComposerChrome(){
   const images = (s && s._pendingMedia) || [];
   $('computerToggleBtn').classList.toggle('on', !!(s && s.preferences.computer));
   $('speakToggleBtn').classList.toggle('on', !!(s && s.preferences.speak));
+  $('thinkToggleBtn').classList.toggle('on', !!(s && s.preferences.think));
   if (s && !SOURCES[s.id]) { SOURCES[s.id] = []; loadSources(s.id); }
   syncSendButton();
   $('contextChips').innerHTML = (s ? sourceChipsHtml(s) : '') + images.map((m,i)=>`<span class="ctx-chip"><img src="${mediaUrl(m.id)}" alt="" style="width:18px;height:18px;object-fit:cover;border-radius:3px">${escapeHtml(m.name)}<button data-idx="${i}" class="chip-remove-media" aria-label="Remove ${escapeHtml(m.name)}">×</button></span>`).join('')
@@ -7649,8 +7651,8 @@ function renderSettingsView(){
           <button class="toggle ${p.webAccess?'on':''}" id="setWebAccess"></button>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line-soft)"><span style="font-size:12.5px">Local telemetry</span><button class="toggle ${p.telemetry?'on':''}" id="setTelemetry"></button></div>
-        <div style="margin-top:12px"><span class="badge ${priv.cls==='state-good'?'badge-green':priv.cls==='state-info'?'badge-blue':'badge-red'}">${priv.level}</span>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:8px">${priv.level==='LOCAL ONLY' ? 'No network access is enabled and the loaded model runs locally — nothing leaves this workspace.' : priv.level==='NETWORK ALLOWED' ? 'Network access is enabled. The loaded model still runs locally, but automations and collectors may reach the network.' : 'The loaded model is a remote/hosted model — prompts and retrieved context for this session leave the workspace.'}</div>
+        <div style="margin-top:12px"><span id="privacyStateBadge" class="badge ${priv.cls==='state-good'?'badge-green':priv.cls==='state-info'?'badge-blue':'badge-red'}" aria-live="polite">${priv.level}</span>
+          <div id="privacyStateDescription" style="font-size:11.5px;color:var(--muted);margin-top:8px">${priv.level==='LOCAL ONLY' ? 'No network access is enabled and the loaded model runs locally — nothing leaves this workspace.' : priv.level==='NETWORK ALLOWED' ? 'Network access is enabled. The loaded model still runs locally, but automations and collectors may reach the network.' : 'The loaded model is a remote/hosted model — prompts and retrieved context for this session leave the workspace.'}</div>
         </div>
       </div>
     </div>
@@ -7669,8 +7671,20 @@ function renderSettingsView(){
   fillComfySettings();
   if ($('setHelperOn')) $('setHelperOn').onchange = e => { setPrefs({ helperEnabled: e.target.checked }); if (window.novaHelper) e.target.checked ? window.novaHelper.show() : window.novaHelper.hide(); };
 }
+function renderPrivacySummary(){
+  const badge = $('privacyStateBadge'), description = $('privacyStateDescription');
+  if (!badge || !description) return;
+  const priv = computePrivacyState();
+  badge.className = 'badge ' + (priv.cls === 'state-good' ? 'badge-green' : priv.cls === 'state-info' ? 'badge-blue' : 'badge-red');
+  badge.textContent = priv.level;
+  description.textContent = priv.level === 'LOCAL ONLY'
+    ? 'No network access is enabled and the loaded model runs locally — nothing leaves this workspace.'
+    : priv.level === 'NETWORK ALLOWED'
+      ? 'Network access is enabled. The loaded model still runs locally, but automations and collectors may reach the network.'
+      : 'The loaded model is a remote/hosted model — prompts and retrieved context for this session leave the workspace.';
+}
 function bindSettingsViewEvents(){
-  const bind = (id, key) => { const el = $(id); el.onclick = () => { const val = !getPrefs()[key]; setPrefs({[key]:val}); el.classList.toggle('on', val); renderShellChrome(); }; };
+  const bind = (id, key) => { const el = $(id); el.onclick = () => { const val = !getPrefs()[key]; setPrefs({[key]:val}); el.classList.toggle('on', val); if (key === 'webAccess') renderPrivacySummary(); renderShellChrome(); }; };
   bind('setRetrieval','retrieval'); bind('setCitations','citations'); bind('setStreaming','streaming'); bind('setDemoMode','demoMode'); bind('setWebAccess','webAccess'); bind('setTelemetry','telemetry');
   $('setTheme').onchange = e => { setPrefs({theme:e.target.value}); applyAppearance(); renderShellChrome(); toast('Theme updated.'); };
   $('setLanguage').onchange = e => { setPrefs({language:e.target.value}); applyAppearance(); renderSettingsView(); toast('Language updated.'); };
@@ -8099,7 +8113,7 @@ async function runTurn(s, text, model){
     const resp = await fetch(apiUrl('/api/chat/turn'), {method:'POST', headers:{'Content-Type':'application/json'}, signal:controller.signal, body:JSON.stringify({
       sessionId:s.id, model:model.id, messages:history,
       options:{temperature:s.preferences.temperature, top_p:s.preferences.topP, top_k:s.preferences.topK, repeat_penalty:s.preferences.repeatPenalty, num_predict:s.preferences.maxTokens, seed:s.preferences.seed ?? undefined},
-      retrieved:chosen.map(c => ({docName:c.docName, text:c.text})), computer:!!s.preferences.computer, memory:getPrefs().memory !== false, followups:getPrefs().followups !== false,
+      retrieved:chosen.map(c => ({docName:c.docName, text:c.text})), computer:!!s.preferences.computer, think:!!s.preferences.think, memory:getPrefs().memory !== false, followups:getPrefs().followups !== false,
     })});
     if (!resp.ok){ const e = await resp.json().catch(()=>({})); throw new Error(e.error || ('HTTP '+resp.status)); }
     let buf = '';
@@ -8419,6 +8433,7 @@ function bindConversationUI(){
   $('addFormInput').onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); submitAddForm(); } if (e.key === 'Escape') closeAddForm(); };
   $('computerToggleBtn').onclick = toggleComputerMode;
   $('speakToggleBtn').onclick = () => toggleSessionFlag('speak', 'I will read my replies aloud.', 'Reading aloud is off.');
+  $('thinkToggleBtn').onclick = () => toggleSessionFlag('think', 'Think on: thinking models reason before answering. Better on hard questions, slower.', 'Think off: thinking models answer straight away.');
   $('activityBtn').onclick = () => toggleActivityDrawer();
   bindMic();
   // Drop files or folders' files anywhere on the conversation.

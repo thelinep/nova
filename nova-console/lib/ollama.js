@@ -117,11 +117,13 @@ class OllamaClient {
   /** Streaming chat completion. Returns the raw fetch Response so the
    *  caller (the HTTP route) can pipe Ollama's newline-delimited JSON
    *  chunks straight through to the browser as they arrive. */
-  async chatStream(modelName, messages, options, signal) {
+  async chatStream(modelName, messages, options, signal, extra) {
+    const body = { model: modelName, messages, stream: true, options: options || {} };
+    if (extra && extra.think !== undefined) body.think = extra.think; // reasoning models only
     const res = await fetchOllama(this.url('/api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: modelName, messages, stream: true, options: options || {} }),
+      body: JSON.stringify(body),
       signal,
     });
     if (!res.ok) {

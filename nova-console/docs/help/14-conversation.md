@@ -81,6 +81,10 @@ When a reply says it ran a command or found files but **no action ran**, a red *
 - **Hold the microphone** while you speak and let go to send. Or click it once, speak, and click again. whisper.cpp turns your words into text on this Mac. **Settings > Send right after I speak** decides whether it sends straight away.
 - **Voice** reads every reply aloud, using Kokoro voices when installed, else the macOS voice. The **speaker** on any reply reads just that one.
 
+## Think
+
+Some models reason step by step before they answer (for example `qwen3.5`, `deepseek-r1` and `gpt-oss`). That helps on hard questions but can take minutes, even for a one-line reply. **Think** under the message box decides, for each chat: off (the default) asks these models to answer straight away; on lets them reason first, and the steps panel shows how much they reasoned. Other models are not affected. Skills such as Translate and Shot List always ask thinking models not to reason.
+
 ## Edit, retry, react, pin
 
 Hover a message for its buttons:
