@@ -5470,6 +5470,25 @@ async function renderCodingStudioView(){
 }
 function workspaceBytes(bytes){ return bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KB':(bytes/1048576).toFixed(1)+' MB'; }
 function workspaceCitation(item){ return `<button class="tag-chip workspace-citation" data-citation="${escapeHtml(item.citation)}" title="Copy file citation">${escapeHtml(item.relativePath)}:${item.line||1}</button>`; }
+/* A background refresh rebuilds the whole view. Keep what the person has typed or picked in it
+   (fields whose value differs from what the page rendered), plus focus, caret and scroll. */
+async function keepTypedInput(container, render){
+  if(!container) return render();
+  const changed=[];
+  container.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{
+    if(el.readOnly||el.disabled||el.type==='file') return;
+    if(el.type==='checkbox'||el.type==='radio'){ if(el.checked!==el.defaultChecked) changed.push({id:el.id,checked:el.checked}); return; }
+    if(el.tagName==='SELECT'){ const dflt=[...el.options].find(o=>o.defaultSelected)||el.options[0]; if(dflt&&el.value!==dflt.value) changed.push({id:el.id,value:el.value}); return; }
+    if(el.value!==el.defaultValue) changed.push({id:el.id,value:el.value});
+  });
+  const active=document.activeElement&&container.contains(document.activeElement)&&document.activeElement.id?document.activeElement:null;
+  const caret=active&&typeof active.selectionStart==='number'?[active.selectionStart,active.selectionEnd]:null;
+  const scrollers=[container,...container.querySelectorAll('.view-pad')].map(el=>[el,el.scrollTop]);
+  await render();
+  for(const c of changed){ const el=document.getElementById(c.id); if(!el||!container.contains(el)) continue; if('checked' in c) el.checked=c.checked; else el.value=c.value; }
+  for(const [el,top] of scrollers) if(el.isConnected) el.scrollTop=top;
+  if(active){ const el=document.getElementById(active.id); if(el&&container.contains(el)){ el.focus({preventScroll:true}); if(caret&&typeof el.setSelectionRange==='function'){ try{ el.setSelectionRange(caret[0],caret[1]); }catch(_){} } } }
+}
 async function renderWorkspaceView(){
   const pad=$('workspaceView').querySelector('.view-pad'); let roots=[],reports=[],plans=[],changes=[],batches=[],runs=[],permissions=[],backups=[],audit=[],gitView=null,gitDrafts=[],gitHistory=[],gitActions=[];
   let deviceInfo=null,contractList=[],chain=null;
@@ -5530,7 +5549,7 @@ async function renderWorkspaceView(){
   if($('loopReview'))$('loopReview').onclick=()=>{workspaceSelectedBatchId=loop.batchId;renderWorkspaceView().then(()=>document.getElementById('workspaceBatchChanges')?.scrollIntoView({behavior:'smooth',block:'center'}));};
   $$('.workspace-loop').forEach(x=>x.onclick=()=>{workspaceSelectedLoopId=x.dataset.id;renderWorkspaceView();});
   if(workspaceLoopPoll){clearTimeout(workspaceLoopPoll);workspaceLoopPoll=null;}
-  if(loop&&loop.status==='running')workspaceLoopPoll=setTimeout(()=>{workspaceLoopPoll=null;if(currentView==='workspace')renderWorkspaceView();},2000);
+  if(loop&&loop.status==='running')workspaceLoopPoll=setTimeout(()=>{workspaceLoopPoll=null;if(currentView==='workspace')keepTypedInput($('workspaceView'),renderWorkspaceView);},2000);
   if($('projectPreview'))$('projectPreview').onclick=async()=>{try{const row=await request('/api/workspace/projects',{parentRootId:$('projectParent').value,name:$('projectName').value.trim(),title:$('projectTitle').value.trim(),template:$('projectTemplate').value});workspaceSelectedProjectId=row.id;renderWorkspaceView();}catch(error){toast(error.message);}};
   if($('projectCreate'))$('projectCreate').onclick=async()=>{try{const row=await request('/api/workspace/projects/'+encodeURIComponent(projectDraft.id)+'/create',{});toast('Created '+row.name+' with '+row.created.files+' files.');renderWorkspaceView();}catch(error){toast(error.message);renderWorkspaceView();}};
   if($('projectOpen'))$('projectOpen').onclick=()=>{workspaceSelectedRootId=projectDraft.created.rootId;renderWorkspaceView();};
