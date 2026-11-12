@@ -71,6 +71,11 @@ SAFE=$(printf '%s' "$M" | tr '/:' '__'); mkdir -p data/checks
 node --no-warnings scripts/validate-real-models.js "$M" --out "data/checks/real-models-$SAFE.json" 2>&1 | tee "$HOME/Maataa-try-model.log"
 echo; echo "════ Result"; grep -F "passed for $M." "$HOME/Maataa-try-model.log" | tail -1
 echo "Memory this model is using now:"; ollama ps 2>/dev/null | awk 'NR==1 || /./'
+if ollama ps 2>/dev/null | awk -v m="$M" '$1==m' | grep -qw mlx; then
+  echo; echo "Note: Ollama gave this Mac the MLX build of $M. In Maataa's checks MLX builds have been slower and"
+  echo "use more memory, and some refuse JSON. The plain llama.cpp build is usually named with q4_K_M,"
+  echo "for example ${M}-q4_K_M or ${M%%:*}:<size>-it-q4_K_M. Check the exact tag on ollama.com/library/${M%%:*}/tags."
+fi
 if [ "$HAD" = 0 ]; then
   K=$(osascript -e "button returned of (display dialog \"Keep $M on this Mac? (${SIZE:-several GB})\" buttons {\"Remove it\", \"Keep it\"} default button \"Keep it\" with title \"Maataa\")" 2>/dev/null)
   if [ "$K" = "Remove it" ]; then ollama rm "$M" && echo "Removed $M."; else echo "Kept $M. In Maataa press Models > Sync from Ollama to use it."; fi
